@@ -1,0 +1,505 @@
+<?php
+
+namespace FluentCommunity\App\Models;
+
+use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Services\Helper;
+
+class Feed extends Model
+{
+    protected $table = 'fcom_posts';
+
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'comments_count'  => 'int',
+        'reactions_count' => 'int',
+        'is_sticky'       => 'int',
+        'priority'        => 'int',
+    ];
+
+    protected $fillable = [
+        'user_id',
+        'title',
+        'slug',
+        'message',
+        'message_rendered',
+        'type',
+        'content_type',
+        'space_id',
+        'privacy',
+        'status',
+        'priority',
+        'featured_image',
+        'is_sticky',
+        'expired_at',
+        'scheduled_at',
+        'comments_count',
+        'reactions_count',
+        'meta',
+        'created_at',
+        'updated_at'
+    ];
+
+    protected $searchable = [
+        'message',
+        'title'
+    ];
+
+    public static $publicColumns = [
+        'id',
+        'slug',
+        'message_rendered',
+        'meta',
+        'title',
+        'featured_image',
+        'created_at',
+        'privacy',
+        'priority',
+        'type',
+        'content_type',
+        'slug',
+        'space_id',
+        'user_id',
+        'is_sticky',
+        'comments_count',
+        'reactions_count'
+    ];
+
+    public static $scopeType = 'text';
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->user_id)) {
+                $model->user_id = get_current_user_id();
+            }
+            if (empty($model->slug)) {
+                $model->slug = self::generateNewSlug($model);
+            }
+
+            if (empty($model->meta)) {
+                $model->meta = self::getDefaultMeta();
+            }
+        });
+
+        static::addGlobalScope('type', function ($builder) {
+            $builder->where('type', self::$scopeType);
+        });
+
+        static::deleting(function ($feed) {
+            Media::where('feed_id', $feed->id)
+                ->update([
+                    'is_active' => 0
+                ]);
+        });
+
+    }
+
+    protected static function generateNewSlug($newModel)
+    {
+        if ($newModel->title) {
+            // Remove the emojis
+            $feedTitle = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
+            $title = sanitize_title($feedTitle, $newModel->user_id . '-' . time());
+        } else {
+            // get the first 25 char from the message
+            $title = sanitize_title(substr($newModel->message, 0, 25), $newModel->user_id . '-' . time());
+        }
+
+        $title = strtolower($title);
+        // only allow alphanumeric, dash, and underscore
+        $title = preg_replace('/[^a-z0-9-_]/', '', $title);
+
+        // check if the slug is already exists
+        $slug = $title;
+        $count = 1;
+        while (self::where('slug', $slug)->exists()) {
+            if ($count == 5) {
+                $count = time();
+            }
+            $slug = $title . '-' . $count;
+            $count++;
+        }
+
+        return $slug;
+    }
+
+    protected static function getDefaultMeta()
+    {
+        return [
+            'preview_data' => null
+        ];
+    }
+
+    public function setMetaAttribute($value)
+    {
+        $this->attributes['meta'] = maybe_serialize($value);
+    }
+
+    public function getMetaAttribute($value)
+    {
+        $meta = maybe_unserialize($value);
+
+        if (!$meta) {
+            $meta = [];
+        }
+
+        return $meta;
+    }
+
+    public function scopeSearchBy($query, $search)
+    {
+        if (!$search) {
+            return $query;
+        }
+
+        $fields = $this->searchable;
+        $query->where(function ($query) use ($fields, $search) {
+            $query->where(array_shift($fields), 'LIKE', "%$search%");
+            foreach ($fields as $field) {
+                $query->orWhere($field, 'LIKE', "$search%");
+            }
+        });
+
+        return $query;
+    }
+
+    public function scopeByUserAccess($query, $userId)
+    {
+        if ($userId) {
+            return $query->where('user_id', $userId)->orWhereNull('space_id')
+                ->orWhereHas('space', function ($q) use ($userId) {
+                    $spaceIds = get_user_meta($userId, '_fcom_space_ids', true);
+                    if ($spaceIds) {
+                        $q->whereIn('id', $spaceIds);
+                        return $q;
+                    }
+                    return $q->where('privacy', 'public');
+                });
+        }
+
+        return $query->whereNull('space_id')
+            ->orWhereHas('space', function ($q) {
+                $q->where('privacy', 'public');
+            });
+    }
+
+    public function scopeByBookMarked($query, $userId)
+    {
+        return $query->whereHas('reactions', function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+                ->where('type', 'bookmark');
+        });
+    }
+
+    public function scopeByTopicSlug($query, $topicSlug)
+    {
+        if (!$topicSlug) {
+            return $query;
+        }
+
+        return $query->whereHas('terms', function ($q) use ($topicSlug) {
+            $topic = Term::where('taxonomy_name', 'post_topic')->where('slug', $topicSlug)->first();
+            if ($topic) {
+                $q->where('term_id', $topic->id);
+            }
+        });
+    }
+
+    public function scopeFilterBySpaceSlug($query, $space)
+    {
+        if (!$space) {
+            return $query;
+        }
+
+        $query->whereHas('space', function ($q) use ($space) {
+            $q->where('slug', $space);
+        });
+
+        return $query;
+    }
+
+    public function scopeByType($query, $type)
+    {
+        if (!$type) {
+            return $query;
+        }
+
+        $query->where('type', $type);
+
+        return $query;
+    }
+
+    public function scopeCustomOrderBy($query, $type)
+    {
+        $acceptedTypes = ['new_activity', 'oldest', 'popular', 'likes', 'alphabetical', 'unanswered'];
+
+        if (!in_array($type, $acceptedTypes)) {
+            return $query->orderBy('created_at', 'DESC');
+        }
+
+        if ($type == 'new_activity') {
+            return $query->orderBy('updated_at', 'DESC');
+        }
+
+        if ($type == 'oldest') {
+            return $query->orderBy('created_at', 'ASC');
+        }
+
+        if ($type == 'likes') {
+            return $query->orderBy('reactions_count', 'DESC');
+        }
+
+        if ($type == 'unanswered') {
+            return $query->where('comments_count', 0)
+                ->orderBy('created_at', 'DESC');
+        }
+
+        if ($type == 'alphabetical') {
+            return $query->orderBy('slug', 'ASC');
+        }
+
+        if ($type == 'popular') {
+            // sort by comments_count + reactions_count desc
+            return $query->orderByRaw('(reactions_count + (comments_count * 2)) DESC');
+        }
+
+        return $query;
+    }
+
+    public function scopeByStatus($query, $status)
+    {
+        if (!$status) {
+            return $query->where('status', 'published');
+        }
+
+        $query->where('status', $status);
+
+        return $query;
+    }
+
+    public function scopeFilterByUserId($query, $userId)
+    {
+        if (!$userId) {
+            return $query;
+        }
+
+        $query->where('user_id', $userId);
+
+        return $query;
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'ID');
+    }
+
+    public function xprofile()
+    {
+        return $this->belongsTo(XProfile::class, 'user_id', 'user_id');
+    }
+
+    public function space()
+    {
+        return $this->belongsTo(BaseSpace::class, 'space_id', 'id')
+            ->withoutGlobalScopes();
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'post_id', 'id');
+    }
+
+    public function reactions()
+    {
+        return $this->hasMany(Reaction::class, 'object_id', 'id')
+            ->where('object_type', 'feed');
+    }
+
+    public function surveyVotes()
+    {
+        return $this->hasMany(Reaction::class, 'object_id', 'id')
+            ->where('type', 'survey_vote');
+    }
+
+    public function terms()
+    {
+        return $this->belongsToMany(Term::class, 'fcom_term_feed', 'post_id', 'term_id');
+    }
+
+    public function hasUserReact($userId, $type = 'like')
+    {
+        if (!$userId) {
+            return false;
+        }
+
+        return (bool)Reaction::where('object_id', $this->id)
+            ->select(['id'])
+            ->where('object_type', 'feed')
+            ->where('user_id', $userId)
+            ->where('type', $type)
+            ->first();
+    }
+
+    public function hasEditAccess($userId)
+    {
+        if (!$userId) {
+            return false;
+        }
+
+        if ($this->user_id == $userId) {
+            return true;
+        }
+
+        $userModel = User::find($userId);
+
+        return $userModel && $userModel->isCommunityModerator();
+    }
+
+    public function getHumanExcerpt($length = 40)
+    {
+        $content = $this->title;
+        if (!$content) {
+            $content = $this->message;
+        }
+
+        return Helper::getHumanExcerpt($content, $length);
+    }
+
+    public function getPermalink()
+    {
+        if ($this->space_id && $this->space) {
+            $path = 'space/' . $this->space->slug . '/post/' . $this->slug;
+        } else {
+            $path = 'post/' . $this->slug;
+        }
+
+        return Helper::baseUrl($path);
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(Activity::class, 'feed_id', 'id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'feed_id', 'id');
+    }
+
+    public function media()
+    {
+        return $this->hasMany(Media::class, 'feed_id', 'id');
+    }
+
+    public function getSurveyCastsByUserId($userId = null)
+    {
+        if (!$userId || $this->content_type != 'survey') {
+            return [];
+        }
+
+        return Utility::getFromCache('survey_cast_' . $this->id . '_' . $userId, function () use ($userId) {
+            return Reaction::where('type', 'survey_vote')
+                ->where('user_id', $userId)
+                ->where('object_id', $this->id)
+                ->pluck('object_type')->toArray();
+        }, 86400);
+    }
+
+    public function updateCustomMeta($key, $value)
+    {
+        $exist = Meta::where('object_id', $this->id)
+            ->where('object_type', 'feed')
+            ->where('meta_key', $key)
+            ->first();
+
+        if ($exist) {
+            $exist->value = $value;
+            $exist->save();
+        } else {
+            Meta::create([
+                'object_id'   => $this->id,
+                'object_type' => 'feed',
+                'meta_key'    => $key,
+                'value'       => $value
+            ]);
+        }
+
+        return true;
+    }
+
+    public function getCustomMeta($key, $default = null)
+    {
+        $exist = Meta::where('object_id', $this->id)
+            ->where('object_type', 'feed')
+            ->where('meta_key', $key)
+            ->first();
+
+        if ($exist) {
+            return $exist->value;
+        }
+
+        return $default;
+    }
+
+    public function attachTopics($topicIds, $sync = false)
+    {
+        if ((!$topicIds && !$sync) || !$this->space_id) {
+            return $this;
+        }
+
+        // let's find the valid topics for this space
+        $spaceTopics = Utility::getTopicsBySpaceId($this->space_id);
+        $spaceTopicIds = array_map(function ($topic) {
+            return $topic['id'];
+        }, $spaceTopics);
+
+        $validTopicIds = array_filter($topicIds, function ($topicId) use ($spaceTopicIds) {
+            return in_array($topicId, $spaceTopicIds);
+        });
+
+        if ($sync) {
+            $this->terms()->sync($validTopicIds);
+        } else {
+            $this->terms()->attach($validTopicIds);
+        }
+
+        return $this;
+    }
+
+    public function getJsRoute()
+    {
+
+        if ($this->type == 'course_lesson') {
+            return [
+                'name'   => 'view_lesson',
+                'params' => [
+                    'course_slug' => $this->space ? $this->space->slug : 'uknown',
+                    'lesson_slug' => $this->slug
+                ]
+            ];
+        }
+
+        if ($this->space_id) {
+            $route = [
+                'name'   => 'space_feed',
+                'params' => [
+                    'space'     => $this->space->slug,
+                    'feed_slug' => $this->slug
+                ]
+            ];
+        } else {
+            $route = [
+                'name'   => 'single_feed',
+                'params' => [
+                    'feed_slug' => $this->slug
+                ]
+            ];
+        }
+
+        return $route;
+    }
+}

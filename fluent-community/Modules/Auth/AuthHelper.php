@@ -1,0 +1,375 @@
+<?php
+
+namespace FluentCommunity\Modules\Auth;
+
+use FluentCommunity\App\App;
+use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\Libs\Mailer;
+use FluentCommunity\Framework\Support\Arr;
+
+class AuthHelper
+{
+    public static function registerNewUser($user_login, $user_email, $user_pass = '', $extraData = [])
+    {
+        $errors = new \WP_Error();
+
+        $sanitized_user_login = sanitize_user($user_login);
+
+        $user_email = apply_filters('user_registration_email', $user_email);
+
+        // Check the username.
+        if ('' === $sanitized_user_login) {
+            $errors->add('empty_username', __('<strong>Error</strong>: Please enter a username.', 'fluent-community'));
+        } elseif (!validate_username($user_login)) {
+            $errors->add('invalid_username', __('<strong>Error</strong>: This username is invalid because it uses illegal characters. Please enter a valid username.', 'fluent-community'));
+            $sanitized_user_login = '';
+        } elseif (username_exists($sanitized_user_login)) {
+            $errors->add('username_exists', __('<strong>Error</strong>: This username is already registered. Please choose another one.', 'fluent-community'));
+        } else {
+            /** This filter is documented in wp-includes/user.php */
+            $illegal_user_logins = (array)apply_filters('illegal_user_logins', array());
+            if (in_array(strtolower($sanitized_user_login), array_map('strtolower', $illegal_user_logins), true)) {
+                $errors->add('invalid_username', __('<strong>Error</strong>: Sorry, that username is not allowed.', 'fluent-community'));
+            }
+        }
+
+        // Check the email address.
+        if ('' === $user_email) {
+            $errors->add('empty_email', __('<strong>Error</strong>: Please type your email address.', 'fluent-community'));
+        } elseif (!is_email($user_email)) {
+            $errors->add('invalid_email', __('<strong>Error</strong>: The email address is not correct.', 'fluent-community'));
+            $user_email = '';
+        } elseif (email_exists($user_email)) {
+            $errors->add(
+                'email_exists',
+                __('<strong>Error:</strong> This email address is already registered. Please login or try resetting your password.', 'fluent-community')
+            );
+        }
+
+        do_action('register_post', $sanitized_user_login, $user_email, $errors);
+
+        $errors = apply_filters('registration_errors', $errors, $sanitized_user_login, $user_email);
+
+        if ($errors->has_errors()) {
+            return $errors;
+        }
+
+        if (!$user_pass) {
+            $user_pass = wp_generate_password(8, false);
+        }
+
+        $data = [
+            'user_login' => wp_slash($sanitized_user_login),
+            'user_email' => wp_slash($user_email),
+            'user_pass'  => $user_pass
+        ];
+
+        if (!empty($extraData['first_name'])) {
+            $data['first_name'] = sanitize_text_field($extraData['first_name']);
+        }
+
+        if (!empty($extraData['last_name'])) {
+            $data['last_name'] = sanitize_text_field($extraData['last_name']);
+        }
+
+        if (!empty($extraData['full_name']) && empty($extraData['first_name']) && empty($extraData['last_name'])) {
+            $extraData['full_name'] = sanitize_text_field($extraData['full_name']);
+            // extract the names
+            $fullNameArray = explode(' ', $extraData['full_name']);
+            $data['first_name'] = array_shift($fullNameArray);
+            if ($fullNameArray) {
+                $data['last_name'] = implode(' ', $fullNameArray);
+            } else {
+                $data['last_name'] = '';
+            }
+        }
+
+        if (!empty($extraData['description'])) {
+            $data['description'] = sanitize_textarea_field($extraData['description']);
+        }
+
+        if (!empty($extraData['user_url']) && filter_var($extraData['user_url'], FILTER_VALIDATE_URL)) {
+            $data['user_url'] = sanitize_url($extraData['user_url']);
+        }
+
+        if (!empty($extraData['role'])) {
+            $data['role'] = $extraData['role'];
+        }
+
+        $user_id = wp_insert_user($data);
+
+        if (!$user_id || is_wp_error($user_id)) {
+            $errors->add('registerfail', __('<strong>Error</strong>: Could not register you. Please contact the site admin!', 'fluent-community')
+            );
+            return $errors;
+        }
+
+        if (!empty($_COOKIE['wp_lang'])) {
+            $wp_lang = sanitize_text_field($_COOKIE['wp_lang']);
+            if (in_array($wp_lang, get_available_languages(), true)) {
+                update_user_meta($user_id, 'locale', $wp_lang); // Set user locale if defined on registration.
+            }
+        }
+
+        do_action('register_new_user', $user_id);
+
+        return $user_id;
+    }
+
+    public static function makeLogin($user)
+    {
+        wp_clear_auth_cookie();
+        wp_set_current_user($user->ID, $user->user_login);
+        wp_set_auth_cookie($user->ID, true, is_ssl());
+
+        $user = get_user_by('ID', $user->ID);
+
+        if ($user) {
+            do_action('wp_login', $user->user_login, $user);
+        }
+
+        return $user;
+    }
+
+    public static function isFluentAuthAvailable()
+    {
+        if (defined('FLUENT_AUTH_VERSION') && FLUENT_AUTH_VERSION) {
+            return (new \FluentAuth\App\Hooks\Handlers\CustomAuthHandler())->isEnabled();
+        }
+
+        return false;
+    }
+
+    public static function getFormFields($invitation = null)
+    {
+
+        $policyUrl = apply_filters('fluent_community/terms_policy_url', get_privacy_policy_url());
+
+        $termsText = __('I agree to the terms and conditions', 'fluent-community');
+        if($policyUrl) {
+            $termsText = sprintf(__('I agree to the %1sterms and conditions%2s', 'fluent-community'), '<a rel="nooppener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
+        }
+
+
+        $fields = apply_filters('fluent_communuty/auth/signup_fields', [
+            'full_name'     => [
+                'label'             => __('Full name', 'fluent-community'),
+                'placeholder'       => __('Your first & last name', 'fluent-community'),
+                'type'              => 'text',
+                'required'          => true,
+                'value'             => $invitation ? Arr::get($invitation->meta, 'invitee_name') : '',
+                'sanitize_callback' => 'sanitize_text_field'
+            ],
+            'email'         => [
+                'type'              => 'email',
+                'placeholder'       => __('Your email address', 'fluent-community'),
+                'label'             => __('Email Address', 'fluent-community'),
+                'required'          => true,
+                'value'             => $invitation ? $invitation->message : '',
+                'readonly'          => !!$invitation,
+                'sanitize_callback' => 'sanitize_email'
+            ],
+            'username'      => [
+                'type'              => 'text',
+                'placeholder'       => __('No space or special characters', 'fluent-community'),
+                'label'             => __('Username', 'fluent-community'),
+                'required'          => true,
+                'sanitize_callback' => 'sanitize_user'
+            ],
+            'password'      => [
+                'type'              => 'password',
+                'placeholder'       => __('Password', 'fluent-community'),
+                'label'             => __('Account Password', 'fluent-community'),
+                'required'          => true,
+                'sanitize_callback' => 'sanitize_text_field'
+            ],
+            'conf_password' => [
+                'type'              => 'password',
+                'placeholder'       => __('Password Confirmation', 'fluent-community'),
+                'label'             => __('Re-type Account Password', 'fluent-community'),
+                'required'          => true,
+                'sanitize_callback' => 'sanitize_text_field'
+            ],
+            'terms'         => [
+                'type'         => 'inline_checkbox',
+                'inline_label' => $termsText,
+                'required'     => true
+            ]
+        ], $invitation);
+        
+        if (!self::isPasswordConfRequired()) {
+            unset($fields['conf_password']);
+        }
+
+        return $fields;
+    }
+
+    public static function getLoginFormFields()
+    {
+        return apply_filters('fluent_community/auth/login_fields', [
+            'username' => [
+                'type'              => 'text',
+                'placeholder'       => __('Your account email address', 'fluent-community'),
+                'label'             => __('Email Address', 'fluent-community'),
+                'required'          => true,
+                'sanitize_callback' => 'sanitize_user'
+            ],
+            'password' => [
+                'type'              => 'password',
+                'placeholder'       => __('Your account password', 'fluent-community'),
+                'label'             => __('Password', 'fluent-community'),
+                'required'          => true,
+                'sanitize_callback' => 'sanitize_text_field'
+            ]
+        ]);
+    }
+ 
+    public static function isPasswordConfRequired()
+    {
+        return apply_filters('fluent_community/autg/password_confirmation', true);
+    }
+
+    public static function isRegistrationEnabled()
+    {
+        return apply_filters('fluent_community/auth/registration_enabled', !!get_option('users_can_register'));
+    }
+
+    public static function isTwoFactorEnabled()
+    {
+        return apply_filters('fluent_community/auth/two_factor_enabled', true);
+    }
+
+    public static function get2FaRegistrationCodeForm($formData)
+    {
+        $generalSettings = Helper::generalSettings();
+        try {
+            $verifcationCode = str_pad(random_int(100123, 900987), 6, 0, STR_PAD_LEFT);
+        } catch (\Exception $e) {
+            $verifcationCode = str_pad(mt_rand(100123, 900987), 6, 0, STR_PAD_LEFT);
+        }
+
+        // Hash the code
+        $codeHash = wp_hash_password($verifcationCode);
+
+        // Create a token with the email and code hash
+        $data = [
+            'email'     => $formData['email'],
+            'code_hash' => $codeHash,
+            'expires'   => time() + 600 // 10 minutes expiry
+        ];
+        $token = base64_encode(json_encode($data));
+
+        // Sign the token
+        $signature = hash_hmac('sha256', $token, SECURE_AUTH_KEY);
+        $signedToken = $token . '.' . $signature;
+
+        $mailSubject = apply_filters("fluent_community/auth/signup_verification_mail_subject", sprintf(__('Your registration verification code for %s', 'fluent-community'), Arr::get($generalSettings, 'site_title')));
+
+        $pStart = '<p style="font-family: Arial, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">';
+
+        $message = $pStart . sprintf(__('Hello %s,', 'fluent-community'), Arr::get($formData, 'first_name')) . '</p>' .
+            $pStart . __('Thank you for registering with us! To complete the setup of your account, please enter the verification code below on the registration page.', 'fluent-community') . '</p>' .
+            $pStart . '<b>' . sprintf(__('Verification Code: %s', 'fluent-community'), $verifcationCode) . '</b></p>' .
+            '<br />' .
+            $pStart . __('This code is valid for 10 minutes and is meant to ensure the security of your account. If you did not initiate this request, please ignore this email.', 'fluent-community') . '</p>';
+
+        $message = apply_filters('fluent_community/auth/signup_verification_email_body', $message, $verifcationCode, $formData);
+
+        $generalSettings = Helper::generalSettings();
+        $message = (string)App::make('view')->make('email.template', [
+            'logo'        => [
+                'url' => $generalSettings['logo'],
+                'alt' => $generalSettings['site_title']
+            ],
+            'bodyContent' => $message,
+            'pre_header'  => __('Activate your account', 'fluent-community'),
+            'footerLines' => [
+                __('If you did not initiate this request, please ignore this email.', 'fluent-community'),
+                sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), site_url())
+            ]
+        ]);
+
+        $mailer = new Mailer($formData['email'], $mailSubject, $message);
+
+        if ($formData['first_name']) {
+            $toName = trim(Arr::get($formData, 'first_name') . ' ' . Arr::get($formData, 'last_name'));
+            $mailer = $mailer->to($formData['email'], $toName);
+        }
+
+        $mailer->send();
+
+        ob_start();
+        ?>
+        <div class="fls_signup_verification">
+            <input type="hidden" name="__two_fa_signed_token" value="<?php echo esc_attr($signedToken); ?>"/>
+            <p><?php echo esc_html(sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
+            <div class="fcom_form-group fcom_field_vefication">
+                <div class="fcom_form_label">
+                    <label for="fcom_field_vefication"><?php _e('Verification Code', 'fluent-community'); ?></label>
+                </div>
+                <div class="fs_input_wrap">
+                    <input type="text" id="fcom_field_vefication"
+                           placeholder="<?php _e('2FA Code', 'fluent-community'); ?>" name="_email_verification_code"
+                           required/>
+                </div>
+            </div>
+            <div class="fcom_form-group">
+                <div class="fcom_form_input">
+                    <button type="submit" class="fcom_btn fcom_btn_primary">
+                        <?php _e('Complete Signup', 'fluent-community'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <?php
+        return ob_get_clean();
+    }
+
+    public static function validateVerificationCode($code, $verificationToken, $formData)
+    {
+        list($data, $signature) = explode('.', $verificationToken, 2);
+        $expectedSignature = hash_hmac('sha256', $data, SECURE_AUTH_KEY);
+
+        if (!hash_equals($expectedSignature, $signature)) {
+            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
+        }
+
+        $data = json_decode(base64_decode($data), true);
+        if ($data['expires'] < time()) {
+            return new \WP_Error('expired_token', __('Verification token has expired. Please try again.', 'fluent-community'));
+        }
+
+        if ($data['email'] !== $formData['email']) {
+            return new \WP_Error('invalid_email', __('Invalid email address. Please try again', 'fluent-community'));
+        }
+
+        if (!wp_check_password($code, $data['code_hash'])) {
+            return new \WP_Error('invalid_code', __('Invalid verification code. Please try again', 'fluent-community'));
+        }
+
+        return true;
+    }
+
+    public static function isAuthRateLimit()
+    {
+        if (apply_filters('fluent_community/auth/disable_rate_limit', false)) {
+            return true;
+        }
+
+        $transientKey = 'fluent_com_rate_limit_' . md5(Helper::getIp());
+        $rateLimit = get_transient($transientKey);
+
+        if (!$rateLimit) {
+            $rateLimit = 0;
+        }
+
+        if ($rateLimit >= 10) {
+            return new \WP_Error('rate_limit', __('Too many requests. Please try again later', 'fluent-community'));
+        }
+
+        $rateLimit = $rateLimit + 1;
+        set_transient($transientKey, $rateLimit, 300); // per 5 minutes
+        return true;
+    }
+}
