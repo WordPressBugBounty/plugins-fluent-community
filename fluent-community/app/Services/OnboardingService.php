@@ -307,7 +307,7 @@ class OnboardingService
                 'admin_url' => admin_url('admin.php?page=fluentcrm-admin'),
                 'title'     => 'Go to FluentCRM Dashboard'
             ],
-            'ninja-smtp' => [
+            'fluent-smtp' => [
                 'admin_url' => admin_url('options-general.php?page=fluent-mail#/'),
                 'title'     => 'Go to FluentSMTP Dashboard'
             ]

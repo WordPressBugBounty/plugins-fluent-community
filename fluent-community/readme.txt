@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.10
+Stable tag: 1.1.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,18 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.1.11 (Date: Nov 27, 2024) =
+- Added Modal View for each post (Configurable)
+- Single Post view is now blazing fast
+- Courses now can be added without any Menu Group
+- Login and Signup Page Customization Improved
+- Post Slug issue fixed for non-latins characters
+- Space and Course Slug can be edited now
+- Fixed course URL issue when using custom slug
+- Added Topics as a required field for Posts (Configurable)
+- Added Option to edit user email from profile
+- Improved UI & UX
 
 = 1.1.10 (Date: Nov 20, 2024) =
 - (Hot fix) Fixed Login issue

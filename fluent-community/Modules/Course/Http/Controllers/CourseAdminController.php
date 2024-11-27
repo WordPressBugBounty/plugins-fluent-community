@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Course\Http\Controllers;
 
+use FluentCommunity\App\App;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Comment;
@@ -51,14 +52,13 @@ class CourseAdminController extends Controller
             'title'       => 'required',
             'description' => 'required',
             'privacy'     => 'required|in:public,private,secret',
-            'course_type' => 'required|in:self_paced,structured,scheduled',
-            'parent_id'   => 'nullable|exists:fcom_spaces,id'
+            'course_type' => 'required|in:self_paced,structured,scheduled'
         ]);
 
         $parentId = $request->get('parent_id');
 
         $courseData = [
-            'parent_id'   => $request->get('parent_id'),
+            'parent_id'   => $request->get('parent_id') ?: NULL,
             'title'       => $request->getSafe('title', 'sanitize_text_field'),
             'privacy'     => $request->get('privacy'),
             'description' => wp_kses_post($request->get('description')),
@@ -155,8 +155,7 @@ class CourseAdminController extends Controller
             'description' => 'required',
             'privacy'     => 'required|in:public,private,secret',
             'status'      => 'required|in:draft,published,archived',
-            'course_type' => 'required|in:self_paced,structured,scheduled',
-            'parent_id'   => 'required|exists:fcom_spaces,id'
+            'course_type' => 'required|in:self_paced,structured,scheduled'
         ]);
 
         $course = Course::findOrFail($courseId);
@@ -167,8 +166,26 @@ class CourseAdminController extends Controller
             'description' => wp_kses_post($request->get('description')),
             'status'      => $request->get('status'),
             'cover_photo' => $request->getSafe('cover_photo', 'sanitize_url'),
-            'parent_id'   => $request->get('parent_id'),
+            'parent_id'   => $request->get('parent_id') ?: NULL,
         ];
+
+        $slug = $request->get('slug');
+        if ($slug && $course->slug != $slug) {
+            $slug = sanitize_title($slug);
+
+            $exist = App::getInstance('db')->table('fcom_spaces')->where('slug', $slug)
+                ->where('id', '!=', $course->id)
+                ->exists();
+
+            if ($exist) {
+                return $this->sendError([
+                    'message' => __('Slug is already taken. Please use a different slug', 'fluent-community')
+                ]);
+            }
+
+            $courseData['slug'] = $slug;
+
+        }
 
         $imageTypes = ['cover_photo', 'logo'];
 
@@ -205,8 +222,7 @@ class CourseAdminController extends Controller
         if ($dirtyFields) {
             $course->save();
             do_action('fluent_community/course/updated', $course, $dirtyFields);
-
-            if($previousStatus != 'published' && $course->status == 'published') {
+            if ($previousStatus != 'published' && $course->status == 'published') {
                 do_action('fluent_community/course/published', $course);
             }
 
@@ -404,7 +420,7 @@ class CourseAdminController extends Controller
     public function getSection(Request $request, $courseId, $topicId)
     {
         $topic = CourseTopic::where('space_id', $courseId)
-            ->whereHas('course', function($query) use ($courseId) {
+            ->whereHas('course', function ($query) use ($courseId) {
                 $query->where('id', $courseId);
             })
             ->where('id', $topicId)
@@ -547,7 +563,7 @@ class CourseAdminController extends Controller
     public function deleteSection(Request $request, $courseId, $sectionId)
     {
         $topic = CourseTopic::where([
-            'id' => $sectionId,
+            'id'       => $sectionId,
             'space_id' => $courseId
         ])->firstOrFail();
 
@@ -555,7 +571,7 @@ class CourseAdminController extends Controller
 
         CourseLesson::where([
             'parent_id' => $sectionId,
-            'space_id' => $courseId
+            'space_id'  => $courseId
         ])->delete();
 
         return [
@@ -585,9 +601,9 @@ class CourseAdminController extends Controller
 
     public function getLesson(Request $request, $courseId, $lessonId)
     {
-        $lesson = CourseLesson::whereHas('course', function($query) use ($courseId) {
-                $query->where('id', $courseId);
-            })
+        $lesson = CourseLesson::whereHas('course', function ($query) use ($courseId) {
+            $query->where('id', $courseId);
+        })
             ->where('id', $lessonId)
             ->with(['topic', 'course'])
             ->firstOrFail();
@@ -606,9 +622,9 @@ class CourseAdminController extends Controller
 
         $sectionId = (int)$request->get('section_id');
 
-        $topic = CourseTopic::whereHas('course', function($query) use ($courseId) {
-                $query->where('id', $courseId);
-            })
+        $topic = CourseTopic::whereHas('course', function ($query) use ($courseId) {
+            $query->where('id', $courseId);
+        })
             ->where('id', $sectionId)
             ->firstOrFail();
 
@@ -639,9 +655,9 @@ class CourseAdminController extends Controller
             'status'    => 'required|in:draft,published,archived'
         ]);
 
-        CourseTopic::whereHas('course', function($query) use ($courseId) {
-                $query->where('id', $courseId);
-            })
+        CourseTopic::whereHas('course', function ($query) use ($courseId) {
+            $query->where('id', $courseId);
+        })
             ->where('id', $lessonData['parent_id'])
             ->firstOrFail();
 
@@ -661,7 +677,7 @@ class CourseAdminController extends Controller
         $lesson->fill($updateData);
         $dirtyFields = $lesson->getDirty();
 
-        if($dirtyFields) {
+        if ($dirtyFields) {
             $lesson->save();
             $isNewlyPublished = $lesson->status === 'published' && $previousStatus !== 'published';
             do_action('fluent_community/lesson/updated', $lesson, $dirtyFields, $isNewlyPublished);
@@ -675,9 +691,9 @@ class CourseAdminController extends Controller
 
     public function patchLesson(Request $request, $courseId, $lessionId)
     {
-        $lesson = CourseLesson::whereHas('course', function($query) use ($courseId) {
-                $query->where('id', $courseId);
-            })
+        $lesson = CourseLesson::whereHas('course', function ($query) use ($courseId) {
+            $query->where('id', $courseId);
+        })
             ->where('id', $lessionId)
             ->firstOrFail();
 
@@ -696,9 +712,9 @@ class CourseAdminController extends Controller
 
     public function deleteLesson(Request $request, $courseId, $lessionId)
     {
-        $lesson = CourseLesson::whereHas('course', function($query) use ($courseId) {
-                $query->where('id', $courseId);
-            })
+        $lesson = CourseLesson::whereHas('course', function ($query) use ($courseId) {
+            $query->where('id', $courseId);
+        })
             ->where('id', $lessionId)
             ->firstOrFail();
 
@@ -706,22 +722,6 @@ class CourseAdminController extends Controller
 
         return [
             'message' => __('Lesson has been deleted successfully.', 'fluent-community')
-        ];
-    }
-
-    public function updateLockscreenSettings(Request $request, $courseId)
-    {
-        $course = Course::findOrFail($courseId);
-
-        $settingFields = $request->get('lockscreen', []);
-
-        $formattedFields = LockscreenService::formatLockscreenFields($settingFields);
-
-        $course->setLockscreen($formattedFields);
-
-        return [
-            'message' => __('Lockscreen settings have been updated successfully.', 'fluent-community'),
-            'course'  => $course
         ];
     }
 

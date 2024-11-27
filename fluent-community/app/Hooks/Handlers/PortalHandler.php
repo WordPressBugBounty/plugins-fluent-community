@@ -81,7 +81,7 @@ class PortalHandler
 
             $css = Utility::getColorCssVariables();
 
-           wp_add_inline_style('fluent_community_global', $css);
+            wp_add_inline_style('fluent_community_global', $css);
 
             wp_enqueue_script('portal_general', Vite::getStaticSrcUrl('portal_general.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, true);
 
@@ -401,7 +401,7 @@ class PortalHandler
                     'react-dom'             => Vite::getStaticSrcUrl(
                         'libs/isolated-editor/react-dom.production.min.js'
                     ),
-                    'isolated-block-editor' => Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.js')
+                    'isolated-block-editor' => Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.min.js')
                 ],
                 'styles'  => [
                     $isRtl ? Vite::getStaticSrcUrl('libs/isolated-editor/core.rtl.css') : Vite::getStaticSrcUrl('libs/isolated-editor/core.css'),
@@ -420,7 +420,8 @@ class PortalHandler
                 'skicky_sidebar'        => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'post_layout'           => Utility::getCustomizationSetting('rich_post_layout'),
                 'video_embeder'         => apply_filters('fluent_community/has_video_embeder', true),
-                'has_topics'            => !!Utility::getTopics()
+                'has_topics'            => !!Utility::getTopics(),
+                'show_post_modal'       => Utility::isCustomizationEnabled('show_post_modal'),
             ],
             'route_classes'             => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
@@ -643,7 +644,7 @@ class PortalHandler
 
         status_header(200);
         App::make('view')->render('portal_page', $data);
-        exit(200);
+        exit();
     }
 
     public function loadClassicPortalAssets($data)
@@ -727,7 +728,7 @@ class PortalHandler
 
         if (!Utility::isDev()) {
 
-            if($isRtl) {
+            if ($isRtl) {
                 $fileName = 'app.rtl.css';
             } else {
                 $fileName = 'app.css';

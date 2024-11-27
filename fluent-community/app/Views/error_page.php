@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 ?>
 <!DOCTYPE html>
-<html style="background: #f0f0f1;" lang='en'>
+<html style="background: #f0f0f1;" <?php language_attributes(); ?>>
 <head>
     <title><?php echo esc_attr($title); ?></title>
     <meta charset='utf-8'>

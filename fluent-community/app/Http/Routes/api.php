@@ -8,6 +8,7 @@ $router->prefix('spaces')->withPolicy('PortalPolicy')->group(function ($router) 
     $router->post('/', 'SpaceController@create');
     $router->get('/{spaceSlug}/by-slug', 'SpaceController@getBySlug')->alphaNumDash('spaceSlug');
     $router->put('/{spaceSlug}/by-slug', 'SpaceController@patchBySlug')->alphaNumDash('spaceSlug');
+    $router->put('/{spaceId}/by-id', 'SpaceController@patchById')->int('spaceId');
     $router->post('/{spaceSlug}/join', 'SpaceController@join')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/leave', 'SpaceController@leave')->alphaNumDash('spaceSlug');
 
@@ -18,7 +19,6 @@ $router->prefix('spaces')->withPolicy('PortalPolicy')->group(function ($router) 
     $router->post('/{spaceSlug}/members/remove', 'SpaceController@removeMember')->alphaNumDash('spaceSlug');
 
     $router->get('/{spaceSlug}/lockscreens', 'SpaceController@getLockScreenSettings')->alphaNumDash('spaceSlug');
-    $router->put('/{spaceSlug}/lockscreens', 'SpaceController@updateLockscreenSettings')->alphaNumDash('spaceSlug');
 
     $router->post('/{spaceSlug}/links', 'SpaceController@updateLinks')->alphaNumDash('spaceSlug');
 
@@ -99,7 +99,6 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->post('/welcome-banner', 'AdminController@updateWelcomeBannerSettings');
 
     $router->get('/auth-settings', 'AdminController@getAuthSettings');
-    $router->post('/auth-settings', 'AdminController@saveAuthSettings');
 
     $router->get('/on-boardings', 'AdminController@getOnboardingSettings');
     $router->post('/on-boardings', 'AdminController@saveOnboardingSettings');

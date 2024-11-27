@@ -186,6 +186,7 @@ class Utility
             'fixed_page_header'    => 'yes',
             'show_powered_by'      => 'yes',
             'feed_link_on_sidebar' => 'yes',
+            'show_post_modal'      => 'yes',
             'fixed_sidebar'        => 'no',
             'icon_on_header_menu'  => 'no',
             'affiliate_id'         => '',
@@ -234,6 +235,7 @@ class Utility
             $defaults = [
                 'members_page_status'    => 'everybody', // everybody, logged_in, admin_only
                 'can_customize_username' => 'no',
+                'can_change_email' => 'no',
                 'show_last_activity'     => 'yes',
                 'email_auto_login'       => 'yes',
                 'user_space_visibility'  => 'everybody', // everybody, logged_in, admin_only
@@ -245,6 +247,7 @@ class Utility
 
             if (!defined('FLUENT_COMMUNITY_PRO')) {
                 $settings['can_customize_username'] = 'no';
+                $settings['can_change_email'] = 'no';
                 $settings['email_auto_login'] = 'no';
             }
 

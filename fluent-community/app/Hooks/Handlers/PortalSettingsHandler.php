@@ -47,7 +47,7 @@ class PortalSettingsHandler
         });
 
         add_action('admin_enqueue_scripts', function () {
-            if(isset($_GET['page']) && $_GET['page'] === 'fluent-community') {
+            if (isset($_GET['page']) && $_GET['page'] === 'fluent-community') {
                 wp_enqueue_style('fluent_community_admin', Vite::getStaticSrcUrl('onboarding.css'), [], FLUENT_COMMUNITY_PLUGIN_VERSION);
             }
         });
@@ -56,8 +56,8 @@ class PortalSettingsHandler
         // add a link to admin menu which will redirect to /portal
         add_action('admin_menu', function () {
             add_menu_page(
-                __('FluentCommunity', 'fluent-community'),
-                __('FluentCommunity', 'fluent-community'),
+                'FluentCommunity',
+                'FluentCommunity',
                 'edit_posts',
                 'fluent-community',
                 [$this, 'showAdminPage'],

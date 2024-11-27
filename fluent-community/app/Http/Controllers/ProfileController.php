@@ -44,6 +44,8 @@ class ProfileController extends Controller
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
 
+        $isOwn = $xprofile->user_id == get_current_user_id();
+
         $isAdmin = Helper::isSiteAdmin();
         if ($xprofile->user_id == get_current_user_id() || $isAdmin) {
             $profile['email'] = $user->user_email;
@@ -51,6 +53,7 @@ class ProfileController extends Controller
             $profile['last_name'] = $user->last_name;
             $profile['short_description'] = $xprofile->short_description;
             $profile['can_change_username'] = $isAdmin || Utility::getPrivacySetting('can_customize_username') === 'yes';
+            $profile['can_change_email'] = current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn);
         }
 
         return [
@@ -148,6 +151,8 @@ class ProfileController extends Controller
 
         $updateData = Arr::only($data, ['first_name', 'last_name', 'short_description', 'website']);
 
+        $updateData = apply_filters('fluent_community/update_profile_data', $updateData, $data, $xProfile);
+
         $currentUser = User::findOrFail(get_current_user_id());
         $meta = $xProfile->meta;
 
@@ -210,8 +215,8 @@ class ProfileController extends Controller
                         'message' => __('Community Username already taken by someone else', 'fluent-community')
                     ]);
                 }
-                
-                if(strlen($userName) < 3) {
+
+                if (strlen($userName) < 3) {
                     return $this->sendError([
                         'message' => __('Username should be at least 3 characters long.', 'fluent-community')
                     ]);
@@ -227,7 +232,6 @@ class ProfileController extends Controller
                 $updateData['username'] = $userName;
                 $userNameChanged = true;
             }
-
         }
 
         $updateData['display_name'] = trim(sanitize_text_field(Arr::get($data, 'first_name') . ' ' . Arr::get($data, 'last_name')));
@@ -270,6 +274,25 @@ class ProfileController extends Controller
                 'profile'      => $xProfile,
                 'redirect_url' => Helper::baseUrl('u/' . $xProfile->username . '/update')
             ];
+        }
+
+        $isOwn = $xProfile->user_id == get_current_user_id();
+        if (current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn)) {
+            $emailAddress = Arr::get($data, 'email');
+
+            if ($emailAddress && is_email($emailAddress) && $emailAddress != $xProfile->user->user_email) {
+                $emailTaken = User::where('user_email', $emailAddress)->where('ID', '!=', $xProfile->user_id)->exists();
+                if ($emailTaken) {
+                    return $this->sendError([
+                        'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community')
+                    ]);
+                }
+
+                wp_update_user([
+                    'user_email' => $emailAddress,
+                    'ID'         => $xProfile->user_id
+                ]);
+            }
         }
 
         return [

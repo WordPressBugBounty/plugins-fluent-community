@@ -105,19 +105,20 @@ class AuthenticationService
 
     public static function formatAuthSettings($settingFields)
     {
-        $textFields = ['type', 'title', 'button_label', 'position'];
-        $colorFields = ['title_color', 'text_color', 'button_color', 'button_label_color', 'background_color'];
-        $urlFields = ['logo', 'background_image'];
+        $currentSettings = self::getAuthSettings();
+
+        $textFields = ['type', 'title', 'button_label', 'position', 'title_color', 'text_color', 'button_color', 'button_label_color', 'background_color'];
+        $mediaFields = ['logo', 'background_image'];
 
         $formattedFields = [];
-
         foreach ($settingFields as $section => $settings) {
             foreach ($settings as $key => $setting) {
                 $textValues = array_map('sanitize_text_field', Arr::only($setting, $textFields));
-                $colorValues = array_map('sanitize_hex_color', Arr::only($setting, $colorFields));
-                $urlValues = array_map('sanitize_url', Arr::only($setting, $urlFields));
+                $mediaUrls = array_map('sanitize_url', Arr::only($setting, $mediaFields));
 
-                $formattedField = array_merge($textValues, $colorValues, $urlValues);
+                $mediaUrls = self::handleMediaUrls($mediaUrls, $currentSettings[$section][$key], $section);
+
+                $formattedField = array_merge($textValues, $mediaUrls);
 
                 $formattedField['hidden'] = Arr::isTrue($setting, 'hidden');
 
@@ -125,14 +126,45 @@ class AuthenticationService
 
                 $formattedField['description_rendered'] = FeedsHelper::mdToHtml($formattedField['description']);
 
-                if (Arr::has($setting, 'fields')) {
-                    $formattedField['fields'] = array_map('sanitize_text_field', $setting['fields']);
-                }
-
                 $formattedFields[$section][$key] = $formattedField;
             }
         }
 
         return $formattedFields;
+    }
+
+    protected static function handleMediaUrls($mediaUrls, $currentSetting, $section)
+    {
+        $deleteMediaUrls = [];
+
+        foreach ($mediaUrls as $key => $url) {
+            $currentImgUrl = Arr::get($currentSetting, $key);
+            if ($url) {
+                $media = Helper::getMediaFromUrl($url);
+                if (!$media || $media->is_active) {
+                    $mediaUrls[$key] = $currentImgUrl;
+                    continue;
+                }
+
+                $mediaUrls[$key] = $media->public_url;
+
+                $media->update([
+                    'is_active'     => true,
+                    'user_id'       => get_current_user_id(),
+                    'sub_object_id' => null,
+                    'object_source' => 'auth_' . $section . '_' . $key
+                ]);
+            }
+
+            if ($currentImgUrl) {
+                $deleteMediaUrls[] = $currentImgUrl;
+            }
+        }
+
+        do_action('fluent_community/remove_medias_by_url', $deleteMediaUrls, [
+            'sub_object_id' => null,
+        ]);
+
+        return $mediaUrls;
     }
 }

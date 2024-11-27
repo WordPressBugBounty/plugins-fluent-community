@@ -72,25 +72,33 @@ class LockscreenService
         return $settings;
     }
 
-    public static function formatLockscreenFields($settingFields)
+    public static function formatLockscreenFields($settingFields, $space)
     {
-        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'el_icon'];
-        $colorFields = ['heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color'];
-        $urlFields = ['button_link', 'background_image'];
+        $currentSettings = self::getLockscreenSettings($space);
+
+        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color'];
+        $urlFields = ['button_link'];
 
         $formattedFields = [];
 
         foreach ($settingFields as $value) {
             $textValues = array_map('sanitize_text_field', Arr::only($value, $textFields));
-            $colorValues = array_map('sanitize_hex_color', Arr::only($value, $colorFields));
             $urlValues = array_map('sanitize_url', Arr::only($value, $urlFields));
 
-            $formattedField = array_merge($textValues, $colorValues, $urlValues);
+            $formattedField = array_merge($textValues, $urlValues);
 
             $formattedField['hidden'] = Arr::isTrue($value, 'hidden');
 
             if ($value['type'] == 'block') {
                 $formattedField['content'] = wp_kses_post(Arr::get($value, 'content'));
+            }
+
+            if (isset($value['background_image'])) {
+                $bgImage = sanitize_url($value['background_image']);
+                $fieldName = Arr::get($value, 'name');
+                $currentImage = self::getCurrentImage($currentSettings, $fieldName);
+                $bgImageUrl = self::handleMediaUrl($bgImage, $currentImage, $fieldName, $space->id);
+                $formattedField['background_image'] = $bgImageUrl;
             }
 
             $formattedFields[] = $formattedField;
@@ -124,5 +132,46 @@ class LockscreenService
             'canSendRequest' => $canSendRequest,
             'lockScreen'     => $showCustom ? self::getLockscreenSettings($space) : null
         ];
+    }
+
+    protected static function getCurrentImage($currentSettings, $fieldName)
+    {
+        foreach ($currentSettings as $setting) {
+            if (Arr::get($setting, 'name') === $fieldName) {
+                return Arr::get($setting, 'background_image');
+            }
+        }
+        return null;
+    }
+
+    protected static function handleMediaUrl($url, $currentImage, $fieldName, $spaceId)
+    {
+        $deleteMediaUrls = [];
+
+        if ($url) {
+            $media = Helper::getMediaFromUrl($url);
+            if (!$media || $media->is_active) {
+                return $currentImage;
+            }
+
+            $url = $media->public_url;
+
+            $media->update([
+                'is_active'     => true,
+                'user_id'       => get_current_user_id(),
+                'sub_object_id' => $spaceId,
+                'object_source' => 'lockscreen_' . $fieldName
+            ]);
+        }
+
+        if ($currentImage) {
+            $deleteMediaUrls[] = $currentImage;
+        }
+
+        do_action('fluent_community/remove_medias_by_url', $deleteMediaUrls, [
+            'sub_object_id' => $spaceId,
+        ]);
+
+        return $url;
     }
 }

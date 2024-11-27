@@ -69,7 +69,7 @@ class FeedsController extends Controller
 
         $disableSticky = $request->get('disable_sticky', '') == 'yes' || !!$search || !!$selectedTopic;
 
-        if($bySpace) {
+        if ($bySpace) {
             $feedsQuery = $feedsQuery->filterBySpaceSlug($bySpace);
         }
 
@@ -246,6 +246,29 @@ class FeedsController extends Controller
 
         if ($spaceSlug = $request->get('space')) {
             $data['space_id'] = $this->validateAndSetSpace($spaceSlug, $user);
+
+            $space = Space::where('id', $data['space_id'])->first();
+            if (Arr::get($space->settings, 'topic_required') == 'yes') {
+                $topicIds = (array)$request->get('topic_ids', []);
+                $spaceTopics = Utility::getTopicsBySpaceId($space->id);
+                $spaceTopicsIds = [];
+
+                foreach ($spaceTopics as $topic) {
+                    $spaceTopicsIds[] = $topic['id'];
+                }
+
+                $validTopicIds = array_intersect($topicIds, $spaceTopicsIds);
+
+                if (!$validTopicIds) {
+                    return $this->sendError([
+                        'message' => __('Please select at least one topic to post in this space.', 'fluent-community'),
+                        'shakes'  => [
+                            'topic_ids' => true
+                        ]
+                    ]);
+                }
+            }
+
         } else if (!Helper::hasGlobalPost()) {
             return $this->sendError([
                 'message' => __('Please select a valid space to post in.', 'fluent-community')

@@ -416,17 +416,20 @@ class Helper
     {
         return apply_filters('fluent_community/app_route_paths', [
             'portal_home',
+            'members',
+            'bookmarks',
+            'chat',
+            'courses',
+            'dashboard',
+            'leaderboards',
+            'notifications',
             'space',
             'discover',
-            'members',
             'courses',
             'u',
-            'leaderboards',
-            'chat',
-            'notifications',
-            'bookmarks',
             'post',
-            'admin'
+            'admin',
+            'course'
         ]);
     }
 
@@ -1686,7 +1689,6 @@ class Helper
         if ($portalSlug == $requestUri) {
             return 'portal_home';
         }
-
         if (!$requestUri) {
             return false;
         }

@@ -25,8 +25,6 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
 
     $router->get('/users/search', 'CourseAdminController@getOtherUsers');
 
-    $router->put('/{cousre_id}/lockscreens', 'CourseAdminController@updateLockscreenSettings')->int('cousre_id');
-
     $router->post('/{cousre_id}/links', 'CourseAdminController@updateLinks')->int('cousre_id');
 
     $router->get('/{cousre_id}/sections', 'CourseAdminController@getSections')->int('cousre_id');

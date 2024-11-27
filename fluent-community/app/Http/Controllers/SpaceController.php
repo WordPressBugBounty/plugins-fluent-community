@@ -136,7 +136,6 @@ class SpaceController extends Controller
 
     public function discover(Request $request)
     {
-
         $currentUser = $this->getUser();
 
         $spaces = Space::orderBy('title', 'ASC')
@@ -157,7 +156,12 @@ class SpaceController extends Controller
                 continue;
             }
 
-            $space->members_count = $space->members()->wherePivot('status', 'active')->count();
+            $space->members_count = SpaceUserPivot::where('space_id', $space->id)->where('status', 'active')
+                ->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                })
+                ->whereHas('user')
+                ->count();
         }
 
         return [
@@ -250,7 +254,7 @@ class SpaceController extends Controller
 
         $data = apply_filters('fluent_community/space/update_data', $data, $space);
 
-        $space->updateCustomData($data, true);
+        $space = $space->updateCustomData($data, true);
 
         if (Arr::has($data, 'topic_ids')) {
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
@@ -259,9 +263,18 @@ class SpaceController extends Controller
 
         do_action('fluent_community/space/updated', $space, $data);
 
+        $slugUpdated = $slug != $space->slug;
+
         return [
-            'message' => __('Space has been updated', 'fluent-community')
+            'message' => __('Settings has been updated', 'fluent-community'),
+            'redirect_url' => $slugUpdated ? $space->getPermalink() : ''
         ];
+    }
+
+    public function patchById(Request $request, $id)
+    {
+        $space = Space::findOrFail($id);
+        return $this->patchBySlug($request, $space->slug);
     }
 
     public function getMembers(Request $request, $slug)
@@ -813,24 +826,10 @@ class SpaceController extends Controller
         $space = Space::where('slug', $spaceSlug)->firstOrFail();
         $lockscreen = $space->getLockscreen();
 
+        $lockscreen = apply_filters('fluent_community/get_lockscreen_settings', $lockscreen, $space);
+
         return [
             'lockscreen' => $lockscreen
-        ];
-    }
-
-    public function updateLockscreenSettings(Request $request, $spaceSlug)
-    {
-        $space = Space::where('slug', $spaceSlug)->firstOrFail();
-
-        $settingFields = $request->get('lockscreen', []);
-
-        $formattedFields = LockscreenService::formatLockscreenFields($settingFields);
-
-        $space->setLockscreen($formattedFields);
-
-        return [
-            'message'   => 'Lockscreen settings have been updated successfully.',
-            'community' => $space
         ];
     }
 }

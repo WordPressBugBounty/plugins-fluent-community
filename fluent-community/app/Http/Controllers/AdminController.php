@@ -275,8 +275,10 @@ class AdminController extends Controller
 
     public function getWelcomeBannerSettings(Request $request)
     {
+        $settings = apply_filters('fluent_community/get_welcome_banner_settings', Helper::getWelcomeBannerSettings());
+
         return [
-            'settings' => Helper::getWelcomeBannerSettings()
+            'settings' => $settings
         ];
     }
 
@@ -297,6 +299,8 @@ class AdminController extends Controller
             }
         }
 
+        $settings = apply_filters('fluent_community/update_welcome_banner_settings', $settings);
+
         Utility::updateOption('welcome_banner_settings', $settings);
 
         Utility::setCache('welcome_banner_settings', $settings, WEEK_IN_SECONDS);
@@ -314,24 +318,10 @@ class AdminController extends Controller
         $settings['login']['form']['fields'] = AuthHelper::getLoginFormFields();
         $settings['signup']['form']['fields'] = AuthHelper::getFormFields();
 
+        $settings = apply_filters('fluent_community/get_auth_settings', $settings);
+
         return [
             'settings' => $settings
-        ];
-    }
-
-    public function saveAuthSettings(Request $request)
-    {
-        $settings = $request->get('settings', []);
-
-        $formattedSettings = AuthenticationService::formatAuthSettings($settings);
-
-        Utility::updateOption('auth_settings', $formattedSettings);
-
-        Utility::setCache('auth_settings', $formattedSettings, WEEK_IN_SECONDS);
-
-        return [
-            'message' => __('Auth settings have been updated successfully', 'fluent-community'),
-            'settings' => $formattedSettings
         ];
     }
 
@@ -397,7 +387,7 @@ class AdminController extends Controller
         Utility::updateOption('onboarding_sub_settings', $subscriptionSettings);
         OnboardingService::maybeCreateSpaceTemplates(Arr::get($inputs, 'template'));
 
-        $installableAddons = array_filter(array_keys([
+        $installableAddons = array_keys(array_filter([
             'fluent-crm'  => Arr::get($inputs, 'install_fluentcrm', 'no') == 'yes',
             'fluent-smtp' => Arr::get($inputs, 'install_fluentsmtp', 'no') == 'yes',
         ]));

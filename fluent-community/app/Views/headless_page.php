@@ -12,7 +12,7 @@
  */
 ?>
 <!DOCTYPE html>
-<html lang='en'>
+<html <?php language_attributes(); ?>>
 <head>
     <title><?php echo esc_attr($title); ?></title>
     <meta charset='utf-8'>
@@ -50,7 +50,7 @@
 
 <?php if ($layout == 'signup'): ?>
     <div class="fcom_full_layout" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
-        <div class="fcom_layout_side" style="background-image: url(<?php echo esc_url($portal['background_image']); ?>); background-color: <?php echo esc_attr($portal['background_color']); ?>;">
+        <div class="fcom_layout_side" style="background-image: url(<?php echo esc_url($portal['background_image']); ?>); background-color: <?php echo esc_attr($portal['background_color']); ?>; display: <?php echo $portal['hidden'] ? 'none' : 'flex'; ?>">
             <div class="fcom_welcome">
                 <?php if(!empty($portal['logo'])): ?>
                 <div class="fcom_logo">

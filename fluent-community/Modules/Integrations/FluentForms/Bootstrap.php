@@ -31,7 +31,8 @@ class Bootstrap extends IntegrationManagerController
         $this->description = __('Connect Fluent Forms with Fluent Community', 'fluent-community');
 
         $this->registerAdminHooks();
-
+        add_filter("fluentform/save_integration_value_{$this->integrationKey}", array($this, 'validateSettings'), 10, 2);
+    
         add_filter('fluentform/notifying_async_fluent_community', '__return_false');
     }
 
@@ -141,6 +142,27 @@ class Bootstrap extends IntegrationManagerController
 
         return $fieldSettings;
     }
+    
+    public function validateSettings($settings)
+    {
+        $message = __('Validation Failed', 'fluent-community');
+        $errors = [];
+        if (empty($settings['space_ids'])) {
+            $errors['space_ids'] = [__('Please Select Space or Course', 'fluent-community')];
+        }
+        if (empty($settings['email'])) {
+            $errors['custom_fields'] = [__('Please Select a Email', 'fluent-community')];
+        }
+        
+        if ($errors) {
+            wp_send_json_error([
+                'message' => $message,
+                'errors'  => $errors
+            ], 423);
+        }
+        
+        return $settings;
+    }
 
     public function getAllSpacesCourses()
     {
@@ -169,7 +191,7 @@ class Bootstrap extends IntegrationManagerController
             ]
         ];
 
-        return apply_filters('fluentform/user_registration_map_fields', $fields);
+        return apply_filters('fluent-community/fluentform_map_fields', $fields);
     }
 
     public function pushIntegration($integrations, $formId)
@@ -211,8 +233,7 @@ class Bootstrap extends IntegrationManagerController
             );
         }
 
-        $spaces = BaseSpace::query()->whereIn('id', $spaceIds)->get();
-
+        $spaces = BaseSpace::query()->withoutGlobalScopes()->whereIn('id', $spaceIds)->get();
         if ($spaces->isEmpty()) {
             return $this->addLog(
                 $feed['settings']['name'],
@@ -305,7 +326,7 @@ class Bootstrap extends IntegrationManagerController
             return new \WP_Error('invalid_email', 'Invalid email address');
         }
 
-        $password = trim(Arr::get($userData, 'password'));
+        $password = trim((string)Arr::get($userData, 'password',''));
         if (!$password) {
             $password = wp_generate_password(8);
         }

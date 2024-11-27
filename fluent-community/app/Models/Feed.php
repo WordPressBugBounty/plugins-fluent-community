@@ -66,6 +66,10 @@ class Feed extends Model
         'reactions_count'
     ];
 
+    protected $appends = [
+        'permalink'
+    ];
+
     public static $scopeType = 'text';
 
     public static function boot()
@@ -102,16 +106,17 @@ class Feed extends Model
     {
         if ($newModel->title) {
             // Remove the emojis
-            $feedTitle = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
-            $title = sanitize_title($feedTitle, $newModel->user_id . '-' . time());
+            $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
         } else {
             // get the first 25 char from the message
-            $title = sanitize_title(substr($newModel->message, 0, 25), $newModel->user_id . '-' . time());
+            $title = substr($newModel->message, 0, 25);
         }
 
         $title = strtolower($title);
         // only allow alphanumeric, dash, and underscore
         $title = preg_replace('/[^a-z0-9-_]/', '', $title);
+
+        $title = sanitize_title($title, 'post-'.time());
 
         // check if the slug is already exists
         $slug = $title;
@@ -378,6 +383,12 @@ class Feed extends Model
         }
 
         return Helper::baseUrl($path);
+    }
+
+
+    public function getPermalinkAttribute()
+    {
+        return $this->getPermalink();
     }
 
     public function activities()

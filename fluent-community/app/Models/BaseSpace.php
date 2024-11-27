@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\App;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\LockscreenService;
@@ -255,6 +256,24 @@ class BaseSpace extends Model
             $this->settings = $settings;
         }
 
+        if(!empty($data['slug']) && $data['slug'] !== $this->slug) {
+            $newSlug = sanitize_title($data['slug']);
+
+            if(empty($newSlug)) {
+                throw new \Exception('Invalid slug', 400);
+            }
+
+            $exist = App::getInstance('db')->table('fcom_spaces')->where('slug', $newSlug)
+                ->where('id', '!=', $this->id)
+                ->exists();
+
+            if($exist) {
+                throw new \Exception(__('Slug already exist. Please use a different slug', 'fluent-community'), 400);
+            }
+
+            $this->slug = $newSlug;
+        }
+
         $deletePhotos = array_filter($deletePhotos);
         if ($removeSrc && $deletePhotos) {
             $deletePhotos = array_filter($deletePhotos);
@@ -298,6 +317,7 @@ class BaseSpace extends Model
             'show_sidebar'         => 'yes',
             'og_image'             => '',
             'links'                => [],
+            'topic_required'       => 'no',
             'hide_members_count'   => 'no', // yes / no
             'members_page_status'  => 'members_only', // members_only, everybody, logged_in, admin_only
         ];
