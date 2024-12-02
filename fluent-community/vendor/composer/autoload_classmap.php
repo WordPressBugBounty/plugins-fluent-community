@@ -9,6 +9,8 @@ return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'FluentCommunity\\App\\App' => $baseDir . '/app/App.php',
     'FluentCommunity\\App\\Functions\\Utility' => $baseDir . '/app/Functions/Utility.php',
+    'FluentCommunity\\App\\Hooks\\CLI\\Commands' => $baseDir . '/app/Hooks/CLI/Commands.php',
+    'FluentCommunity\\App\\Hooks\\CLI\\DymmyCommands' => $baseDir . '/app/Hooks/CLI/DymmyCommands.php',
     'FluentCommunity\\App\\Hooks\\Handlers\\ActivationHandler' => $baseDir . '/app/Hooks/Handlers/ActivationHandler.php',
     'FluentCommunity\\App\\Hooks\\Handlers\\ActivityMonitorHandler' => $baseDir . '/app/Hooks/Handlers/ActivityMonitorHandler.php',
     'FluentCommunity\\App\\Hooks\\Handlers\\CleanupHandler' => $baseDir . '/app/Hooks/Handlers/CleanupHandler.php',

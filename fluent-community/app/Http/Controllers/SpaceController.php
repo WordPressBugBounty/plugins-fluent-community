@@ -51,15 +51,18 @@ class SpaceController extends Controller
         $data['privacy'] = sanitize_text_field($data['privacy']);
 
         $this->validate($data, [
-            'title'     => 'required',
-            'slug'      => 'required|unique:fcom_spaces,slug',
-            'privacy'   => 'required|in:public,private,secret',
-            'parent_id' => 'required|exists:fcom_spaces,id'
-        ], [
-            'parent_id.required' => __('Please select a menu group', 'fluent-community')
+            'title'   => 'required',
+            'slug'    => 'required|unique:fcom_spaces,slug',
+            'privacy' => 'required|in:public,private,secret'
         ]);
 
-        $spaceGroup = SpaceGroup::findOrFail($data['parent_id']);
+        $spaceGroup = null;
+        if (!empty($data['parent_id'])) {
+            $spaceGroup = SpaceGroup::findOrFail($data['parent_id']);
+            $serial = BaseSpace::where('parent_id', $spaceGroup->id)->max('serial') + 1;
+        } else {
+            $serial = BaseSpace::max('serial') + 1;
+        }
 
         $spaceData = apply_filters('fluent_community/space/create_data', [
             'title'       => sanitize_text_field($data['title']),
@@ -74,10 +77,10 @@ class SpaceController extends Controller
                 'layout_style'         => Arr::get($data, 'settings.layout_style', 'timeline'),
                 'show_sidebar'         => Arr::get($data, 'settings.show_sidebar', 'yes'),
                 'shape_svg'            => CustomSanitizer::sanitizeSvg(Arr::get($data, 'settings.shape_svg', '')),
-                'hide_members_count'   => Arr::get($data, 'settings.hide_members_count', 'no') == 'yes' ? 'yes' : 'no',
+                'hide_members_count'   => $serial
             ],
-            'parent_id'   => $spaceGroup->id,
-            'serial'      => BaseSpace::where('parent_id', $spaceGroup->id)->max('serial') + 1
+            'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
+            'serial'      => $spaceGroup ?: 1
         ]);
 
         $ogImage = Arr::get($data, 'settings.og_image', '');
@@ -254,6 +257,10 @@ class SpaceController extends Controller
 
         $data = apply_filters('fluent_community/space/update_data', $data, $space);
 
+        if (empty($data['parent_id'])) {
+            $data['parent_id'] = '';
+        }
+
         $space = $space->updateCustomData($data, true);
 
         if (Arr::has($data, 'topic_ids')) {
@@ -266,7 +273,7 @@ class SpaceController extends Controller
         $slugUpdated = $slug != $space->slug;
 
         return [
-            'message' => __('Settings has been updated', 'fluent-community'),
+            'message'      => __('Settings has been updated', 'fluent-community'),
             'redirect_url' => $slugUpdated ? $space->getPermalink() : ''
         ];
     }
@@ -650,8 +657,16 @@ class SpaceController extends Controller
             ]);
         }
 
-        $user = $this->getUser();
+        if ($request->get('options_only')) {
+            $groups = SpaceGroup::orderBy('serial', 'ASC')
+                ->select(['id', 'title'])
+                ->get();
+            return [
+                'groups' => $groups
+            ];
+        }
 
+        $user = $this->getUser();
         $groups = Helper::getAllCommunityGroups($user, false);
 
         foreach ($groups as $group) {

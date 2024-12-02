@@ -387,6 +387,7 @@ class PortalHandler
             'i18n'                      => TransStrings::getStrings(),
             'auth'                      => $authData,
             'ajaxurl'                   => admin_url('admin-ajax.php'),
+            'ajax_nonce'                => wp_create_nonce('fluent_community_ajax_nonce'),
             'slug'                      => 'fluent-community',
             'rest'                      => $this->getRestInfo(),
             'user_id'                   => $userModel ? $userModel->ID : null,
@@ -529,7 +530,8 @@ class PortalHandler
             'topicsConfig'              => Helper::getTopicsConfig(),
             'is_absolute_url'           => $isAbsoluteUrl,
             'portal_paths'              => $isAbsoluteUrl ? Helper::portalRoutePaths() : [],
-            'suggestedColors'           => Utility::getSuggestedColors()
+            'suggestedColors'           => Utility::getSuggestedColors(),
+            'view_leaderboard_members'  => Utility::canViewLeaderboardMembers()
         ]);
 
         if ($xprofile) {
@@ -571,6 +573,9 @@ class PortalHandler
 
     protected function renderFullApp()
     {
+        // set no cache headers
+        nocache_headers();
+
         if (isset($_REQUEST['fcom_action'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $action = sanitize_text_field(wp_unslash($_REQUEST['fcom_action'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             do_action('fluent_community/portal_action_' . $action, $_GET); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -641,6 +646,7 @@ class PortalHandler
         }
 
         do_action('fluent_community/before_portal_rendered', $data);
+
 
         status_header(200);
         App::make('view')->render('portal_page', $data);

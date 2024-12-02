@@ -583,7 +583,7 @@ class AuthModdule
                                 </div>
                             <?php endif; ?>
                             <p class="fcom_reset_pass_text">
-                                <a href="<?php echo esc_url(add_query_arg('form', 'reset_password', $currentUrl)); ?>">
+                                <a href="<?php echo wp_lostpassword_url($currentUrl); ?>">
                                     <?php _e('Lost your password?', 'fluent-community'); ?>
                                 </a>
                             </p>

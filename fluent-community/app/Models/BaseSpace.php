@@ -205,14 +205,17 @@ class BaseSpace extends Model
         }
 
         if (isset($data['parent_id'])) {
-            $group = SpaceGroup::find($data['parent_id']);
-            if (!$group) {
-                throw new \Exception('Invalid group id', 400);
+            if (!empty($data['parent_id'])) {
+                $group = SpaceGroup::find($data['parent_id']);
+                if (!$group) {
+                    throw new \Exception('Invalid group id', 400);
+                }
+                $this->parent_id = $group->id;
+            } else {
+                $this->parent_id = NULL;
             }
-
-            $this->parent_id = $group->id;
         }
-
+        
         if (isset($data['settings'])) {
             $shapSvg = '';
             if (!empty($data['settings']['shape_svg'])) {
@@ -256,10 +259,10 @@ class BaseSpace extends Model
             $this->settings = $settings;
         }
 
-        if(!empty($data['slug']) && $data['slug'] !== $this->slug) {
+        if (!empty($data['slug']) && $data['slug'] !== $this->slug) {
             $newSlug = sanitize_title($data['slug']);
 
-            if(empty($newSlug)) {
+            if (empty($newSlug)) {
                 throw new \Exception('Invalid slug', 400);
             }
 
@@ -267,7 +270,7 @@ class BaseSpace extends Model
                 ->where('id', '!=', $this->id)
                 ->exists();
 
-            if($exist) {
+            if ($exist) {
                 throw new \Exception(__('Slug already exist. Please use a different slug', 'fluent-community'), 400);
             }
 

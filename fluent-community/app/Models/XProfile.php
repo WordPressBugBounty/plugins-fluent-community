@@ -8,6 +8,7 @@ use FluentCommunity\App\Models\Contact;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Framework\Support\Str;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCrm\App\Models\Subscriber;
 
@@ -67,7 +68,7 @@ class XProfile extends Model
                 }
             });
         }
-        
+
         return $query;
     }
 
@@ -127,19 +128,52 @@ class XProfile extends Model
      */
     public function getAvatarAttribute()
     {
+        $gravatarEnabled = Utility::getPrivacySetting('enable_gravatar') != 'no';
+
         if (!empty($this->attributes['avatar'])) {
-            return $this->attributes['avatar'];
+            $url = $this->attributes['avatar'];
+            if(!$gravatarEnabled && strpos($url, 'gravatar.com')) {
+                $url = apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->user_id);
+            }
+
+            if(!$url) {
+                $url = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png';
+            }
+
+            return $url;
+        }
+
+      if (!$gravatarEnabled) {
+            $url = apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->user_id);
+
+            if(!$url) {
+                $url = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png';
+            }
+
+            return $url;
         }
 
         $url = Utility::getFromCache('user_avatar_' . $this->user_id, function () {
+            $displayName = $this->display_name;
+            if ($displayName) {
+                $names = explode(' ', $displayName);
+                // take the first letter of each name
+                $displayName = '';
+                foreach ($names as $name) {
+                    $name = (string) $name;
+                    $firstLetter = $name[0];
+                    $displayName .= $firstLetter . '+';
+                }
+            }
+
             return get_avatar_url($this->user_id, [
                 'size'    => 128,
-                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/?name=' . $this->display_name . '/128', $this)
+                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/'.esc_attr($displayName).'/128', $this->user_id)
             ]);
         }, WEEK_IN_SECONDS);
 
         if (!$url) {
-            $url = apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this);
+            $url = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png';
         }
 
         return $url;

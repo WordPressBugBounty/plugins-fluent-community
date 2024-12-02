@@ -5,6 +5,7 @@ namespace FluentCommunity\App\Hooks\Handlers;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\Framework\Support\Arr;
 
 class ActivityMonitorHandler
 {
@@ -30,6 +31,24 @@ class ActivityMonitorHandler
             }
         });
 
+        add_action('wp_ajax_fluent_community_renew_nonce', function () {
+
+            $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce');
+
+            if (!wp_verify_nonce($ajax_nonce, 'fluent_community_ajax_nonce')) {
+                wp_send_json(['message' => 'Invalid nonce'], 400);
+            }
+
+            $currentProfile = Helper::getCurrentProfile();
+            if (!$currentProfile) {
+                wp_send_json(['message' => 'Invalid user'], 400);
+            }
+
+            wp_send_json([
+                'rest_nonce' => wp_create_nonce('wp_rest'),
+                'ajax_nonce' => wp_create_nonce('fluent_community_ajax_nonce'),
+            ], 200);
+        });
     }
 
 

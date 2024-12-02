@@ -324,6 +324,7 @@ class Helper
                 'access_roles' => []
             ],
             'auth_form_type'          => 'default',
+            'explicit_registration'   => 'no',
             'disable_global_posts'    => 'yes',
             'auth_content'            => 'Please login first to access this page',
             'auth_redirect'           => '',
@@ -874,6 +875,8 @@ class Helper
 
         $membersPageStatus = Utility::canViewMembersPage() ? 'yes' : 'no';
 
+        $leaderboardPageVisibility = (Utility::canViewLeaderboardMembers() || is_user_logged_in()) ? 'yes' : 'no';
+
         $defaultMainMenuItems = [
             'all_feeds'   => [
                 'slug'         => 'all_feeds',
@@ -921,8 +924,8 @@ class Helper
                 'slug'           => 'leaderboard',
                 'is_system'      => 'yes',
                 'is_locked'      => 'yes',
-                'enabled'        => 'yes',
-                'is_unavailable' => self::isFeatureEnabled('leader_board_module') ? 'no' : 'yes',
+                'enabled'        => $leaderboardPageVisibility,
+                'is_unavailable' => self::isFeatureEnabled('leader_board_module') && $leaderboardPageVisibility == 'yes' ? 'no' : 'yes',
                 'title'          => __('Leaderboard', 'fluent-community'),
                 'link_classes'   => 'fcom_leaderboards route_url',
                 'permalink'      => self::baseUrl('leaderboards'),

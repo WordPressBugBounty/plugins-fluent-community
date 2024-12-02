@@ -6,6 +6,7 @@ use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\Framework\Http\Request\Request;
+use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
@@ -54,7 +55,11 @@ class CourseController extends Controller
 
             $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
-            $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+            if(Arr::get($course->settings, 'hide_members_count') != 'yes') {
+                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+            } else {
+                $course->studentsCount = 0;
+            }
         }
 
         return [

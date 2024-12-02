@@ -24,10 +24,11 @@ class FeedsController extends Controller
 {
     public function get(Request $request)
     {
+        $start = microtime(true);
         $bySpace = $request->get('space');
         $userId = $request->getSafe('user_id', 'intval', '');
         $selectedTopic = $request->getSafe('topic_slug', 'sanitize_text_field', '');
-        $search = $request->get('search');
+        $search = $request->getSafe('search', 'sanitize_text_field', '');
         if ($bySpace) {
             // just for validation
             $space = BaseSpace::where('slug', $bySpace)->first();
@@ -61,7 +62,7 @@ class FeedsController extends Controller
                     }
                 ]
             )
-            ->searchBy($search)
+            ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->get('type', ''));
 
@@ -123,6 +124,8 @@ class FeedsController extends Controller
         if ($isMainFeed && get_current_user_id()) {
             $data['last_fetched_timestamp'] = current_time('timestamp');
         }
+
+        $data['execution_time'] = microtime(true) - $start;
 
         return $data;
     }

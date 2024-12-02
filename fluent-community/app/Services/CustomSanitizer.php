@@ -186,7 +186,7 @@ class CustomSanitizer
             $sanitizedSettings[$type]['bannerVideo'] = self::sanitizeBannerVideo($bannerVideo);
             $sanitizedSettings[$type]['bannerImage'] = self::sanitizeBannerImage($bannerImage);
             $sanitizedSettings[$type]['ctaButtons'] = self::sanitizeCtaButtons($ctaButtons);
-            $sanitizedSettings[$type]['description'] = self::unslashMarkdown(Arr::get($typeSettings, 'description'));
+            $sanitizedSettings[$type]['description'] = Arr::get($typeSettings, 'description');
 
             foreach ($typeSettings as $key => $value) {
                 if (isset($rules[$key]) && !in_array($key, ['bannerVideo', 'bannerImage', 'ctaButtons'])) {
@@ -440,6 +440,7 @@ class CustomSanitizer
             '\\*'  => '*',
             '\\~'  => '~',
             '\\:'  => ':',
+            '\\.'  => '.'
         ];
 
         return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);

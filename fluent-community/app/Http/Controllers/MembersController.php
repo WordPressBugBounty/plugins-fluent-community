@@ -14,13 +14,14 @@ class MembersController extends Controller
 {
     public function getMembers(Request $request)
     {
-        $canAccess = Utility::canViewMembersPage();
         $mention = $request->getSafe('mention', 'sanitize_text_field');
         if($mention && !get_current_user_id()) {
             return $this->sendError([
                 'message' => __('You must be logged in to mention someone', 'fluent-community'),
             ]);
         }
+
+        $canAccess = Utility::canViewMembersPage();
 
         $members = XProfile::select(ProfileHelper::getXProfilePublicFields())
             ->whereHas('user');

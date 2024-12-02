@@ -2,10 +2,8 @@
 
 namespace FluentCommunity\Modules\Course\Model;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\BaseSpace;
-use FluentCommunity\App\Models\Meta;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;

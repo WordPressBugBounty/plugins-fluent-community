@@ -72,6 +72,7 @@ class AdminController extends Controller
         $featuredMedia = Helper::getMediaFromUrl($settings['featured_image']);
         $settings['cutsom_auth_url'] = sanitize_url(Arr::get($inputs, 'cutsom_auth_url', ''));
         $settings['auth_form_type'] = sanitize_text_field(Arr::get($inputs, 'auth_form_type', ''));
+        $settings['explicit_registration'] = sanitize_text_field(Arr::get($inputs, 'explicit_registration', 'no'));
 
         if ($media) {
             $settings['logo'] = $media->public_url;
@@ -285,6 +286,16 @@ class AdminController extends Controller
     public function updateWelcomeBannerSettings(Request $request)
     {
         $settings = $request->get('settings', []);
+
+        if(!empty($settings['login']['description'])) {
+            $description = wp_unslash($settings['login']['description']);
+            $settings['login']['description'] = CustomSanitizer::unslashMarkdown($description);
+        }
+
+        if(!empty($settings['logout']['description'])) {
+            $description = wp_unslash($settings['logout']['description']);
+            $settings['logout']['description'] = CustomSanitizer::unslashMarkdown($description);
+        }
 
         $settings = CustomSanitizer::sanitizeWelcomeBannerSettings($settings);
 

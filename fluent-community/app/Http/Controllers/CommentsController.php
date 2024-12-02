@@ -289,6 +289,10 @@ class CommentsController extends Controller
         if ($feed->space_id && $feed->space) {
             $user = $this->getUser(true);
             $user->verifySpacePermission('registered', $feed->space);
+
+            if($feed->space->type == 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
+                throw new \Exception(esc_html__('Comments are disabled for this course', 'fluent-community'));
+            }
         }
     }
 

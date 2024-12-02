@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.11
+Stable tag: 1.1.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,21 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.1.12 (Date: Dec 02, 2024) =
+- Added Option to disable Gravatar Profile Image
+- You can now add Multiple Badges to a User
+- Notification Type Icons added
+- [FluentCRM Automation] - Add or Remove Badge on FluentCRM Automation Action
+- [FluentCRM Bulk Actions] - Add Or Remove Badge on FluentCRM Bulk Actions
+- Improved UX for Post Popup
+- Disable Comments on courses globally
+- Course Progress Bar added to lesson view
+- Add Option to Hide Students Count from Course Listings
+- You can now create Space without any group
+- Improved Slug Generation for non-latin characters
+- Space & Group menu management improved
+- Bug Fixes and Improvements suggested by community users
 
 = 1.1.11 (Date: Nov 27, 2024) =
 - Added Modal View for each post (Configurable)

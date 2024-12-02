@@ -497,6 +497,8 @@ class FeedsHelper
                     }
 
                     $surveyConfig['options'] = $newOptions;
+                } else {
+                    $surveyConfig = $data['survey'];
                 }
             }
 

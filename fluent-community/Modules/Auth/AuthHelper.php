@@ -146,7 +146,7 @@ class AuthHelper
         $policyUrl = apply_filters('fluent_community/terms_policy_url', get_privacy_policy_url());
 
         $termsText = __('I agree to the terms and conditions', 'fluent-community');
-        if($policyUrl) {
+        if ($policyUrl) {
             $termsText = sprintf(__('I agree to the %1sterms and conditions%2s', 'fluent-community'), '<a rel="nooppener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
         }
 
@@ -196,7 +196,7 @@ class AuthHelper
                 'required'     => true
             ]
         ], $invitation);
-        
+
         if (!self::isPasswordConfRequired()) {
             unset($fields['conf_password']);
         }
@@ -223,7 +223,7 @@ class AuthHelper
             ]
         ]);
     }
- 
+
     public static function isPasswordConfRequired()
     {
         return apply_filters('fluent_community/autg/password_confirmation', true);
@@ -231,7 +231,14 @@ class AuthHelper
 
     public static function isRegistrationEnabled()
     {
-        return apply_filters('fluent_community/auth/registration_enabled', !!get_option('users_can_register'));
+        $enabled = !!get_option('users_can_register');
+
+        if (!$enabled) {
+            $generalSettinsg = Helper::generalSettings();
+            $enabled = $generalSettinsg['explicit_registration'] !== 'no';
+        }
+
+        return apply_filters('fluent_community/auth/registration_enabled', $enabled);
     }
 
     public static function isTwoFactorEnabled()
@@ -302,7 +309,7 @@ class AuthHelper
         ?>
         <div class="fls_signup_verification">
             <input type="hidden" name="__two_fa_signed_token" value="<?php echo esc_attr($signedToken); ?>"/>
-            <p><?php echo esc_html(sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
+            <p><?php echo esc_html(\sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
             <div class="fcom_form-group fcom_field_vefication">
                 <div class="fcom_form_label">
                     <label for="fcom_field_vefication"><?php _e('Verification Code', 'fluent-community'); ?></label>

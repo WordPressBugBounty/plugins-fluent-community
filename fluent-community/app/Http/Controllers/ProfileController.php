@@ -38,7 +38,7 @@ class ProfileController extends Controller
             'website'                    => Arr::get($xprofile->meta, 'website'),
             'social_links'               => (object)Arr::get($xprofile->meta, 'social_links', []),
             'status'                     => $xprofile->status,
-            'badge_slug'                 => Arr::get($xprofile->meta, 'badge_slug'),
+            'badge_slugs'                 => (array) Arr::get($xprofile->meta, 'badge_slug', []),
             'compilation_score'          => $xprofile->getCompletionScore(),
             'total_points'               => $xprofile->total_points,
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
@@ -196,7 +196,7 @@ class ProfileController extends Controller
             }
 
             if (Helper::isFeatureEnabled('user_badge')) {
-                $badgeSlug = Arr::get($data, 'badge_slug');
+                $badgeSlug = (array) Arr::get($data, 'badge_slugs', []);
                 $meta['badge_slug'] = $badgeSlug;
             }
         } else if (Utility::getPrivacySetting('can_customize_username')) {

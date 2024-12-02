@@ -19,7 +19,7 @@ class EmailComposer
 
     public function addBlock($type, $content, $options = [])
     {
-        if($content) {
+        if ($content) {
             $this->blocks[] = [
                 'type'    => $type,
                 'content' => $content,
@@ -110,7 +110,10 @@ class EmailComposer
 
     public function setLogo($logo)
     {
-        $this->logo = $logo;
+        if ($logo) {
+            $this->logo = $logo;
+        }
+
         return $this;
     }
 
@@ -197,7 +200,7 @@ class EmailComposer
         $data['footerLines'] = $footerLines;
 
 
-        if($this->headingBlocks) {
+        if ($this->headingBlocks) {
             $data['headingContent'] = $this->complileHeadingBlocks();
         }
 

@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Support\Arr;
@@ -87,6 +88,10 @@ class User extends Model
                 }
             }
             return '';
+        }
+
+        if (Utility::getPrivacySetting('enable_gravatar') != 'yes') {
+            return apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->ID);
         }
 
         $hash = md5(strtolower(trim($this->attributes['user_email'])));
@@ -625,7 +630,6 @@ class User extends Model
             'user_id'           => $this->ID,
             'username'          => ProfileHelper::generateUserName($this->ID, $useUserName),
             'display_name'      => $this->getDisplayName(),
-            'avatar'            => $this->getPhotoAttribute(),
             'is_verified'       => $this->isVerified() ? 1 : 0,
             'short_description' => get_user_meta($this->ID, 'description', true),
             'meta'              => [
@@ -642,7 +646,6 @@ class User extends Model
             $exist->save();
             return $exist;
         }
-
 
         $counter = 1;
         $initialUserName = $data['username'];

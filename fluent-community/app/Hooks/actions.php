@@ -17,3 +17,12 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Rate limit handler
 (new \FluentCommunity\App\Hooks\Handlers\RateLimitHandler())->register();
+
+
+if (defined('WP_CLI') && WP_CLI) {
+    \WP_CLI::add_command('fluent_community', '\FluentCommunity\App\Hooks\CLI\Commands');
+    // Add Fluent CLI commands
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        \WP_CLI::add_command('fluent_community_dummy', '\FluentCommunity\App\Hooks\CLI\DymmyCommands');
+    }
+}

@@ -107,16 +107,20 @@ class Feed extends Model
         if ($newModel->title) {
             // Remove the emojis
             $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
+            // get the first 30 char from the title
+            $title = substr($title, 0, 30);
         } else {
             // get the first 25 char from the message
-            $title = substr($newModel->message, 0, 25);
+            $title = substr($newModel->message, 0, 30);
         }
+
+        $title = remove_accents($title);
 
         $title = strtolower($title);
         // only allow alphanumeric, dash, and underscore
-        $title = preg_replace('/[^a-z0-9-_]/', '', $title);
+        $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
 
-        $title = sanitize_title($title, 'post-'.time());
+        $title = sanitize_title($title, 'post-' . time());
 
         // check if the slug is already exists
         $slug = $title;
@@ -155,17 +159,32 @@ class Feed extends Model
         return $meta;
     }
 
-    public function scopeSearchBy($query, $search)
+    public function scopeSearchBy($query, $search, $in = [])
     {
         if (!$search) {
             return $query;
         }
 
+        if (!$in || !is_array($in)) {
+            $in = ['post_content'];
+        }
+
         $fields = $this->searchable;
-        $query->where(function ($query) use ($fields, $search) {
-            $query->where(array_shift($fields), 'LIKE', "%$search%");
-            foreach ($fields as $field) {
-                $query->orWhere($field, 'LIKE', "$search%");
+        $query->where(function ($query) use ($fields, $search, $in) {
+            if (in_array('post_content', $in)) {
+                $query->where(array_shift($fields), 'LIKE', "%$search%");
+                foreach ($fields as $field) {
+                    $query->orWhere($field, 'LIKE', "$search%");
+                }
+                if ($in && in_array('post_comments', $in)) {
+                    $query->orWhereHas('comments', function ($q) use ($search) {
+                        return $q->where('message', 'LIKE', "%$search%");
+                    });
+                }
+            } else if ($in && in_array('post_comments', $in)) {
+                $query->whereHas('comments', function ($q) use ($search) {
+                    return $q->where('message', 'LIKE', "%$search%");
+                });
             }
         });
 

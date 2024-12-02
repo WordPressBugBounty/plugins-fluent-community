@@ -3,7 +3,7 @@
 /**
  * Plugin Name: FluentCommunity - Community & LMS Plugin
  * Description: The super-fast Community Plugin for WordPress
- * Version: 1.1.11
+ * Version: 1.1.12
  * Author: WPManageNinja LLC
  * Author URI: https://fluentcommunity.co
  * Plugin URI: https://fluentcommunity.co
@@ -12,7 +12,7 @@
  * Domain Path: /language
  */
 
-define('FLUENT_COMMUNITY_PLUGIN_VERSION', '1.1.11');
+define('FLUENT_COMMUNITY_PLUGIN_VERSION', '1.1.12');
 define('FLUENT_COMMUNITY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FLUENT_COMMUNITY_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FLUENT_COMMUNITY_DIR_FILE', __FILE__);

@@ -68,6 +68,7 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
 
         <div class="fcom_sidebar_contents">
             <?php foreach ($spaceGroups as $spaceGroup): ?>
+                <?php if($spaceGroup['children']): ?>
                 <div class="fcom_communities_menu">
                     <div class="fcom_space_group_header fcom_group_title">
                         <h4 data-group_id="<?php echo (int)$spaceGroup['id']; ?>" class="space_section_title">
@@ -95,6 +96,7 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                         </ul>
                     </nav>
                 </div>
+                <?php endif; ?>
             <?php endforeach; ?>
 
             <?php if ($bottomLinkGroups): ?>

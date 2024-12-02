@@ -233,12 +233,14 @@ class Utility
 
         $settings = self::getFromCache('privacy_settings', function () {
             $defaults = [
-                'members_page_status'    => 'everybody', // everybody, logged_in, admin_only
-                'can_customize_username' => 'no',
-                'can_change_email' => 'no',
-                'show_last_activity'     => 'yes',
-                'email_auto_login'       => 'yes',
-                'user_space_visibility'  => 'everybody', // everybody, logged_in, admin_only
+                'can_customize_username'         => 'no',
+                'can_change_email'               => 'no',
+                'show_last_activity'             => 'yes',
+                'email_auto_login'               => 'yes',
+                'enable_gravatar'                => 'yes',
+                'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
+                'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
+                'leaderboard_members_visibility' => 'everybody', // everybody, logged_in, admin_only
             ];
 
             $settings = self::getOption('privacy_settings', $defaults);
@@ -253,6 +255,10 @@ class Utility
 
             return $settings;
         });
+
+        if(!empty($settings['enable_gravatar'])) {
+            $settings['enable_gravatar'] = 'yes';
+        }
 
         return $settings;
     }
@@ -270,6 +276,21 @@ class Utility
         }
 
         return apply_filters('fluent_community/can_view_members_page', Helper::isModerator(), $pageStatus);
+    }
+
+    public static function canViewLeaderboardMembers()
+    {
+        $pageStatus = self::getPrivacySetting('leaderboard_members_visibility');
+
+        if ($pageStatus == 'everybody') {
+            return apply_filters('fluent_community/can_view_leaderboard_members', true, $pageStatus);
+        }
+
+        if ($pageStatus == 'logged_in') {
+            return apply_filters('fluent_community/can_view_leaderboard_members', is_user_logged_in(), $pageStatus);
+        }
+
+        return apply_filters('fluent_community/can_view_leaderboard_members', Helper::isModerator(), $pageStatus);
     }
 
     public static function getPrivacySetting($key)

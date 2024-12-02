@@ -56,6 +56,11 @@ class CourseAdminController extends Controller
         ]);
 
         $parentId = $request->get('parent_id');
+        if($parentId) {
+            $serial = BaseSpace::where('parent_id', $parentId)->max('serial') + 1;
+        } else {
+            $serial = BaseSpace::max('serial') + 1;
+        }
 
         $courseData = [
             'parent_id'   => $request->get('parent_id') ?: NULL,
@@ -64,11 +69,13 @@ class CourseAdminController extends Controller
             'description' => wp_kses_post($request->get('description')),
             'status'      => $request->get('status', 'draft'),
             'settings'    => [
-                'course_type' => $request->get('course_type'),
-                'emoji'       => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
-                'shape_svg'   => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
+                'course_type'        => $request->get('course_type'),
+                'emoji'              => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
+                'shape_svg'          => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
+                'disable_comments'   => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
+                'hide_members_count' => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
             ],
-            'serial'      => BaseSpace::where('parent_id', $parentId)->max('serial') + 1
+            'serial'      => $serial
         ];
 
         $slug = $request->get('slug');
@@ -202,6 +209,8 @@ class CourseAdminController extends Controller
                     'sub_object_id' => $course->id,
                     'object_source' => 'space_' . $type
                 ]);
+            } else {
+                $courseData[$type] = null;
             }
         }
 
@@ -210,6 +219,8 @@ class CourseAdminController extends Controller
         $existingSettings['custom_lock_screen'] = $request->get('settings.custom_lock_screen') === 'yes' ? 'yes' : 'no';
         $existingSettings['emoji'] = CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', ''));
         $existingSettings['shape_svg'] = CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', ''));
+        $existingSettings['disable_comments'] = $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no';
+        $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
 
         $courseData['settings'] = $existingSettings;
 

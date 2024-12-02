@@ -47,6 +47,8 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'FluentCommunity\\App\\App' => __DIR__ . '/../..' . '/app/App.php',
         'FluentCommunity\\App\\Functions\\Utility' => __DIR__ . '/../..' . '/app/Functions/Utility.php',
+        'FluentCommunity\\App\\Hooks\\CLI\\Commands' => __DIR__ . '/../..' . '/app/Hooks/CLI/Commands.php',
+        'FluentCommunity\\App\\Hooks\\CLI\\DymmyCommands' => __DIR__ . '/../..' . '/app/Hooks/CLI/DymmyCommands.php',
         'FluentCommunity\\App\\Hooks\\Handlers\\ActivationHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ActivationHandler.php',
         'FluentCommunity\\App\\Hooks\\Handlers\\ActivityMonitorHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ActivityMonitorHandler.php',
         'FluentCommunity\\App\\Hooks\\Handlers\\CleanupHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/CleanupHandler.php',

@@ -64,7 +64,7 @@ class InvitationHandler
         $user = Helper::getCurrentUser();
         $user->syncXProfile(false);
         $frameData['title'] = '';
-        $frameData['description'] = \sprintf(__('Welcome back %1$s. %2$s has been invited you to join the community. Please click the button bellow to continue.', 'fluent-community'), $user->display_name, $invitation->xprofile->display_name);
+        $frameData['description'] = \sprintf(__('Welcome back %1$s. %2$s has been invited you to join the community. Please click the button below to continue.', 'fluent-community'), $user->display_name, $invitation->xprofile->display_name);
         $frameData['invitation_token'] = $invitation->message_rendered;
 
         App::make('view')->render('auth.logged_in_accept', $frameData);
