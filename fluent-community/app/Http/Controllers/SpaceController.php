@@ -80,8 +80,10 @@ class SpaceController extends Controller
                 'hide_members_count'   => $serial
             ],
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
-            'serial'      => $spaceGroup ?: 1
+            'serial'      => $serial ?: 1
         ]);
+
+
 
         $ogImage = Arr::get($data, 'settings.og_image', '');
         $ogMedia = null;

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.12
+Stable tag: 1.1.13
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,9 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.1.13 (Date: Dec 02, 2024) =
+- (Hotfix) - Space Create issue fixed
 
 = 1.1.12 (Date: Dec 02, 2024) =
 - Added Option to disable Gravatar Profile Image
