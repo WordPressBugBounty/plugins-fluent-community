@@ -174,7 +174,7 @@ class AuthModdule
                 Vite::getStaticSrcUrl('user_registration.css')
             ],
             'js_files'       => [
-                Vite::getStaticSrcUrl('public/js/user_registration.js')
+                Vite::getStaticSrcUrl('user_registration.js')
             ],
             'js_vars'        => [
                 'fluentComRegistration' => [
@@ -190,6 +190,12 @@ class AuthModdule
                 'description' => get_bloginfo('description')
             ]
         ];
+
+        if(Utility::isDev()) {
+            $pageVars['js_files'] = [
+                Vite::getStaticSrcUrl('public/js/user_registration.js')
+            ];
+        }
 
         $formType = ($targetForm == 'register') ? 'signup' : 'login';
 

@@ -4948,7 +4948,7 @@ msgid "Select which courses this automation is for."
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:79
-msgid "Select which spcaes this automation funnel is for."
+msgid "Select which spaces this automation funnel is for."
 msgstr ""
 
 #: app/Http/Controllers/CommentsController.php:414
