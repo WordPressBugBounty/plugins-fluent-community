@@ -2,6 +2,8 @@
 
 namespace FluentCommunity\Framework\Foundation;
 
+use FluentCommunity\Framework\Http\Request\WPUserProxy;
+
 trait FoundationTrait
 {
     use HooksRemovalTrait;
@@ -471,6 +473,16 @@ trait FoundationTrait
     public function url($url = '')
     {
         return $this->baseUrl.ltrim($url, '/');
+    }
+
+    /**
+     * Get the current user.
+     * 
+     * @return \FluentCommunity\Framework\Http\Request\WPUserProxy
+     */
+    public function user()
+    {
+        return new WPUserProxy(wp_get_current_user());
     }
 
     /**

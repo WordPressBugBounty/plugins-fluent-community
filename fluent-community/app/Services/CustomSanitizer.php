@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Services;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Models\Space;
 use FluentCommunity\Framework\Support\Arr;
 
 class CustomSanitizer
@@ -444,5 +445,32 @@ class CustomSanitizer
         ];
 
         return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
+    }
+
+    public static function santizeSpaceSettings($settings = [])
+    {
+        $yesNotFields = [
+            'restricted_post_only',
+            'can_request_join',
+            'custom_lock_screen',
+            'show_sidebar',
+            'hide_members_count',
+            'document_library'
+        ];
+
+        $settings = Arr::only($settings, array_keys((new Space())->defaultSettings()));
+
+        foreach ($yesNotFields as $field) {
+            $defaults[$field] = $settings[$field] === 'yes' ? 'yes' : 'no';
+        }
+
+        $settings['shape_svg'] = self::sanitizeSvg(Arr::get($settings, 'shape_svg', ''));
+        if (empty($settings['shape_svg'])) {
+            $settings['emoji'] = self::sanitizeEmoji(Arr::get($settings, 'emoji', ''));
+        } else {
+            $settings['emoji'] = '';
+        }
+
+        return $settings;
     }
 }

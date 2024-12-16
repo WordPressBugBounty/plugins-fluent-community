@@ -90,7 +90,6 @@ class AuthenticationService
     public static function getFormattedAuthSettings($view = 'login')
     {
         $authSettings = self::getAuthSettings();
-
         $settings = Arr::get($authSettings, $view, []);
 
         foreach ($settings as &$setting) {
@@ -135,8 +134,6 @@ class AuthenticationService
 
     protected static function handleMediaUrls($mediaUrls, $currentSetting, $section)
     {
-        $deleteMediaUrls = [];
-
         foreach ($mediaUrls as $key => $url) {
             $currentImgUrl = Arr::get($currentSetting, $key);
             if ($url) {
@@ -155,15 +152,7 @@ class AuthenticationService
                     'object_source' => 'auth_' . $section . '_' . $key
                 ]);
             }
-
-            if ($currentImgUrl) {
-                $deleteMediaUrls[] = $currentImgUrl;
-            }
         }
-
-        do_action('fluent_community/remove_medias_by_url', $deleteMediaUrls, [
-            'sub_object_id' => null,
-        ]);
 
         return $mediaUrls;
     }

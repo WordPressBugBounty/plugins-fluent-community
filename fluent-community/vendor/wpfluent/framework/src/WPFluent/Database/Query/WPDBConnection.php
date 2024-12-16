@@ -9,9 +9,6 @@ namespace FluentCommunity\Framework\Database\Query;
 use Closure;
 use Exception;
 use DateTimeInterface;
-use FluentCommunity\Framework\Database\MultipleColumnsSelectedException;
-use FluentCommunity\Framework\Database\Query\Grammars\Grammar;
-use FluentCommunity\Framework\Database\Query\Processors\Processor;
 use FluentCommunity\Framework\Foundation\App;
 use FluentCommunity\Framework\Database\Schema;
 use FluentCommunity\Framework\Database\QueryException;
@@ -56,14 +53,14 @@ class WPDBConnection implements ConnectionInterface
     /**
      * The query grammar implementation.
      *
-     * @var \FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar|\FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar
+     * @var \FluentCommunity\Framework\Database\Query\Grammars\Grammar
      */
     protected $queryGrammar;
 
     /**
      * The query post processor implementation.
      *
-     * @var \FluentCommunity\Framework\Database\Query\Processors\MySqlProcessor|\FluentCommunity\Framework\Database\Query\Processors\SQLiteProcessor;
+     * @var \FluentCommunity\Framework\Database\Query\Processors\Processor
      */
     protected $postProcessor;
 
@@ -143,7 +140,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Get the default query grammar instance.
      *
-     * @return \FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar|\FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar
+     * @return \FluentCommunity\Framework\Database\Query\Grammars\Grammar
      */
     protected function getDefaultQueryGrammar()
     {
@@ -163,7 +160,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Get the default post processor instance.
      *
-     * @return \FluentCommunity\Framework\Database\Query\Processors\MySqlProcessor|\FluentCommunity\Framework\Database\Query\Processors\SQLiteProcessor
+     * @return \FluentCommunity\Framework\Database\Query\Processors\Processor
      */
     protected function getDefaultPostProcessor()
     {
@@ -598,7 +595,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Get the query grammar used by the connection.
      *
-     * @return \FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar|\FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar
+     * @return \FluentCommunity\Framework\Database\Query\Grammars\Grammar
      */
     public function getQueryGrammar()
     {
@@ -610,7 +607,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Set the query grammar used by the connection.
      *
-     * @param \FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar | \FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar $grammar
+     * @param \FluentCommunity\Framework\Database\Query\Grammars\Grammar $grammar
      * @return $this
      */
     public function setQueryGrammar(Grammar $grammar)
@@ -623,7 +620,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Get the query post processor used by the connection.
      *
-     * @return \FluentCommunity\Framework\Database\Query\Processors\MySqlProcessor|\FluentCommunity\Framework\Database\Query\Processors\SQLiteProcessor
+     * @return \FluentCommunity\Framework\Database\Query\Processors\Processor
      */
     public function getPostProcessor()
     {
@@ -633,7 +630,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Set the query post processor used by the connection.
      *
-     * @param $processor \FluentCommunity\Framework\Database\Query\Processors\Processor
+     * @param \FluentCommunity\Framework\Database\Query\Processors\Processor $processor
      * @return $this
      */
     public function setPostProcessor(Processor $processor)

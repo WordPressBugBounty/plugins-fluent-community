@@ -26,11 +26,40 @@ class FeedReactionsMigrator
                 `ip_address` VARCHAR(100) NULL,
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
-                INDEX `object_id` (`object_id`),
-                INDEX `object_type` (`object_type`),
-                INDEX `type` (`type`)
+                INDEX object_user_object_type_type (object_id, user_id, object_type, type),
+                INDEX object_type_parent_id_user_id (object_type, parent_id, user_id)
             ) $charsetCollate;";
             dbDelta($sql);
+        } else {
+            $indexes = $wpdb->get_results("SHOW INDEX FROM $table");
+
+            $hasObjectUserObjectTypeType = false;
+            $hasObjectTypeParentIdUserId = false;
+
+            foreach ($indexes as $index) {
+                if ($index->Key_name === 'object_user_object_type_type') {
+                    $hasObjectUserObjectTypeType = true;
+                }
+                if ($index->Key_name === 'object_type_parent_id_user_id') {
+                    $hasObjectTypeParentIdUserId = true;
+                }
+            }
+
+            if (!$hasObjectUserObjectTypeType) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX object_user_object_type_type (object_id, user_id, object_type, type)");
+            }
+
+            if (!$hasObjectTypeParentIdUserId) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX object_type_parent_id_user_id (object_type, parent_id, user_id)");
+            }
+
+            $removeIndexes = ['object_id', 'object_type', 'type'];
+
+            foreach ($indexes as $index) {
+                if (in_array($index->Column_name, $removeIndexes)) {
+                    $wpdb->query("ALTER TABLE $table DROP INDEX $index->Key_name");
+                }
+            }
         }
     }
 }

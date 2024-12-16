@@ -3,7 +3,7 @@
 namespace FluentCommunity\Framework\Database\Query;
 
 use Closure;
-use DateTimePeriod;
+use DatePeriod;
 use LogicException;
 use RuntimeException;
 use DateTimeInterface;
@@ -798,7 +798,7 @@ class Builder
      *
      * @param  array  $wheres
      * @param  array  $bindings
-     * @return Builder
+     * @return $this
      */
     public function mergeWheres($wheres, $bindings)
     {
@@ -952,9 +952,7 @@ class Builder
     {
         if ($useDefault) {
             return [$operator, '='];
-        }
-
-        if ($this->invalidOperatorAndValue($operator, $value)) {
+        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
             throw new InvalidArgumentException(
                 'Illegal operator and value combination.'
             );
@@ -1154,10 +1152,18 @@ class Builder
     ) {
         $type = 'Like';
 
-        $this->wheres[] = compact('type', 'column', 'value', 'caseSensitive', 'boolean', 'not');
+        $this->wheres[] = compact(
+            'type', 'column', 'value', 'caseSensitive', 'boolean', 'not'
+        );
 
         if (method_exists($this->grammar, 'prepareWhereLikeBinding')) {
-            $value = $this->grammar->prepareWhereLikeBinding($value, $caseSensitive);
+            $value = $this->grammar->prepareWhereLikeBinding(
+                $value, $caseSensitive
+            );
+        }
+
+        if (!str_contains($value, '%')) {
+            $value = '%'.$value.'%';
         }
 
         $this->addBinding($value);
@@ -1210,6 +1216,50 @@ class Builder
     }
 
     /**
+     * Add a "where like" clause to the query.
+     *
+     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
+     * @param  string  $value
+     * @param  bool  $caseSensitive
+     * @param  string  $boolean
+     * @param  bool  $not
+     * @return $this
+     */
+    public function whereStartsLike(
+        $column,
+        $value,
+        $caseSensitive = false,
+        $boolean = 'and',
+        $not = false
+    ) {
+        return $this->whereLike(
+            $column, $value.'%', $caseSensitive, $boolean, $not
+        );
+    }
+
+    /**
+     * Add a "where like" clause to the query.
+     *
+     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
+     * @param  string  $value
+     * @param  bool  $caseSensitive
+     * @param  string  $boolean
+     * @param  bool  $not
+     * @return $this
+     */
+    public function whereEndsLike(
+        $column,
+        $value,
+        $caseSensitive = false,
+        $boolean = 'and',
+        $not = false
+    ) {
+        return $this->whereLike(
+            $column, '%'.$value, $caseSensitive, $boolean, $not
+        );
+    }
+
+    /**
      * Add a "where in" clause to the query.
      *
      * @param  string  $column
@@ -1233,9 +1283,10 @@ class Builder
             $this->addBinding($bindings, 'where');
         }
 
-        // Next, if the value is ArrayableInterface we need to cast it to its raw array form so we
-        // have the underlying array value instead of an Arrayable object which is not
-        // able to be added as a binding, etc. We will then add to the wheres array.
+        // Next, if the value is ArrayableInterface we need to cast it to its raw 
+        // array form so we have the underlying array value instead of an 
+        // Arrayable object which is not able to be added as a binding,
+        // etc. We will then add to the wheres array.
         if ($values instanceof ArrayableInterface) {
             $values = $values->toArray();
         }
@@ -1414,7 +1465,7 @@ class Builder
 
         $type = 'between';
 
-        if ($values instanceof DateTimePeriod) {
+        if ($values instanceof DatePeriod) {
             $values = [$values->getStartDate(), $values->getEndDate()];
         }
 
@@ -2589,7 +2640,7 @@ class Builder
     {
         $type = 'between';
 
-        if ($values instanceof DateTimePeriod) {
+        if ($values instanceof DatePeriod) {
             $values = [$values->getStartDate(), $values->getEndDate()];
         }
 
@@ -3431,7 +3482,7 @@ class Builder
             return $column;
         }
 
-        $columnString = $column instanceof ExpressionContract
+        $columnString = $column instanceof Expression
             ? $this->grammar->getValue($column)
             : $column;
 
@@ -4302,7 +4353,7 @@ class Builder
     /**
      * Get the query grammar instance.
      *
-     * @return \FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar|\FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar
+     * @return \FluentCommunity\Framework\Database\Query\Grammars\Grammar
      */
     public function getGrammar()
     {

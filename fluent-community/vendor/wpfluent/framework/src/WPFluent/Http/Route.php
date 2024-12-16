@@ -500,6 +500,10 @@ class Route
      */
     public function rateLimit($limit, $interval)
     {
+        // Since the rate limiter is applied twice because
+        // WordPress sends an extra request for every
+        // request, so we need to double the limit.
+
         $rateLimiter = new RateLimiter($limit * 2, $interval);
 
         $this->middleware('before', $rateLimiter);

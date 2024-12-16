@@ -276,11 +276,11 @@ class Request
      */
     public function isRest()
     {
-        if ($this->app->isUnitTesting()) {
-            return false;
-        }
-
         $isRest = false;
+
+        if ($this->app->isUnitTesting()) {
+            return $isRest;
+        }
 
         $url = $this->url();
 
@@ -305,6 +305,16 @@ class Request
         }
 
         return $isRest;
+    }
+
+    /**
+     * Determine if the request is initiated by WordPress.
+     * 
+     * @return boolean
+     */
+    public function isInternal()
+    {
+        return $GLOBALS['wp_rest_server']->is_dispatching();
     }
 
     /**

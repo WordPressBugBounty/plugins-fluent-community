@@ -1,4 +1,4 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
 <?php
 /**
  * @var $title string
@@ -39,6 +39,8 @@
         }
     </style>
 
+    <?php do_action('fluent_community/headless/head_early', $scope); ?>
+
     <?php foreach ($css_files as $css_file): ?>
         <link rel="stylesheet"
               href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
@@ -50,24 +52,25 @@
 
 <?php if ($layout == 'signup'): ?>
     <div class="fcom_full_layout" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
-        <div class="fcom_layout_side" style="background-image: url(<?php echo esc_url($portal['background_image']); ?>); background-color: <?php echo esc_attr($portal['background_color']); ?>; display: <?php echo $portal['hidden'] ? 'none' : 'flex'; ?>">
+        <div class="fcom_layout_side"
+             style="<?php if (!empty($portal['background_image'])): ?>background-image: url(<?php echo esc_url($portal['background_image']); ?>);<?php endif; ?> display: <?php echo $portal['hidden'] ? 'none' : 'flex'; ?>">
             <div class="fcom_welcome">
-                <?php if(!empty($portal['logo'])): ?>
-                <div class="fcom_logo">
-                    <a href="<?php echo esc_url(\FluentCommunity\App\Services\Helper::baseUrl()); ?>">
-                        <img src="<?php echo esc_url($portal['logo']); ?>" alt="Site logo">
-                    </a>
-                </div>
+                <?php if (!empty($portal['logo'])): ?>
+                    <div class="fcom_logo">
+                        <a href="<?php echo esc_url(\FluentCommunity\App\Services\Helper::baseUrl()); ?>">
+                            <img src="<?php echo esc_url($portal['logo']); ?>" alt="Site logo">
+                        </a>
+                    </div>
                 <?php endif; ?>
-                <h2 class="fcom_title" style="color: <?php echo esc_attr($portal['title_color']); ?>">
+                <h2 class="fcom_title">
                     <?php echo wp_kses_post($portal['title']); ?>
                 </h2>
-                <div class="fcom_sub_title" style="color: <?php echo esc_attr($portal['text_color']); ?>">
+                <div class="fcom_sub_title">
                     <?php echo wp_kses_post($portal['description']); ?>
                 </div>
             </div>
         </div>
-        <div class="fcom_layout_main" style="background-image: url(<?php echo esc_url($portal['form']['background_image']); ?>); background-color: <?php echo esc_attr($portal['form']['background_color']); ?>;">
+        <div class="fcom_layout_main" style="<?php if (!empty($portal['form']['background_image'])): ?>background-image: url(<?php echo esc_url($portal['form']['background_image']); ?>);<?php endif; ?>">
             <div class="fluent_com">
                 <?php do_action('fluent_community/headless/content', $scope); ?>
             </div>

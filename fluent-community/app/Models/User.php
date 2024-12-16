@@ -334,6 +334,13 @@ class User extends Model
         return Arr::isTrue($permissions, 'community_moderator');
     }
 
+    public function hasCommunityAdminAccess()
+    {
+        $permissions = $this->getPermissions(true);
+
+        return Arr::isTrue($permissions, 'community_admin');
+    }
+
     public function hasCourseCreatorAccess()
     {
         $permissions = $this->getPermissions(true);
@@ -435,7 +442,7 @@ class User extends Model
         if ($isAdmin || in_array('course_admin', $roles)) {
             $permissions['course_creator'] = true;
             $permissions['course_admin'] = true;
-        } else if (in_array('course_creatror', $roles)) {
+        } else if (in_array('course_creator', $roles)) {
             $permissions['course_creator'] = true;
         }
 
@@ -464,64 +471,78 @@ class User extends Model
         }
 
         $role = $this->getSpaceRole($space);
+
+        $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'document_library') == 'yes';
+
         $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') == 'yes';
 
         if (!$role) {
             $permissions = [
-                'can_create_post'  => false,
-                'registered'       => true,
-                'can_view_posts'   => true,
-                'can_view_members' => $space->canViewMembers($this),
-                'is_pending'       => false,
-                'is_non_member'    => true,
-                'can_view_info'    => $space->privacy !== 'secret'
+                'can_create_post'    => false,
+                'registered'         => true,
+                'can_view_posts'     => true,
+                'can_view_members'   => $space->canViewMembers($this),
+                'is_pending'         => false,
+                'is_non_member'      => true,
+                'can_view_info'      => $space->privacy !== 'secret',
+                'can_view_documents' => $hasDocuments && Arr::get($space->settings, 'document_access') == 'everybody'
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
                 $permissions['can_view_posts'] = false;
                 $permissions['can_view_members'] = false;
+                $permissions['can_view_documents'] = false;
             }
         } else if ($role == 'pending') {
             $permissions = [
-                'can_create_post'  => false,
-                'registered'       => true,
-                'can_view_posts'   => true,
-                'can_view_members' => $space->canViewMembers($this),
-                'is_pending'       => true,
-                'can_view_info'    => $space->privacy !== 'secret'
+                'can_create_post'    => false,
+                'registered'         => true,
+                'can_view_posts'     => true,
+                'can_view_members'   => $space->canViewMembers($this),
+                'is_pending'         => true,
+                'can_view_info'      => $space->privacy !== 'secret',
+                'can_view_documents' => $hasDocuments && Arr::get($space->settings, 'document_access') == 'everybody'
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
                 $permissions['can_view_posts'] = false;
                 $permissions['can_view_members'] = false;
+                $permissions['can_view_documents'] = false;
             }
         } else if ($role == 'member' || $role == 'student') {
             $permissions = [
-                'can_create_post'  => $isRestrictedPost ? false : true,
-                'registered'       => true,
-                'can_view_posts'   => true,
-                'can_view_members' => $space->canViewMembers($this),
-                'can_comment'      => true,
-                'can_view_info'    => true
+                'can_create_post'      => $isRestrictedPost ? false : true,
+                'registered'           => true,
+                'can_view_posts'       => true,
+                'can_view_members'     => $space->canViewMembers($this),
+                'can_comment'          => true,
+                'can_view_info'        => true,
+                'can_view_documents'   => $hasDocuments,
+                'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') == 'members_only'
             ];
         } else {
+            $isMod = in_array($role, ['admin', 'moderator']);
             $permissions = [
-                'can_create_post'     => $isRestrictedPost ? in_array($role, ['admin', 'moderator']) : true,
-                'can_view_posts'      => true,
-                'can_view_members'    => $space->canViewMembers($this),
-                'registered'          => true,
-                'community_admin'     => $role === 'admin',
-                'community_moderator' => in_array($role, ['admin', 'moderator']),
-                'edit_any_feed'       => $role === 'admin',
-                'delete_any_feed'     => in_array($role, ['admin', 'moderator']),
-                'super_admin'         => Helper::isSiteAdmin(),
-                'read'                => true,
-                'can_remove_member'   => $role === 'admin',
-                'can_add_member'      => $role === 'admin',
-                'can_comment'         => in_array($role, ['admin', 'moderator']),
-                'can_view_info'       => true
+                'can_create_post'      => $isRestrictedPost ? $isMod : true,
+                'can_view_posts'       => true,
+                'can_view_members'     => $space->canViewMembers($this),
+                'registered'           => true,
+                'community_admin'      => $role === 'admin',
+                'community_moderator'  => $isMod,
+                'edit_any_feed'        => $role === 'admin',
+                'delete_any_feed'      => $isMod,
+                'super_admin'          => Helper::isSiteAdmin(),
+                'read'                 => true,
+                'can_remove_member'    => $role === 'admin',
+                'can_add_member'       => $role === 'admin',
+                'can_comment'          => $isMod,
+                'can_view_info'        => true,
+                'can_view_documents'   => $hasDocuments,
+                'can_upload_documents' => $hasDocuments && $isMod
             ];
         }
+
+        $permissions['is_member'] = in_array($role, ['admin', 'moderator', 'member', 'student']);
 
         return apply_filters('fluent_community/user/space/permissions', $permissions, $space, $role, $this);
     }
@@ -620,7 +641,8 @@ class User extends Model
 
     public function syncXProfile($force = false, $useUserName = false)
     {
-        $exist = $this->xprofile;
+
+        $exist = XProfile::where('user_id', $this->ID)->first();
 
         if ($exist && !$force) {
             return $exist;
@@ -656,7 +678,10 @@ class User extends Model
 
         $data['username'] = $initialUserName;
 
-        return XProfile::create($data);
+        $xprofile = XProfile::create($data);
+        $this->load('xprofile');
+
+        return $xprofile;
     }
 
     public function getUserMeta($metaKey, $default = null)

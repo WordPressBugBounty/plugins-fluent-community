@@ -23,8 +23,7 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
     $router->post('/{cousre_id}/students', 'CourseAdminController@addStudent')->int('cousre_id');
     $router->delete('/{cousre_id}/students/{student_id}', 'CourseAdminController@removeStudent')->int('cousre_id')->int('student_id');
 
-    $router->get('/users/search', 'CourseAdminController@getOtherUsers');
-
+    $router->get('/{cousre_id}/users/search', 'CourseAdminController@getOtherUsers')->int('course_id');
     $router->post('/{cousre_id}/links', 'CourseAdminController@updateLinks')->int('cousre_id');
 
     $router->get('/{cousre_id}/sections', 'CourseAdminController@getSections')->int('cousre_id');

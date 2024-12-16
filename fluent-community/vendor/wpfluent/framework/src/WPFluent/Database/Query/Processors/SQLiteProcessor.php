@@ -36,8 +36,8 @@ class SQLiteProcessor extends Processor
                 $matches
             ) === 1 ? $matches[1] : null;
 
-            // Refactor "match" with "switch"
             $generationType = null;
+            
             if ($isGenerated) {
                 switch ((int) $result->extra) {
                     case 3:

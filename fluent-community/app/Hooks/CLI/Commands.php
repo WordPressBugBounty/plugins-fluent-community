@@ -33,18 +33,22 @@ class Commands
     {
         $xProfiles = \FluentCommunity\App\Models\XProfile::all();
 
+        $progress = \WP_CLI\Utils\make_progress_bar('Recalculating Points', count($xProfiles));
+
         foreach ($xProfiles as $xProfile) {
+
+            $progress->tick();
+
             $currentPoint = LeaderBoardHelper::recalculateUserPoints($xProfile->user_id);
             if ($currentPoint > $xProfile->total_points) {
                 $oldPoints = $xProfile->total_points;
                 $xProfile->total_points = $currentPoint;
                 $xProfile->save();
-
                 do_action('fluent_community/user_points_updated', $xProfile, $oldPoints);
-
-                \WP_CLI::line('Recalculated Points for User: ' . $xProfile->display_name . ' - ' . $oldPoints . ' to ' . $currentPoint);
             }
         }
+
+        $progress->finish();
 
         \WP_CLI::success('Points Recalculated Successfully for ' . count($xProfiles) . ' users');
     }

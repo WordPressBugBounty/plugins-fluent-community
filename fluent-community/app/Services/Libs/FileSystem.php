@@ -61,9 +61,20 @@ class FileSystem
 
         $uploadOverrides = ['test_form' => false];
 
+        $uploadedFiles = [];
+
         foreach ((array)$files as $file) {
             $filesArray = $file->toArray();
-            $uploadedFiles[] = \wp_handle_upload($filesArray, $uploadOverrides);
+            $originalName = $filesArray['name'];
+            $uploadedFile = \wp_handle_upload($filesArray, $uploadOverrides);
+
+            if (isset($uploadedFile['error'])) {
+                $uploadedFiles[] = new \WP_Error('upload_error', $uploadedFile['error']);
+            }
+
+            $uploadedFile['original_name'] = $originalName;
+
+            $uploadedFiles[] = $uploadedFile;
         }
 
         return $uploadedFiles;

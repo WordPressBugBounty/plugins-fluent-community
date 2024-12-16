@@ -10,6 +10,7 @@ use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\DailyDigest;
 use FluentCommunity\App\Services\Libs\Mailer;
@@ -324,10 +325,8 @@ class EmailNotificationHandler
         }
 
         $message = $feed->message;
-        $pattern = '/(?<!\S)@everyone(?!\S)/';
 
-        // match if the message contains @everyone
-        if (!preg_match($pattern, $message)) {
+        if(!FeedsHelper::hasEveryoneTag($message)) {
             return true;
         }
 

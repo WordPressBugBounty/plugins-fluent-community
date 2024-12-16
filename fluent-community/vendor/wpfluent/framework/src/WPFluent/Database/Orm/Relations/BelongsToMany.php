@@ -3,7 +3,6 @@
 namespace FluentCommunity\Framework\Database\Orm\Relations;
 
 use Closure;
-use FluentCommunity\Framework\Database\Query\Grammars\Grammar;
 use InvalidArgumentException;
 use FluentCommunity\Framework\Support\Str;
 use FluentCommunity\Framework\Support\Helper;
@@ -12,6 +11,7 @@ use FluentCommunity\Framework\Database\Orm\Builder;
 use FluentCommunity\Framework\Database\Orm\Collection;
 use FluentCommunity\Framework\Support\ArrayableInterface;
 use FluentCommunity\Framework\Database\Orm\ModelNotFoundException;
+use FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar;
 use FluentCommunity\Framework\Database\Orm\Relations\Concerns\AsPivot;
 use FluentCommunity\Framework\Database\UniqueConstraintViolationException;
 use FluentCommunity\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
@@ -1442,8 +1442,8 @@ class BelongsToMany extends Relation
 
             $grammar = $this->query->getQuery()->getGrammar();
 
-            if ($grammar instanceof Grammar && $grammar->useLegacyGroupLimit($this->query->getQuery())) {
-                $column = 'pivot_'.Helper::last(explode('.', $column));
+            if ($grammar instanceof MySqlGrammar && $grammar->useLegacyGroupLimit($this->query->getQuery())) {
+                $column = 'pivot_'.last(explode('.', $column));
             }
 
             $this->query->groupLimit($value, $column);

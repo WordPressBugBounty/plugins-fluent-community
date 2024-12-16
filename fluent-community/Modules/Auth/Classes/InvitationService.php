@@ -195,6 +195,24 @@ class InvitationService
         return $inviation;
     }
 
+    public static function createLinkInvite($data)
+    {
+        $formattedData = array_filter([
+            'message'          => '',
+            'user_id'          => $data['user_id'],
+            'status'           => 'active',
+            'post_id'          => $data['space_id'],
+            'message_rendered' => md5($data['space_id'] . '_' . time() . '_' . wp_generate_uuid4(10) . '_' . $data['user_id']),
+            'meta'             => Arr::only($data, ['title', 'limit', 'expire_date'])
+        ]);
+
+        $inviation = Invitation::create($formattedData);
+
+        do_action('fluent_community/invitation_link_created', $inviation);
+
+        return $inviation;
+    }
+
     public static function sendInvitationEmail(Invitation $invitation)
     {
         $xProfile = $invitation->xprofile;

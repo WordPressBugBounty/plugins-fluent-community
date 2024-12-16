@@ -55,7 +55,7 @@ class CourseController extends Controller
 
             $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
-            if(Arr::get($course->settings, 'hide_members_count') != 'yes') {
+            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
                 $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
             } else {
                 $course->studentsCount = 0;
@@ -64,7 +64,7 @@ class CourseController extends Controller
 
         return [
             'courses'           => $courses,
-            'course_categories' => $request->get('with_categories') ?  CourseHelper::getCourseCategories() : []
+            'course_categories' => $request->get('with_categories') ? CourseHelper::getCourseCategories() : []
         ];
     }
 

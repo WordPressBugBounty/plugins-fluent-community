@@ -38,11 +38,12 @@ class ProfileController extends Controller
             'website'                    => Arr::get($xprofile->meta, 'website'),
             'social_links'               => (object)Arr::get($xprofile->meta, 'social_links', []),
             'status'                     => $xprofile->status,
-            'badge_slugs'                 => (array) Arr::get($xprofile->meta, 'badge_slug', []),
+            'badge_slugs'                => (array)Arr::get($xprofile->meta, 'badge_slug', []),
             'compilation_score'          => $xprofile->getCompletionScore(),
             'total_points'               => $xprofile->total_points,
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
+
 
         $isOwn = $xprofile->user_id == get_current_user_id();
 
@@ -55,6 +56,47 @@ class ProfileController extends Controller
             $profile['can_change_username'] = $isAdmin || Utility::getPrivacySetting('can_customize_username') === 'yes';
             $profile['can_change_email'] = current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn);
         }
+
+        $profileBaseUrl = Helper::baseUrl('u/' . $xprofile->username . '/');
+
+        $profile['profile_navs'] = [
+            [
+                'title' => __('About', 'fluent-community'),
+                'url'   => $profileBaseUrl,
+                'route' => [
+                    'name' => 'user_profile'
+                ]
+            ],
+            [
+                'title' => __('Posts', 'fluent-community'),
+                'url'   => $profileBaseUrl . 'posts',
+                'route' => [
+                    'name' => 'user_profile_feeds'
+                ]
+            ]
+        ];
+
+        if ($profile['canViewUserSpaces']) {
+            $profile['profile_navs'][] = [
+                'title' => __('Spaces', 'fluent-community'),
+                'url'   => $profileBaseUrl . 'spaces',
+                'route' => [
+                    'name' => 'user_spaces'
+                ]
+            ];
+        }
+
+        $profile['profile_navs'][] = [
+            'title' => __('Comments', 'fluent-community'),
+            'url'   => $profileBaseUrl . 'comments',
+            'route' => [
+                'name' => 'user_comments'
+            ]
+        ];
+
+        $profile['profile_nav_actions'] = [];
+
+        $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile);
 
         return [
             'profile' => $profile
@@ -196,7 +238,7 @@ class ProfileController extends Controller
             }
 
             if (Helper::isFeatureEnabled('user_badge')) {
-                $badgeSlug = (array) Arr::get($data, 'badge_slugs', []);
+                $badgeSlug = (array)Arr::get($data, 'badge_slugs', []);
                 $meta['badge_slug'] = $badgeSlug;
             }
         } else if (Utility::getPrivacySetting('can_customize_username')) {
@@ -418,7 +460,6 @@ class ProfileController extends Controller
             if ($group->spaces->isEmpty()) {
                 continue;
             }
-
             $formattedSpaces = [];
             foreach ($group->spaces as $space) {
 
@@ -439,7 +480,6 @@ class ProfileController extends Controller
                     'pref'  => $pref
                 ];
             }
-
             if ($formattedSpaces) {
                 $formattedSpaceGroups[] = [
                     'id'     => $group->id,
@@ -447,6 +487,45 @@ class ProfileController extends Controller
                     'spaces' => $formattedSpaces
                 ];
             }
+        }
+
+
+        // let's find the other spaces
+        $otherSpaces = Space::whereHas('members', function ($q) use ($xProfile) {
+            $q->where('user_id', $xProfile->user_id);
+        })
+            ->whereNull('parent_id')
+            ->orderBy('title', 'ASC')
+            ->get();
+
+        if (!$otherSpaces->isEmpty()) {
+
+            $formattedSpaces = [];
+
+            foreach ($otherSpaces as $space) {
+                $pref = '';
+                if (isset($spaceWisePrefs[$space->id])) {
+                    $perfs = (array)$spaceWisePrefs[$space->id];
+                    if (!empty($perfs['np_by_member_mail'])) {
+                        $pref = 'all_member_posts';
+                    } else if (!empty($perfs['np_by_admin_mail'])) {
+                        $pref = 'admin_only_posts';
+                    }
+                }
+
+                $formattedSpaces[] = [
+                    'id'    => $space->id,
+                    'title' => $space->title,
+                    'icon'  => $space->getIconMark(),
+                    'pref'  => $pref
+                ];
+            }
+
+            $formattedSpaceGroups[] = [
+                'id'     => 'other_space_group',
+                'title'  => __('Other Spaces', 'fluent-community'),
+                'spaces' => $formattedSpaces
+            ];
         }
 
         $digestDay = (string)Arr::get($emailPref, 'digest_mail_day', 'tue');

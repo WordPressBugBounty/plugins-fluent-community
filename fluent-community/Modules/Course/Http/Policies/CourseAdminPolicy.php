@@ -3,9 +3,9 @@
 namespace FluentCommunity\Modules\Course\Http\Policies;
 
 use FluentCommunity\App\Http\Policies\BasePolicy;
-use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Http\Request\Request;
+use FluentCommunity\Modules\Course\Model\Course;
 
 class CourseAdminPolicy extends BasePolicy
 {
@@ -75,8 +75,21 @@ class CourseAdminPolicy extends BasePolicy
             return false;
         }
 
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+
         $user = User::find($userId);
 
-        return $user->hasSpaceManageAccess();
+        if ($courseId = $request->get('cousre_id')) {
+            $course = Course::find($courseId);
+            if (!$course) {
+                return false;
+            }
+
+            return $course->isCourseAdmin($user);
+        }
+
+        return $user->hasCourseCreatorAccess();
     }
 }

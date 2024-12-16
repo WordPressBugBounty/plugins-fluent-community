@@ -165,15 +165,19 @@ class BaseSpace extends Model
             return true;
         }
 
-        $membership = $this->getMembership($userId);
-        if (!$membership) {
-            return false;
-        }
-
         $roles = ['admin'];
 
         if ($checkModerator) {
+            $user = User::find($userId);
+            if ($user && $user->hasCommunityModeratorAccess()) {
+                return true;
+            }
             $roles[] = 'moderator';
+        }
+
+        $membership = $this->getMembership($userId);
+        if (!$membership) {
+            return false;
         }
 
         return in_array($membership->pivot->role, $roles);
@@ -217,20 +221,9 @@ class BaseSpace extends Model
         }
         
         if (isset($data['settings'])) {
-            $shapSvg = '';
-            if (!empty($data['settings']['shape_svg'])) {
-                $shapSvg = CustomSanitizer::sanitizeSvg($data['settings']['shape_svg']);
-            }
+            $settings = CustomSanitizer::santizeSpaceSettings($data['settings']);
 
             $exisitingSetting = $this->settings;
-            $settings = Arr::only(fluentCommunitySanitizeArray($data['settings']), array_keys($this->defaultSettings()));
-
-            if ($shapSvg) {
-                $settings['shape_svg'] = $shapSvg;
-            } else if (!empty($settings['emoji'])) {
-                $settings['emoji'] = CustomSanitizer::sanitizeEmoji($settings['emoji']);
-            }
-
             $settings['links'] = Arr::get($exisitingSetting, 'links', []);
 
             if (isset($settings['og_image'])) {

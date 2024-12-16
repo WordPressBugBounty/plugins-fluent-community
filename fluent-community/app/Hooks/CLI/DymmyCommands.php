@@ -15,17 +15,22 @@ use FluentCommunity\Framework\Support\Str;
 
 class DymmyCommands
 {
+    /*
+     * Seed the database with dummy data
+     * usage: wp fluent_community_dummy seed --count=5000
+     */
     public function seed($args, $assoc_args)
     {
-        $baseCount = Arr::get($assoc_args, 'count', 5000);
+        $baseCount = Arr::get($assoc_args, 'count', 10000);
         $userCount = $baseCount;
-        $postCount = $userCount * 2;
+        $postCount = $userCount * 3;
         $commentCount = $postCount * 5;
         $postReactionCount = $postCount * 5;
         $commentReactionCount = $commentCount * 3;
 
         $this->create_users($args, ['count' => $userCount]);
         $this->create_spaces($args, ['count' => 5]);
+        $this->assign_users_to_spaces($args, []);
         $this->create_posts($args, ['count' => $postCount, 'with_space' => 'yes']);
         $this->create_comments($args, ['count' => $commentCount]);
         $this->add_post_reactions($args, ['count' => $postReactionCount]);
@@ -34,6 +39,10 @@ class DymmyCommands
         (new Commands)->recalculate_user_points();
     }
 
+    /*
+     * Create 5 Dummy Spaces
+     * usage: wp fluent_community_dummy create_spaces --count=5
+     */
     public function create_spaces($args, $assoc_args = [])
     {
         $count = Arr::get($assoc_args, 'count', 5);
@@ -74,48 +83,28 @@ class DymmyCommands
         \WP_CLI::line("Spaces created: $count");
     }
 
-    public function assign_users_to_spaces()
-    {
-        $spaces = Space::all();
-        $profiles = User::all();
-
-        foreach ($spaces as $space) {
-            \WP_CLI::line("Assigning users to space: " . $space->title);
-            foreach ($profiles as $index => $profile) {
-                if ($space->getMembership($profile->ID)) {
-                    continue;
-                }
-
-                $space->members()->attach($profile->ID, [
-                    'role'   => 'member',
-                    'status' => 'active'
-                ]);
-
-                if ($index % 100 === 0) {
-                    \WP_CLI::line("Assigned $index users to space: " . $space->title);
-                }
-
-            }
-        }
-
-        \WP_CLI::line("All Done: ");
-    }
-
     /*
-     * usage: wp fluent_com_dummy create_users --count=1000
+     * Create 10000 Dummy Users
+     * usage: wp fluent_community_dummy create_users --count=5000
      */
     public function create_users($args, $assoc_args)
     {
         $count = Arr::get($assoc_args, 'count', 10000);
+
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Creating Users', $count, $interval = 100 );
+
         // let's create the wp users with subscriber role
         for ($i = 0; $i < $count; $i++) {
+
+            $progress->tick();
+
             $names = $this->getRandomName();
             $firstName = $names['first_name'];
             $lastName = $names['last_name'];
             $userId = wp_insert_user([
-                'user_login'   => 'user_' . $i,
+                'user_login'   => 'user_' . $i. '_' . time(),
                 'user_pass'    => wp_generate_password(),
-                'user_email'   => 'user_' . $i . '@example.com',
+                'user_email'   => 'user_' . $i. time() . '@example.com',
                 'display_name' => $firstName . ' ' . $lastName,
                 'first_name'   => $firstName,
                 'last_name'    => $lastName,
@@ -125,22 +114,77 @@ class DymmyCommands
             $user->syncXProfile();
         }
 
+        $progress->finish();
+
         \WP_CLI::line("Users created: $count");
     }
 
+    /*
+     * Assign All users to all spaces or selected spaces
+     * usage: wp fluent_community_dummy assign_users_to_spaces --space_ids=1,2,3
+     */
+    public function assign_users_to_spaces($args, $assoc_args = [])
+    {
+
+        $providedSpaceIds = Arr::get($assoc_args, 'space_ids', '');
+
+        if ($providedSpaceIds) {
+            $spaceIds = explode(',', $providedSpaceIds);
+            $spaces = Space::whereIn('id', $spaceIds)->get();
+        } else {
+            $spaces = Space::all();
+        }
+
+        if($spaces->isEmpty()) {
+            \WP_CLI::line("No spaces found");
+            return;
+        }
+
+        $profiles = User::all();
+
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Assigning Users to Spaces', $profiles->count() * $spaces->count(), $interval = 100 );
+
+        foreach ($spaces as $space) {
+            \WP_CLI::line("Assigning users to space: " . $space->title);
+            foreach ($profiles as $index => $profile) {
+                $progress->tick();
+                if ($space->getMembership($profile->ID)) {
+                    continue;
+                }
+                $space->members()->attach($profile->ID, [
+                    'role'   => 'member',
+                    'status' => 'active'
+                ]);
+            }
+        }
+
+        $progress->finish();
+    }
+
+
+    /*
+     * Create 10000 Dummy Posts
+     * usage: wp fluent_community_dummy create_posts --count=10000
+     */
     public function create_posts($args, $assoc_args)
     {
+
         $totalUsersCount = XProfile::query()->count();
 
-        $withSpace = Arr::get($assoc_args, 'with_space') == 'yes';
+        $withSpace = Arr::get($assoc_args, 'with_space', 'yes') == 'yes';
+        $count = Arr::get($assoc_args, 'count', 1000);
 
         if ($withSpace) {
             $spaces = Space::all();
             $spaceIds = $spaces->pluck('id')->toArray();
         }
 
-        $count = Arr::get($assoc_args, 'count', 1000);
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Generating Posts', $count, $interval = 100 );
+
         for ($i = 0; $i < $count; $i++) {
+
+            $progress->tick();
+
             // get a random user
             $randomUserId = mt_rand(1, $totalUsersCount);
 
@@ -166,18 +210,29 @@ class DymmyCommands
             $feed->save();
         }
 
+        $progress->finish();
+
         \WP_CLI::line("Posts created: $count");
     }
-
+    
+    /*
+     * Create 10000 Dummy Comments
+     * usage: wp fluent_community_dummy create_comments --count=10000
+     */
     public function create_comments($args, $assoc_args)
     {
         $totalUsersCount = XProfile::query()->count();
         $totalPostCount = Feed::query()->count();
-        $count = Arr::get($assoc_args, 'count', 1000);
+        $count = Arr::get($assoc_args, 'count', 10000);
 
         $createdCount = 0;
 
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Generating Comments', $count, $interval = 100 );
+
         for ($i = 0; $i < $count; $i++) {
+
+            $progress->tick();
+
             // get a random user
             $randomUserId = mt_rand(1, $totalUsersCount);
             $postId = mt_rand(1, $totalPostCount);
@@ -210,17 +265,27 @@ class DymmyCommands
             $feed->save();
         }
 
+        $progress->finish();
+
         \WP_CLI::line("Comments created: $createdCount");
     }
 
+    /*
+     * Create 10000 Dummy Reactions for Posts
+     * usage: wp fluent_community_dummy add_post_reactions --count=10000
+     */
     public function add_post_reactions($args, $assoc_args)
     {
         $totalUsersCount = XProfile::query()->count();
         $totalPostCount = Feed::query()->count();
         $count = Arr::get($assoc_args, 'count', 1000);
 
+        // Create a progress bar for CLI
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Generating Post Reactions', $count, $interval = 100 );
+
         $createdCount = 0;
         for ($i = 0; $i < $count; $i++) {
+            $progress->tick();
             $userId = mt_rand(1, $totalUsersCount);
             $postId = mt_rand(1, $totalPostCount);
             $post = Feed::find($postId);
@@ -249,18 +314,29 @@ class DymmyCommands
             $createdCount++;
         }
 
+        $progress->finish();
+
         \WP_CLI::line("Reaction created: $createdCount");
     }
 
+    /*
+     * Create 10000 Dummy Reactions for Comments
+     * usage: wp fluent_community_dummy add_comment_reactions --count=10000
+     */
     public function add_comment_reactions($args, $assoc_args)
     {
         $totalUsersCount = XProfile::query()->count();
         $totalComments = Comment::query()->count();
-        $count = Arr::get($assoc_args, 'count', 1000);
+        $count = Arr::get($assoc_args, 'count', 10000);
 
         $createdCount = 0;
 
+        $progress = \WP_CLI\Utils\make_progress_bar( 'Generating Comment Reactions', $count, $interval = 100 );
+
         for ($i = 0; $i < $count; $i++) {
+
+            $progress->tick();
+
             $userId = mt_rand(1, $totalUsersCount);
             $commentId = mt_rand(1, $totalComments);
             $comment = Comment::find($commentId);
@@ -290,10 +366,11 @@ class DymmyCommands
             $createdCount++;
         }
 
-        \WP_CLI::line("Reaction created: $createdCount");
+        $progress->finish();
+
+        \WP_CLI::line("Comment Reaction created: $createdCount");
 
     }
-
 
     protected function getWords($count)
     {

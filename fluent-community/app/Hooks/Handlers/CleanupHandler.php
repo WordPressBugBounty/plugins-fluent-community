@@ -39,7 +39,6 @@ class CleanupHandler
         }, 10, 2);
 
         add_action('deleted_user', [$this, 'handleUserDeleted'], 10, 2);
-
     }
 
     public function handleFeedDeleted($feed)

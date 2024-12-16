@@ -174,7 +174,7 @@ class Feed extends Model
             if (in_array('post_content', $in)) {
                 $query->where(array_shift($fields), 'LIKE', "%$search%");
                 foreach ($fields as $field) {
-                    $query->orWhere($field, 'LIKE', "$search%");
+                    $query->orWhere($field, 'LIKE', "%$search%");
                 }
                 if ($in && in_array('post_comments', $in)) {
                     $query->orWhereHas('comments', function ($q) use ($search) {
@@ -360,12 +360,12 @@ class Feed extends Model
             return false;
         }
 
-        return (bool)Reaction::where('object_id', $this->id)
-            ->select(['id'])
+        return Reaction::select(['id'])
+            ->where('object_id', $this->id)
             ->where('object_type', 'feed')
             ->where('user_id', $userId)
             ->where('type', $type)
-            ->first();
+            ->exists();
     }
 
     public function hasEditAccess($userId)

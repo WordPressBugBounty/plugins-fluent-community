@@ -37,7 +37,6 @@ class SpaceController extends Controller
     public function create(Request $request)
     {
         $currentUser = $this->getUser(true);
-        $currentUser->verifyCommunityPermission('community_admin');
 
         $data = $request->get('space', []);
 
@@ -69,20 +68,10 @@ class SpaceController extends Controller
             'slug'        => $data['slug'],
             'privacy'     => $data['privacy'],
             'description' => sanitize_textarea_field($data['description']),
-            'settings'    => [
-                'restricted_post_only' => Arr::get($data, 'settings.restricted_post_only', 'no'),
-                'emoji'                => CustomSanitizer::sanitizeEmoji(Arr::get($data, 'settings.emoji', '')),
-                'can_request_join'     => Arr::get($data, 'settings.can_request_join', 'no'),
-                'custom_lock_screen'   => Arr::get($data, 'settings.custom_lock_screen', 'no'),
-                'layout_style'         => Arr::get($data, 'settings.layout_style', 'timeline'),
-                'show_sidebar'         => Arr::get($data, 'settings.show_sidebar', 'yes'),
-                'shape_svg'            => CustomSanitizer::sanitizeSvg(Arr::get($data, 'settings.shape_svg', '')),
-                'hide_members_count'   => $serial
-            ],
+            'settings'    => CustomSanitizer::santizeSpaceSettings(Arr::get($data, 'settings', [])),
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
             'serial'      => $serial ?: 1
         ]);
-
 
 
         $ogImage = Arr::get($data, 'settings.og_image', '');
@@ -141,6 +130,7 @@ class SpaceController extends Controller
 
     public function discover(Request $request)
     {
+        $start = microtime(true);
         $currentUser = $this->getUser();
 
         $spaces = Space::orderBy('title', 'ASC')
@@ -170,7 +160,8 @@ class SpaceController extends Controller
         }
 
         return [
-            'spaces' => $spaces
+            'spaces'         => $spaces,
+            'execution_time' => microtime(true) - $start
         ];
     }
 
@@ -180,14 +171,7 @@ class SpaceController extends Controller
         $space = Space::where('slug', $spaceSlug)
             ->firstOrFail();
 
-        $space->permissions = $space->getUserPermissions($user);
-        $space->description_rendered = FeedsHelper::mdToHtml($space->description);
-        $space->membership = $space->getMembership(get_current_user_id());
-        $space->topics = Utility::getTopicsBySpaceId($space->id);
-
-        if (!Helper::isSiteAdmin()) {
-            $space->lockscreen_config = LockscreenService::getLockscreenConfig($space, $space->membership);
-        }
+        $space = $space->formatSpaceData($user);
 
         if ($space->privacy == 'secret' && !$space->membership) {
             return $this->sendError([
@@ -214,17 +198,16 @@ class SpaceController extends Controller
             ]);
         }
 
-        $space->verifyUserPermisson($this->getUser(), 'community_admin');
-
         $data = $request->get('data', []);
 
-        if (!empty($data['title'])) {
-            $taken = Space::where('title', $data['title'])
+        if (!empty($data['slug'])) {
+            $taken = Space::where('slug', $data['slug'])
                 ->where('id', '!=', $space->id)
                 ->first();
+
             if ($taken) {
                 return $this->sendError([
-                    'message' => 'Space title is already taken. Please use a different title'
+                    'message' => 'Slug is already taken. Please use a different slug'
                 ]);
             }
         }
@@ -283,6 +266,7 @@ class SpaceController extends Controller
     public function patchById(Request $request, $id)
     {
         $space = Space::findOrFail($id);
+
         return $this->patchBySlug($request, $space->slug);
     }
 
@@ -299,6 +283,7 @@ class SpaceController extends Controller
                 'permission_failed' => true
             ]);
         }
+
         $search = $request->getSafe('search', 'sanitize_text_field');
 
         $pendingCount = 0;
@@ -443,12 +428,6 @@ class SpaceController extends Controller
             ]);
         }
 
-        if (!Helper::isSiteAdmin()) {
-            return $this->sendError([
-                'message' => 'You are not allowed to delete this community'
-            ]);
-        }
-
         do_action('fluent_community/space/before_delete', $space);
 
         Comment::whereHas('post', function ($q) use ($space) {
@@ -496,9 +475,6 @@ class SpaceController extends Controller
                 'message' => __('Selected user is not active', 'fluent-community')
             ]);
         }
-
-        $admin = User::find(get_current_user_id());
-        $admin->verifySpacePermission('can_add_member', $space);
 
         $pivot = SpaceUserPivot::bySpace($space->id)
             ->byUser($userId)
@@ -563,9 +539,6 @@ class SpaceController extends Controller
 
         $userId = $request->get('user_id');
 
-        $admin = User::find(get_current_user_id());
-        $admin->verifySpacePermission('can_remove_member', $space);
-
         $pivot = SpaceUserPivot::bySpace($space->id)
             ->byUser($userId)
             ->first();
@@ -602,19 +575,33 @@ class SpaceController extends Controller
         $isMod = $currentUser->isCommunityModerator() && current_user_can('list_users');
 
         $spaceId = $request->get('space_id');
+        $space = Space::findOrFail($spaceId);
+
+        if (!$space->verifyUserPermisson($currentUser, 'can_add_member', false)) {
+            return $this->sendError([
+                'message' => 'You are not allowed to add members to this space'
+            ]);
+        }
 
         $selects = ['ID', 'display_name'];
-
         if ($isMod) {
             $selects[] = 'user_email';
         }
 
-        $users = User::whereDoesntHave('spaces', function ($q) use ($spaceId) {
-            return $q->where('space_id', $spaceId);
-        })
-            ->select($selects)
+        $userIds = User::select(['ID'])
+            ->whereDoesntHave('space_pivot', function ($q) use ($space) {
+                $q->where('space_id', $space->id);
+            })
+            ->limit(100)
             ->searchBy($request->get('search'))
-            ->paginate();
+            ->get()
+            ->pluck('ID')
+            ->toArray();
+
+
+        $users = User::select($selects)
+            ->whereIn('ID', $userIds)
+            ->paginate(100);
 
         return [
             'users' => $users
@@ -630,8 +617,6 @@ class SpaceController extends Controller
                 'message' => 'Space not found'
             ]);
         }
-
-        $space->verifyUserPermisson($this->getUser(), 'community_admin');
 
         $links = $request->get('links', []);
 
@@ -652,13 +637,6 @@ class SpaceController extends Controller
 
     public function getSpaceGroups(Request $request)
     {
-        $user = $this->getUser(true);
-        if (!$user->isCommunityModerator()) {
-            return $this->sendError([
-                'message' => 'You are not allowed to create space group'
-            ]);
-        }
-
         if ($request->get('options_only')) {
             $groups = SpaceGroup::orderBy('serial', 'ASC')
                 ->select(['id', 'title'])
@@ -669,6 +647,7 @@ class SpaceController extends Controller
         }
 
         $user = $this->getUser();
+
         $groups = Helper::getAllCommunityGroups($user, false);
 
         foreach ($groups as $group) {
@@ -684,13 +663,6 @@ class SpaceController extends Controller
 
     public function createSpaceGroup(Request $request)
     {
-        $user = $this->getUser(true);
-        if (!$user->isCommunityModerator()) {
-            return $this->sendError([
-                'message' => 'You are not allowed to create space group'
-            ]);
-        }
-
         $data = $request->all();
 
         $this->validate($data, [
@@ -721,13 +693,6 @@ class SpaceController extends Controller
 
     public function updateSpaceGroup(Request $request, $groupId)
     {
-        $user = $this->getUser();
-        if (!$user || !$user->isCommunityModerator()) {
-            return $this->sendError([
-                'message' => 'You are not allowed to create space group'
-            ]);
-        }
-
         $group = SpaceGroup::findOrFail($groupId);
         $data = $request->all();
 
@@ -765,14 +730,6 @@ class SpaceController extends Controller
 
     public function deleteSpaceGroup(Request $request, $groupId)
     {
-
-        $user = $this->getUser();
-        if (!$user || !$user->isCommunityModerator()) {
-            return $this->sendError([
-                'message' => 'You are not allowed to create space group'
-            ]);
-        }
-
         $group = SpaceGroup::findOrFail($groupId);
 
         if (!$group->spaces->isEmpty()) {
@@ -830,7 +787,7 @@ class SpaceController extends Controller
         $group = SpaceGroup::findOrFail($groupId);
 
         $space->update([
-            'parent_id' => $groupId
+            'parent_id' => $group->id
         ]);
 
         return [

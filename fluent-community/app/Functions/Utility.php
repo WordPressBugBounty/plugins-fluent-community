@@ -100,6 +100,7 @@ class Utility
             'cloud_storage'       => 'no',
             'invitation'          => 'yes',
             'user_badge'          => 'yes',
+            'has_crm_sync'        => 'no'
         ];
 
 
@@ -191,6 +192,7 @@ class Utility
             'icon_on_header_menu'  => 'no',
             'affiliate_id'         => '',
             'rich_post_layout'     => 'classic',
+            'member_list_layout'   => 'classic', // grid, classic
             'post_title_pref'      => 'optional',
         ];
 
@@ -202,6 +204,7 @@ class Utility
             $settings['show_powered_by'] = 'yes';
             $settings['affiliate_id'] = '';
             $settings['rich_post_layout'] = 'classic';
+            $settings['member_list_layout'] = 'classic';
         }
 
         return $settings;
@@ -256,7 +259,7 @@ class Utility
             return $settings;
         });
 
-        if(!empty($settings['enable_gravatar'])) {
+        if (empty($settings['enable_gravatar'])) {
             $settings['enable_gravatar'] = 'yes';
         }
 
@@ -488,7 +491,7 @@ class Utility
 
         $maxRunTime = $maxRunTime - 3;
 
-        return apply_filters('fluent_communutt/max_execution_time', $maxRunTime);
+        return apply_filters('fluent_community/max_execution_time', $maxRunTime);
     }
 
     public static function getColorSchemas()

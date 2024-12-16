@@ -3,6 +3,7 @@
 namespace FluentCommunity\Framework\Http\Request;
 
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Framework\Support\DateTime;
 
 trait InputHelperMethodsTrait
 {
@@ -220,4 +221,25 @@ trait InputHelperMethodsTrait
 			FILTER_NULL_ON_FAILURE
 		);
 	}
+
+    /**
+     * Returns a FluentCommunity\Framework\Framework\Support\Date object.
+     * 
+     * @param  string $key 
+     * @param  string $format
+     * @param  string $tz
+     * @return FluentCommunity\Framework\Framework\Support\Date
+     */
+    public function getDate($key, $format = null, $tz = null)
+    {
+        if (!$value = $this->get($key)) {
+            return null;
+        }
+
+        if (is_null($format)) {
+            return DateTime::parse($value, $tz);
+        }
+
+        return DateTime::createFromFormat($format, $value, $tz);
+    }
 }

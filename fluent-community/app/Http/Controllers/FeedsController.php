@@ -108,11 +108,11 @@ class FeedsController extends Controller
 
         // add $stickyFeed to the first page
         if ($stickyFeed) {
-            $stickyFeed = $this->transformFeed($stickyFeed);
+            $stickyFeed = FeedsHelper::transformFeed($stickyFeed);
         }
 
         $feeds->getCollection()->each(function ($feed) {
-            $this->transformFeed($feed);
+            FeedsHelper::transformFeed($feed);
         });
 
         $data = [
@@ -132,6 +132,8 @@ class FeedsController extends Controller
 
     public function getFeedBySlug(Request $request, $feed_slug)
     {
+        $start = microtime(true);
+
         if ($request->get('context') == 'edit') {
             $feed = Feed::where('slug', $feed_slug)->first();
 
@@ -179,10 +181,11 @@ class FeedsController extends Controller
             ], 404);
         }
 
-        $this->transformFeed($feed);
+        $feed = FeedsHelper::transformFeed($feed);
 
         return [
-            'feed' => $feed
+            'feed'           => $feed,
+            'execution_time' => microtime(true) - $start
         ];
     }
 
@@ -215,7 +218,7 @@ class FeedsController extends Controller
             ->paginate();
 
         $feeds->getCollection()->each(function ($feed) {
-            $this->transformFeed($feed);
+            FeedsHelper::transformFeed($feed);
         });
 
         $data = [
@@ -239,6 +242,7 @@ class FeedsController extends Controller
         $requestData = $request->all();
 
         $data = $this->sanitizeAndValidateData($requestData);
+        $data['user_id'] = $user->ID;
 
         if ($isDulicate = $this->checkForDuplicatePost($user->ID, $data['message'])) {
             return $isDulicate;
@@ -246,11 +250,19 @@ class FeedsController extends Controller
 
         $feed = new Feed();
         $feed->user_id = $user->ID;
+        $space = null;
 
         if ($spaceSlug = $request->get('space')) {
             $data['space_id'] = $this->validateAndSetSpace($spaceSlug, $user);
 
             $space = Space::where('id', $data['space_id'])->first();
+
+            if (!$space) {
+                return $this->sendError([
+                    'message' => __('Please select a valid space to post in.', 'fluent-community')
+                ]);
+            }
+
             if (Arr::get($space->settings, 'topic_required') == 'yes') {
                 $topicIds = (array)$request->get('topic_ids', []);
                 $spaceTopics = Utility::getTopicsBySpaceId($space->id);
@@ -292,9 +304,26 @@ class FeedsController extends Controller
 
         $data = apply_filters('fluent_community/feed/new_feed_data', $data, $requestData);
 
+        $formContentType = (string)Arr::get($requestData, 'content_type', '');
+
+        if ($formContentType) {
+            $data = apply_filters('fluent_community/feed/new_feed_data_type_' . $formContentType, $data, $requestData);
+        }
+
+        if (is_wp_error($data)) {
+            return $this->sendError([
+                'message' => $data->get_error_message(),
+                'errors'  => $data->get_error_data()
+            ]);
+        }
+
         $feed->fill($data);
 
         $feed->save();
+
+        if ($formContentType) {
+            do_action('fluent_community/feed/just_created_type_' . $formContentType, $feed, $requestData);
+        }
 
         if ($mediaItems) {
             $this->saveMediaItems($feed, $mediaItems);
@@ -315,12 +344,13 @@ class FeedsController extends Controller
         }
 
         do_action('fluent_community/feed/created', $feed);
+
         if ($feed->space_id) {
             do_action('fluent_community/space_feed/created', $feed);
         }
 
         return [
-            'feed'                   => $this->transformFeed($feed),
+            'feed'                   => FeedsHelper::transformFeed($feed),
             'message'                => __('Your post has been published', 'fluent-community'),
             'last_fetched_timestamp' => current_time('timestamp')
         ];
@@ -347,6 +377,31 @@ class FeedsController extends Controller
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData, $existingFeed);
 
         $data = apply_filters('fluent_community/feed/update_feed_data', $data, $requestData);
+
+        if (is_wp_error($data)) {
+            return $this->sendError([
+                'message' => $data->get_error_message(),
+                'errors'  => $data->get_error_data()
+            ]);
+        }
+
+        $newContentType = Arr::get($requestData, 'content_type', '');
+        $exisitngContentType = $existingFeed->content_type;
+
+        if ($newContentType != $exisitngContentType) {
+            // Content Type Changed
+            do_action('fluent_community/feed/updating_content_type_old_' . $exisitngContentType, $existingFeed, $newContentType, $requestData);
+        }
+
+        if ($newContentType != 'text') {
+            $data = apply_filters('fluent_community/feed/update_feed_data_type_' . $newContentType, $data, $requestData, $existingFeed);
+            if (is_wp_error($data)) {
+                return $this->sendError([
+                    'message' => $data->get_error_message(),
+                    'errors'  => $data->get_error_data()
+                ]);
+            }
+        }
 
         if ($message != $existingFeed->message) {
             $data['meta']['last_edited'] = [
@@ -405,7 +460,7 @@ class FeedsController extends Controller
         }
 
         return [
-            'feed'    => $this->transformFeed($existingFeed),
+            'feed'    => FeedsHelper::transformFeed($existingFeed),
             'message' => __('Your post has been updated', 'fluent-community')
         ];
     }
@@ -617,7 +672,14 @@ class FeedsController extends Controller
 
         $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', true, $file);
 
-        if ($request->get('resize') && $maxWidth = $request->get('max_width')) {
+        $willResize = $request->get('resize');
+        $maxWidth = $request->get('max_width');
+
+        if ($context = $request->get('context')) {
+            $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
+        }
+
+        if ($willResize && $maxWidth) {
             $upload_dir = wp_upload_dir();
             $fileUrl = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $file['url']);
 
@@ -732,6 +794,8 @@ class FeedsController extends Controller
 
     public function getTicker(Request $request)
     {
+        $start = microtime(true);
+
         do_action('fluent_communit/track_activity');
         $lastLoadedTimeStamp = $request->get('last_fetched_timestamp');
 
@@ -762,7 +826,8 @@ class FeedsController extends Controller
         return apply_filters('fluent_community/feed_ticker', [
             'last_fetched_timestamp'    => current_time('timestamp'),
             'new_items_count'           => $newItemsCount > 10 ? 10 : $newItemsCount,
-            'unread_notification_count' => $notificationCount
+            'unread_notification_count' => $notificationCount,
+            'execution_time'            => microtime(true) - $start
         ]);
     }
 
@@ -793,39 +858,5 @@ class FeedsController extends Controller
         return [
             'html' => $html
         ];
-    }
-
-    private function transformFeed(Feed $feed)
-    {
-        $userId = $this->getUserId();
-        if ($userId) {
-            $feed->has_user_react = $feed->hasUserReact($userId, 'like');
-            $feed->bookmarked = $feed->hasUserReact($userId, 'bookmark');
-
-            $likedIds = FeedsHelper::getLikedIdsByUserFeedId($feed->id, get_current_user_id());
-            $feed->comments->each(function ($comment) use ($likedIds) {
-                if ($likedIds && in_array($comment->id, $likedIds)) {
-                    $comment->liked = 1;
-                }
-            });
-
-            if ($feed->content_type == 'survey') {
-                $votedOptions = $feed->getSurveyCastsByUserId($userId);
-
-                if ($votedOptions) {
-                    $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
-                    foreach ($surveyConfig['options'] as $index => $option) {
-                        if (in_array($option['slug'], $votedOptions)) {
-                            $surveyConfig['options'][$index]['voted'] = true;
-                        }
-                    }
-                    $meta = $feed->meta;
-                    $meta['survey_config'] = $surveyConfig;
-                    $feed->meta = $meta;
-                }
-            }
-        }
-
-        return $feed;
     }
 }

@@ -428,6 +428,16 @@ class FeedsHelper
                 'type'    => Arr::get($surveyConfig, 'type'),
                 'options' => Arr::get($surveyConfig, 'options', [])
             ];
+        } else if ($feed->content_type == 'document') {
+            $documents = Media::where('object_source', 'space_document')
+                ->where('feed_id', $feed->id)
+                ->where('is_active', 1)
+                ->get();
+            $mediaIds = [];
+            foreach ($documents as $document) {
+                $mediaIds[] = $document->getPrivateFileMeta();
+            }
+            $feed->document_ids = $mediaIds;
         } else {
             $mediaImages = Arr::get($feed->meta, 'media_items', []);
             $meta = $feed->meta;
@@ -573,7 +583,6 @@ class FeedsHelper
                     'height'      => Arr::get($singleMedia->settings, 'height'),
                     'media_id'    => $singleMedia->id,
                 ];
-
             } else if ($uploadedMediaItems) {
                 $mediaPreviews = [];
                 foreach ($uploadedMediaItems as $mediaItem) {
@@ -603,5 +612,46 @@ class FeedsHelper
         }
 
         return [$data, $uplaodedDocs];
+    }
+
+    public static function transformFeed(Feed $feed)
+    {
+        $userId = get_current_user_id();
+
+        if ($userId) {
+            $feed->has_user_react = $feed->hasUserReact($userId, 'like');
+            $feed->bookmarked = $feed->hasUserReact($userId, 'bookmark');
+
+            $likedIds = self::getLikedIdsByUserFeedId($feed->id, get_current_user_id());
+            $feed->comments->each(function ($comment) use ($likedIds) {
+                if ($likedIds && in_array($comment->id, $likedIds)) {
+                    $comment->liked = 1;
+                }
+            });
+
+            if ($feed->content_type == 'survey') {
+                $votedOptions = $feed->getSurveyCastsByUserId($userId);
+
+                if ($votedOptions) {
+                    $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
+                    foreach ($surveyConfig['options'] as $index => $option) {
+                        if (in_array($option['slug'], $votedOptions)) {
+                            $surveyConfig['options'][$index]['voted'] = true;
+                        }
+                    }
+                    $meta = $feed->meta;
+                    $meta['survey_config'] = $surveyConfig;
+                    $feed->meta = $meta;
+                }
+            }
+        }
+
+        return $feed;
+    }
+
+    public static function hasEveryoneTag($message) {
+        // Regular expression to match @everyone with possible variations
+        $pattern = '/(^|\s|&#x20;)@everyone(?=\s|&#x20;|[.,!?]|\z)/i';
+        return preg_match($pattern, $message) === 1;
     }
 }

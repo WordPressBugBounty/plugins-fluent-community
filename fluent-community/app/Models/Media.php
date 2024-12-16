@@ -3,6 +3,8 @@
 namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\Helper;
+use FluentCommunity\Framework\Support\Arr;
 
 /**
  *  Meta Model - DB Model for Notifications table
@@ -114,6 +116,11 @@ class Media extends Model
         return apply_filters('fluent_community/media_public_url_' . $this->driver, $this->media_url, $this);
     }
 
+    public function getSignedPublicUrl($time = 3600)
+    {
+        return apply_filters('fluent_community/media_signed_public_url_' . $this->driver, $this->media_url, $this, $time);
+    }
+
     public function deleteFile()
     {
         if ($this->driver == 'local') {
@@ -123,5 +130,32 @@ class Media extends Model
         } else {
             do_action('fluent_community/delete_remote_media_' . $this->driver, $this);
         }
+    }
+
+    public function getFileTitle()
+    {
+        $title = Arr::get($this->settings, 'title');
+
+        if (!$title) {
+            $title = Arr::get($this->settings, 'original_name') ?? basename($this->media_url);
+        }
+
+        return $title;
+    }
+
+    public function getPrivateDownloadUrl()
+    {
+        return Helper::baseUrl('?fcom_action=download_document&media_key=' . $this->media_key . '&media_id=' . $this->id);
+    }
+
+    public function getPrivateFileMeta()
+    {
+        return [
+            'id'        => $this->id,
+            'url'       => $this->getPrivateDownloadUrl(),
+            'media_key' => $this->media_key,
+            'title'     => $this->getFileTitle(),
+            'type'      => $this->media_type
+        ];
     }
 }

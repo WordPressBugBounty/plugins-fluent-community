@@ -627,6 +627,37 @@ class Arr
     }
 
     /**
+     * Select an array of values from an array.
+     *
+     * @param  array  $array
+     * @param  array|string  $keys
+     * @return array
+     */
+    public static function select($array, $keys)
+    {
+        $keys = static::wrap($keys);
+
+        return array_map(function ($item) use ($keys) {
+            $result = [];
+            
+            $item = (array) $item;
+            
+            foreach ($keys as $key) {
+                
+                if (static::accessible($item) && static::has($item, $key)) {
+                    
+                    [$first] = explode('.', $key);
+
+                    $result[$first] = static::get($item, $first);
+                }
+            }
+
+            return $result;
+
+        }, (array) $array);
+    }
+
+    /**
      * Pluck an array of values from an array.
      *
      * @param  iterable  $array
@@ -821,12 +852,14 @@ class Arr
      */
     public static function shuffle($array, $seed = null)
     {
-        if (is_null($seed)) {
-            shuffle($array);
-        } else {
+        if (!is_null($seed)) {
             mt_srand($seed);
-            shuffle($array);
+            usort($array, function () {
+                return mt_rand(-1, 1);
+            });
             mt_srand();
+        } else {
+            shuffle($array);
         }
 
         return $array;

@@ -149,4 +149,34 @@ class Invitation extends Model
             'invitation_token' => $this->message_rendered
         ], Helper::baseUrl('/'));
     }
+
+    public function isValid()
+    {
+        if ($this->message) {
+            return $this->status == 'pending';
+        }
+
+        if ($this->status != 'active') {
+            return false;
+        }
+
+        $meta = $this->meta;
+
+        $expireDate = Arr::get($meta, 'expire_date', '');
+        $limit = Arr::get($meta, 'limit', 0);
+
+        if ($expireDate && strtotime($expireDate) < strtotime(date('Y-m-d', current_time('timestamp')))) {
+            $this->status = 'expired';
+            $this->save();
+            return false;
+        }
+
+        if ($limit && $this->reactions_count >= $limit) {
+            $this->status = 'expired';
+            $this->save();
+            return false;
+        }
+
+        return true;
+    }
 }

@@ -330,7 +330,7 @@ class Helper
             'auth_redirect'           => '',
             'restricted_role_content' => 'Sorry, you can not access to this page. Only authorized users can access this page.',
             'auth_url'                => '',
-            'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth'),
+            'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth')
         ];
 
         $settings = wp_parse_args($settings, $defaults);
@@ -1367,7 +1367,7 @@ class Helper
             $space = BaseSpace::withoutGlobalScopes()->find($space);
         }
 
-        if (!$space) {
+        if (!$space || !$space instanceof BaseSpace) {
             return false;
         }
 
@@ -1443,7 +1443,7 @@ class Helper
             $space = BaseSpace::query()->withoutGlobalScopes()->find($space);
         }
 
-        if (!$space) {
+        if (!$space || !$space instanceof BaseSpace) {
             return false;
         }
 

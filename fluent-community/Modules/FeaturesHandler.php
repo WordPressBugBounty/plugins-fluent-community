@@ -20,12 +20,6 @@ class FeaturesHandler
         add_action('init', [$this, 'maybeOembedRequest']);
 
         add_action('fluent_community/rendering_headless_portal', [$this, 'loadHeadlessPortalAssets']);
-
-        // require the CLI
-        if (defined('WP_CLI') && WP_CLI) {
-            \WP_CLI::add_command('fluent_community', '\FluentCommunity\Modules\CLI\Commands');
-            \WP_CLI::add_command('fluent_com_dummy', '\FluentCommunity\Modules\CLI\DummyCommands');
-        }
     }
 
     public function loadHeadlessPortalAssets($data)

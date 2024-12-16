@@ -56,7 +56,7 @@ class CourseAdminController extends Controller
         ]);
 
         $parentId = $request->get('parent_id');
-        if($parentId) {
+        if ($parentId) {
             $serial = BaseSpace::where('parent_id', $parentId)->max('serial') + 1;
         } else {
             $serial = BaseSpace::max('serial') + 1;
@@ -357,8 +357,6 @@ class CourseAdminController extends Controller
             ]);
         }
 
-        $admin = User::find(get_current_user_id());
-        $admin->verifySpacePermission('can_add_member', $course);
         $enrolled = CourseHelper::enrollCourse($course, $userId, 'by_admin');
 
         if (!$enrolled) {
@@ -375,10 +373,6 @@ class CourseAdminController extends Controller
     public function removeStudent(Request $request, $courseId, $studentId)
     {
         $course = Course::findOrFail($courseId);
-
-        $admin = User::find(get_current_user_id());
-
-        $admin->verifySpacePermission('can_remove_member', $course);
 
         $student = SpaceUserPivot::bySpace($course->id)
             ->byUser($studentId)
@@ -678,11 +672,14 @@ class CourseAdminController extends Controller
 
         $previousStatus = $lesson->status;
 
+        $updatedMeta = CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []));
+        $updatedMeta['document_ids'] = Arr::get($lesson->meta, 'document_ids', []);
+
         $updateData = array_filter([
             'title'   => sanitize_text_field(Arr::get($lessonData, 'title')),
             'message' => wp_kses_post(Arr::get($lessonData, 'message')),
             'status'  => Arr::get($lessonData, 'status'),
-            'meta'    => CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []))
+            'meta'    => wp_parse_args($updatedMeta, $lesson->meta)
         ]);
 
         $lesson->fill($updateData);
@@ -736,22 +733,32 @@ class CourseAdminController extends Controller
         ];
     }
 
-    public function getOtherUsers(Request $request)
+    public function getOtherUsers(Request $request, $courseId)
     {
-        $this->validate($request->all(), [
-            'course_id' => 'required|exists:fcom_spaces,id'
-        ]);
-
-        $courseId = (int)$request->get('course_id');
-
         $search = $request->getSafe('search');
 
-        $users = User::whereDoesntHave('courses', function ($q) use ($courseId) {
-            $q->where('space_id', $courseId);
-        })
-            ->select(['ID', 'display_name'])
-            ->searchBy($search)
-            ->paginate();
+        $selects = [
+            'ID',
+            'display_name'
+        ];
+
+        if (current_user_can('list_users')) {
+            $selects[] = 'user_email';
+        }
+
+        $userIds = User::select(['ID'])
+            ->whereDoesntHave('space_pivot', function ($q) use ($courseId) {
+                $q->where('space_id', $courseId);
+            })
+            ->limit(100)
+            ->searchBy($request->get('search'))
+            ->get()
+            ->pluck('ID')
+            ->toArray();
+
+        $users = User::whereIn('ID', $userIds)
+            ->select($selects)
+            ->paginate(100);
 
         return [
             'users' => $users

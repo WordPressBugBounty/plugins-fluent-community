@@ -21,6 +21,6 @@ class InvitationPolicy extends BasePolicy
             return false;
         }
 
-        return Helper::canAccessPortal($userId) && Helper::getCurrentUser()->isCommunityModerator();
+        return Helper::canAccessPortal($userId);
     }
 }

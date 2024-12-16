@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.13
+Stable tag: 1.1.15
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -241,8 +241,20 @@ OR
 
 == Changelog ==
 
-= 1.1.13 (Date: Dec 02, 2024) =
-- (Hotfix) - Space Create issue fixed
+= 1.1.15 (Date: Dec 16, 2024) =
+- NEW: Secure Docoments Feature for Spaces
+- NEW: Secure Documents Feature for Course Lesson
+- NEW: Added new member list / grid layout
+- NEW: Invitation Links for Spaces
+- NEW: Rebust Access Management with FluentCRM tags
+- NEW: Improved Auth Pages UI & UX & better integration with FluentAuth
+- NEW: FluentCRM triggers for Course / Space left
+- NEW: Contextual Smartcode for FluentCRM Automation
+- Course Editor Mobile UI Issues Fixed
+- Fixed Permission Issues with Moderartors / Course Creators
+- Fixed Gravatar API Issues
+- Fixed: everyone tag issues
+- i18n Improvements
 
 = 1.1.12 (Date: Dec 02, 2024) =
 - Added Option to disable Gravatar Profile Image

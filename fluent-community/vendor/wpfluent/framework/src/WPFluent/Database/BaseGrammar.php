@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Framework\Database;
 
+use RuntimeException;
 use FluentCommunity\Framework\Support\Helper;
 use FluentCommunity\Framework\Support\MacroableTrait;
 use FluentCommunity\Framework\Database\Query\Expression;
@@ -208,7 +209,9 @@ abstract class BaseGrammar
      */
     protected function wrapJsonSelector($value)
     {
-        throw new \RuntimeException('This database engine does not support JSON operations.');
+        throw new RuntimeException(
+            'This database engine does not support JSON operations.'
+        );
     }
 
     /**
@@ -280,7 +283,9 @@ abstract class BaseGrammar
     public function escape($value, $binary = false)
     {
         if (is_null($this->connection)) {
-            throw new \RuntimeException("The database driver's grammar implementation does not support escaping values.");
+            throw new RuntimeException(
+                "The database driver's grammar implementation does not support escaping values."
+            );
         }
 
         return $this->connection->escape($value, $binary);

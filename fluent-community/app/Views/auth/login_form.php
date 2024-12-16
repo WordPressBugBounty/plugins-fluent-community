@@ -1,8 +1,9 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
 <div id="fcom_user_onboard_wrap" class="fcom_user_onboard">
+    <?php do_action('fluent_community/before_auth_form_header', 'login'); ?>
     <div class="fcom_onboard_header">
-        <div class="fcom_onboard_header_title" style="color: <?php echo esc_attr($settings['text_color']); ?>;">
-            <h2 style="color: <?php echo esc_attr($settings['title_color']); ?>;">
+        <div class="fcom_onboard_header_title">
+            <h2>
                 <?php echo esc_html($settings['title']); ?>
             </h2>
             <p>
@@ -42,7 +43,7 @@
                 </div>
                 <div class="fcom_form-group">
                     <div class="fcom_form_input">
-                        <button type="submit" class="fcom_btn fcom_btn_primary" style="background-color: <?php echo esc_attr($settings['button_color']); ?>; color: <?php echo esc_attr($settings['button_label_color']); ?>;">
+                        <button type="submit" class="fcom_btn fcom_btn_submit fcom_btn_primary">
                             <?php echo esc_html($settings['button_label']); ?>
                         </button>
                     </div>

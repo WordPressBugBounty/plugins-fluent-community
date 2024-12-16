@@ -91,7 +91,8 @@ class CourseLesson extends Model
                 'html'         => ''
             ],
             'enable_comments' => 'yes',
-            'enable_media'    => 'yes'
+            'enable_media'    => 'yes',
+            'document_lists' => []
         ];
     }
 

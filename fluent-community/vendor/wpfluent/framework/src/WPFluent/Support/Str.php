@@ -354,6 +354,42 @@ class Str
     }
 
     /**
+     * Remove the given string(s) if it exists at the start of the haystack.
+     *
+     * @param  string  $subject
+     * @param  string|array  $needle
+     * @return string
+     */
+    public static function chopStart($subject, $needle)
+    {
+        foreach ((array) $needle as $n) {
+            if (str_starts_with($subject, $n)) {
+                return substr($subject, strlen($n));
+            }
+        }
+
+        return $subject;
+    }
+
+    /**
+     * Remove the given string(s) if it exists at the end of the haystack.
+     *
+     * @param  string  $subject
+     * @param  string|array  $needle
+     * @return string
+     */
+    public static function chopEnd($subject, $needle)
+    {
+        foreach ((array) $needle as $n) {
+            if (str_ends_with($subject, $n)) {
+                return substr($subject, 0, -strlen($n));
+            }
+        }
+
+        return $subject;
+    }
+
+    /**
      * Determine if a given string contains a given substring.
      *
      * @param  string  $haystack
@@ -387,6 +423,21 @@ class Str
         }
 
         return true;
+    }
+
+    /**
+     * Replace consecutive instances of a given character
+     * with a single character in the given string.
+     *
+     * @param  string  $string
+     * @param  string  $character
+     * @return string
+     */
+    public static function deduplicate(string $string, string $character = ' ')
+    {
+        return preg_replace(
+            '/'.preg_quote($character, '/').'+/u', $character, $string
+        );
     }
 
     /**
@@ -703,15 +754,30 @@ class Str
      * @param  string  $value
      * @param  int  $limit
      * @param  string  $end
+     * @param  bool  $preserveWords
      * @return string
      */
-    public static function limit($value, $limit = 100, $end = '...')
+    public static function limit(
+        $value, $limit = 100, $end = '...', $preserveWords = false
+    )
     {
         if (mb_strwidth($value, 'UTF-8') <= $limit) {
             return $value;
         }
 
-        return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
+        if (! $preserveWords) {
+            return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
+        }
+
+        $value = trim(preg_replace('/[\n\r]+/', ' ', strip_tags($value)));
+
+        $trimmed = rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8'));
+
+        if (mb_substr($value, $limit, 1, 'UTF-8') === ' ') {
+            return $trimmed.$end;
+        }
+
+        return preg_replace("/(.*)\s.*/", '$1', $trimmed).$end;
     }
 
     /**
@@ -754,7 +820,9 @@ class Str
      * @param  string  $encoding
      * @return string
      */
-    public static function mask($string, $character, $index, $length = null, $encoding = 'UTF-8')
+    public static function mask(
+        $string, $character, $index, $length = null, $encoding = 'UTF-8'
+    )
     {
         if ($character === '') {
             return $string;
@@ -898,6 +966,43 @@ class Str
     }
 
     /**
+     * Parse an integer from a string.
+     * 
+     * @param  string $value
+     * @return int|null
+     */
+    public static function parseInt($value)
+    {
+        if (preg_match('/[-+]?\d+/', $value, $matches)) {
+            return (int) $matches[0];
+        }
+    }
+
+    /**
+     * Parse a floasting point number from a string.
+     * 
+     * @param  string $value
+     * @return float|null
+     */
+    public static function parseFloat($value)
+    {
+        if (preg_match('/[-+]?\d*\.?\d+(e[-+]?\d+)?/i', $value, $matches)) {
+            return (float) $matches[0];
+        }
+    }
+
+    /**
+     * Remove all non-numeric characters from a string.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public static function parseNumber($value)
+    {
+        return preg_replace('/[^0-9]/', '', $value);
+    }
+
+    /**
      * Get the plural form of an English word.
      *
      * @param  string  $value
@@ -926,6 +1031,23 @@ class Str
     }
 
     /**
+     * Find the multi-byte safe position of the first
+     * occurrence of a given substring in a string.
+     *
+     * @param  string  $haystack
+     * @param  string  $needle
+     * @param  int  $offset
+     * @param  string|null  $encoding
+     * @return int|false
+     */
+    public static function position(
+        $haystack, $needle, $offset = 0, $encoding = null
+    )
+    {
+        return mb_strpos($haystack, (string) $needle, $offset, $encoding);
+    }
+
+    /**
      * Generate a more truly "random" alpha-numeric string.
      *
      * @param  int  $length
@@ -940,7 +1062,11 @@ class Str
 
             $bytes = random_bytes($size);
 
-            $string .= substr(str_replace(['/', '+', '='], '', base64_encode($bytes)), 0, $size);
+            $string .= substr(
+                str_replace(
+                    ['/', '+', '='], '', base64_encode($bytes)
+                ), 0, $size
+            );
         }
 
         return $string;

@@ -14,6 +14,7 @@ class MembersController extends Controller
 {
     public function getMembers(Request $request)
     {
+        $start = microtime(true);
         $mention = $request->getSafe('mention', 'sanitize_text_field');
         if($mention && !get_current_user_id()) {
             return $this->sendError([
@@ -66,7 +67,8 @@ class MembersController extends Controller
             return [
                 'members' => [
                     'data' => $members
-                ]
+                ],
+                'execution_time' => microtime(true) - $start
             ];
         }
 
@@ -106,7 +108,8 @@ class MembersController extends Controller
         $members = $members->paginate();
 
         return [
-            'members' => $members
+            'members' => $members,
+            'execution_time' => microtime(true) - $start
         ];
     }
 

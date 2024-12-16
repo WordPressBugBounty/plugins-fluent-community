@@ -277,9 +277,17 @@ class PortalHandler
                         </div>
                 </li>
             <?php else: ?>
-                <li class="top_menu_item fcom_login_li">
-                    <a class="fcom_login_btn" href="<?php echo esc_url($auth_url); ?>">
-                        <span><?php esc_html_e('Login', 'fluent-community'); ?></span>
+                <?php
+                if (AuthHelper::isRegistrationEnabled()) {
+                    $btnText = __('Login / Signup', 'fluent-community');
+                } else {
+                    $btnText = __('Login', 'fluent-community');
+                }
+                ?>
+
+                <li style="margin-right: 5px" class="top_menu_item fcom_login_li">
+                    <a class="fcom_login_btn el-button fcom_primary_button" href="<?php echo esc_url($auth_url); ?>">
+                        <span><?php echo esc_html($btnText); ?></span>
                     </a>
                 </li>
             <?php endif; ?>
@@ -329,14 +337,7 @@ class PortalHandler
             }
 
             $userSpaces->each(function ($space) use ($userModel) {
-                $userId = get_current_user_id();
-                $space->permissions = $space->getUserPermissions($userModel);
-                $space->membership = $space->getMembership($userId);
-                $space->description_rendered = FeedsHelper::mdToHtml($space->description);
-                if (!$space->membership) {
-                    $space->lockscreen_config = LockscreenService::getLockscreenConfig($space, $space->membership);
-                }
-                $space->topics = Utility::getTopicsBySpaceId($space->id);
+                $space = $space->formatSpaceData($userModel);
                 do_action_ref_array('fluent_community/space', [&$space]);
             });
 
@@ -420,6 +421,7 @@ class PortalHandler
                 'has_course'            => Helper::isFeatureEnabled('course_module'),
                 'skicky_sidebar'        => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'post_layout'           => Utility::getCustomizationSetting('rich_post_layout'),
+                'member_list_layout'    => Utility::getCustomizationSetting('member_list_layout'),
                 'video_embeder'         => apply_filters('fluent_community/has_video_embeder', true),
                 'has_topics'            => !!Utility::getTopics(),
                 'show_post_modal'       => Utility::isCustomizationEnabled('show_post_modal'),
@@ -607,16 +609,16 @@ class PortalHandler
 
         if ($xprofile && $xprofile->status != 'active') {
             if ($xprofile->status == 'pending') {
-                $this->viewErrorPage('You request is on pending', 'An admin need to approve your join request. Please contact with an admin to get approval');
+                $this->viewErrorPage(__('You request is on pending', 'fluent-community'), __('An admin need to approve your join request. Please contact with an admin to get approval', 'fluent-community'));
             } else {
-                $this->viewErrorPage('Access denied', 'Sorry, You can not access to this portal');
+                $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, You can not access to this portal', 'fluent-community'));
             }
         }
 
         if ($xprofile) {
             if (!Helper::canAccessPortal()) {
                 $generalSettings = Helper::generalSettings();
-                $this->viewErrorPage('Access Denied', Arr::get($generalSettings, 'restricted_role_content'));
+                $this->viewErrorPage(__('Access Denied', 'fluent-community'), Arr::get($generalSettings, 'restricted_role_content'));
             }
             if ($xprofile->user) {
                 $xprofile->user->cacheAccessSpaces();
@@ -687,7 +689,6 @@ class PortalHandler
 
     public function getAppData()
     {
-
         $isRtl = Helper::isRtl();
 
         $userId = get_current_user_id();
@@ -733,7 +734,6 @@ class PortalHandler
         ];
 
         if (!Utility::isDev()) {
-
             if ($isRtl) {
                 $fileName = 'app.rtl.css';
             } else {
@@ -985,12 +985,12 @@ class PortalHandler
         return apply_filters('fluent_community/auth/login_url', Helper::getAuthUrl());
     }
 
-    protected function viewErrorPage($title, $message = '', $showBtn = true)
+    public function viewErrorPage($title, $message = '', $showBtn = true)
     {
         $data = [
             'title'       => $title,
             'description' => $message,
-            'btn_txt'     => 'Go to home page',
+            'btn_txt'     => __('Go to home page', 'fluent-community'),
             'url'         => site_url()
         ];
 

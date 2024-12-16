@@ -151,7 +151,7 @@ class AuthHelper
         }
 
 
-        $fields = apply_filters('fluent_communuty/auth/signup_fields', [
+        $fields = apply_filters('fluent_community/auth/signup_fields', [
             'full_name'     => [
                 'label'             => __('Full name', 'fluent-community'),
                 'placeholder'       => __('Your first & last name', 'fluent-community'),
@@ -166,7 +166,7 @@ class AuthHelper
                 'label'             => __('Email Address', 'fluent-community'),
                 'required'          => true,
                 'value'             => $invitation ? $invitation->message : '',
-                'readonly'          => !!$invitation,
+                'readonly'          => $invitation && $invitation->message,
                 'sanitize_callback' => 'sanitize_email'
             ],
             'username'      => [
@@ -204,6 +204,19 @@ class AuthHelper
         return $fields;
     }
 
+    public static function getLostPasswordUrl($redirectUrl = '')
+    {
+        if (self::isFluentAuthAvailable()) {
+            $url = add_query_arg([
+                'form' => 'reset_password'
+            ], Helper::getAuthUrl());
+        } else {
+            $url = wp_lostpassword_url($redirectUrl);;
+        }
+
+        return apply_filters('fluent_community/auth/lost_password_url', $url);
+    }
+
     public static function getLoginFormFields()
     {
         return apply_filters('fluent_community/auth/login_fields', [
@@ -231,6 +244,7 @@ class AuthHelper
 
     public static function isRegistrationEnabled()
     {
+
         $enabled = !!get_option('users_can_register');
 
         if (!$enabled) {
@@ -322,8 +336,19 @@ class AuthHelper
             </div>
             <div class="fcom_form-group">
                 <div class="fcom_form_input">
-                    <button type="submit" class="fcom_btn fcom_btn_primary">
-                        <?php _e('Complete Signup', 'fluent-community'); ?>
+                    <button type="submit" class="fcom_btn has_svg_loader fcom_btn_primary">
+                        <svg version="1.1" class="fls_loading_svg" x="0px" y="0px" width="40px" height="20px" viewBox="0 0 50 50" style="enable-background:new 0 0 50 50;" xml:space="preserve">
+                            <path fill="currentColor" d="M43.935,25.145c0-10.318-8.364-18.683-18.683-18.683c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615c8.072,0,14.615,6.543,14.615,14.615H43.935z">
+                                <animateTransform attributeType="xml"
+                                                  attributeName="transform"
+                                                  type="rotate"
+                                                  from="0 25 25"
+                                                  to="360 25 25"
+                                                  dur="0.6s"
+                                                  repeatCount="indefinite"/>
+                            </path>
+                        </svg>
+                        <span> <?php _e('Complete Signup', 'fluent-community'); ?></span>
                     </button>
                 </div>
             </div>

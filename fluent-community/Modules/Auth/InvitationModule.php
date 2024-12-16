@@ -23,6 +23,7 @@ class InvitationModule
                     $router->get('/', 'InvitationController@getInvitations');
                     $router->delete('/{invitation_id}', 'InvitationController@delete')->int('invitation_id');
                     $router->post('/', 'InvitationController@store');
+                    $router->post('/link', 'InvitationController@createNewLink');
                     $router->post('/{invitation_id}/resend', 'InvitationController@resend')->int('invitation_id');
                 });
         });

@@ -3,7 +3,7 @@
 /**
  * @var $router FluentCommunity\Framework\Http\Router
  */
-$router->prefix('spaces')->withPolicy('PortalPolicy')->group(function ($router) {
+$router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->get('/', 'SpaceController@get');
     $router->post('/', 'SpaceController@create');
     $router->get('/{spaceSlug}/by-slug', 'SpaceController@getBySlug')->alphaNumDash('spaceSlug');
@@ -141,7 +141,8 @@ $router->prefix('settings')->withPolicy('AdminPolicy')->group(function ($router)
     $router->post('customization-settings', 'SettingController@updateCustomizationSettings');
     $router->get('privacy-settings', 'SettingController@getPrivacySettings');
     $router->post('privacy-settings', 'SettingController@updatePrivacySettings');
-
     $router->get('color-config', 'SettingController@getColorConfig');
+
+    $router->get('crm-tagging-config', 'SettingController@getCrmTaggingConfig');
 
 });

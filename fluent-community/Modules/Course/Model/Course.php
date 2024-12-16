@@ -95,4 +95,20 @@ class Course extends BaseSpace
         $this->syncTopics($categoryIds);
         return $this;
     }
+
+    public function isCourseAdmin(User $user)
+    {
+        $permissions = $user->getPermissions();
+
+        if (!empty($permissions['course_admin'])) {
+            return true;
+        }
+
+        // Check if course creator
+        if (!empty($permissions['course_creator'])) {
+            return $this->user_id == $user->ID;
+        }
+
+        return false;
+    }
 }

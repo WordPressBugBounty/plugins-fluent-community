@@ -3,10 +3,13 @@
 namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Models\Space;
+use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Framework\Support\Sanitizer;
+use FluentCommunity\Modules\Course\Model\Course;
 
 class SettingController extends Controller
 {
@@ -34,6 +37,7 @@ class SettingController extends Controller
             'cloud_storage'       => 'sanitize_text_field',
             'emoji_module'        => 'sanitize_text_field',
             'user_badge'          => 'sanitize_text_field',
+            'has_crm_sync'        => 'sanitize_text_field',
         ]);
 
         Utility::updateOption('fluent_community_features', $data);
@@ -155,7 +159,7 @@ class SettingController extends Controller
 
     public function getAddons()
     {
-        return [
+        $addons = [
             'fluent-messaging' => [
                 'is_repo'        => false,
                 'title'          => __('FluentCommunity Chat', 'fluent-community'),
@@ -207,6 +211,21 @@ class SettingController extends Controller
                 'description'    => __('WordPress Helpdesk and Customer Support Ticket Plugin. Provide awesome support and manage customer queries right from your WordPress dashboard.', 'fluent-community')
             ]
         ];
+
+        if (defined('FLUENT_COMMUNITY_PRO')) {
+            $addons['wp-payment-form'] = [
+                'is_repo'        => true,
+                'title'          => __('Paymattic', 'fluent-community'),
+                'logo'           => Helper::assetUrl('images/brands/paymattic.png'),
+                'is_installed'   => defined('WPPAYFORM_VERSION'),
+                'learn_more_url' => 'https://wordpress.org/plugins/wp-payment-form/',
+                'settings_url'   => admin_url('admin.php?page=wppayform.php#/integrations/fluent_community'),
+                'action_text'    => $this->isPluginInstalled('wp-payment-form/wp-payment-form.php') ? __('Active Paymattic', 'fluent-community') : __('Install Paymattic', 'fluent-community'),
+                'description'    => __('Paymattic – Secure, Simple Payment & Donation with Subscription Payments, Recurring Donations, Customer Management', 'fluent-community')
+            ];
+        }
+
+        return $addons;
     }
 
     private function isPluginInstalled($plugin)
@@ -377,7 +396,6 @@ class SettingController extends Controller
         return $plugins;
     }
 
-
     public function getCustomizationSettings(Request $request)
     {
         return [
@@ -441,4 +459,114 @@ class SettingController extends Controller
         ];
     }
 
+    public function getCrmTaggingConfig(Request $request)
+    {
+        $defaults = [
+            'is_enabled'         => 'no',
+            'tagging_maps'       => [],
+            'linked_maps'        => [],
+            'create_crm_contact' => 'yes',
+            'create_user'        => 'no',
+            'send_welcome_email' => 'yes',
+            'has_space_tagging'  => 'no',
+            'has_space_sync'     => 'no',
+            'has_course_tagging' => 'no',
+            'has_course_sync'    => 'no',
+        ];
+
+        $settings = get_option('_fcom_crm_tagging', []);
+        $settings = wp_parse_args($settings, $defaults);
+
+        $spaceGroups = SpaceGroup::with(['spaces' => function ($query) {
+            $query->where('type', 'community');
+        }])
+            ->orderBy('serial', 'ASC')
+            ->get();
+
+        $formattedSpaceGroups = [];
+        foreach ($spaceGroups as $spaceGroup) {
+            $spaces = $spaceGroup->spaces->map(function ($space) {
+                return [
+                    'id'      => $space->id,
+                    'title'   => $space->title,
+                    'privacy' => $space->privacy,
+                    'slug'    => $space->slug,
+                    'icon'    => $space->getIconMark(),
+                    'type'    => $space->type,
+                ];
+            });
+
+            if (!$spaces) {
+                continue;
+            }
+
+            $formattedSpaceGroups[] = [
+                'id'     => $spaceGroup->id,
+                'title'  => $spaceGroup->title,
+                'spaces' => $spaces
+            ];
+        }
+
+        $otherSpaces = Space::whereNull('parent_id')
+            ->orderBy('title', 'ASC')
+            ->get();
+
+        if (!$otherSpaces->isEmpty()) {
+            $formattedSpaceGroups[] = [
+                'id'     => 'other',
+                'title'  => __('Other Spaces', 'fluent-community'),
+                'spaces' => $otherSpaces->map(function ($space) {
+                    return [
+                        'id'      => $space->id,
+                        'type'    => $space->type,
+                        'title'   => $space->title,
+                        'privacy' => $space->privacy,
+                        'slug'    => $space->slug,
+                        'icon'    => $space->getIconMark(),
+                    ];
+                })
+            ];
+        }
+
+        $courses = Course::orderBy('title', 'ASC')->get();
+
+        if (!$courses->isEmpty()) {
+            $formattedSpaceGroups[] = [
+                'id'     => 'courses',
+                'title'  => __('All Courses', 'fluent-community'),
+                'spaces' => $courses->map(function ($course) {
+                    return [
+                        'id'      => $course->id,
+                        'title'   => $course->title,
+                        'privacy' => $course->privacy,
+                        'slug'    => $course->slug,
+                        'icon'    => $course->getIconMark(),
+                        'type'    => $course->type,
+                    ];
+                })
+            ];
+        }
+
+        if (empty($settings['tagging_maps'])) {
+            $settings['tagging_maps'] = (object)[];
+        }
+
+        if (empty($settings['linked_maps'])) {
+            $settings['linked_maps'] = (object)[];
+        }
+
+        if (defined('FLUENTCRM')) {
+            $fluentCrmTags = \FluentCrm\App\Models\Tag::select(['id', 'title'])->orderBy('title', 'ASC')->get();
+        } else {
+            $fluentCrmTags = [];
+        }
+
+
+        return [
+            'settings'      => $settings,
+            'spaceGroups'   => $formattedSpaceGroups,
+            'crm_tags'      => $fluentCrmTags,
+            'has_fluentcrm' => defined('FLUENTCRM')
+        ];
+    }
 }

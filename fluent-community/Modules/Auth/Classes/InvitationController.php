@@ -4,6 +4,7 @@ namespace FluentCommunity\Modules\Auth\Classes;
 
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
@@ -17,6 +18,9 @@ class InvitationController extends Controller
         $user = $this->getUser(true);
         $isMod = $user->isCommunityModerator();
         $spaceId = intval($request->get('space_id'));
+
+        $space = Space::findOrFail($spaceId);
+        $space->verifyUserPermisson($user, 'community_moderator');
 
         $status = $request->get('status', 'pending');
         if ($status == 'all') {
@@ -39,6 +43,12 @@ class InvitationController extends Controller
             ->orderBy('id', 'desc')
             ->paginate();
 
+        foreach ($inviatations as $inviatation) {
+            if ($inviatation->isValid()) {
+                $inviatation->access_url = $inviatation->getAccessUrl();
+            }
+        }
+
         return [
             'invitations' => $inviatations,
             'is_mod'      => $isMod
@@ -48,7 +58,12 @@ class InvitationController extends Controller
     public function delete(Request $request, $invitationId)
     {
         $invitationId = intval($invitationId);
-        Invitation::findOrFail($invitationId)->delete();
+        $inivitation = Invitation::findOrFail($invitationId);
+        $user = $this->getUser(true);
+        $space = Space::findOrFail($inivitation->post_id);
+        $space->verifyUserPermisson($user, 'community_moderator');
+
+        $inivitation->delete();
 
         return [
             'message' => __('Invitation deleted successfully', 'fluent-community')
@@ -59,11 +74,15 @@ class InvitationController extends Controller
     {
         $data = $request->all();
         $this->validate($data, [
-            'email' => 'required|email',
+            'email'    => 'required|email',
+            'space_id' => 'required'
         ]);
 
         $spaceId = (int)Arr::get($data, 'space_id');
         $user = $this->getUser(true);
+
+        $space = Space::findOrFail($spaceId);
+        $space->verifyUserPermisson($user, 'community_moderator');
 
         $inviteeEmail = sanitize_email(Arr::get($data, 'email'));
 
@@ -71,28 +90,8 @@ class InvitationController extends Controller
             'email'        => $inviteeEmail,
             'user_id'      => $user->ID,
             'invitee_name' => sanitize_text_field(Arr::get($data, 'invitee_name')),
+            'space_id'     => $space->id
         ]);
-
-        if ($spaceId) {
-            $space = BaseSpace::findOrFail($spaceId);
-            $spaceRole = $user->getSpaceRole($space);
-
-            if (!$spaceRole || $spaceRole == 'pending') {
-                $this->sendError([
-                    'message' => __('You are not permitted to invite', 'fluent-community')
-                ]);
-            }
-
-            $isMod = in_array($spaceRole, ['admin', 'moderator']);
-
-            if (!$isMod && $space->privacy != 'public') {
-                $this->sendError([
-                    'message' => __('You are not permitted to invite', 'fluent-community')
-                ]);
-            }
-
-            $indivatationData['space_id'] = $space->id;
-        }
 
         $invitation = InvitationService::invite($indivatationData);
         if (is_wp_error($invitation)) {
@@ -106,6 +105,50 @@ class InvitationController extends Controller
 
         return [
             'message'    => __('Invitation has been sent successfully', 'fluent-community'),
+            'invitation' => $invitation
+        ];
+    }
+
+    public function createNewLink(Request $request)
+    {
+        $data = $request->all();
+        $this->validate($data, [
+            'title'    => 'required',
+            'space_id' => 'required',
+        ]);
+
+        $spaceId = (int)Arr::get($data, 'space_id');
+        $space = Space::findOrFail($spaceId);
+        $user = $this->getUser(true);
+        $space->verifyUserPermisson($user, 'community_moderator');
+
+        $indivatationData = array_filter([
+            'email'    => '',
+            'user_id'  => $user->ID,
+            'space_id' => $space->id,
+            'title'    => sanitize_text_field(Arr::get($data, 'title')),
+            'limit'    => sanitize_text_field(Arr::get($data, 'limit', 0)),
+            'expire_date'   => sanitize_text_field(Arr::get($data, 'expire_date', '')),
+        ]);
+
+        $invitation = apply_filters('fluent_community/create_invitation_link', null, $indivatationData);
+
+        if(!$invitation) {
+            return $this->sendError([
+                'message' => __('Something went wrong', 'fluent-community')
+            ]);
+        }
+
+        if (is_wp_error($invitation)) {
+            return $this->sendError([
+                'message' => $invitation->get_error_message()
+            ]);
+        }
+
+        $invitation->access_url =  $invitation->getAccessUrl();
+
+        return [
+            'message'    => __('Invitation link has been created', 'fluent-community'),
             'invitation' => $invitation
         ];
     }

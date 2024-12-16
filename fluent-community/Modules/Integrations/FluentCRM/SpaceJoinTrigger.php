@@ -75,11 +75,11 @@ class SpaceJoinTrigger extends BaseTrigger
             'community_ids' => [
                 'type'        => 'multi-select',
                 'is_multiple' => true,
-                'label'       => __('Targeted Communitues', 'fluent-community'),
-                'help'        => __('Select which communities this automation funnel is for.', 'fluent-community'),
-                'placeholder' => __('Select Communities', 'fluent-community'),
+                'label'       => __('Targeted Spaces', 'fluent-community'),
+                'help'        => __('Select which spcaes this automation funnel is for.', 'fluent-community'),
+                'placeholder' => __('Select Spaces', 'fluent-community'),
                 'options'     => $communities,
-                'inline_help' => __('Leave blank to run for all communities', 'fluent-community')
+                'inline_help' => __('Leave blank to run for all Spaces', 'fluent-community')
             ],
             'run_multiple'  => [
                 'type'        => 'yes_no_check',

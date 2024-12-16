@@ -8,6 +8,7 @@ use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\SpaceUserPivot;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -473,12 +474,7 @@ class NotificationEventHandler
             return;
         }
 
-        $message = $feed->message;
-        $pattern = '/(?<!\S)@everyone(?!\S)/';
-
-        // match if the message contains @everyone
-
-        if (!preg_match($pattern, $message)) {
+        if(!FeedsHelper::hasEveryoneTag($feed->message)) {
             return;
         }
 
