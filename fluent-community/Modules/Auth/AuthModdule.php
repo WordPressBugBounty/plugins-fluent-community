@@ -67,7 +67,6 @@ class AuthModdule
 
     public function viewAuthPage()
     {
-
         add_filter('login_form_defaults', function ($defaults) {
             $defaults['label_username'] = __('Email Address', 'fluent-community');
             return $defaults;
@@ -180,6 +179,7 @@ class AuthModdule
                 'fluentComRegistration' => [
                     'ajax_url'     => admin_url('admin-ajax.php'),
                     'is_logged_in' => is_user_logged_in(),
+                    'redirecting_text' => __('Redirecting...', 'fluent-community')
                 ]
             ],
             'scope'          => 'user_registration',

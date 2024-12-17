@@ -42,6 +42,7 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
 
     $router->get('bookmarks', 'FeedsController@getBookmarks');
     $router->get('/{feed_slug}/by-slug', 'FeedsController@getFeedBySlug')->alphaNumDash('feed_slug');
+    $router->get('/{feed_id}/by-id', 'FeedsController@getFeedById')->int('feed_id');
 
     $router->get('/{feed_id}/comments', 'CommentsController@getComments')->int('feed_id');
     $router->post('/{feed_id}/comments', 'CommentsController@store')->int('feed_id');

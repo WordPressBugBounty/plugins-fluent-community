@@ -17,6 +17,22 @@ class PortalSettingsHandler
                 return $vars;
             }
 
+            $user = Helper::getCurrentUser();
+            if (!$user) {
+                wp_redirect(Helper::baseUrl());
+                exit();
+            }
+
+            $roles = $user->getCommunityRoles();
+
+            $acceptedRoles = ['admin', 'moderator', 'course_admin', 'course_creator'];
+
+            if(!$roles || !array_intersect($roles, $acceptedRoles)) {
+                wp_redirect(Helper::baseUrl());
+                exit();
+            }
+
+
             $isRtl = Helper::isRtl();
             unset($vars['js_files']['fcom_app_admin']);
             $vars['js_files']['fcom_app'] = [

@@ -461,7 +461,7 @@ class CustomSanitizer
         $settings = Arr::only($settings, array_keys((new Space())->defaultSettings()));
 
         foreach ($yesNotFields as $field) {
-            $defaults[$field] = $settings[$field] === 'yes' ? 'yes' : 'no';
+            $defaults[$field] = Arr::get($settings, $field) === 'yes' ? 'yes' : 'no';
         }
 
         $settings['shape_svg'] = self::sanitizeSvg(Arr::get($settings, 'shape_svg', ''));

@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Course\Model;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\Reaction;
@@ -79,7 +80,8 @@ class CourseTopic extends Model
 
     protected static function generateNewSlug($newModel)
     {
-        $slug = sanitize_title($newModel->title);
+        $slug = Utility::slugify($newModel->title, 'topic');
+
         $exist = self::where('slug', $slug)
             ->exists();
 
@@ -193,7 +195,7 @@ class CourseTopic extends Model
         if (!$content) {
             return '';
         }
-        
+
         // return the first $length chars of the content with ... at the end
         return mb_substr($content, 0, $length) . '...';
     }

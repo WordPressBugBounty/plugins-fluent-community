@@ -523,7 +523,7 @@ class SpaceController extends Controller
         do_action('fluent_community/space/joined', $space, $userId, 'by_admin');
 
         return [
-            'message' => 'User has been added to this community'
+            'message' => __('User has been added to this Space', 'fluent-community')
         ];
     }
 

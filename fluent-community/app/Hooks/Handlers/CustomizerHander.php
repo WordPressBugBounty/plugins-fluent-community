@@ -23,7 +23,7 @@ class CustomizerHander
             } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) {
 
                 $vars['css_files'] = array_merge($vars['css_files'], [
-                    'customizer' => [
+                    'customizer'     => [
                         'url' => Vite::getStaticSrcUrl('customizer.css')
                     ],
                     'customizer_app' => [
@@ -85,7 +85,10 @@ class CustomizerHander
                     'Background color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.' => __('Background color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.', 'fluent-community'),
                     'Secondary Nav Active Background'                                                                                                               => __('Secondary Nav Active Background', 'fluent-community'),
                     'Text color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.'       => __('Text color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.', 'fluent-community'),
-                    'Secondary Nav Active Color'                                                                                                                    => __('Secondary Nav Active Color', 'fluent-community')
+                    'Secondary Nav Active Color'                                                                                                                    => __('Secondary Nav Active Color', 'fluent-community'),
+                    'Sidebar'                                                                                                                                       => __('Sidebar', 'fluent-community'),
+                    'General'                                                                                                                                       => __('General', 'fluent-comunity'),
+                    'Save Settings (Pro Requied)' => __('Save Settings (Pro Requied)', 'fluent-community'),
                 ];
             }
 

@@ -1058,4 +1058,24 @@ class Utility
 
         return apply_filters('fluent_community/suggested_colors', $colors);
     }
+
+    public static function slugify($text, $fallback = '')
+    {
+        $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $text);
+        $title = remove_accents($title);
+
+        $title = strtolower($title);
+        // only allow alphanumeric, dash, and underscore
+        $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
+
+        if (!$title) {
+            $title = $fallback;
+        }
+
+        if (!$title) {
+            return $title;
+        }
+
+        return sanitize_title($title, $fallback);
+    }
 }

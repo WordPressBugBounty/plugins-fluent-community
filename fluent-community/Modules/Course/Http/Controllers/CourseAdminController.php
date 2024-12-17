@@ -3,6 +3,7 @@
 namespace FluentCommunity\Modules\Course\Http\Controllers;
 
 use FluentCommunity\App\App;
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Comment;
@@ -85,7 +86,7 @@ class CourseAdminController extends Controller
         }
 
         if ($slug) {
-            $slug = sanitize_title($slug);
+            $slug = Utility::slugify($slug);
             $exist = Course::where('slug', $slug)
                 ->exists();
 
@@ -178,20 +179,19 @@ class CourseAdminController extends Controller
 
         $slug = $request->get('slug');
         if ($slug && $course->slug != $slug) {
-            $slug = sanitize_title($slug);
+            $slug = Utility::slugify($slug);
 
             $exist = App::getInstance('db')->table('fcom_spaces')->where('slug', $slug)
                 ->where('id', '!=', $course->id)
                 ->exists();
 
-            if ($exist) {
+            if ($exist || !$slug) {
                 return $this->sendError([
                     'message' => __('Slug is already taken. Please use a different slug', 'fluent-community')
                 ]);
             }
 
             $courseData['slug'] = $slug;
-
         }
 
         $imageTypes = ['cover_photo', 'logo'];

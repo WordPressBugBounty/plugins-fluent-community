@@ -326,7 +326,7 @@ class EmailNotificationHandler
 
         $message = $feed->message;
 
-        if(!FeedsHelper::hasEveryoneTag($message)) {
+        if (!FeedsHelper::hasEveryoneTag($message)) {
             return true;
         }
 
@@ -362,11 +362,11 @@ class EmailNotificationHandler
 
         $author = $feed->user;
         $emailSubject = \sprintf(
-        /* translators: %1$s is the user name, %2$s is the space title and %3$3s is the time */
-            __('%1$s mentioned you and others in a post at %2$s [%3$s]', 'fluent-community'),
+        /* translators: %1$s is the user name, %2$s is the space title and %3$s space name */
+            __('%1$s mentioned you in "%2$s" [%3$s]', 'fluent-community'),
             $author->display_name,
-            $feed->space->title,
-            gmdate('H:i', strtotime($feed->created_at))
+            $feed->getHumanExcerpt(30),
+            $feed->space->title
         );
         $emailBody = $this->getFeedHtml($feed, true);
         $feedPermalink = $feed->getPermalink();
@@ -397,7 +397,7 @@ class EmailNotificationHandler
                 as_schedule_single_action(time(), 'fluent_community/email_notify_users_everyone_tag', [$feedId, $lastSendUserId], 'fluent-community');
                 return true;
             }
-            
+
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {

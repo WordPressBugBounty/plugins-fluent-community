@@ -604,6 +604,26 @@ class FeedsHelper
 
         // Let's handle the fallback here
         $firstUrl = FeedsHelper::findFirstUrl(Arr::get($data, 'message_rendered'));
+
+        // check if this is another post or not
+        if (strpos($firstUrl, Helper::baseUrl()) === 0) {
+            // this is an internal URL
+            if (Helper::getRouteNameByRequestPath($firstUrl) == 'feed_view') {
+                $uriParts = explode('/', $firstUrl);
+                if (count($uriParts) >= 2) {
+                    $postSlug = end($uriParts);
+                    $feed = Feed::where('slug', $postSlug)->first();
+                    if ($feed) {
+                        $firstUrl = null;
+                        $data['meta']['custom_app_preview'] = [
+                            'app_name' => 'child_post',
+                            'feed_id'  => $feed->id
+                        ];
+                    }
+                }
+            }
+        }
+
         if ($firstUrl) {
             $metaData = RemoteUrlParser::parse($firstUrl);
             if ($metaData && !is_wp_error($metaData) && (!empty($metaData['image']) || !empty($metaData['html']))) {
@@ -649,9 +669,12 @@ class FeedsHelper
         return $feed;
     }
 
-    public static function hasEveryoneTag($message) {
-        // Regular expression to match @everyone with possible variations
-        $pattern = '/(^|\s|&#x20;)@everyone(?=\s|&#x20;|[.,!?]|\z)/i';
+    public static function hasEveryoneTag($message)
+    {
+
+        // Updated regular expression to match @everyone with more flexibility
+        $pattern = '/(?<=^|\W)@everyone(?=\W|\z)/iu';
+
         return preg_match($pattern, $message) === 1;
     }
 }

@@ -3,6 +3,7 @@
 namespace FluentCommunity\Modules\Course\Model;
 
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
@@ -92,13 +93,13 @@ class CourseLesson extends Model
             ],
             'enable_comments' => 'yes',
             'enable_media'    => 'yes',
-            'document_lists' => []
+            'document_lists'  => []
         ];
     }
 
     protected static function generateNewSlug($newModel)
     {
-        $slug = sanitize_title($newModel->title);
+        $slug = Utility::slugify($newModel->title, 'lesson-' . time());
 
         // check if the slug is available for this type
         $exist = self::where('slug', $slug)

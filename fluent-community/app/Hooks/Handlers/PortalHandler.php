@@ -142,7 +142,7 @@ class PortalHandler
                                         fill="white"/>
                                     </svg>
                                 </span>
-                                <span>Upgrade</span>
+                                <span><?php _e('Upgrade', 'fluent-community'); ?></span>
                             </a>
                         <?php else: ?>
                             <a title="Go to /wp-admin" class="fcom_inline_icon_link_item fcom_wp_admin_link"

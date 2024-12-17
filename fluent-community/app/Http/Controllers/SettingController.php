@@ -263,7 +263,7 @@ class SettingController extends Controller
             if ($pluginSlug == 'fluent-messaging') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError('Fluent Messaging is a Pro Plugin. Please install Fluent Space Pro first.');
+                    return $this->sendError(__('Fluent Messaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community'));
                 }
 
                 do_action('fleunt_community/install_messaging_plugin');

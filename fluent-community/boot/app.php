@@ -59,5 +59,17 @@ return function ($file) {
             update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, 'no');
             \FluentCommunity\Database\DBMigrator::run();
         }
+
+
+        if(defined('FLUENT_COMMUNITY_PRO_VERSION')) {
+            add_filter('fluent_community/portal_notices', function ($notices) {
+                if (FLUENT_COMMUNITY_MIN_PRO_VERSION !== FLUENT_COMMUNITY_PRO_VERSION && version_compare(FLUENT_COMMUNITY_MIN_PRO_VERSION, FLUENT_COMMUNITY_PRO_VERSION, '>')) {
+                    $updateUrl = admin_url('plugins.php?s=fluent-community&plugin_status=all&fluent-fluent-community-pro-check-update=' . time());
+                    $notices[] = '<div style="padding: 10px;" class="error; background-color: var(--fcom-primary-bg, white);"><b>Heads UP: </b> FluentCommunityPro Plugin needs to be updated to the latest version. <a href="' . esc_url($updateUrl) . '">Click here to update</a></div>';
+                }
+                return $notices;
+            });
+        }
+
     });
 };

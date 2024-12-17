@@ -26,3 +26,4 @@ if (defined('WP_CLI') && WP_CLI) {
         \WP_CLI::add_command('fluent_community_dummy', '\FluentCommunity\App\Hooks\CLI\DymmyCommands');
     }
 }
+

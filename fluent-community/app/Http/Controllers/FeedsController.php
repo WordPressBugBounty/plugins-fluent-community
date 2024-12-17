@@ -189,6 +189,13 @@ class FeedsController extends Controller
         ];
     }
 
+    public function getFeedById(Request $request, $feedId)
+    {
+        $feed = Feed::findOrFail($feedId);
+        return $this->getFeedBySlug($request, $feed->slug);
+    }
+
+
     public function getBookmarks(Request $request)
     {
         $userId = get_current_user_id();
@@ -670,7 +677,8 @@ class FeedsController extends Controller
 
         $file = $uploadedFiles[0];
 
-        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', true, $file);
+        $willWebPConvert = $request->get('disable_convert') != 'yes';
+        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
 
         $willResize = $request->get('resize');
         $maxWidth = $request->get('max_width');

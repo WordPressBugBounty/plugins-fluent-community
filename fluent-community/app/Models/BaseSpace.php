@@ -46,8 +46,7 @@ class BaseSpace extends Model
             }
 
             if (empty($model->slug)) {
-                $slug = sanitize_title($model->tilte, time());
-                $model->slug = $slug;
+                $model->slug = self::generateNewSlug($model);
             }
             $model->type = static::$type;
         });
@@ -219,7 +218,7 @@ class BaseSpace extends Model
                 $this->parent_id = NULL;
             }
         }
-        
+
         if (isset($data['settings'])) {
             $settings = CustomSanitizer::santizeSpaceSettings($data['settings']);
 
@@ -477,4 +476,36 @@ class BaseSpace extends Model
         return $this;
     }
 
+    protected static function generateNewSlug($newModel)
+    {
+        if ($newModel->title) {
+            // Remove the emojis
+            $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
+            // get the first 30 char from the title
+            $title = substr($title, 0, 30);
+        } else {
+            $title = self::$type . '-' . time();
+        }
+
+        $title = remove_accents($title);
+
+        $title = strtolower($title);
+        // only allow alphanumeric, dash, and underscore
+        $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
+
+        $title = sanitize_title($title, self::$type . '-' . time());
+
+        // check if the slug is already exists
+        $slug = $title;
+        $count = 1;
+        while (self::withoutGlobalScopes()->where('slug', $slug)->exists()) {
+            if ($count == 5) {
+                $count = time();
+            }
+            $slug = $title . '-' . $count;
+            $count++;
+        }
+
+        return $slug;
+    }
 }
