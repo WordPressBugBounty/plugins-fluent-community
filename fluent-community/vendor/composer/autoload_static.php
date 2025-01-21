@@ -96,6 +96,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Models\\SpaceUserPivot' => __DIR__ . '/../..' . '/app/Models/SpaceUserPivot.php',
         'FluentCommunity\\App\\Models\\Term' => __DIR__ . '/../..' . '/app/Models/Term.php',
         'FluentCommunity\\App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
+        'FluentCommunity\\App\\Models\\UserMeta' => __DIR__ . '/../..' . '/app/Models/UserMeta.php',
         'FluentCommunity\\App\\Models\\XProfile' => __DIR__ . '/../..' . '/app/Models/XProfile.php',
         'FluentCommunity\\App\\Services\\AdminTransStrings' => __DIR__ . '/../..' . '/app/Services/AdminTransStrings.php',
         'FluentCommunity\\App\\Services\\AuthenticationService' => __DIR__ . '/../..' . '/app/Services/AuthenticationService.php',
@@ -370,6 +371,10 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\SpaceJoinTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/SpaceJoinTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentForms\\Bootstrap' => __DIR__ . '/../..' . '/Modules/Integrations/FluentForms/Bootstrap.php',
         'FluentCommunity\\Modules\\Integrations\\Integrations' => __DIR__ . '/../..' . '/Modules/Integrations/Integrations.php',
+        'FluentCommunity\\Modules\\Migrations\\Helpers\\BPMigratorHelper' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/BPMigratorHelper.php',
+        'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
+        'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/MigrationController.php',
+        'FluentCommunity\\Modules\\Migrations\\MigrationModule' => __DIR__ . '/../..' . '/Modules/Migrations/MigrationModule.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

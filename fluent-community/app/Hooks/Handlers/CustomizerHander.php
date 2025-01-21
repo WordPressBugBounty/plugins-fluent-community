@@ -88,7 +88,7 @@ class CustomizerHander
                     'Secondary Nav Active Color'                                                                                                                    => __('Secondary Nav Active Color', 'fluent-community'),
                     'Sidebar'                                                                                                                                       => __('Sidebar', 'fluent-community'),
                     'General'                                                                                                                                       => __('General', 'fluent-comunity'),
-                    'Save Settings (Pro Requied)' => __('Save Settings (Pro Requied)', 'fluent-community'),
+                    'Save Settings (Pro Required)' => __('Save Settings (Pro Required)', 'fluent-community'),
                 ];
             }
 

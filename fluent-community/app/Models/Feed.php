@@ -380,7 +380,15 @@ class Feed extends Model
 
         $userModel = User::find($userId);
 
-        return $userModel && $userModel->isCommunityModerator();
+        if (!$userModel) {
+            return false;
+        }
+
+        if ($this->space_id) {
+            return $userModel->hasSpacePermission('edit_any_feed', $this->space);
+        }
+
+        return $userModel->hasCommunityPermission('edit_any_feed');
     }
 
     public function getHumanExcerpt($length = 40)
@@ -395,15 +403,26 @@ class Feed extends Model
 
     public function getPermalink()
     {
-        if ($this->space_id && $this->space) {
-            $path = 'space/' . $this->space->slug . '/post/' . $this->slug;
-        } else {
-            $path = 'post/' . $this->slug;
+        $sectionPrefix = 'space';
+        $contentPrefix = 'post';
+        $isLesson = $this->type === 'course_lesson';
+
+        if ($isLesson) {
+            $sectionPrefix = 'course';
+            $contentPrefix = 'lessons';
         }
 
-        return Helper::baseUrl($path);
-    }
+        $urlPath = $contentPrefix . '/' . $this->slug;
 
+        if ($this->space_id && $this->space) {
+            $urlPath = $sectionPrefix . '/' . $this->space->slug . '/' . $contentPrefix . '/' . $this->slug;
+            if ($isLesson) {
+                $urlPath .= '/view';
+            }
+        }
+
+        return Helper::baseUrl($urlPath);
+    }
 
     public function getPermalinkAttribute()
     {
@@ -532,4 +551,19 @@ class Feed extends Model
 
         return $route;
     }
+
+    public function recountStats()
+    {
+        $this->comments_count = Comment::where('post_id', $this->id)
+            ->where('type', 'comment')
+            ->count();
+
+        $this->reactions_count = Reaction::where('object_type', 'feed')->where('type', 'like')
+            ->where('object_id', $this->id)
+            ->count();
+
+        $this->save();
+        return $this;
+    }
+
 }

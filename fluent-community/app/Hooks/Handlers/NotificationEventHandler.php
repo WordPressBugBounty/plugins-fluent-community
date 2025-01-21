@@ -314,7 +314,7 @@ class NotificationEventHandler
             );
         } else {
             $notificationContent = \sprintf(
-                /* translators: %1$s is the commenter name & %2$s is the feed title */
+            /* translators: %1$s is the commenter name & %2$s is the feed title */
                 __('%1$s also commented on %2$s', 'fluent-community'),
                 '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
                 '<span class="fcom_nft">' . $feedTitle . '</span>'
@@ -474,26 +474,20 @@ class NotificationEventHandler
             return;
         }
 
-        if(!FeedsHelper::hasEveryoneTag($feed->message)) {
+        if (Arr::get($feed->meta, 'send_announcement_email') !== 'yes') {
             return;
         }
 
         // we have everyone
         // check if current user is a moderator or admin
         $user = $feed->user;
-
         $spaceRole = $user->getSpaceRole($feed->space);
-
         if (!in_array($spaceRole, ['admin', 'moderator'])) {
             return;
         }
 
-        $notificationSettings = Utility::getEmailNotificationSettings();
-
-        if (Arr::get($notificationSettings, 'mention_mail') === 'yes') {
-
+        if (Utility::hasEmailAnnouncementEnabled()) {
             do_action('fluent_community/feed/scheduling_everyone_tag', $feed);
-
             // Let's schedule an email hook to send email to everyone for this post
             // We are scheduling this after 5 minutes of the post publish for performance
             as_schedule_single_action(time() + 300, 'fluent_community/email_notify_users_everyone_tag', [
@@ -501,7 +495,6 @@ class NotificationEventHandler
                 0
             ], 'fluent-community');
         }
-
 
     }
 

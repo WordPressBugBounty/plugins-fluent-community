@@ -58,6 +58,7 @@ return array(
     'FluentCommunity\\App\\Models\\SpaceUserPivot' => $baseDir . '/app/Models/SpaceUserPivot.php',
     'FluentCommunity\\App\\Models\\Term' => $baseDir . '/app/Models/Term.php',
     'FluentCommunity\\App\\Models\\User' => $baseDir . '/app/Models/User.php',
+    'FluentCommunity\\App\\Models\\UserMeta' => $baseDir . '/app/Models/UserMeta.php',
     'FluentCommunity\\App\\Models\\XProfile' => $baseDir . '/app/Models/XProfile.php',
     'FluentCommunity\\App\\Services\\AdminTransStrings' => $baseDir . '/app/Services/AdminTransStrings.php',
     'FluentCommunity\\App\\Services\\AuthenticationService' => $baseDir . '/app/Services/AuthenticationService.php',
@@ -332,4 +333,8 @@ return array(
     'FluentCommunity\\Modules\\Integrations\\FluentCRM\\SpaceJoinTrigger' => $baseDir . '/Modules/Integrations/FluentCRM/SpaceJoinTrigger.php',
     'FluentCommunity\\Modules\\Integrations\\FluentForms\\Bootstrap' => $baseDir . '/Modules/Integrations/FluentForms/Bootstrap.php',
     'FluentCommunity\\Modules\\Integrations\\Integrations' => $baseDir . '/Modules/Integrations/Integrations.php',
+    'FluentCommunity\\Modules\\Migrations\\Helpers\\BPMigratorHelper' => $baseDir . '/Modules/Migrations/Helpers/BPMigratorHelper.php',
+    'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => $baseDir . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
+    'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => $baseDir . '/Modules/Migrations/Http/Controllers/MigrationController.php',
+    'FluentCommunity\\Modules\\Migrations\\MigrationModule' => $baseDir . '/Modules/Migrations/MigrationModule.php',
 );

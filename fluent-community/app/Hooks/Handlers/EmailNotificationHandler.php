@@ -25,7 +25,7 @@ class EmailNotificationHandler
 
     public function register()
     {
-        add_action('fluent_community/space_feed/created', [$this, 'handleSpaceFeedCreated'], 10, 1);
+        add_action('fluent_community/space_feed/created', [$this, 'handleSpaceFeedCreated'], 20, 1);
         add_action('fluent_community/email_notify_new_posts', [$this, 'notifyOnPostCreatedAsync'], 10, 1);
 
         add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 30, 2);
@@ -312,7 +312,6 @@ class EmailNotificationHandler
 
     public function emailNotifyUsersForEveryoneTag($feedId, $lastSendUserId = 0)
     {
-
         if (!$this->maxRunTime) {
             $this->maxRunTime = Utility::getMaxRunTime();
         }
@@ -324,9 +323,7 @@ class EmailNotificationHandler
             return true;
         }
 
-        $message = $feed->message;
-
-        if (!FeedsHelper::hasEveryoneTag($message)) {
+        if (Arr::get($feed->meta, 'send_announcement_email') !== 'yes' || !Utility::hasEmailAnnouncementEnabled()) {
             return true;
         }
 
@@ -362,10 +359,10 @@ class EmailNotificationHandler
 
         $author = $feed->user;
         $emailSubject = \sprintf(
-        /* translators: %1$s is the user name, %2$s is the space title and %3$s space name */
-            __('%1$s mentioned you in "%2$s" [%3$s]', 'fluent-community'),
-            $author->display_name,
+        /* translators: for admin post to send email all space members: %1$s is the feed title, %2$s is the author name and %3$s space name */
+            __('%1$s - %2$s [%3$s]', 'fluent-community'),
             $feed->getHumanExcerpt(30),
+            $author->display_name,
             $feed->space->title
         );
         $emailBody = $this->getFeedHtml($feed, true);

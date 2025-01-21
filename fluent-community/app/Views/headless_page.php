@@ -52,8 +52,9 @@
 
 <?php if ($layout == 'signup'): ?>
     <div class="fcom_full_layout" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
-        <div class="fcom_layout_side"
-             style="<?php if (!empty($portal['background_image'])): ?>background-image: url(<?php echo esc_url($portal['background_image']); ?>);<?php endif; ?> display: <?php echo $portal['hidden'] ? 'none' : 'flex'; ?>">
+        <div class="fcom_layout_side" style="<?php if (!empty($portal['background_image'])) echo 'background-image: url(' . esc_url($portal['background_image']) . ');'; ?>
+            <?php if (!empty($portal['background_color'])) echo 'background-color: ' . esc_attr($portal['background_color']) . ';'; ?>
+            display: <?php echo $portal['hidden'] ? 'none' : 'flex'; ?>">
             <div class="fcom_welcome">
                 <?php if (!empty($portal['logo'])): ?>
                     <div class="fcom_logo">
@@ -62,11 +63,11 @@
                         </a>
                     </div>
                 <?php endif; ?>
-                <h2 class="fcom_title">
+                <h2 class="fcom_title" style="color: <?php echo esc_attr(!empty($portal['title_color']) ? $portal['title_color'] : 'var(--fcom_text_color, #606266)'); ?>">
                     <?php echo wp_kses_post($portal['title']); ?>
                 </h2>
-                <div class="fcom_sub_title">
-                    <?php echo wp_kses_post($portal['description']); ?>
+                <div class="fcom_sub_title" style="color: <?php echo esc_attr(!empty($portal['text_color']) ? $portal['text_color'] : 'var(--fcom_text_color, #606266)'); ?>">
+                    <p><?php echo wp_kses_post($portal['description']); ?></p>
                 </div>
             </div>
         </div>

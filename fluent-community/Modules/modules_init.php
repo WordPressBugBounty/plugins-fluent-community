@@ -5,4 +5,5 @@ add_action('fluent_community/portal_loaded', function ($app) {
 
     // Load the Integrations
     (new \FluentCommunity\Modules\Integrations\Integrations())->register();
+    (new \FluentCommunity\Modules\Migrations\MigrationModule())->register($app);
 });

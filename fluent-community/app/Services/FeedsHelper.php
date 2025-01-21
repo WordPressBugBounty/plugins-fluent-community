@@ -53,6 +53,7 @@ class FeedsHelper
         $html = (new \FluentCommunity\App\Services\Parsedown([
         ]))
             ->setBreaksEnabled(true)
+            ->setSafeMode(true)
             ->text($text);
 
         if (!Arr::get($options, 'disable_link_process')) {
@@ -421,6 +422,10 @@ class FeedsHelper
             }
         }
 
+        if (Arr::get($feed->meta, 'send_announcement_email') == 'yes') {
+            $feed->send_announcement_email = 'yes';
+        }
+
         $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
 
         if ($surveyConfig) {
@@ -447,7 +452,7 @@ class FeedsHelper
                 $feed->media_images = $mediaImages;
             } else if ($mediaPreview = Arr::get($meta, 'media_preview')) {
                 $type = Arr::get($mediaPreview, 'type');
-                if ($type == 'oembed') {
+                if ($type == 'oembed' || $type == 'iframe_html') {
                     $feed->media = $mediaPreview;
                 }
 
@@ -531,7 +536,12 @@ class FeedsHelper
         }
 
         // Handling Video Embed
-        if (Arr::get($requestData, 'media') && Arr::get($requestData, 'media.type') == 'oembed') {
+        if (Arr::get($requestData, 'media') && (Arr::get($requestData, 'media.type') == 'oembed' || Arr::get($requestData, 'media.type') == 'iframe_html')) {
+            if (Arr::get($requestData, 'media.type') == 'iframe_html') {
+                $data['meta']['media_preview'] = array_filter(Arr::get($requestData, 'media', []));
+                return [$data, $uplaodedDocs];
+            }
+
             $media = Arr::get($requestData, 'media');
             $url = Arr::get($media, 'url');
             $metaData = RemoteUrlParser::parse($url);
@@ -583,6 +593,7 @@ class FeedsHelper
                     'height'      => Arr::get($singleMedia->settings, 'height'),
                     'media_id'    => $singleMedia->id,
                 ];
+
             } else if ($uploadedMediaItems) {
                 $mediaPreviews = [];
                 foreach ($uploadedMediaItems as $mediaItem) {
@@ -594,6 +605,7 @@ class FeedsHelper
                         'height'   => Arr::get($mediaItem->settings, 'height'),
                         'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
                     ];
+
                     $mediaPreviews[] = array_filter($mediaData);
                 }
                 $data['meta']['media_items'] = $mediaPreviews;
@@ -651,7 +663,6 @@ class FeedsHelper
 
             if ($feed->content_type == 'survey') {
                 $votedOptions = $feed->getSurveyCastsByUserId($userId);
-
                 if ($votedOptions) {
                     $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
                     foreach ($surveyConfig['options'] as $index => $option) {
@@ -664,6 +675,14 @@ class FeedsHelper
                     $feed->meta = $meta;
                 }
             }
+        }
+
+        if ($feed->content_type == 'document') {
+            $documentLists = Arr::get($feed->meta, 'document_lists', []);
+            foreach ($documentLists as $index => $document) {
+                $documentLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key=' . $document['media_key'] . '&media_id=' . $document['id']);
+            }
+            $feed->meta['document_lists'] = $documentLists;
         }
 
         return $feed;

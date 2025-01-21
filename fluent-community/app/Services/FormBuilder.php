@@ -14,8 +14,10 @@ class FormBuilder
     public function render()
     {
         foreach ($this->formFields as $name => $field) {
-            $field['name'] = $name;
-            $this->renderField($field);
+            if (empty($field['disabled'])) {
+                $field['name'] = $name;
+                $this->renderField($field);
+            }
         }
     }
 

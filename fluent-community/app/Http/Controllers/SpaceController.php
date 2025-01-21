@@ -2,16 +2,13 @@
 
 namespace FluentCommunity\App\Http\Controllers;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
-use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
-use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Comment;
@@ -72,7 +69,6 @@ class SpaceController extends Controller
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
             'serial'      => $serial ?: 1
         ]);
-
 
         $ogImage = Arr::get($data, 'settings.og_image', '');
         $ogMedia = null;
@@ -216,15 +212,9 @@ class SpaceController extends Controller
         foreach ($mediaTypes as $type) {
             if (!empty($data[$type])) {
                 $media = Helper::getMediaFromUrl($data[$type]);
-                if (!$media) {
+                if (!$media || $media->is_active) {
                     unset($data[$type]);
                     continue;
-                }
-
-                if (!$media || $media->is_active) {
-                    return $this->sendError([
-                        'message' => 'Invalid media image. Please upload a new one.'
-                    ]);
                 }
 
                 $data[$type] = $media->public_url;
@@ -588,13 +578,23 @@ class SpaceController extends Controller
             $selects[] = 'user_email';
         }
 
-        $userIds = User::select(['ID'])
+        $userQuery = User::select(['ID'])
             ->whereDoesntHave('space_pivot', function ($q) use ($space) {
                 $q->where('space_id', $space->id);
             })
             ->limit(100)
-            ->searchBy($request->get('search'))
-            ->get()
+            ->searchBy($request->get('search'));
+
+        if (is_multisite()) {
+            global $wpdb;
+            $blogId = get_current_blog_id();
+            $blogPrefix = $wpdb->get_blog_prefix($blogId);
+            $userQuery->whereHas('usermeta', function($q) use ($blogPrefix) {
+                $q->where('meta_key', $blogPrefix . 'capabilities');
+            });
+        }
+
+        $userIds = $userQuery->get()
             ->pluck('ID')
             ->toArray();
 

@@ -1724,4 +1724,9 @@ class Helper
             return wp_parse_args($config, $default);
         }, WEEK_IN_SECONDS);
     }
+
+    public static function htmlToMd($html)
+    {
+        return preg_replace('/<a.*?href="(.*?)".*?>(.*?)<\/a>/', '[$2]($1)', $html);
+    }
 }

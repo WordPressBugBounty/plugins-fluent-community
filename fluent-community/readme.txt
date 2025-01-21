@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.17
+Stable tag: 1.1.20
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -241,12 +241,33 @@ OR
 
 == Changelog ==
 
+= 1.1.20 (Date: Jan 21, 2024) =
+- New: Migration support for BuddyPress
+- New: Migration support for BuddyBoss
+- New: Added ability to change the space for a post
+- New: Terms and Conditions field customization option
+- Added exclude users from leaderboard
+- Added option to remove users from selected lists
+- Added multisite compatibility for users
+- Added space permission control
+- Added missing translation strings
+- Resolved posting without space selection issue
+- Fixed login/signup background style not rendering
+- Fixed permalink issue in course comments
+- Fixed media storage issue with Amazon S3 region
+- Fixed course document permission issue
+- Fixed profile status update issue in CRM action
+- Addressed numeric emoji saving issue
+- Resolved invalid media image error
+- Improved loading style
+- Improve UI/UX
+
 = 1.1.17 (Date: Dec 17, 2024 =
 - New: Post Sharing Card when sharing community post on the feed
 - Added Missing Translations
 - Added Soundcloud support for oEmbed
 - Added Fallback slug generation for non-latin characters
-- Fixed @veryone tag issues
+- Fixed @everyone tag issues
 - Fixed Styling issue for color customizations
 - Fixed Open Graph Image issue
 

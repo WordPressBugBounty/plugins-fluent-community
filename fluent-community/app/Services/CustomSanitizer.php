@@ -152,10 +152,10 @@ class CustomSanitizer
         }
 
         if ($single && function_exists('\mb_substr')) {
-            $emoji = \mb_substr($emoji, 0, 1, 'UTF-8');
+            $emoji = \mb_substr($emoji, 0, 4, 'UTF-8');
         }
 
-        $isEmoji = preg_match('/[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{2B50}\x{2B55}\x{2934}\x{2935}\x{3297}\x{3299}]/u', $emoji);
+        $isEmoji = preg_match('/[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{2B50}\x{2B55}\x{2934}\x{2935}\x{3297}\x{3299}\x{20E3}]/u', $emoji);
 
         if ($isEmoji) {
             return $emoji;

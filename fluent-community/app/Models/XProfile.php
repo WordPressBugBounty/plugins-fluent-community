@@ -8,7 +8,6 @@ use FluentCommunity\App\Models\Contact;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;
-use FluentCommunity\Framework\Support\Str;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCrm\App\Models\Subscriber;
 
@@ -132,21 +131,21 @@ class XProfile extends Model
 
         if (!empty($this->attributes['avatar'])) {
             $url = $this->attributes['avatar'];
-            if(!$gravatarEnabled && strpos($url, 'gravatar.com')) {
+            if (!$gravatarEnabled && strpos($url, 'gravatar.com')) {
                 $url = apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->user_id);
             }
 
-            if(!$url) {
+            if (!$url) {
                 $url = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png';
             }
 
             return $url;
         }
 
-      if (!$gravatarEnabled) {
+        if (!$gravatarEnabled) {
             $url = apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->user_id);
 
-            if(!$url) {
+            if (!$url) {
                 $url = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png';
             }
 
@@ -160,7 +159,7 @@ class XProfile extends Model
                 // take the first letter of each name
                 $displayName = '';
                 foreach ($names as $name) {
-                    $name = (string) $name;
+                    $name = (string)$name;
                     $firstLetter = $name[0];
                     $displayName .= $firstLetter . '+';
                 }
@@ -168,7 +167,7 @@ class XProfile extends Model
 
             return get_avatar_url($this->user_id, [
                 'size'    => 128,
-                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/'.esc_attr($displayName).'/128', $this->user_id)
+                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/' . esc_attr($displayName) . '/128', $this->user_id)
             ]);
         }, WEEK_IN_SECONDS);
 
@@ -177,6 +176,11 @@ class XProfile extends Model
         }
 
         return $url;
+    }
+
+    public function hasCustomAvatar()
+    {
+        return !empty($this->attributes['avatar']);
     }
 
     public function getBadgeAttribute()

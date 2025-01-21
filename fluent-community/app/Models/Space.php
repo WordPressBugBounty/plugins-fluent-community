@@ -48,7 +48,7 @@ class Space extends BaseSpace
         $userId = $user ? $user->ID : null;
 
         $this->permissions = $this->getUserPermissions($user);
-        $this->description_rendered = FeedsHelper::mdToHtml($this->description);
+        $this->description_rendered = wpautop($this->description);
         $this->membership = $this->getMembership($userId);
         $this->topics = Utility::getTopicsBySpaceId($this->id);
 

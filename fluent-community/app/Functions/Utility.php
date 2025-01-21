@@ -81,6 +81,15 @@ class Utility
         return $exist;
     }
 
+    public static function deleteOption($key)
+    {
+        \FluentCommunity\App\Models\Meta::where('object_type', 'option')
+            ->where('meta_key', $key)
+            ->delete();
+
+        self::forgetCache('option_' . $key);
+    }
+
     public static function getFeaturesConfig()
     {
         static $features = null;
@@ -385,6 +394,12 @@ class Utility
         return $settings;
     }
 
+    public static function hasEmailAnnouncementEnabled()
+    {
+        $settings = self::getEmailNotificationSettings();
+        return Arr::get($settings, 'mention_mail', 'no') === 'yes';
+    }
+
     public static function postTitlePref()
     {
         $pref = self::getCustomizationSetting('post_title_pref');
@@ -481,6 +496,11 @@ class Utility
             if ($maxRunTime === 0) {
                 $maxRunTime = 60;
             }
+            // If set to 0 (unlimited) or a negative value, return a large number
+            if ($maxRunTime <= 0) {
+                return PHP_INT_MAX;
+            }
+
         } else {
             $maxRunTime = 30;
         }

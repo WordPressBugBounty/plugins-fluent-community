@@ -315,8 +315,13 @@ class AuthModdule
         $request = $app->make('request');
         $fields = AuthHelper::getFormFields();
 
+        $authSettings = AuthenticationService::getAuthSettings();
+        $termsField = Arr::get($authSettings, 'signup.form.fields.terms');
+
+        $fields['terms'] = $termsField ?: $fields['terms'];
+
         $requiredFields = array_filter($fields, function ($field) {
-            return $field['required'] ?? false;
+            return ($field['required'] && empty($field['disabled'])) ?? false;
         });
 
         $keys = array_keys($fields);
@@ -728,6 +733,16 @@ class AuthModdule
     public function renderRegistrationForm($frameData, $invitation = null)
     {
         $formFields = AuthHelper::getFormFields($invitation);
+
+        $authSettings = AuthenticationService::getAuthSettings();
+
+        $termsField = Arr::get($authSettings, 'signup.form.fields.terms');
+
+        if ($termsField) {
+            unset($termsField['label']);
+            $formFields['terms'] = $termsField;
+        }
+
         $frameData['formFields'] = $formFields;
 
         if ($invitation) {

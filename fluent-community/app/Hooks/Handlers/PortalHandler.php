@@ -12,7 +12,6 @@ use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
-use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\App\Services\TransStrings;
 use FluentCommunity\App\Vite;
@@ -416,6 +415,7 @@ class PortalHandler
                 'has_survey_poll'       => true,
                 'is_onboarding_enabled' => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
                 'can_switch_layout'     => true,
+                'mention_mail'          => Utility::hasEmailAnnouncementEnabled(),
                 'max_media_per_post'    => apply_filters('fluent_community/max_media_per_post', 4),
                 'has_post_title'        => Utility::postTitlePref(),
                 'has_course'            => Helper::isFeatureEnabled('course_module'),
@@ -533,7 +533,44 @@ class PortalHandler
             'is_absolute_url'           => $isAbsoluteUrl,
             'portal_paths'              => $isAbsoluteUrl ? Helper::portalRoutePaths() : [],
             'suggestedColors'           => Utility::getSuggestedColors(),
-            'view_leaderboard_members'  => Utility::canViewLeaderboardMembers()
+            'view_leaderboard_members'  => Utility::canViewLeaderboardMembers(),
+            'el_i18n'                   => [
+                'pagination' => [
+                    'currentPage'        => \sprintf(__('page %s', 'fluent-community'), '{pager}'),
+                    'deprecationWarning' => 'Deprecated usages detected',
+                    'goto'               => __('Go to', 'fluent-community'),
+                    'next'               => __('Go to next page', 'fluent-community'),
+                    'nextPages'          => \sprintf(__('Next %s pages', 'fluent-community'), ' {pager}'),
+                    'page'               => __('Page', 'fluent-community'),
+                    'pageClassifier'     => '',
+                    'pagesize'           => '/page',
+                    'prev'               => __('Go to previous page', 'fluent-community'),
+                    'prevPages'          => \sprintf(__('Previous %s pages', 'fluent-community'), '{pager}'),
+                    'total'              => \sprintf(__('Total %s', 'fluent-community'), '{total}'),
+                ],
+                'table' => [
+                    'clearFilter' => __('All', 'fluent-community'),
+                    'confirmFilter' => __('Confirm', 'fluent-community'),
+                    'emptyText' => __('No Data', 'fluent-community'),
+                    'resetFilter' => __('Reset', 'fluent-community'),
+                    'sumText' => __('Sum', 'fluent-community'),
+                ],
+                'image' => [
+                    'error' => __('Failed to Load', 'fluent-community'),
+                ],
+                'upload' => [
+                    'continue' => __('Continue', 'fluent-community'),
+                    'delete' => __('Delete', 'fluent-community'),
+                    'deleteTip' => __('press delete to remove', 'fluent-community'),
+                    'preview' => __('Preview', 'fluent-community'),
+                ],
+                'select' => [
+                    'loading' => __('Loading', 'fluent-community'),
+                    'noData' => __('No data', 'fluent-community'),
+                    'noMatch' => __('No matching data', 'fluent-community'),
+                    'placeholder' => __('Select', 'fluent-community'),
+                ]
+            ]
         ]);
 
         if ($xprofile) {

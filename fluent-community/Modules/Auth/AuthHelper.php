@@ -140,9 +140,8 @@ class AuthHelper
         return false;
     }
 
-    public static function getFormFields($invitation = null)
+    public static function getTermsText()
     {
-
         $policyUrl = apply_filters('fluent_community/terms_policy_url', get_privacy_policy_url());
 
         $termsText = __('I agree to the terms and conditions', 'fluent-community');
@@ -150,7 +149,11 @@ class AuthHelper
             $termsText = sprintf(__('I agree to the %1sterms and conditions%2s', 'fluent-community'), '<a rel="nooppener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
         }
 
+        return $termsText;
+    }
 
+    public static function getFormFields($invitation = null)
+    {
         $fields = apply_filters('fluent_community/auth/signup_fields', [
             'full_name'     => [
                 'label'             => __('Full name', 'fluent-community'),
@@ -192,7 +195,7 @@ class AuthHelper
             ],
             'terms'         => [
                 'type'         => 'inline_checkbox',
-                'inline_label' => $termsText,
+                'inline_label' => self::getTermsText(),
                 'required'     => true
             ]
         ], $invitation);

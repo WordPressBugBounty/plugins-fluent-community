@@ -141,7 +141,7 @@ class CommentsController extends Controller
         $comment = Comment::findOrFail($commentId);
         $user = User::find(get_current_user_id());
 
-        if (!$user->can('edit_any_comment') && $comment->user_id != get_current_user_id()) {
+        if ($comment->user_id != get_current_user_id() && !$user->can('edit_any_comment', $feed->space)) {
             return $this->sendError([
                 'message' => __('You are not allowed to edit this comment', 'fluent-community')
             ]);
@@ -390,7 +390,7 @@ class CommentsController extends Controller
         }
 
         $user = User::find(get_current_user_id());
-        if (!$user->can('delete_any_comment') && $comment->user_id != get_current_user_id()) {
+        if ($comment->user_id != get_current_user_id() && !$user->can('delete_any_comment', $feed->space)) {
             return $this->sendError([
                 'message' => 'You are not allowed to delete this comment'
             ]);

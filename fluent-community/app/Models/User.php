@@ -140,6 +140,11 @@ class User extends Model
         return $this->belongsTo(XProfile::class, 'ID', 'user_id');
     }
 
+    public function usermeta()
+    {
+        return $this->hasMany(UserMeta::class, 'user_id', 'ID');
+    }
+
     public function getGeneralData()
     {
         $user = get_user_by('ID', $this->ID);
@@ -522,19 +527,22 @@ class User extends Model
             ];
         } else {
             $isMod = in_array($role, ['admin', 'moderator']);
+            $isAdmin = $role === 'admin';
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? $isMod : true,
                 'can_view_posts'       => true,
                 'can_view_members'     => $space->canViewMembers($this),
                 'registered'           => true,
-                'community_admin'      => $role === 'admin',
+                'community_admin'      => $isAdmin,
                 'community_moderator'  => $isMod,
-                'edit_any_feed'        => $role === 'admin',
+                'edit_any_feed'        => $isAdmin,
                 'delete_any_feed'      => $isMod,
+                'edit_any_comment'     => $isAdmin,
+                'delete_any_comment'   => $isMod,
                 'super_admin'          => Helper::isSiteAdmin(),
                 'read'                 => true,
-                'can_remove_member'    => $role === 'admin',
-                'can_add_member'       => $role === 'admin',
+                'can_remove_member'    => $isAdmin,
+                'can_add_member'       => $isAdmin,
                 'can_comment'          => $isMod,
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
@@ -589,7 +597,7 @@ class User extends Model
 
     public function canEditFeed($feed, $throwException = false)
     {
-        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('edit_any_feed') || $this->hasSpacePermission('edit_any_feed', $feed->space_id);
+        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('edit_any_feed') || $this->hasSpacePermission('edit_any_feed', $feed->space);
 
         if (!$result && $throwException) {
             throw new \Exception('You do not have permission to do this action');
@@ -600,7 +608,7 @@ class User extends Model
 
     public function canDeleteFeed($feed, $throwException = false)
     {
-        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('delete_any_feed') || $this->hasSpacePermission('delete_any_feed', $feed->space_id);
+        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('delete_any_feed') || $this->hasSpacePermission('delete_any_feed', $feed->space);
 
         if (!$result && $throwException) {
             throw new \Exception('You do not have permission to do this action');
@@ -641,7 +649,6 @@ class User extends Model
 
     public function syncXProfile($force = false, $useUserName = false)
     {
-
         $exist = XProfile::where('user_id', $this->ID)->first();
 
         if ($exist && !$force) {

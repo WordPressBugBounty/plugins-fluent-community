@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Services;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Modules\Auth\AuthHelper;
 
 class AuthenticationService
 {
@@ -70,6 +71,7 @@ class AuthenticationService
                         'title'              => 'Sign Up to ' . $siteTitle,
                         'description'        => 'Create an account to get started',
                         'button_label'       => 'Sign up',
+                        'terms_label'        => '',
                         'title_color'        => '#19283a',
                         'text_color'         => '#525866',
                         'button_color'       => '#2B2E33',
@@ -82,7 +84,20 @@ class AuthenticationService
 
             $settings = Utility::getOption('auth_settings', []);
 
-            return wp_parse_args($settings, $defaults);
+            $authSettings = wp_parse_args($settings, $defaults);
+            
+            if (!Arr::get($authSettings, 'signup.form.fields.terms')) {
+                $termsText = AuthHelper::getTermsText();
+                $authSettings['signup']['form']['fields']['terms'] = [
+                    'disabled'     => false,
+                    'required'     => true,
+                    'type'         => 'inline_checkbox',
+                    'label'        => Helper::htmlToMd($termsText),
+                    'inline_label' => $termsText
+                ];
+            }
+
+            return apply_filters('fluent_community/auth/settings', $authSettings);
 
         }, WEEK_IN_SECONDS);
     }
@@ -119,14 +134,23 @@ class AuthenticationService
 
                 $formattedField = array_merge($textValues, $mediaUrls);
 
-                $formattedField['hidden'] = Arr::isTrue($setting, 'hidden');
-
                 $formattedField['description'] = wp_kses_post(Arr::get($setting, 'description'));
 
                 $formattedField['description_rendered'] = FeedsHelper::mdToHtml($formattedField['description']);
 
+                $formattedField['hidden'] = Arr::isTrue($setting, 'hidden');
+                
                 $formattedFields[$section][$key] = $formattedField;
             }
+        }
+
+        if (Arr::get($settingFields, 'signup.form.fields.terms')) {
+            $termsField = Arr::get($settingFields, 'signup.form.fields.terms');
+            $termsField['disabled'] = Arr::isTrue($termsField, 'disabled');
+            $termsField['required'] = Arr::isTrue($termsField, 'required');
+            $termsField['label'] = wp_kses_post($termsField['label']);
+            $termsField['inline_label'] = FeedsHelper::mdToHtml($termsField['label']);
+            $formattedFields['signup']['form']['fields']['terms'] = $termsField;
         }
 
         return $formattedFields;

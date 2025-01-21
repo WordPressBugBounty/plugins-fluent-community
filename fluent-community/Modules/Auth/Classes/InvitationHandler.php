@@ -78,7 +78,7 @@ class InvitationHandler
         $spaceName = $space ? $space->title : __('the community', 'fluent-community');
 
         $frameData['description'] = \sprintf(
-            __('Welcome back %1$s. %2$s has been invited you to join in %3$s. Please click the button below to continue.', 'fluent-community'),
+            __('Welcome back %1$s. %2$s has invited you to join in %3$s. Please click the button below to continue.', 'fluent-community'),
             $user->display_name,
             $invitation->xprofile ? $invitation->xprofile->display_name : __('Someone', 'fluent-community'),
             '<b>' . $spaceName . '</b>'

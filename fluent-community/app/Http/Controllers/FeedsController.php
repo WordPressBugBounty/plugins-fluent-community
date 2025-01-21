@@ -14,9 +14,7 @@ use FluentCommunity\App\Services\Libs\FileSystem;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Http\Request\Request;
-use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
-use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -93,13 +91,15 @@ class FeedsController extends Controller
             }
         }
 
+        $currentUserId = get_current_user_id();
+
         if ($userId) {
             $feedsQuery = $feedsQuery->where('user_id', $userId);
-            if ($userId != get_current_user_id()) {
-                $feedsQuery = $feedsQuery->byUserAccess(get_current_user_id());
+            if ($userId != $currentUserId) {
+                $feedsQuery = $feedsQuery->byUserAccess($currentUserId);
             }
         } else {
-            $feedsQuery->byUserAccess(get_current_user_id());
+            $feedsQuery->byUserAccess($currentUserId);
         }
 
         do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all()]);
@@ -121,7 +121,7 @@ class FeedsController extends Controller
         ];
 
         $isMainFeed = $request->get('page') == 1 && !$search && !$userId;
-        if ($isMainFeed && get_current_user_id()) {
+        if ($isMainFeed && $currentUserId) {
             $data['last_fetched_timestamp'] = current_time('timestamp');
         }
 
@@ -195,7 +195,6 @@ class FeedsController extends Controller
         return $this->getFeedBySlug($request, $feed->slug);
     }
 
-
     public function getBookmarks(Request $request)
     {
         $userId = get_current_user_id();
@@ -261,13 +260,13 @@ class FeedsController extends Controller
 
         if ($spaceSlug = $request->get('space')) {
             $data['space_id'] = $this->validateAndSetSpace($spaceSlug, $user);
-
-            $space = Space::where('id', $data['space_id'])->first();
-
-            if (!$space) {
-                return $this->sendError([
-                    'message' => __('Please select a valid space to post in.', 'fluent-community')
-                ]);
+            if ($data['space_id']) {
+                $space = Space::where('id', $data['space_id'])->first();
+                if (!$space) {
+                    return $this->sendError([
+                        'message' => __('Please select a valid space to post in.', 'fluent-community')
+                    ]);
+                }
             }
 
             if (Arr::get($space->settings, 'topic_required') == 'yes') {
@@ -307,7 +306,15 @@ class FeedsController extends Controller
         // replace new line with br
         $data['message_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($message));
 
+        $requestData['is_admin'] = $user->hasSpacePermission('community_moderator', $space);
+
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData);
+
+        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
+            $data['meta']['send_announcement_email'] = 'yes';
+        } else if (isset($data['meta']['send_announcement_email'])) {
+            $data['meta']['send_announcement_email'] = 'no';
+        }
 
         $data = apply_filters('fluent_community/feed/new_feed_data', $data, $requestData);
 
@@ -366,6 +373,7 @@ class FeedsController extends Controller
     public function update(Request $request, $feedId)
     {
         $requestData = $request->all();
+
         $data = $this->sanitizeAndValidateData($requestData);
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
@@ -382,6 +390,12 @@ class FeedsController extends Controller
         $data['message_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($message));
 
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData, $existingFeed);
+
+        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $user->hasSpacePermission('community_moderator', $existingFeed->space)) {
+            $data['meta']['send_announcement_email'] = 'yes';
+        } else if (Arr::get($existingFeed->meta, 'send_announcement_email')) {
+            $data['meta']['send_announcement_email'] = Arr::get($existingFeed->meta, 'send_announcement_email');
+        }
 
         $data = apply_filters('fluent_community/feed/update_feed_data', $data, $requestData);
 
@@ -415,6 +429,26 @@ class FeedsController extends Controller
                 'user_id' => $user->ID,
                 'time'    => current_time('mysql')
             ];
+        }
+
+
+        if ($newSpaceId = $request->get('new_space_id')) {
+            if (!Helper::isUserInSpace($existingFeed->user_id, $newSpaceId)) {
+                return $this->sendError([
+                    'message' => __('The author is not a member of the selected space', 'fluent-community')
+                ]);
+            }
+
+            $newSpace = Space::findOrFail($newSpaceId);
+
+            // check if the current user is admin
+            if (!$user->hasSpacePermission('community_admin', $newSpace)) {
+                return $this->sendError([
+                    'message' => __('Sorry, you do not have permission to change the space for this post', 'fluent-community')
+                ]);
+            }
+
+            $data['space_id'] = $newSpaceId;
         }
 
         $data = apply_filters('fluent_community/feed/update_data', $data, $existingFeed);

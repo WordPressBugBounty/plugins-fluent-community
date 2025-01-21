@@ -134,7 +134,7 @@ class EmailComposer
 
         if (!$footerTextHtml) {
             if ($settings['disable_powered_by'] == 'no') {
-                $poweredBy = '<a href="https://fluentcommunity.com/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; margin: 10px 0; text-decoration: none;">Powered by FluentCommunity</a>';
+                $poweredBy = '<a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; margin: 10px 0; text-decoration: none;">Powered by FluentCommunity</a>';
                 $this->addFooterLine('paragraph', $poweredBy);
             }
             return $this;
@@ -169,7 +169,7 @@ class EmailComposer
         $this->addFooterLine('paragraph', $footerTextHtml);
 
         if ($settings['disable_powered_by'] == 'no') {
-            $poweredBy = '<p class="powered_by"><a href="https://fluentcommunity.com/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; text-decoration: none;">Powered by FluentCommunity</a></p>';
+            $poweredBy = '<p class="powered_by"><a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; text-decoration: none;">Powered by FluentCommunity</a></p>';
             $this->addFooterLine('paragraph', $poweredBy);
         }
 
