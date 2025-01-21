@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.20
+Stable tag: 1.1.21
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,9 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.1.21 (Date: Jan 21, 2024) =
+- Hotfix: mention html fixed
 
 = 1.1.20 (Date: Jan 21, 2024) =
 - New: Migration support for BuddyPress
