@@ -2,10 +2,9 @@
 
 namespace FluentCommunity\App\Hooks\CLI;
 
-use FluentCommunity\App\App;
+use FluentCommunityPro\App\Modules\LeaderBoard\Services\LeaderBoardHelper;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;
-use FluentCommunityPro\App\Modules\LeaderBoard\Services\LeaderBoardHelper;
 
 class Commands
 {
@@ -74,7 +73,7 @@ class Commands
         delete_option('_fcom_bp_migrations_meta');
 
         $user_id = wp_create_user('admin', 'admin', 'admin@gmail.com');
-        $user    = new \WP_User($user_id);
+        $user = new \WP_User($user_id);
         $user->set_role('administrator');
 
         \WP_CLI::success('Tables Truncated Successfully');

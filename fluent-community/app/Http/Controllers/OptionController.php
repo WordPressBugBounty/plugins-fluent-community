@@ -36,7 +36,7 @@ class OptionController extends Controller
             $userSpaces->each(function ($space) use ($userModel) {
                 $space->permissions = $userModel->getSpacePermissions($space);
                 $space->membership = $space->getMembership($userModel->ID);
-                $space->description_rendered = FeedsHelper::mdToHtml($space->description);
+                $space->description_rendered = wp_kses_post(FeedsHelper::mdToHtml($space->description));
                 if ($space->privacy == 'private' && !$space->membership) {
                     $space->lockscreen_config = LockscreenService::getLockscreenConfig($space);
                 }

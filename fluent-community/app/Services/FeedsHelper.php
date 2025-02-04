@@ -53,7 +53,7 @@ class FeedsHelper
         $html = (new \FluentCommunity\App\Services\Parsedown([
         ]))
             ->setBreaksEnabled(true)
-         //   ->setSafeMode(true)
+          //  ->setSafeMode(true)
             ->text($text);
 
         if (!Arr::get($options, 'disable_link_process')) {
@@ -593,7 +593,6 @@ class FeedsHelper
                     'height'      => Arr::get($singleMedia->settings, 'height'),
                     'media_id'    => $singleMedia->id,
                 ];
-
             } else if ($uploadedMediaItems) {
                 $mediaPreviews = [];
                 foreach ($uploadedMediaItems as $mediaItem) {
@@ -605,7 +604,6 @@ class FeedsHelper
                         'height'   => Arr::get($mediaItem->settings, 'height'),
                         'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
                     ];
-
                     $mediaPreviews[] = array_filter($mediaData);
                 }
                 $data['meta']['media_items'] = $mediaPreviews;

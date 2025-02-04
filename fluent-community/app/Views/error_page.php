@@ -25,16 +25,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
             <h3 style="margin: 0"><?php echo wp_kses_post($title); ?></h3>
         </div>
         <div style="padding: 20px 20px 40px;background: white;border-bottom-left-radius: 10px;border-bottom-right-radius: 10px;" class="fcom_error_body">
-            <p>
-                <?php echo wp_kses_post($description); ?>
-            </p>
+            <p><?php echo wp_kses_post($description); ?></p>
 
             <?php if($btn_txt): ?>
-            <div style="text-align: center;margin-top: 40px;" class="btn_wrapper">
-                <a style=" background: black;color: white;padding: 10px 20px;border-radius: 5px;text-decoration: none;display: inline-block;" href="<?php echo esc_url($url); ?>" class="fcom_btn fcom_btn_primary">
-                    <?php echo wp_kses_post($btn_txt); ?>
-                </a>
-            </div>
+                <div style="text-align: center;margin-top: 40px;" class="btn_wrapper">
+                    <a style=" background: black;color: white;padding: 10px 20px;border-radius: 5px;text-decoration: none;display: inline-block;" href="<?php echo esc_url($url); ?>" class="fcom_btn fcom_btn_primary">
+                        <?php echo wp_kses_post($btn_txt); ?>
+                    </a>
+                </div>
             <?php endif; ?>
         </div>
     </div>

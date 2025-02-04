@@ -64,7 +64,9 @@ class DailyDigest
             Arr::get($settings, 'site_title')
         );
 
-        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . date('F d', strtotime('-7 days')) . ' - ' . date('F d, Y') . '</p>';
+        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . 
+            sprintf(__('%1$s - %2$s', 'fluent-community'), date_i18n('F d', strtotime('-7 days')), date_i18n('F d, Y')) . '</p>';
+
         $emailComposer->addBlock('html_content', $headingHtml);
         $emailComposer->addBlock('paragraph', __('Here are some of the most popular posts and notifications you may have missed from the last week 🔥.', 'fluent-community'));
 

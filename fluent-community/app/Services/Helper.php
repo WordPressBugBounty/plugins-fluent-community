@@ -708,51 +708,51 @@ class Helper
 
         $isComModerator = $user && $user->hasCommunityModeratorAccess();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
-
+        $isNotMemberOfAnySpace = $user && $user->isNotMemberOfAnySpace();
         $formattedGroups = [];
 
         foreach ($communityGroups as $communityGroup) {
-            $spaces = $communityGroup->spaces;
             $validSpaces = [];
+            $spaces = $communityGroup->spaces;
             $isShowAll = Arr::get($communityGroup->settings, 'always_show_spaces') === 'yes';
 
+            if (!$isShowAll && $isNotMemberOfAnySpace) {
+                continue;
+            }
+
             foreach ($spaces as $space) {
+                $validSpace = self::transformSpaceToLink($space);
+
                 if ($isComModerator && $space->type != 'course') {
-                    $validSpaces[] = self::transformSpaceToLink($space);
-                    continue;
-                }
-
-                if ($isCourseCreator && $space->type == 'course') {
-                    $validSpaces[] = self::transformSpaceToLink($space);
-                    continue;
-                }
-
-                if ($space->privacy === 'secret') {
-                    if (!$user || !$space->getMembership($user->ID)) {
-                        continue;
-                    }
-                    $validSpaces[] = self::transformSpaceToLink($space);
-                    continue;
-                }
-
-                if ($isShowAll || $space->privacy = 'public') {
-                    $validSpace = self::transformSpaceToLink($space);
-
-                    if ($space->privacy == 'private') {
-                        if (!$user || !$space->getMembership($user->ID)) {
-                            $validSpace['show_lock'] = true;
-                        }
-                    }
-
                     $validSpaces[] = $validSpace;
                     continue;
                 }
 
-                if (!$user || $space->getMembership($user->ID)) {
+                if ($isCourseCreator && $space->type == 'course') {
+                    $validSpaces[] = $validSpace;
                     continue;
                 }
 
-                $validSpaces[] = self::transformSpaceToLink($space);
+                if ($space->privacy == 'public') {
+                    $validSpaces[] = $validSpace;
+                    continue;
+                }
+
+                $hasMembership = $space->getMembership($user->ID);
+
+                if ($space->privacy == 'private') {
+                    if (!$user || !$hasMembership) {
+                        $validSpace['show_lock'] = true;
+                    }
+                }
+
+                if ($space->privacy == 'secret') {
+                    if (!$user || !$hasMembership) {
+                        continue;
+                    }
+                }
+
+                $validSpaces[] = $validSpace;
             }
 
             if (!$validSpaces && !$isComModerator && !$isCourseCreator) {
@@ -779,7 +779,6 @@ class Helper
      */
     private static function transformSpaceToLink($space)
     {
-
         $logo = $space->logo;
 
         $title = $space->title;
@@ -1416,9 +1415,9 @@ class Helper
         ]);
 
         if ($space->type == 'course') {
-            do_action('fluent_community/course/enrolled', $space, $userId, $by);
+            do_action('fluent_community/course/enrolled', $space, $userId, $by, $created);
         } else {
-            do_action('fluent_community/space/joined', $space, $userId, $by);
+            do_action('fluent_community/space/joined', $space, $userId, $by, $created);
         }
 
         return true;

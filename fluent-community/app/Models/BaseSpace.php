@@ -40,6 +40,7 @@ class BaseSpace extends Model
     public static function boot()
     {
         parent::boot();
+
         static::creating(function ($model) {
             if (empty($model->created_by)) {
                 $model->created_by = get_current_user_id();
@@ -125,6 +126,11 @@ class BaseSpace extends Model
     public function posts()
     {
         return $this->hasMany(Feed::class, 'space_id', 'id');
+    }
+
+    public function comments()
+    {
+        return $this->hasManyThrough(Comment::class, Feed::class, 'space_id','post_id');
     }
 
     public function members()
@@ -490,10 +496,16 @@ class BaseSpace extends Model
         $title = remove_accents($title);
 
         $title = strtolower($title);
-        // only allow alphanumeric, dash, and underscore
+
         $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
 
-        $title = sanitize_title($title, self::$type . '-' . time());
+        $slugNum = time();
+
+        if (self::$type == 'community') {
+            $slugNum = self::withoutGlobalScopes()->where('type', self::$type)->count();
+        }
+
+        $title = sanitize_title($title, self::$type . '-' . $slugNum);
 
         // check if the slug is already exists
         $slug = $title;
@@ -502,7 +514,7 @@ class BaseSpace extends Model
             if ($count == 5) {
                 $count = time();
             }
-            $slug = $title . '-' . $count;
+            $slug = $title . '-' . ++$slugNum;
             $count++;
         }
 

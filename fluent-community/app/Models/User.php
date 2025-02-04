@@ -28,6 +28,8 @@ class User extends Model
 
     protected $appends = ['photo'];
 
+    public $timestamps = false;
+
     protected $searchable = [
         'display_name',
         'user_email'
@@ -298,6 +300,11 @@ class User extends Model
         ]);
     }
 
+    public function isNotMemberOfAnySpace()
+    {
+        return $this->spaces()->count() == 0;
+    }
+
     public function getSpaceIds($cached = true)
     {
         if ($cached) {
@@ -535,9 +542,9 @@ class User extends Model
                 'registered'           => true,
                 'community_admin'      => $isAdmin,
                 'community_moderator'  => $isMod,
-                'edit_any_feed'        => $isAdmin,
+                'edit_any_feed'        => $isMod,
                 'delete_any_feed'      => $isMod,
-                'edit_any_comment'     => $isAdmin,
+                'edit_any_comment'     => $isMod,
                 'delete_any_comment'   => $isMod,
                 'super_admin'          => Helper::isSiteAdmin(),
                 'read'                 => true,
@@ -623,6 +630,15 @@ class User extends Model
         }
 
         return $this->hasCommunityPermission($permission);
+    }
+
+    public function hasPermissionOrInCurrentSpace($permission, $space = null)
+    {
+        if ($this->hasCommunityPermission($permission)) {
+            return true;
+        }
+
+        return $space && $this->hasSpacePermission($permission, $space);
     }
 
     public function getUnreadNotificationCount()

@@ -3,7 +3,6 @@
 namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
-use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\Framework\Support\Arr;
@@ -20,7 +19,6 @@ use FluentCommunity\Framework\Support\Arr;
 class Space extends BaseSpace
 {
     protected static $type = 'community';
-
 
     public function defaultSettings()
     {

@@ -45,7 +45,12 @@ class SpacePolicy extends BasePolicy
         return !!get_current_user_id();
     }
 
-    public function delete(Request $request)
+    public function deleteBySlug(Request $request)
+    {
+        return $this->canManageCommunity($request);
+    }
+
+    public function deleteById(Request $request)
     {
         return $this->canManageCommunity($request);
     }
@@ -92,13 +97,34 @@ class SpacePolicy extends BasePolicy
     {
         $user = User::find(get_current_user_id());
 
-        return $user && $user->hasCommunityAdminAccess();
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->hasCommunityAdminAccess()) {
+            return true;
+        }
+
+        $space = Space::find($request->get('space_id'));
+
+        return $space && $user->getSpaceRole($space) === 'admin';
     }
 
     protected function canManageSpace(Request $request)
     {
         $user = User::find(get_current_user_id());
 
-        return $user && $user->hasSpaceManageAccess();
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->hasSpaceManageAccess()) {
+            return true;
+        }
+
+        $space = Space::find($request->get('space_id'));
+
+        return $space && $user->getSpaceRole($space) === 'admin';
     }
 }
+

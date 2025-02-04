@@ -5,13 +5,10 @@ namespace FluentCommunity\App\Http\Controllers;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\Feed;
-use FluentCommunity\App\Models\Notification;
-use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
-use FluentCommunity\Framework\Support\Arr;
 
 class ActivityController extends Controller
 {

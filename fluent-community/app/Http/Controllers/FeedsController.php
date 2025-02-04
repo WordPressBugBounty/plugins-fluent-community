@@ -48,7 +48,7 @@ class FeedsController extends Controller
                     'reactions'         => function ($q) {
                         $q->with([
                             'xprofile' => function ($query) {
-                                $query->select(['user_id', 'avatar']);
+                                $query->select(['user_id', 'avatar', 'display_name']);
                             }
                         ])
                             ->where('type', 'like')
@@ -250,10 +250,6 @@ class FeedsController extends Controller
         $data = $this->sanitizeAndValidateData($requestData);
         $data['user_id'] = $user->ID;
 
-        if ($isDulicate = $this->checkForDuplicatePost($user->ID, $data['message'])) {
-            return $isDulicate;
-        }
-
         $feed = new Feed();
         $feed->user_id = $user->ID;
         $space = null;
@@ -296,7 +292,13 @@ class FeedsController extends Controller
             ]);
         }
 
-        $message = $data['message'];
+        $spaceId = Arr::get($data, 'space_id');
+        $message = Arr::get($data, 'message');
+
+        if ($isDulicate = $this->checkForDuplicatePost($user->ID, $message, $spaceId)) {
+            return $isDulicate;
+        }
+
         $mentions = FeedsHelper::getMentions($data['message'], Arr::get($data, 'space_id'));
         if ($mentions) {
             $data['message'] = $message;
@@ -442,7 +444,7 @@ class FeedsController extends Controller
             $newSpace = Space::findOrFail($newSpaceId);
 
             // check if the current user is admin
-            if (!$user->hasSpacePermission('community_admin', $newSpace)) {
+            if (!$user->hasPermissionOrInCurrentSpace('community_admin', $newSpace)) {
                 return $this->sendError([
                     'message' => __('Sorry, you do not have permission to change the space for this post', 'fluent-community')
                 ]);
@@ -511,10 +513,11 @@ class FeedsController extends Controller
         $feed = Feed::findOrFail($feedId);
         $user = $this->getUser(true);
 
-        $isMod = $user->isCommunityModerator();
         $isAuthor = $feed->user_id == $user->ID;
+        $isMod = $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
+        $isAdmin = $user->hasPermissionOrInCurrentSpace('community_admin', $feed->space);
 
-        if (!$isMod && !$isAuthor) {
+        if (!$isMod && !$isAuthor && !$isAdmin) {
             return $this->sendError([
                 'message' => __('You do not have permission to perform this action', 'fluent-community')
             ]);
@@ -614,13 +617,16 @@ class FeedsController extends Controller
         return FeedsHelper::sanitizeAndValidateData($data);
     }
 
-    private function checkForDuplicatePost($userId, $message)
+    private function checkForDuplicatePost($userId, $message, $spaceId = null)
     {
         $message = trim($message);
 
         $exist = Feed::where('user_id', $userId)
             ->where('message', $message)
             ->where('created_at', '>', gmdate('Y-m-d H:i:s', current_time('timestamp') - 7 * 24 * 60 * 60))
+            ->when($spaceId, function ($query) use ($spaceId) {
+                $query->where('space_id', $spaceId);
+            })
             ->first();
 
         if ($exist) {

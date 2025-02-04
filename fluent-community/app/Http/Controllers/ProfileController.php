@@ -33,7 +33,7 @@ class ProfileController extends Controller
             'avatar'                     => $xprofile->avatar,
             'created_at'                 => $xprofile->created_at->format('Y-m-d H:i:s'),
             'last_activity'              => $xprofile->last_activity,
-            'short_description_rendered' => FeedsHelper::mdToHtml($xprofile->short_description),
+            'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml($xprofile->short_description)),
             'cover_photo'                => Arr::get($xprofile->meta, 'cover_photo'),
             'website'                    => Arr::get($xprofile->meta, 'website'),
             'social_links'               => (object)Arr::get($xprofile->meta, 'social_links', []),

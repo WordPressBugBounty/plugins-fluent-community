@@ -15,7 +15,8 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->get('/{spaceSlug}/members', 'SpaceController@getMembers')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/members', 'SpaceController@addMember')->alphaNumDash('spaceSlug');
 
-    $router->delete('/{spaceSlug}', 'SpaceController@delete')->alphaNumDash('spaceSlug');
+    $router->delete('/{spaceSlug}', 'SpaceController@deleteBySlug')->alphaNumDash('spaceSlug');
+    $router->delete('/{spaceId}/by-id', 'SpaceController@deleteById')->int('spaceId');
     $router->post('/{spaceSlug}/members/remove', 'SpaceController@removeMember')->alphaNumDash('spaceSlug');
 
     $router->get('/{spaceSlug}/lockscreens', 'SpaceController@getLockScreenSettings')->alphaNumDash('spaceSlug');

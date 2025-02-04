@@ -136,7 +136,7 @@ class AuthenticationService
 
                 $formattedField['description'] = wp_kses_post(Arr::get($setting, 'description'));
 
-                $formattedField['description_rendered'] = FeedsHelper::mdToHtml($formattedField['description']);
+                $formattedField['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($formattedField['description']));
 
                 $formattedField['hidden'] = Arr::isTrue($setting, 'hidden');
                 
@@ -149,7 +149,7 @@ class AuthenticationService
             $termsField['disabled'] = Arr::isTrue($termsField, 'disabled');
             $termsField['required'] = Arr::isTrue($termsField, 'required');
             $termsField['label'] = wp_kses_post($termsField['label']);
-            $termsField['inline_label'] = FeedsHelper::mdToHtml($termsField['label']);
+            $termsField['inline_label'] = wp_kses_post(FeedsHelper::mdToHtml($termsField['label']));
             $formattedFields['signup']['form']['fields']['terms'] = $termsField;
         }
 

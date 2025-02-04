@@ -425,6 +425,7 @@ class PortalHandler
                 'video_embeder'         => apply_filters('fluent_community/has_video_embeder', true),
                 'has_topics'            => !!Utility::getTopics(),
                 'show_post_modal'       => Utility::isCustomizationEnabled('show_post_modal'),
+                'has_analytics'         => Utility::hasAnalyticsEnabled(),
             ],
             'route_classes'             => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),

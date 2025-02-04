@@ -104,6 +104,11 @@ class XProfile extends Model
         return $this->hasMany(Feed::class, 'user_id', 'user_id');
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'user_id', 'user_id');
+    }
+
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'fcom_space_user', 'user_id', 'space_id')

@@ -300,11 +300,11 @@ class AdminController extends Controller
         $settings = CustomSanitizer::sanitizeWelcomeBannerSettings($settings);
 
         if (Arr::get($settings, 'login.enabled') == 'yes') {
-            $settings['login']['description_rendered'] = FeedsHelper::mdToHtml(Arr::get($settings, 'login.description'));
+            $settings['login']['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml(Arr::get($settings, 'login.description')));
         }
 
         if (Arr::get($settings, 'logout.enabled') == 'yes') {
-            $settings['logout']['description_rendered'] = FeedsHelper::mdToHtml(Arr::get($settings, 'logout.description'));
+            $settings['logout']['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml(Arr::get($settings, 'logout.description')));
             if (Arr::get($settings, 'logout.buttonLabel') && Arr::get($settings, 'logout.useCustomUrl') != 'yes') {
                 $settings['logout']['buttonLink'] = Helper::getAuthUrl();
             }

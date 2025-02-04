@@ -157,9 +157,12 @@ class AuthModdule
             'logo'          => Arr::get($portalSettings, 'logo', ''),
             'title'         => sprintf(__('Join %s', 'fluent-community'), $titleVar),
             'description'   => __('Login or Signup to join the community', 'fluent-community'),
-            'loginBtnText'  => __('Login', 'fluent-community'),
-            'signupBtnText' => __('Signup', 'fluent-community'),
+            'button_label'  => __('Login', 'fluent-community'),
         ];
+
+        if($targetForm == 'register') {
+            $frameData['button_label'] = __('Signup', 'fluent-community');
+        }
 
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
 
@@ -706,7 +709,7 @@ class AuthModdule
 
         $frameData['hiddenFields'] = [];
         if ($invitation) {
-            $frameData['loginBtnText'] = __('Log In & Accept Invitation', 'fluent-community');
+            $frameData['button_label'] = __('Log In & Accept Invitation', 'fluent-community');
             $frameData['hiddenFields']['invitation_token'] = $invitation->message_rendered;
         }
 
@@ -770,7 +773,6 @@ class AuthModdule
                 'action'            => 'fcom_user_registration',
                 '_fls_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce'),
             ];
-            $frameData['button_label'] = Arr::get($frameData, 'signupBtnText', __('Sign up', 'fluent-community'));
         }
 
         add_action('fluent_community/before_registration_form', function ($frameData) {

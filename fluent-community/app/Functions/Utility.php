@@ -1098,4 +1098,15 @@ class Utility
 
         return sanitize_title($title, $fallback);
     }
+
+    public static function hasAnalyticsEnabled()
+    {
+        $defaultSettings = [ 'status' => 'no'];
+
+        $settings = apply_filters('fluent_community/features/analytics', $defaultSettings);
+
+        $status = Arr::get($settings, 'status');
+
+        return $status === 'yes';
+    }
 }

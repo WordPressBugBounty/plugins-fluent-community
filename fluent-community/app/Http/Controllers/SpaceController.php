@@ -37,18 +37,17 @@ class SpaceController extends Controller
 
         $data = $request->get('space', []);
 
-        if (empty($data['slug'])) {
-            $data['slug'] = sanitize_title($data['title'], '');
-        } else {
-            $data['slug'] = sanitize_title($data['slug'], '');
-        }
+        $slug = $data['slug'] ?: $data['title'];
 
+        $slug = preg_replace('/[^a-zA-Z0-9]/', '', $slug);
+
+        $data['slug'] = sanitize_title($slug, '');
         $data['title'] = sanitize_text_field($data['title']);
         $data['privacy'] = sanitize_text_field($data['privacy']);
 
         $this->validate($data, [
             'title'   => 'required',
-            'slug'    => 'required|unique:fcom_spaces,slug',
+            'slug'    => 'unique:fcom_spaces,slug',
             'privacy' => 'required|in:public,private,secret'
         ]);
 
@@ -139,7 +138,7 @@ class SpaceController extends Controller
                 })
                     ->orWhereIn('privacy', ['public', 'private']);
             })
-            ->get();
+            ->paginate();
 
         foreach ($spaces as $space) {
             if (Arr::get($space->settings, 'hide_members_count') == 'yes' && (!$currentUser || !$space->verifyUserPermisson($currentUser, 'can_view_members', false))) {
@@ -232,7 +231,7 @@ class SpaceController extends Controller
 
         $data = apply_filters('fluent_community/space/update_data', $data, $space);
 
-        if (empty($data['parent_id'])) {
+        if (isset($data['parent_id']) && !$data['parent_id']) {
             $data['parent_id'] = '';
         }
 
@@ -408,7 +407,7 @@ class SpaceController extends Controller
         ];
     }
 
-    public function delete(Request $request, $slug)
+    public function deleteBySlug(Request $request, $slug)
     {
         $space = Space::where('slug', $slug)->first();
 
@@ -440,6 +439,13 @@ class SpaceController extends Controller
         return [
             'message' => __('Space has been deleted successfully', 'fluent-community')
         ];
+    }
+
+    public function deleteById(Request $request, $id)
+    {
+        $space = Space::findOrFail($id);
+
+        return $this->deleteBySlug($request, $space->slug);
     }
 
     public function addMember(Request $request, $slug)

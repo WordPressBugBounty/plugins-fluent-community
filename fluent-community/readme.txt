@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.21
+Stable tag: 1.1.22
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -241,10 +241,26 @@ OR
 
 == Changelog ==
 
-= 1.1.21 (Date: Jan 21, 2024) =
+= 1.1.22 (Date: Feb 04, 2025) =
+- New: Reporting and Analytics Overview
+- New: Integration with Paymattic
+- New: Allow Users to Leave/Join Group Chat
+- Improvement: Multiple Media Upload Support in Post Comment
+- Added Pagination for Space and Course Lists
+- Added Options to Edit and Delete Space in Space Group Settings
+- Duplicate Post Validation Limited to Current Space
+- Resolved: Video Embed Issue with Custom HTML
+- Resolved Space Remove from Group Issue
+- Fixed: Login Button Label Not Updating Issue
+- Fixed: Group Space Menu Visibility for Public
+- Fixed: Space Permission Handling Issue
+- Fixed: Flags Emoji Saving Issue
+- Fixed Slug Not Updating Issue
+
+= 1.1.21 (Date: Jan 21, 2025) =
 - Hotfix: mention html fixed
 
-= 1.1.20 (Date: Jan 21, 2024) =
+= 1.1.20 (Date: Jan 21, 2025) =
 - New: Migration support for BuddyPress
 - New: Migration support for BuddyBoss
 - New: Added ability to change the space for a post
@@ -265,7 +281,7 @@ OR
 - Improved loading style
 - Improve UI/UX
 
-= 1.1.17 (Date: Dec 17, 2024 =
+= 1.1.17 (Date: Dec 17, 2024) =
 - New: Post Sharing Card when sharing community post on the feed
 - Added Missing Translations
 - Added Soundcloud support for oEmbed

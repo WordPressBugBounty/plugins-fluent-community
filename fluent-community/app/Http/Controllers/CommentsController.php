@@ -84,7 +84,7 @@ class CommentsController extends Controller
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
 
         if ($parentId = $request->get('parent_id')) {
-            $parentId = (int) $parentId;
+            $parentId = (int)$parentId;
             $parentComment = Comment::where('id', $parentId)
                 ->where('post_id', $feed->id)
                 ->first();
@@ -98,7 +98,7 @@ class CommentsController extends Controller
             $commentData['parent_id'] = $parentId;
         }
 
-        [$commentData, $media] = $this->prepareCommentMedia($commentData, $requestData);
+        [$commentData, $mediaItems] = $this->prepareCommentMedia($commentData, $requestData);
 
         do_action('fluent_community/before_comment_create', $commentData, $feed);
 
@@ -109,14 +109,16 @@ class CommentsController extends Controller
         $feed->comments_count = $feed->comments_count + 1;
         $feed->save();
 
-        if ($media) {
-            $media->fill([
-                'is_active'     => 1,
-                'feed_id'       => $feed->id,
-                'object_source' => 'comment',
-                'sub_object_id' => $comment->id
-            ]);
-            $media->save();
+        if ($mediaItems) {
+            foreach ($mediaItems as $mediaItem) {
+                $mediaItem->fill([
+                    'is_active'     => 1,
+                    'feed_id'       => $feed->id,
+                    'object_source' => 'comment',
+                    'sub_object_id' => $comment->id
+                ]);
+                $mediaItem->save();
+            }
         }
 
         $this->loadCommentRelations($comment);
@@ -152,7 +154,7 @@ class CommentsController extends Controller
 
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
 
-        [$commentData, $media] = $this->prepareCommentMedia($commentData, $requestData, $comment);
+        [$commentData, $mediaItems] = $this->prepareCommentMedia($commentData, $requestData, $comment);
 
         $commentData = apply_filters('fluent_community/comment/update_comment_data', $commentData, $feed, $requestData);
 
@@ -164,23 +166,29 @@ class CommentsController extends Controller
             $comment->save();
         }
 
-        if ($media) {
-            $media->fill([
-                'is_active'     => 1,
-                'feed_id'       => $feed->id,
-                'object_source' => 'comment',
-                'sub_object_id' => $comment->id
-            ]);
-            $media->save();
+        if ($mediaItems) {
+            $mediaIds = [];
+            foreach ($mediaItems as $media) {
+                $media->fill([
+                    'is_active'     => 1,
+                    'feed_id'       => $feed->id,
+                    'object_source' => 'comment',
+                    'sub_object_id' => $comment->id
+                ]);
+                $media->save();
+                $mediaIds[] = $media->id;
+            }
 
             // remove other media
             $otherMedias = Media::where('object_source', 'comment')
+                ->when($mediaIds, function ($q) use ($mediaIds) {
+                    $q->whereNotIn('id', $mediaIds);
+                })
                 ->where('sub_object_id', $comment->id)
-                ->where('id', '!=', $media->id)
                 ->get();
 
             if (!$otherMedias->isEmpty()) {
-            //    do_action('fluent_community/comment/media_deleted', $otherMedias);
+                do_action('fluent_community/comment/media_deleted', $otherMedias);
             }
         } else {
             // remove other media
@@ -189,7 +197,7 @@ class CommentsController extends Controller
                 ->get();
 
             if (!$otherMedias->isEmpty()) {
-             //   do_action('fluent_community/comment/media_deleted', $otherMedias);
+                do_action('fluent_community/comment/media_deleted', $otherMedias);
             }
         }
 
@@ -211,19 +219,54 @@ class CommentsController extends Controller
         $mediaImages = Arr::get($requestData, 'media_images', []);
 
         if ($mediaImages) {
-            $uploadedImages = Helper::getMediaByProvider($mediaImages);
-            if ($uploadedImages) {
-                $mediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
-                if ($mediaItems) {
-                    $firstMedia = $mediaItems[0];
-                    $commentData['meta']['media_preview'] = [
-                        'image'    => $firstMedia->public_url,
-                        'type'     => 'image',
-                        'provider' => 'upload',
-                        'height'   => $firstMedia->settings ? Arr::get($firstMedia->settings, 'height', 0) : 0,
-                        'width'    => $firstMedia->settings ? Arr::get($firstMedia->settings, 'width', 0) : 0,
-                    ];
-                    return [$commentData, $firstMedia];
+            if ($exisitngComment) {
+                $mediaItems = [];
+                $mediaData = [];
+                foreach ($mediaImages as $mediaImage) {
+                    $id = Arr::get($mediaImage, 'media_id');
+                    if ($id) {
+                        $media = Media::where('sub_object_id', $exisitngComment->id)
+                            ->where('object_source', 'comment')
+                            ->find($id);
+                    } else {
+                        $media = Helper::getMediaFromUrl($mediaImage);
+                    }
+
+                    if ($media) {
+                        $mediaItems[] = $media;
+                        $mediaData[] = [
+                            'media_id' => $media->id,
+                            'url'      => $media->public_url,
+                            'type'     => 'image',
+                            'width'    => Arr::get($media->settings, 'width'),
+                            'height'   => Arr::get($media->settings, 'height'),
+                            'provider' => Arr::get($media->settings, 'provider', 'uploader')
+                        ];
+                    }
+                }
+                $commentData['meta']['media_items'] = $mediaData;
+                return [$commentData, $mediaItems];
+            } else {
+                $uploadedImages = Helper::getMediaByProvider($mediaImages);
+                if ($uploadedImages) {
+                    $mediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
+                    if ($mediaItems) {
+                        $mediaPreviews = [];
+                        foreach ($mediaItems as $mediaItem) {
+                            $mediaData = [
+                                'media_id' => $mediaItem->id,
+                                'url'      => $mediaItem->public_url,
+                                'type'     => 'image',
+                                'width'    => Arr::get($mediaItem->settings, 'width'),
+                                'height'   => Arr::get($mediaItem->settings, 'height'),
+                                'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
+                            ];
+
+                            $mediaPreviews[] = array_filter($mediaData);
+                        }
+                        $commentData['meta']['media_items'] = $mediaPreviews;
+                        return [$commentData, $mediaItems];
+                    }
                 }
             }
         }
@@ -290,7 +333,7 @@ class CommentsController extends Controller
             $user = $this->getUser(true);
             $user->verifySpacePermission('registered', $feed->space);
 
-            if($feed->space->type == 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
+            if ($feed->space->type == 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
                 throw new \Exception(esc_html__('Comments are disabled for this course', 'fluent-community'));
             }
         }
@@ -476,9 +519,46 @@ class CommentsController extends Controller
         ])->findOrFail($id);
 
         // Just to verify the permission
-        $feed = Feed::withoutGlobalScopes()
+        Feed::withoutGlobalScopes()
             ->byUserAccess($this->getUserId())
             ->findOrFail($comment->post_id);
+
+        if ($request->get('context') == 'edit') {
+            $meta = $comment->meta;
+            unset($comment->meta);
+            $images = Arr::get($meta, 'media_items', []);
+            if ($images) {
+                $comment->media_images = $images;
+            } else {
+                $preview = Arr::get($meta, 'media_preview', []);
+                if ($preview) {
+                    $previewUrl = Arr::get($preview, 'image');
+                    $provider = Arr::get($preview, 'provider');
+                    if ($previewUrl && $provider == 'uploader') {
+                        $media = Media::where('media_url', $previewUrl)
+                            ->where('object_source', 'comment')
+                            ->where('sub_object_id', $comment->id)
+                            ->first();
+                        if ($media) {
+                            $comment->media_images = [
+                                [
+                                    'media_id' => $media->id,
+                                    'url'      => $media->public_url,
+                                    'type'     => $media->media_type,
+                                    'width'    => Arr::get($media->settings, 'width'),
+                                    'height'   => Arr::get($media->settings, 'height'),
+                                    'provider' => Arr::get($media->settings, 'provider', 'uploader')
+                                ]
+                            ];
+                        }
+                    } else {
+                        $comment->meta = [
+                            'media_preview' => $preview
+                        ];
+                    }
+                }
+            }
+        }
 
         return [
             'comment' => $comment

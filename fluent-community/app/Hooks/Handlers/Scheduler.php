@@ -4,7 +4,6 @@ namespace FluentCommunity\App\Hooks\Handlers;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\NotificationSubscription;
-use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
 class Scheduler
