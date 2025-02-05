@@ -738,7 +738,7 @@ class Helper
                     continue;
                 }
 
-                $hasMembership = $space->getMembership($user->ID);
+                $hasMembership = $user && $space->getMembership($user->ID);
 
                 if ($space->privacy == 'private') {
                     if (!$user || !$hasMembership) {

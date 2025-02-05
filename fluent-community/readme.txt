@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.22
+Stable tag: 1.1.23
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,12 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.1.23 (Date: Feb 05, 2025) =
+- Added Missing Translation
+- Added Space Select Option
+- Fixed Leaderboard CSS Glitch
+- Fixed Warning Showing for Logged-out Users
 
 = 1.1.22 (Date: Feb 04, 2025) =
 - New: Reporting and Analytics Overview
