@@ -127,9 +127,11 @@ class SpaceController extends Controller
     {
         $start = microtime(true);
         $currentUser = $this->getUser();
+        $type = $request->getSafe('type');
+        $search = $request->getSafe('search');
+        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
 
-        $spaces = Space::orderBy('title', 'ASC')
-            ->with(['space_pivot' => function ($q) {
+        $spaces = Space::with(['space_pivot' => function ($q) {
                 $q->where('user_id', get_current_user_id());
             }])
             ->where(function ($q) {
@@ -138,10 +140,30 @@ class SpaceController extends Controller
                 })
                     ->orWhereIn('privacy', ['public', 'private']);
             })
+            ->when($type == 'joined', function ($q) {
+                $q->whereHas('space_pivot', function ($q) {
+                    $q->where('user_id', get_current_user_id());
+                });
+            })
+            ->when($search, function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%');
+            })
+            ->when($sortBy == 'alphabetical', function ($q) {
+                $q->orderBy('title', 'ASC');
+            })
+            ->when($sortBy == 'oldest', function ($q) {
+                $q->orderBy('created_at', 'ASC');
+            })
+            ->when($sortBy == 'latest', function ($q) {
+                $q->orderBy('created_at', 'DESC');
+            })
             ->paginate();
 
         foreach ($spaces as $space) {
-            if (Arr::get($space->settings, 'hide_members_count') == 'yes' && (!$currentUser || !$space->verifyUserPermisson($currentUser, 'can_view_members', false))) {
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
+
+            if ($shouldHideMembersCount && !$canViewMembers) {
                 $space->members_count = 0;
                 continue;
             }

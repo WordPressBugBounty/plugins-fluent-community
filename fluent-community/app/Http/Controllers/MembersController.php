@@ -23,6 +23,7 @@ class MembersController extends Controller
         }
 
         $canAccess = Utility::canViewMembersPage();
+        $isMod = Helper::isModerator();
 
         $members = XProfile::select(ProfileHelper::getXProfilePublicFields())
             ->whereHas('user');
@@ -39,6 +40,7 @@ class MembersController extends Controller
                     ]);
                 }
             }
+
             if (!$space) {
                 $spaceId = $request->getSafe('space_id', 'intval');
                 if ($spaceId) {
@@ -88,10 +90,9 @@ class MembersController extends Controller
         }
 
         $members = $members
-            ->searchBy($request->getSafe('search', 'sanitize_text_field'))
-            ->orderBy('last_activity', 'DESC');
+            ->searchBy($request->getSafe('search', 'sanitize_text_field'));
 
-        if(Helper::isModerator()) {
+        if($isMod) {
             $statuses = $request->getSafe('status', 'sanitize_text_field', 'active');
             if ($statuses == 'in_active') {
                 $statuses = ['pending', 'blocked'];

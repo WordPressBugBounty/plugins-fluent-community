@@ -4,7 +4,6 @@ namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\BaseSpace;
-use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\Framework\Http\Request\Request;

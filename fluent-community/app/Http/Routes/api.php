@@ -1,4 +1,4 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
  * @var $router FluentCommunity\Framework\Http\Router
@@ -105,6 +105,9 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('/on-boardings', 'AdminController@getOnboardingSettings');
     $router->post('/on-boardings', 'AdminController@saveOnboardingSettings');
     $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
+
+    $router->get('/profile-link-providers', 'AdminController@getProfileLinkProviders');
+    $router->post('/profile-link-providers', 'AdminController@updateProfileLinkProviders');
 });
 
 $router->prefix('members')->withPolicy('PortalPolicy')->group(function ($router) {

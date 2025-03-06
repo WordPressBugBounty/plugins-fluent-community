@@ -8,8 +8,6 @@ use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\SpaceUserPivot;
-use FluentCommunity\App\Services\FeedsHelper;
-use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
 class NotificationEventHandler
@@ -240,7 +238,6 @@ class NotificationEventHandler
             }
         }
 
-
         $route = $feed->getJsRoute();
 
         if ($exist) {
@@ -418,10 +415,6 @@ class NotificationEventHandler
         );
 
         $route = $feed->getJsRoute();
-
-        if ($feed->space_id) {
-            $space = $feed->space;
-        }
 
         $notification = [
             'feed_id'         => $feed->id,

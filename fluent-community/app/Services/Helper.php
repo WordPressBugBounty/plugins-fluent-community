@@ -132,6 +132,7 @@ class Helper
         if (!$user) {
             $user = self::getCurrentUser();
         }
+
         return $user && $user->isCommunityModerator();
     }
 
@@ -1724,8 +1725,50 @@ class Helper
         }, WEEK_IN_SECONDS);
     }
 
+    public static function getModerationConfig()
+    {
+        return Utility::getFromCache('moderation_config', function () {
+            $config = Utility::getOption('moderation_config', []);
+            $default = [
+                'is_enabled' => 'no',
+                'profanity_filter' => "",
+                'flag_after_threshold' => 0,
+            ];
+            return wp_parse_args($config, $default);
+        }, WEEK_IN_SECONDS);
+    }
+
+    public static function getReportReasons()
+    {
+        return apply_filters('fluent_community/report_reasons', [
+            'harassment' => __('Harassment', 'fluent-community'),
+            'spam' => __('Spam', 'fluent-community'),
+            'offensive' => __('Offensive', 'fluent-community'),
+            'incorrect_space' => __('Incorrect Space', 'fluent-community'),
+            'against_community' => __('Against Community Rules', 'fluent-community'),
+            'other' => __('Other', 'fluent-community'),
+        ]);
+    }
+
     public static function htmlToMd($html)
     {
         return preg_replace('/<a.*?href="(.*?)".*?>(.*?)<\/a>/', '[$2]($1)', $html);
+    }
+
+    public static function isProfanity($profanity, $text)
+    {
+        $profanity = explode(',', $profanity);
+        if (empty($profanity)) {
+            return false;
+        }
+        $profanity = array_map('trim', $profanity);
+        $profanity = array_map('strtolower', $profanity);
+        $text = strtolower($text);
+        foreach ($profanity as $p) {
+            if (strpos($text, $p) !== false) {
+                return $p;
+            }
+        }
+        return false;
     }
 }

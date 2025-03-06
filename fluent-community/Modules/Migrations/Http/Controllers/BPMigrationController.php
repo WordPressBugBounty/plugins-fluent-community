@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\Modules\Migrations\Http\Controllers;
 
-use FluentCommunity\App\App;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
@@ -11,7 +10,6 @@ use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
-use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
@@ -443,8 +441,17 @@ class BPMigrationController extends Controller
             $newData = wp_parse_args($newData, $status);
         }
 
-        $newData = Arr::only($newData, ['migrated_groups', 'last_activity_id', 'last_migrated_member_id', 'migrated_posts_count', 'last_migrated_user_id', 'current_stage']);
+        $newData = Arr::only($newData, [
+            'migrated_groups',
+            'last_activity_id',
+            'last_migrated_member_id',
+            'migrated_posts_count',
+            'last_migrated_user_id',
+            'current_stage'
+        ]);
+
         update_option('_fcom_bp_migrations_status', $newData, 'no');
+
         return $newData;
     }
 

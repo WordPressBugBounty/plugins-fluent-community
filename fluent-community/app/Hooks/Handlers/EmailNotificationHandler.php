@@ -244,10 +244,6 @@ class EmailNotificationHandler
             return;
         }
 
-        if (!$notificationUserIds) {
-            return;
-        }
-
         $notificationUserIds = array_unique($notificationUserIds);
 
         $users = User::query()->whereIn('ID', $notificationUserIds)
@@ -542,7 +538,7 @@ class EmailNotificationHandler
         $sentCount = 0;
 
         foreach ($users as $user) {
-            Utility::updateOption('last_digest_sent_user_id', $user->user_id);
+            Utility::updateOption('last_digest_sent_user_id', $user->ID);
             $emailDigest = new DailyDigest($user);
             if ($emailDigest->send()) {
                 $sentCount++;

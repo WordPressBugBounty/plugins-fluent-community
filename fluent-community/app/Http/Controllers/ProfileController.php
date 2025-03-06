@@ -291,7 +291,7 @@ class ProfileController extends Controller
         if ($socialLinks) {
             $socialLinks = array_filter($socialLinks);
             $formattedSocialLinkes = [];
-            $socialLinkProviders = ProfileHelper::socialLinkProviders();
+            $socialLinkProviders = ProfileHelper::socialLinkProviders(true);
             foreach ($socialLinks as $linkName => $socialLink) {
                 if (isset($socialLinkProviders[$linkName])) {
                     $formattedSocialLinkes[$linkName] = sanitize_text_field(trim($socialLink));
@@ -389,6 +389,7 @@ class ProfileController extends Controller
         $hasAllAccess = $xProfile->user_id == get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
 
         $comments = Comment::where('user_id', $xProfile->user_id)
+            ->where('status', 'published')
             ->with([
                 'post' => function ($q) {
                     $q->select(['id', 'title', 'message', 'type', 'space_id', 'slug', 'created_at'])

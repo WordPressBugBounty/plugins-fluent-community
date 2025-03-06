@@ -28,6 +28,8 @@ class CommentsController extends Controller
         }
 
         $comments = Comment::where('post_id', $feed->id)
+            ->where('status', 'published')
+            ->pendingCommentsByUser($this->getUserId())
             ->orderBy('created_at', 'asc')
             ->with([
                 'xprofile' => function ($q) {
@@ -462,7 +464,7 @@ class CommentsController extends Controller
     {
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
-
+                
         if ($comment->post_id != $feed->id) {
             return $this->sendError([
                 'message' => 'Invalid comment'
@@ -512,10 +514,12 @@ class CommentsController extends Controller
 
     public function show(Request $request, $id)
     {
-        $comment = Comment::with([
-            'xprofile' => function ($q) {
-                return $q->select(ProfileHelper::getXProfilePublicFields());
-            }
+        $comment = Comment::where('status', 'published')
+            ->pendingCommentsByUser($this->getUserId())
+            ->with([
+                'xprofile' => function ($q) {
+                    return $q->select(ProfileHelper::getXProfilePublicFields());
+                }
         ])->findOrFail($id);
 
         // Just to verify the permission

@@ -5,6 +5,7 @@ namespace FluentCommunity\App\Hooks\Handlers;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Framework\Support\DateTime;
 
 class Scheduler
 {
@@ -53,10 +54,10 @@ class Scheduler
         $digestTime = Arr::get($notificationSettings, 'daily_digest_time', '09:00');
         // Let's check if we have the daily digest action scheduled or not
         if (!\as_next_scheduled_action('fluent_community_send_daily_digest_init')) {
-            $notificationDay = 'next ' . $notificationDay . 'day ' . $digestTime;
-            $diff = time() - current_time('timestamp');
-            $timeStamp = strtotime($notificationDay) + $diff;
-            \as_schedule_single_action($timeStamp, 'fluent_community_send_daily_digest_init', [], 'fluent-community', true);
+            $timestamp = $this->getNextOccurrenceTimestamp($notificationDay . 'day', $digestTime);
+            if ($timestamp) {
+                \as_schedule_single_action($timestamp, 'fluent_community_send_daily_digest_init', [], 'fluent-community', true);
+            }
         }
     }
 
@@ -95,4 +96,35 @@ class Scheduler
 
         return $deleted;
     }
+
+    private function getNextOccurrenceTimestamp($dayname, $time)
+    {
+        // Ensure dayname is lowercase and valid
+        $dayname = strtolower($dayname);
+        $valid_days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        if (!in_array($dayname, $valid_days)) {
+            return false;
+        }
+
+        // Get current time in WordPress timezone
+        $current = current_datetime();
+
+        // Create target DateTime with "next" modifier in WordPress timezone
+        $target = new \DateTime('next ' . $dayname . ' ' . $time, wp_timezone());
+
+
+        $targetDate = $target->format('Ymd');
+        $currentDate = $current->format('Ymd');
+
+
+        // If it's the same day and time has passed, move to next week
+        if ($targetDate === $currentDate || $currentDate > $targetDate) {
+            $target->modify('+7 days');
+        }
+
+        // Switch to UTC timezone and get timestamp
+        $target->setTimezone(new \DateTimeZone('UTC'));
+        return $target->getTimestamp();
+    }
+
 }

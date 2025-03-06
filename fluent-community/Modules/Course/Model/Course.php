@@ -4,6 +4,7 @@ namespace FluentCommunity\Modules\Course\Model;
 
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;
@@ -66,6 +67,11 @@ class Course extends BaseSpace
             ->withPivot(['role', 'created_at', 'status']);
     }
 
+    public function enrollment()
+    {
+        return $this->belongsTo(SpaceUserPivot::class, 'id', 'space_id');
+    }
+
     public function getCompletedStrundesCount()
     {
         return Activity::where('feed_id', $this->id)
@@ -111,4 +117,5 @@ class Course extends BaseSpace
 
         return false;
     }
+
 }

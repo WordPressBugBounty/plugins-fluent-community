@@ -7,6 +7,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Contact;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCrm\App\Models\Subscriber;
@@ -159,13 +160,14 @@ class XProfile extends Model
 
         $url = Utility::getFromCache('user_avatar_' . $this->user_id, function () {
             $displayName = $this->display_name;
+
             if ($displayName) {
                 $names = explode(' ', $displayName);
                 // take the first letter of each name
                 $displayName = '';
                 foreach ($names as $name) {
                     $name = (string)$name;
-                    $firstLetter = $name[0];
+                    $firstLetter = mb_substr($name, 0, 1, 'UTF-8');
                     $displayName .= $firstLetter . '+';
                 }
             }
@@ -310,6 +312,11 @@ class XProfile extends Model
         }
 
         return $score > 100 ? 100 : $score;
+    }
+
+    public function getPermalink()
+    {
+        return Helper::baseUrl('u/' . $this->username);
     }
 
 }

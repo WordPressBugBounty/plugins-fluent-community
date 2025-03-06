@@ -109,9 +109,9 @@ class Utility
             'cloud_storage'       => 'no',
             'invitation'          => 'yes',
             'user_badge'          => 'yes',
-            'has_crm_sync'        => 'no'
+            'has_crm_sync'        => 'no',
+            'content_moderation'  => 'no'
         ];
-
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
             $features['cloud_storage'] = 'yes';
@@ -1101,7 +1101,7 @@ class Utility
 
     public static function hasAnalyticsEnabled()
     {
-        $defaultSettings = [ 'status' => 'no'];
+        $defaultSettings = ['status' => 'no'];
 
         $settings = apply_filters('fluent_community/features/analytics', $defaultSettings);
 

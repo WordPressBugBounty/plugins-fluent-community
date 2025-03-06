@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\Helper;
 
 class Comment extends Model
 {
@@ -111,6 +112,35 @@ class Comment extends Model
             ->where('object_type', 'comment');
     }
 
+    public function scopePendingCommentsByUser($query, $currentUserId, $space = null)
+    {
+        $user = User::find($currentUserId);
+        $spaceId = $space ? $space->id : null;
+        if ($user && $user->hasCommunityModeratorAccess()) {
+            return $query->when(true, function($q) {
+                $q->orWhere('status', 'pending');
+            })->when($spaceId, function($q) use ($spaceId) {
+                $q->whereHas('post.space', function($spaceQuery) use ($spaceId) {
+                    $spaceQuery->where('id', $spaceId);
+                });
+            });
+        }
+
+        return $query->orWhere(function ($query) use ($currentUserId, $spaceId) {
+            $query->where('status', 'pending')->where(function ($q) use ($currentUserId, $spaceId) {
+                $q->where('user_id', $currentUserId);
+                $q->orWhereHas('post.space', function ($spaceQuery) use ($currentUserId, $spaceId) {
+                    if ($spaceId) {
+                        $spaceQuery->where('id', $spaceId);
+                    }
+                    $spaceQuery->whereHas('members', function ($memberQuery) use ($currentUserId) {
+                        $memberQuery->where('user_id', $currentUserId)
+                            ->whereIn('role', ['admin', 'moderator']);
+                    });
+                });
+            });
+        });
+    }
     /*
      * Find all the user ids of a child comment who commented on the parent comment including the parent comment author
      */
@@ -154,6 +184,16 @@ class Comment extends Model
         }
 
         return $meta;
+    }
+
+    public function getHumanExcerpt($length = 30)
+    {
+        $content = $this->title;
+        if (!$content) {
+            $content = $this->message;
+        }
+
+        return Helper::getHumanExcerpt($content, $length);
     }
 
     public function getEmailSubject($feed = null)

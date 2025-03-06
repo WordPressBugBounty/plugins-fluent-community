@@ -23,6 +23,7 @@ class FeedsController extends Controller
     public function get(Request $request)
     {
         $start = microtime(true);
+        $space = null;
         $bySpace = $request->get('space');
         $userId = $request->getSafe('user_id', 'intval', '');
         $selectedTopic = $request->getSafe('topic_slug', 'sanitize_text_field', '');
@@ -38,14 +39,18 @@ class FeedsController extends Controller
         $feedsQuery = Feed::where('status', 'published')
             ->select(Feed::$publicColumns)
             ->with([
-                    'xprofile'          => function ($q) {
+                    'xprofile'  => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
                     },
-                    'comments.xprofile' => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
+                    'comments'  => function ($q) use ($space) {
+                        $q->where('status', 'published')
+                            ->pendingCommentsByUser($this->getUserId(), $space)
+                            ->with(['xprofile' => function ($q) {
+                                $q->select(ProfileHelper::getXProfilePublicFields());
+                            }]);
                     },
                     'space',
-                    'reactions'         => function ($q) {
+                    'reactions' => function ($q) {
                         $q->with([
                             'xprofile' => function ($query) {
                                 $query->select(['user_id', 'avatar', 'display_name']);
@@ -54,7 +59,7 @@ class FeedsController extends Controller
                             ->where('type', 'like')
                             ->limit(3);
                     },
-                    'terms'             => function ($q) {
+                    'terms'     => function ($q) {
                         $q->select(['title', 'slug'])
                             ->where('taxonomy_name', 'post_topic');
                     }
@@ -78,11 +83,15 @@ class FeedsController extends Controller
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
                     ->with([
-                            'xprofile'          => function ($q) {
+                            'xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             },
-                            'comments.xprofile' => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
+                            'comments' => function ($q) use ($space) {
+                                $q->where('status', 'published')
+                                    ->pendingCommentsByUser($this->getUserId(), $space)
+                                    ->with(['xprofile' => function ($q) {
+                                        $q->select(ProfileHelper::getXProfilePublicFields());
+                                    }]);
                             },
                             'space'
                         ]
@@ -101,6 +110,8 @@ class FeedsController extends Controller
         } else {
             $feedsQuery->byUserAccess($currentUserId);
         }
+
+        $feedsQuery->pendingFeedsByUser($currentUserId, $space);
 
         do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all()]);
 
@@ -149,16 +160,21 @@ class FeedsController extends Controller
         }
 
         $feed = Feed::where('slug', $feed_slug)
+            ->where('status', 'published')
             ->select(Feed::$publicColumns)
             ->with([
-                'xprofile'          => function ($q) {
+                'xprofile'  => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
                 },
                 'space',
-                'comments.xprofile' => function ($q) {
-                    $q->select(ProfileHelper::getXProfilePublicFields());
+                'comments'  => function ($q) {
+                    $q->where('status', 'published')
+                        ->pendingCommentsByUser($this->getUserId())
+                        ->with(['xprofile' => function ($q) {
+                            $q->select(ProfileHelper::getXProfilePublicFields());
+                        }]);
                 },
-                'reactions'         => function ($q) {
+                'reactions' => function ($q) {
                     $q->with([
                         'xprofile' => function ($query) {
                             $query->select(['user_id', 'avatar']);
@@ -167,12 +183,13 @@ class FeedsController extends Controller
                         ->where('type', 'like')
                         ->limit(3);
                 },
-                'terms'             => function ($q) {
+                'terms'     => function ($q) {
                     $q->select(['title', 'slug'])
                         ->where('taxonomy_name', 'post_topic');
                 }
             ])
             ->byUserAccess($this->getUserId())
+            ->pendingFeedsByUser($this->getUserId())
             ->first();
 
         if (!$feed) {
@@ -202,11 +219,15 @@ class FeedsController extends Controller
         $feedsQuery = Feed::where('status', 'published')
             ->select(Feed::$publicColumns)
             ->with([
-                    'xprofile'          => function ($q) {
+                    'xprofile' => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
                     },
-                    'comments.xprofile' => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
+                    'comments' => function ($q) use ($userId) {
+                        $q->where('status', 'published')
+                            ->pendingCommentsByUser($userId)
+                            ->with(['xprofile' => function ($q) {
+                                $q->select(ProfileHelper::getXProfilePublicFields());
+                            }]);
                     },
                     'space'
                 ]
@@ -548,7 +569,6 @@ class FeedsController extends Controller
             $data['meta'] = $meta;
         }
 
-
         if ($data) {
             $feed->fill($data);
             $dirty = $feed->getDirty();
@@ -713,15 +733,26 @@ class FeedsController extends Controller
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community')
         ]);
 
+        add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
         $uploadedFiles = FileSystem::put($files);
+        remove_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
 
         $file = $uploadedFiles[0];
 
-        $willWebPConvert = $request->get('disable_convert') != 'yes';
-        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
+        $upload_dir = wp_upload_dir();
 
+        $originalUrl = $file['url'];
+        $orginalPath = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
+        $originalFileType = $file['type'];
+        $originalFileName = $file['file'];
+
+        $willWebPConvert = $request->get('disable_convert') != 'yes';
+
+        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
         $willResize = $request->get('resize');
         $maxWidth = $request->get('max_width');
+
+        $willResize = apply_filters('fluent_community/media_upload_resize', $willResize, $file);
 
         if ($context = $request->get('context')) {
             $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
@@ -737,13 +768,13 @@ class FeedsController extends Controller
                 // Current file extension
                 $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
                 $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-
                 $willConvert = in_array($ext, $imageExtensions) && $willWebPConvert;
 
                 if ($willConvert) {
                     $imageExtensions = array_map(function ($ext) {
                         return '.' . $ext;
                     }, $imageExtensions);
+
                     $fileUrl = str_replace($imageExtensions, '.webp', $fileUrl);
                     $file['file'] = str_replace($imageExtensions, '.webp', $file['file']);
                     $file['url'] = str_replace($imageExtensions, '.webp', $file['url']);
@@ -754,12 +785,20 @@ class FeedsController extends Controller
                 $editor->resize($maxWidth, null, false);
                 $editor->set_quality(90);
                 if ($willConvert) {
-                    $editor->save($fileUrl, 'image/webp');
-                    // remove original file now
-                    wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
+                    $result = $editor->save($fileUrl, 'image/webp');
+                    if ($result['mime-type'] == 'image/webp') {
+                        // remove original file now
+                        wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
+                    }
                     $file['is_converted'] = true;
                 } else {
-                    $editor->save($fileUrl);
+                    $result = $editor->save($fileUrl);
+                }
+
+                if ($result['mime-type'] != 'image/webp') {
+                    $file['file'] = $originalFileName;
+                    $file['url'] = $originalUrl;
+                    $file['type'] = $result['mime-type'];
                 }
 
                 $file['meta'] = [
@@ -782,12 +821,18 @@ class FeedsController extends Controller
                 // Let's convert to webp
                 $editor = wp_get_image_editor($file['path']);
                 if (!is_wp_error($editor)) {
-                    $orginalPath = $file['path'];
                     $file['path'] = str_replace('.' . $extension, '.webp', $file['path']);
                     $file['url'] = str_replace('.' . $extension, '.webp', $file['url']);
                     $file['type'] = 'image/webp';
-                    $editor->save($file['path'], 'image/webp');
-                    wp_delete_file($orginalPath);
+                    $result = $editor->save($file['path'], 'image/webp');
+
+                    if ($result['mime-type'] != 'image/webp') {
+                        $file['path'] = $orginalPath;
+                        $file['url'] = $originalUrl;
+                        $file['type'] = $result['mime-type'];
+                    } else {
+                        wp_delete_file($orginalPath);
+                    }
 
                     $file['meta'] = [
                         'width'  => $editor->get_size()['width'],
@@ -838,6 +883,79 @@ class FeedsController extends Controller
                 'height'    => Arr::get($media->settings, 'height')
             ]
         ];
+    }
+
+    public function fixImageOrientation($file)
+    {
+        // Only process JPEG images (since they typically have EXIF data)
+        $image_types = array('image/jpeg', 'image/jpg');
+        if (!in_array($file['type'], $image_types)) {
+            return $file;
+        }
+
+        // Check if the EXIF extension is available
+        if (!function_exists('exif_read_data')) {
+            return $file;
+        }
+
+        // Read EXIF data from the uploaded image
+        $exif = @exif_read_data($file['file']);
+
+        if (!$exif || !isset($exif['Orientation'])) {
+            return $file;
+        }
+
+        $orientation = $exif['Orientation'];
+
+        // Load the image based on the available library (Imagick or GD)
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            // Use Imagick if available
+            try {
+                $image = new \Imagick($file['file']);
+                switch ($orientation) {
+                    case 3: // 180°
+                        $image->rotateImage(new \ImagickPixel(), 180);
+                        break;
+                    case 6: // 90° clockwise
+                        $image->rotateImage(new \ImagickPixel(), 90);
+                        break;
+                    case 8: // 90° counter-clockwise
+                        $image->rotateImage(new \ImagickPixel(), -90);
+                        break;
+                }
+                // Strip EXIF data to prevent further issues
+                $image->stripImage();
+                // Save the rotated image
+                $image->writeImage($file['file']);
+                $image->destroy();
+            } catch (\Exception $e) {
+
+            }
+        } elseif (function_exists('imagecreatefromjpeg')) {
+            // Use GD if Imagick is not available
+            $image = @imagecreatefromjpeg($file['file']);
+            if ($image === false) {
+                return $file;
+            }
+
+            switch ($orientation) {
+                case 3: // 180°
+                    $image = imagerotate($image, 180, 0);
+                    break;
+                case 6: // 90° clockwise
+                    $image = imagerotate($image, -90, 0);
+                    break;
+                case 8: // 90° counter-clockwise
+                    $image = imagerotate($image, 90, 0);
+                    break;
+            }
+
+            // Save the rotated image
+            imagejpeg($image, $file['file'], 100);
+            imagedestroy($image);
+        }
+
+        return $file;
     }
 
     public function getTicker(Request $request)

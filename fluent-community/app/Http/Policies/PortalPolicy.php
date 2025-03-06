@@ -23,7 +23,7 @@ class PortalPolicy extends BasePolicy
         }
 
         if ($method != 'GET' && !$userId) {
-            return false;
+            throw new \Exception(__('You must be logged in to perform this action', 'fluent-community'));
         }
 
         return !!Helper::canAccessPortal($userId);

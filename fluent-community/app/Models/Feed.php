@@ -61,6 +61,7 @@ class Feed extends Model
         'slug',
         'space_id',
         'user_id',
+        'status',
         'is_sticky',
         'comments_count',
         'reactions_count'
@@ -209,6 +210,36 @@ class Feed extends Model
             ->orWhereHas('space', function ($q) {
                 $q->where('privacy', 'public');
             });
+    }
+
+    public function scopePendingFeedsByUser($query, $currentUserId, $space = null)
+    {
+        $user = User::find($currentUserId);
+        $spaceId = $space ? $space->id : null;
+        if ($user && $user->hasCommunityModeratorAccess()) {
+            return $query->when(true, function($q) {
+                $q->orWhere('status', 'pending');
+            })->when($spaceId, function($q) use ($spaceId) {
+                $q->whereHas('space', function($spaceQuery) use ($spaceId) {
+                    $spaceQuery->where('id', $spaceId);
+                });
+            });
+        }
+
+        return $query->orWhere(function ($query) use ($currentUserId, $spaceId) {
+            $query->where('status', 'pending')->where(function ($q) use ($currentUserId, $spaceId) {
+                $q->where('user_id', $currentUserId);
+                $q->orWhereHas('space', function ($spaceQuery) use ($currentUserId, $spaceId) {
+                    if ($spaceId) {
+                        $spaceQuery->where('id', $spaceId);
+                    }
+                    $spaceQuery->whereHas('members', function ($memberQuery) use ($currentUserId) {
+                        $memberQuery->where('user_id', $currentUserId)
+                            ->whereIn('role', ['admin', 'moderator']);
+                    });
+                });
+            });
+        });
     }
 
     public function scopeByBookMarked($query, $userId)
@@ -521,7 +552,6 @@ class Feed extends Model
 
     public function getJsRoute()
     {
-
         if ($this->type == 'course_lesson') {
             return [
                 'name'   => 'view_lesson',

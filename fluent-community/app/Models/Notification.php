@@ -109,7 +109,6 @@ class Notification extends Model
 
     public function scopeByStatus($query, $status, $userId)
     {
-
         $valids = ['unread', 'read'];
         if (!in_array($status, $valids)) {
             return $query;

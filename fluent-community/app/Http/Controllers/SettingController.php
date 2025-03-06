@@ -40,6 +40,10 @@ class SettingController extends Controller
             'has_crm_sync'        => 'sanitize_text_field',
         ]);
 
+        $prevConfig = Utility::getFeaturesConfig();
+
+        $data = wp_parse_args($data, $prevConfig);
+
         Utility::updateOption('fluent_community_features', $data);
 
         return [

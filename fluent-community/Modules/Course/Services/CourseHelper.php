@@ -402,14 +402,22 @@ class CourseHelper
         return $formattedTerms;
     }
 
-    public function getUserCourses($userId = null)
+    public static function getUserCourses($userId = null)
     {
         if (!$userId) {
             $userId = get_current_user_id();
         }
 
+        if (!$userId) {
+            return null;
+        }
+
         return Course::whereHas('students', function ($q) use ($userId) {
             $q->where('user_id', $userId);
-        })->get();
+        })
+            ->with('enrollment', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->get();
     }
 }

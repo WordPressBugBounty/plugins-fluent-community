@@ -16,7 +16,7 @@ class Integrations
     {
         if (defined('FLUENTCRM')) {
             new \FluentCommunity\Modules\Integrations\FluentCRM\SpaceJoinTrigger();
-
+            (new  \FluentCommunity\Modules\Integrations\FluentCRM\ProfileSection())->register();
             // Course Specifics
             if (Helper::isFeatureEnabled('course_module')) {
                 new \FluentCommunity\Modules\Integrations\FluentCRM\CourseEnrollmentTrigger();

@@ -18,30 +18,35 @@ class CourseController extends Controller
     {
         $user = $this->getUser();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
+        $enrolledIds = CourseHelper::getEnrolledCourseIds();
 
-        if ($request->get('type') == 'enrolled') {
-            $courses = Course::searchBy($request->get('search'))
-                ->where('status', 'published')
-                ->orderBy('title', 'ASC')
-                ->byPostTopic($request->get('topic_slug'))
-                ->whereIn('id', CourseHelper::getEnrolledCourseIds())
-                ->paginate();
-        } else {
-            $courses = Course::searchBy($request->get('search'))
-                ->when(!$isCourseCreator, function ($q) {
-                    $q->where('status', 'published');
-                })
-                ->byPostTopic($request->get('topic_slug'))
-                ->orderBy('title', 'ASC')
-                ->where(function ($q) {
-                    $q->whereIn('privacy', ['public', 'private']);
-                    if ($enrolledIds = CourseHelper::getEnrolledCourseIds()) {
-                        $q->orWhereIn('id', $enrolledIds);
-                    }
-                })
-                ->paginate();
-        }
+        $search = $request->getSafe('search');
+        $topicSlug = $request->getSafe('topic_slug');
+        $isEnrolled = $request->getSafe('type') == 'enrolled';
+        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
 
+        $courses = Course::searchBy($search)
+            ->when(!$isCourseCreator || $isEnrolled, function ($q) {
+                $q->where('status', 'published');
+            })
+            ->byPostTopic($topicSlug)
+            ->where(function ($q) use ($enrolledIds) {
+                $q->whereIn('privacy', ['public', 'private']);
+                $q->orWhereIn('id', $enrolledIds);
+            })
+            ->when($isEnrolled, function ($q) use ($enrolledIds) {
+                $q->whereIn('id', $enrolledIds);
+            })
+            ->when($sortBy == 'alphabetical', function ($q) {
+                $q->orderBy('title', 'ASC');
+            })
+            ->when($sortBy == 'oldest', function ($q) {
+                $q->orderBy('created_at', 'ASC');
+            })
+            ->when($sortBy == 'latest', function ($q) {
+                $q->orderBy('created_at', 'DESC');
+            })
+            ->paginate();
 
         foreach ($courses as $course) {
             $course->isEnrolled = CourseHelper::isEnrolled($course->id);

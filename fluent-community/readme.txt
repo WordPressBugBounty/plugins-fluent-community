@@ -1,10 +1,10 @@
-=== FluentCommunity - Full-fledge Social Network, Community & LMS ===
+=== FluentCommunity - Ultra-Fast High-Performance Social Network, Community, LMS & Online Courses Plugin ===
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.1.23
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Get a fast & all-in-one community plugin. Create unlimited communities, and cour
 
 == Description ==
 
-= FluentCommunity is a Full-fledge Community & LMS =
+= FluentCommunity is a Full-fledged Community & LMS Plugin =
 
 **FluentCommunity** is the ultimate user-friendly WordPress community plugin, combining powerful **social networking tools** with built-in **Learning Management System(LMS)**. It’s a **no-code solution** for creating vibrant communities and managing courses all in one seamless platform without slowing down your server.
 
@@ -241,6 +241,24 @@ OR
 
 == Changelog ==
 
+= 1.2.0 (Date: Mar 06, 2025) =
+- Introduced Content Moderation Feature
+- Integrated BunnyCDN
+- Added Incoming Webhook
+- Added Social Links Customizations!
+- Added Search and Sort Options in Space and Course List
+- Added Profile Section To FluentCRM
+- Added Last Seen as Privacy Settings!
+- Resolved Image Rotation Issues!
+- Fixed File Upload Bug
+- Fixed Welcome Banner Style Issue
+- Fixed Avatar Not Generating for Other Language
+- Fixed User Badge Border Color Inconsistency
+- Fixed Create Space Group Showing Exiting Group Data
+- Fixed Profile Dropdown Icon Style Issue
+- Fixed User Document Download Issue
+- Fixed Issue with Daily Digest Email
+
 = 1.1.23 (Date: Feb 05, 2025) =
 - Added Missing Translation
 - Added Space Select Option
@@ -352,14 +370,14 @@ OR
 = 1.0.99 (Date: Nov 19, 2024) =
 - Hotfix: User Registration Issue Fixed
 
-= 1.0.98 (Date: Nov 18, 2024 =
+= 1.0.98 (Date: Nov 18, 2024) =
 - Added Color Schema Customization
 - Improved UI & UX
 - Improved FluentCRM Integration
 - Added more privacy Settings
 - Translation Improvement
 
-= 1.0.97 (Date: Nov 14, 2024 =
+= 1.0.97 (Date: Nov 14, 2024) =
 - Fixed Portal Slug Issue on activation
 
 = 1.0.96 (Date: Nov 14, 2024) =

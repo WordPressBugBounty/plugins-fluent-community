@@ -6,6 +6,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\AuthenticationService;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
+use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Modules\Auth\AuthHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\OnboardingService;
@@ -28,9 +29,9 @@ class AdminController extends Controller
         unset($formatedRoles['administrator']);
 
         return [
-            'settings'   => $settings,
-            'user_roles' => $formatedRoles,
-            'users_can_register' => !!get_option('users_can_register'),
+            'settings'                     => $settings,
+            'user_roles'                   => $formatedRoles,
+            'users_can_register'           => !!get_option('users_can_register'),
             'user_registration_enable_url' => admin_url('options-general.php')
         ];
     }
@@ -194,6 +195,8 @@ class AdminController extends Controller
             'driver' => 'required'
         ];
 
+        $isRemote = in_array($driver, ['amazon_s3', 'bunny_cdn', 'cloudflare_r2']);
+
         if ($driver == 'cloudflare_r2') {
             $validation = [
                 'driver'     => 'required',
@@ -210,12 +213,19 @@ class AdminController extends Controller
                 'secret_key' => 'required',
                 'bucket'     => 'required'
             ];
+        } else if ($driver == 'bunny_cdn') {
+            $validation = [
+                'driver'      => 'required',
+                'access_key'  => 'required',
+                's3_endpoint' => 'required',
+                'bucket'      => 'required',
+                'public_url'  => 'required|url'
+            ];
         }
 
         $this->validate($config, $validation);
 
-        if ($driver === 'cloudflare_r2' || $driver === 'amazon_s3') {
-
+        if ($isRemote) {
             $previousConfig = \FluentCommunityPro\App\Modules\CloudStorage\StorageHelper::getConfig();
             if ($config['access_key'] == 'FCOM_ENCRYPTED_DATA_KEY') {
                 $config['access_key'] = Arr::get($previousConfig, 'access_key');
@@ -287,12 +297,12 @@ class AdminController extends Controller
     {
         $settings = $request->get('settings', []);
 
-        if(!empty($settings['login']['description'])) {
+        if (!empty($settings['login']['description'])) {
             $description = wp_unslash($settings['login']['description']);
             $settings['login']['description'] = CustomSanitizer::unslashMarkdown($description);
         }
 
-        if(!empty($settings['logout']['description'])) {
+        if (!empty($settings['logout']['description'])) {
             $description = wp_unslash($settings['logout']['description']);
             $settings['logout']['description'] = CustomSanitizer::unslashMarkdown($description);
         }
@@ -452,6 +462,29 @@ class AdminController extends Controller
 
         return [
             'message' => __('Slug has been changed successfully', 'fluent-community')
+        ];
+    }
+
+    public function getProfileLinkProviders(Request $request)
+    {
+        return [
+            'providers' => ProfileHelper::socialLinkProviders()
+        ];
+    }
+
+    public function updateProfileLinkProviders(Request $request)
+    {
+        $providerKeys = array_keys(ProfileHelper::socialLinkProviders());
+        $config = $request->get('configs', []);
+
+        $config = array_filter($config, function ($value) use ($providerKeys) {
+            return in_array($value, $providerKeys);
+        });
+
+        do_action('fluent_community/update_profile_link_providers', $config);
+
+        return [
+            'message' => __('Profile link providers have been updated successfully', 'fluent-community'),
         ];
     }
 

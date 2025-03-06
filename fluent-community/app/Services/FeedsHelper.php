@@ -676,11 +676,13 @@ class FeedsHelper
         }
 
         if ($feed->content_type == 'document') {
-            $documentLists = Arr::get($feed->meta, 'document_lists', []);
+            $feedMeta  = $feed->meta;
+            $documentLists = Arr::get($feedMeta, 'document_lists', []);
             foreach ($documentLists as $index => $document) {
                 $documentLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key=' . $document['media_key'] . '&media_id=' . $document['id']);
             }
-            $feed->meta['document_lists'] = $documentLists;
+            $feedMeta['document_lists'] = $documentLists;
+            $feed->meta = $feedMeta;
         }
 
         return $feed;
