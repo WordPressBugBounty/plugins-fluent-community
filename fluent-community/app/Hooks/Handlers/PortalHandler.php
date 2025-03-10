@@ -211,7 +211,7 @@ class PortalHandler
             <?php do_action('fluent_community/before_header_right_menu_items', $auth); ?>
             <?php if ($has_color_scheme): ?>
                 <li>
-                    <span class="fcom_color_mode_core">
+                    <button class="fcom_color_mode_core el-button el-button--small is-text">
                         <span class="fcom_color_mode_action fcom_mode_switch el-icon">
                             <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none"
                                  xmlns="http://www.w3.org/2000/svg">
@@ -230,7 +230,7 @@ class PortalHandler
                                                                     fill="correntColor"/></clipPath></defs>
                             </svg>
                         </span>
-                    </span>
+                    </button>
                 </li>
             <?php endif; ?>
             <li class="top_menu_item fcom_search_holder"></li>
@@ -434,7 +434,7 @@ class PortalHandler
                 'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu')
             ]),
             'urls'                      => [
-                'site_url'      => site_url(),
+                'site_url'      => home_url(),
                 'portal_base'   => Helper::baseUrl('/'),
                 'global_search' => Helper::baseUrl(),
             ],
@@ -1033,7 +1033,7 @@ class PortalHandler
             'title'       => $title,
             'description' => $message,
             'btn_txt'     => __('Go to home page', 'fluent-community'),
-            'url'         => site_url()
+            'url'         => home_url()
         ];
 
         if (!$showBtn) {

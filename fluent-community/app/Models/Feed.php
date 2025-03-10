@@ -212,33 +212,26 @@ class Feed extends Model
             });
     }
 
-    public function scopePendingFeedsByUser($query, $currentUserId, $space = null)
+    public function scopeByContentModerationAccessStatus($query, $user, $space = null)
     {
-        $user = User::find($currentUserId);
-        $spaceId = $space ? $space->id : null;
-        if ($user && $user->hasCommunityModeratorAccess()) {
-            return $query->when(true, function($q) {
-                $q->orWhere('status', 'pending');
-            })->when($spaceId, function($q) use ($spaceId) {
-                $q->whereHas('space', function($spaceQuery) use ($spaceId) {
-                    $spaceQuery->where('id', $spaceId);
-                });
-            });
+        if (!$user || !Helper::isFeatureEnabled('content_moderation')) {
+            return $query->where('status', 'published');
         }
 
-        return $query->orWhere(function ($query) use ($currentUserId, $spaceId) {
-            $query->where('status', 'pending')->where(function ($q) use ($currentUserId, $spaceId) {
-                $q->where('user_id', $currentUserId);
-                $q->orWhereHas('space', function ($spaceQuery) use ($currentUserId, $spaceId) {
-                    if ($spaceId) {
-                        $spaceQuery->where('id', $spaceId);
-                    }
-                    $spaceQuery->whereHas('members', function ($memberQuery) use ($currentUserId) {
-                        $memberQuery->where('user_id', $currentUserId)
-                            ->whereIn('role', ['admin', 'moderator']);
-                    });
+        if (
+            $user->hasCommunityModeratorAccess() ||
+            ($space && $user->hasSpacePermission('edit_any_feed', $space))
+        ) {
+            return $query->whereIn('status', ['published', 'pending']);
+        }
+
+        // This is a normal User.
+        return $query->where(function ($q) use ($user) {
+            $q->where('status', 'published')
+                ->orWhere(function ($q) use ($user) {
+                    $q->where('status', 'pending')
+                        ->where('user_id', $user->ID);
                 });
-            });
         });
     }
 

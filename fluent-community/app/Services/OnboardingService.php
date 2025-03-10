@@ -282,7 +282,7 @@ class OnboardingService
                 'full_name'       => $userFullName,
                 'email'           => $userEmail,
                 'source'          => 'fcom_plugin',
-                'optin_website'   => site_url(),
+                'optin_website'   => home_url(),
                 'share_essential' => Arr::get($settings, 'share_data', 'no') === 'yes' ? 'yes' : 'no',
             ])
         ]);

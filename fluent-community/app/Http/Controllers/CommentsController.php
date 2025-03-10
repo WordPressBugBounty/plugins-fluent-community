@@ -28,8 +28,7 @@ class CommentsController extends Controller
         }
 
         $comments = Comment::where('post_id', $feed->id)
-            ->where('status', 'published')
-            ->pendingCommentsByUser($this->getUserId())
+            ->byContentModerationAccessStatus($this->getUser())
             ->orderBy('created_at', 'asc')
             ->with([
                 'xprofile' => function ($q) {
@@ -64,6 +63,12 @@ class CommentsController extends Controller
 
         $text = $this->validateCommentText($request->all());
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
+
+        if($feed->status != 'published') {
+            return $this->sendError([
+                'message' => __('This post is not published yet', 'fluent-community')
+            ]);
+        }
 
         $this->verifyCreateCommentPermission($feed);
 
@@ -102,9 +107,15 @@ class CommentsController extends Controller
 
         [$commentData, $mediaItems] = $this->prepareCommentMedia($commentData, $requestData);
 
+        $commentData['is_admin'] = $user->hasSpacePermission('community_moderator', $feed->space);
+
+        if ($mentionUserIds = Arr::get($mentions, 'user_ids', [])) {
+            $commentData['meta']['mentioned_user_ids'] = $mentionUserIds;
+        }
+
         do_action('fluent_community/before_comment_create', $commentData, $feed);
 
-        $commentData = apply_filters('fluent_community/comment/comment_data', $commentData, $feed, $requestData);
+        $commentData = apply_filters('fluent_community/comment/comment_data', $commentData, $feed);
 
         $comment = Comment::create($commentData);
 
@@ -125,9 +136,17 @@ class CommentsController extends Controller
 
         $this->loadCommentRelations($comment);
 
-        $mentionedUsers = $mentions ? $mentions['users'] : null;
-        do_action('fluent_community/comment_added_' . $feed->type, $comment, $feed, $mentionedUsers);
-        do_action('fluent_community/comment_added', $comment, $feed, $mentionedUsers);
+        if ($comment->status != 'published') {
+            do_action('fluent_community/comment/new_comment_' . $comment->status, $comment, $feed);
+            return [
+                'comment' => $comment,
+                'message' => sprintf(__('Your comment has been marked as %s', 'fluent-community'), $comment->status),
+            ];
+        }
+
+        do_action('fluent_community/comment_added_' . $feed->type, $comment, $feed);
+
+        do_action('fluent_community/comment_added', $comment, $feed);
 
         return [
             'comment' => $comment,
@@ -152,6 +171,7 @@ class CommentsController extends Controller
         }
 
         $mentions = FeedsHelper::getMentions($text, $feed->space_id);
+
         $commentHtml = $this->generateCommentHtml($text, $mentions);
 
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
@@ -464,7 +484,7 @@ class CommentsController extends Controller
     {
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
-                
+
         if ($comment->post_id != $feed->id) {
             return $this->sendError([
                 'message' => 'Invalid comment'
@@ -514,13 +534,15 @@ class CommentsController extends Controller
 
     public function show(Request $request, $id)
     {
-        $comment = Comment::where('status', 'published')
-            ->pendingCommentsByUser($this->getUserId())
+
+        $testComment = Comment::query()->findOrFail($id);
+
+        $comment = Comment::byContentModerationAccessStatus($this->getUser(), $testComment->space)
             ->with([
                 'xprofile' => function ($q) {
                     return $q->select(ProfileHelper::getXProfilePublicFields());
                 }
-        ])->findOrFail($id);
+            ])->findOrFail($id);
 
         // Just to verify the permission
         Feed::withoutGlobalScopes()

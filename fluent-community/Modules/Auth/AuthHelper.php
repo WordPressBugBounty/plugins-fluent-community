@@ -309,7 +309,7 @@ class AuthHelper
             'pre_header'  => __('Activate your account', 'fluent-community'),
             'footerLines' => [
                 __('If you did not initiate this request, please ignore this email.', 'fluent-community'),
-                sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), site_url())
+                sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), home_url())
             ]
         ]);
 

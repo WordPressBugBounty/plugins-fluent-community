@@ -106,41 +106,48 @@ class Comment extends Model
         return $this->belongsTo(Feed::class, 'post_id', 'id')->withoutGlobalScopes();
     }
 
+    public function space()
+    {
+        return $this->hasOneThrough(
+            BaseSpace::class,
+            Feed::class,
+            'id',         // Foreign key on the feeds table
+            'id',         // Foreign key on the spaces table
+            'post_id',    // Local key on the comments table
+            'space_id'    // Local key on the feeds table
+        )->withoutGlobalScopes();
+    }
+
     public function reactions()
     {
         return $this->hasMany(Reaction::class, 'object_id', 'id')
             ->where('object_type', 'comment');
     }
 
-    public function scopePendingCommentsByUser($query, $currentUserId, $space = null)
+    public function scopeByContentModerationAccessStatus($query, $user, $space = null)
     {
-        $user = User::find($currentUserId);
-        $spaceId = $space ? $space->id : null;
-        if ($user && $user->hasCommunityModeratorAccess()) {
-            return $query->when(true, function($q) {
-                $q->orWhere('status', 'pending');
-            })->when($spaceId, function($q) use ($spaceId) {
-                $q->whereHas('post.space', function($spaceQuery) use ($spaceId) {
-                    $spaceQuery->where('id', $spaceId);
-                });
-            });
+        if (!$user || !Helper::isFeatureEnabled('content_moderation')) {
+            return $query->where('status', 'published');
         }
 
-        return $query->orWhere(function ($query) use ($currentUserId, $spaceId) {
-            $query->where('status', 'pending')->where(function ($q) use ($currentUserId, $spaceId) {
-                $q->where('user_id', $currentUserId);
-                $q->orWhereHas('post.space', function ($spaceQuery) use ($currentUserId, $spaceId) {
-                    if ($spaceId) {
-                        $spaceQuery->where('id', $spaceId);
-                    }
-                    $spaceQuery->whereHas('members', function ($memberQuery) use ($currentUserId) {
-                        $memberQuery->where('user_id', $currentUserId)
-                            ->whereIn('role', ['admin', 'moderator']);
-                    });
+        if (
+            $user->hasCommunityModeratorAccess() ||
+            ($space && $user->hasSpacePermission('edit_any_comment', $space))
+        ) {
+            return $query->whereIn('status', ['published', 'pending']);
+        }
+
+        // This is a normal User.
+        return $query->where(function ($q) use ($user) {
+            $q->where('status', 'published')
+                ->orWhere(function ($q) use ($user) {
+                    $q->where('status', 'pending')
+                        ->where('user_id', $user->ID);
                 });
-            });
         });
+
     }
+
     /*
      * Find all the user ids of a child comment who commented on the parent comment including the parent comment author
      */

@@ -24,6 +24,7 @@ class EmailNotificationHandler
 
     public function register()
     {
+
         add_action('fluent_community/space_feed/created', [$this, 'handleSpaceFeedCreated'], 20, 1);
         add_action('fluent_community/email_notify_new_posts', [$this, 'notifyOnPostCreatedAsync'], 10, 1);
 

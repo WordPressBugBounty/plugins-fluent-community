@@ -149,7 +149,7 @@ class FeedsHelper
         return array_values($termIds);
     }
 
-    public static function getMentions($text, $spaceId = null)
+    public static function getMentions($text, $spaceId = null, $withUsers = false)
     {
         // the mention may have . or _ or - in the username
         preg_match_all('/@([a-zA-Z0-9_.-]+)/', $text, $matches);
@@ -184,12 +184,16 @@ class FeedsHelper
             $userMentions['@' . $xProfile->username] = $html;
         }
 
-        $users = User::whereIn('ID', $userIds)->get();
-
-        return [
-            'users' => $users,
+        $data = [
+            'user_ids' => $userIds,
             'text'  => strtr($text, $userMentions)
         ];
+
+        if ($withUsers) {
+            $data['users'] = User::whereIn('ID', $userIds)->get();
+        }
+
+        return $data;
     }
 
     public static function getLikedIdsByUserFeedId($feedId, $userId)

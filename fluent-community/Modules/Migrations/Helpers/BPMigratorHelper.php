@@ -5,6 +5,7 @@ namespace FluentCommunity\Modules\Migrations\Helpers;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
+use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -176,7 +177,6 @@ class BPMigratorHelper
             usort($comment['children'], function ($a, $b) {
                 return $a['id'] - $b['id'];
             });
-
         }
 
         return $commentTree;
@@ -194,7 +194,8 @@ class BPMigratorHelper
         return trim($content);
     }
 
-    private static function toMarkdown($html) {
+    private static function toMarkdown($html)
+    {
         // Replace header tags
         $html = preg_replace('/<h1>(.*?)<\/h1>/', '# $1', $html);
         $html = preg_replace('/<h2>(.*?)<\/h2>/', '## $1', $html);
@@ -238,40 +239,26 @@ class BPMigratorHelper
 
     private static function getActivityMediaPreview($activityId)
     {
-        $mediaPreviews = self::getMediaItems($activityId);
-
-        if (!$mediaPreviews) {
-            return null;
-        }
-
-        if (count($mediaPreviews) === 1) {
-            return [
-                'media_preview' => [
-                    'is_uploaded' => true,
-                    'image'       => $mediaPreviews[0]['url'],
-                    'type'        => 'meta_data',
-                    'provider'    => 'uploader',
-                    'width'       => $mediaPreviews[0]['width'],
-                    'height'      => $mediaPreviews[0]['height']
-                ]
-            ];
-        }
-
-        return [
-            'media_items' => $mediaPreviews
-        ];
+        return self::getMediaItems($activityId);
     }
 
     private static function getMediaItems($activityId)
     {
         $mediaPreviews = [];
-        $mediaMeta = fluentCommunityApp('db')->table('bp_activity_meta')
-            ->select('meta_value')
+        $mediaMetas = fluentCommunityApp('db')->table('bp_activity_meta')
+            ->select(['meta_value', 'meta_key'])
             ->where('activity_id', $activityId)
-            ->where('meta_key', 'bp_media_ids')
-            ->first();
+            ->whereIn('meta_key', ['bp_media_ids', '_gif_raw_data'])
+            ->get()
+            ->keyBy('meta_key')
+            ->toArray();
 
-        if ($mediaMeta) {
+        if (!$mediaMetas) {
+            return null;
+        }
+
+        if (!empty($mediaMetas['bp_media_ids']) && !empty($mediaMetas['bp_media_ids']->meta_value)) {
+            $mediaMeta = $mediaMetas['bp_media_ids'];
             $mediaIds = explode(',', $mediaMeta->meta_value);
 
             $mediaItems = fluentCommunityApp('db')->table('bp_media')
@@ -287,11 +274,9 @@ class BPMigratorHelper
                 ->get();
 
             foreach ($mediaPosts as $mediaPost) {
-
                 if (strpos($mediaPost->post_mime_type, 'image/') === false) {
                     continue;
                 }
-
                 $meta = (array)get_post_meta($mediaPost->ID, '_wp_attachment_metadata', true);
                 $mediaPreviews[] = [
                     'media_id' => NULL,
@@ -302,13 +287,41 @@ class BPMigratorHelper
                     'provider' => 'external'
                 ];
             }
+        } else if (!empty($mediaMetas['_gif_raw_data'])) {
+            $giphyMeta = maybe_unserialize($mediaMetas['_gif_raw_data']->meta_value, true);
+
+            $giphyMedia = Arr::get($giphyMeta, 'images.downsized_medium', []);
+            if (!$giphyMedia || empty($giphyMedia['url'])) {
+                return null;
+            }
+
+            return [
+                'media_preview' => array_filter([
+                    'image'    => sanitize_url($giphyMedia['url']),
+                    'type'     => 'image',
+                    'provider' => 'giphy',
+                    'height'   => (int)Arr::get($giphyMedia, 'height', 0),
+                    'width'    => (int)Arr::get($giphyMedia, 'width', 0),
+                ])
+            ];
         }
 
         if (!$mediaPreviews) {
             return null;
         }
 
-        return $mediaPreviews;
+        if (count($mediaPreviews) == 1) {
+            $media = $mediaPreviews[0];
+            $media['image'] = $media['url'];
+            unset($media['url']);
+            return [
+                'media_preview' => $media
+            ];
+        }
+
+        return [
+            'media_items' => $mediaPreviews
+        ];
     }
 
     public static function isBuddyBoss()
@@ -391,5 +404,84 @@ class BPMigratorHelper
                 Comment::where('id', $commentId)->update(['reactions_count' => $count]);
             }
         }
+    }
+
+    public static function syncUser(User $user)
+    {
+        $xprofile = $user->syncXProfile();
+        // Let's sync the
+        if (!$xprofile->hasCustomAvatar()) {
+            $avatar = bp_core_fetch_avatar([
+                'item_id' => $user->ID,
+                'object'  => 'user',
+                'type'    => 'full',
+                'html'    => false,
+                'no_grav' => true
+            ]);
+
+
+            $coverPhoto = bp_attachments_get_attachment(
+                'url',
+                array(
+                    'object_dir' => 'members',
+                    'item_id'    => 1,
+                )
+            );
+
+            $hasChange = false;
+            if ($coverPhoto) {
+                $meta = $xprofile->meta;
+                $meta['cover_photo'] = $coverPhoto;
+                $xprofile->meta = $meta;
+                $hasChange = true;
+            }
+
+            if ($avatar && !strpos($avatar, 'gravatar.com')) {
+                $xprofile->avatar = $avatar;
+                $hasChange = true;
+            }
+
+            if ($hasChange) {
+                $xprofile->save();
+            }
+        }
+
+        if (!self::isBuddyBoss()) {
+            $favIds = get_user_meta($user->ID, 'bp_favorite_activities', true);
+            if ($favIds) {
+                $favFeedIds = fluentCommunityApp('db')->table('bp_activity_meta')
+                    ->whereIn('activity_id', $favIds)
+                    ->select(['meta_value'])
+                    ->where('meta_key', '_fcom_feed_id')
+                    ->get()
+                    ->pluck('meta_value')
+                    ->toArray();
+
+                if ($favFeedIds) {
+                    $favPosts = Feed::whereIn('id', $favFeedIds)->get();
+                    foreach ($favPosts as $favPost) {
+                        $exist = Reaction::where('user_id', $user->ID)
+                            ->where('object_id', $favPost->id)
+                            ->where('type', 'like')
+                            ->objectType('feed')
+                            ->exists();
+
+                        if (!$exist) {
+                            Reaction::create([
+                                'user_id'     => get_current_user_id(),
+                                'object_id'   => $favPost->id,
+                                'type'        => 'like',
+                                'object_type' => 'feed'
+                            ]);
+
+                            $favPost->reactions_count = (int)$favPost->reactions_count + 1;
+                            $favPost->save();
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 }

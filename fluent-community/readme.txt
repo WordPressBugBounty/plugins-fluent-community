@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.0
+Stable tag: 1.2.10
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -162,6 +162,9 @@ FluentCommunity helps you transform your customers into loyal brand advocates by
 ==Community for Workplace==
 Create a centralized workplace platform with custom features, a branded design, and tailored guidelines to suit your team's needs. FluentCommunity enables seamless collaboration, communication, and productivity, providing a unified space to streamline workflows and foster a positive team culture.
 
+==One-Click Migration from BuddyBoss and BuddyPress==
+FluentCommunity offers a seamless migration process from BuddyBoss and BuddyPress, allowing you to effortlessly transfer your existing community data and settings. With just a few clicks, you can transition to FluentCommunity without losing any valuable content, activities, media, user profiles, ensuring a smooth and hassle-free experience.
+
 == Integrations and Add-ons Available in the Free Version ==
 
 * <a href="https://wordpress.org/plugins/fluent-crm" target="_blank">FluentCRM</a>
@@ -240,6 +243,12 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.2.10 (Date: Mar 10, 2025) =
+- Improved Moderation Module and Added new features
+- BuddyBoss & BuddyPress Migration Support for Media
+- Improved Database Queries for Feeds
+- Accessibility support for top menu bar
 
 = 1.2.0 (Date: Mar 06, 2025) =
 - Introduced Content Moderation Feature

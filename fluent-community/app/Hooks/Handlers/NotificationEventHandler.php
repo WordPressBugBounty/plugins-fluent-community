@@ -14,7 +14,7 @@ class NotificationEventHandler
 {
     public function register()
     {
-        add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 3);
+        add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 2);
         add_action('fluent_community/space_feed/created', [$this, 'handleNewSpaceFeed'], 10);
         add_action('fluent_community/feed/react_added', [$this, 'handleNewFeedReact'], 10, 2);
 
@@ -23,16 +23,16 @@ class NotificationEventHandler
         /*
          * Mentions handler
          */
-        add_action('fluent_community/feed_mentioned', [$this, 'handleFeedMentions'], 10, 2);
+        add_action('fluent_community/feed/created', [$this, 'maybeHandleMentionedUserIds'], 10, 1);
 
     }
 
-    public function handleNewCommentEvent($comment, $feed, $mentionedUsers = null)
+    public function handleNewCommentEvent($comment, $feed)
     {
-        $this->commentNotificationToAuthorFeed($comment, $feed, $mentionedUsers);
+        $this->commentNotificationToAuthorFeed($comment, $feed);
 
         // now notify all users who commented on this feed
-        $this->commentNotificationToFeedCommenters($comment, $feed, $mentionedUsers);
+        $this->commentNotificationToFeedCommenters($comment, $feed);
     }
 
     public function handleNewSpaceFeed($feed)
@@ -172,17 +172,15 @@ class NotificationEventHandler
         $notification->subscribe([$pivot->user_id]);
     }
 
-    protected function commentNotificationToAuthorFeed(Comment $comment, Feed $feed, $mentionUsers = null)
+    protected function commentNotificationToAuthorFeed(Comment $comment, Feed $feed)
     {
         if ($comment->user_id == $feed->user_id) {
             return;
         }
 
-        if ($mentionUsers) {
-            $mentionedUserIds = $mentionUsers->pluck('ID')->toArray();
-            if (in_array($feed->user_id, $mentionedUserIds)) {
-                return;
-            }
+        $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
+        if (in_array($feed->user_id, $mentionedUserIds)) {
+            return;
         }
 
         $commenter = '<b class="fcom_nudn">' . $comment->user->display_name . '</b>';
@@ -271,7 +269,7 @@ class NotificationEventHandler
         $notification->subscribe([$feed->user_id]);
     }
 
-    protected function commentNotificationToFeedCommenters($comment, $feed, $mentionedUsers = null)
+    protected function commentNotificationToFeedCommenters($comment, $feed)
     {
         if ($comment->parent_id) {
             return $this->notifyForChildCommentReply($comment, $feed);
@@ -286,11 +284,7 @@ class NotificationEventHandler
 
         $userIds = $comments->pluck('user_id')->toArray();
 
-        $mentionedUserIds = [];
-
-        if ($mentionedUsers) {
-            $mentionedUserIds = $mentionedUsers->pluck('ID')->toArray();
-        }
+        $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
 
         if (!$userIds && !$mentionedUserIds) {
             return;
@@ -431,8 +425,13 @@ class NotificationEventHandler
         return $notification;
     }
 
-    public function handleFeedMentions($feed, $mentionedUsers)
+    public function maybeHandleMentionedUserIds($feed)
     {
+        $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
+        if (!$mentionedUserIds) {
+            return;
+        }
+
         $feedTitle = $feed->getHumanExcerpt(60);
         $user = $feed->user;
 
@@ -456,9 +455,7 @@ class NotificationEventHandler
 
         $notification = Notification::create($notification);
 
-        $userIds = $mentionedUsers->pluck('ID')->toArray();
-
-        $notification->subscribe($userIds);
+        $notification->subscribe($mentionedUserIds);
     }
 
     private function maybeHasEveryoneTag(Feed $feed)

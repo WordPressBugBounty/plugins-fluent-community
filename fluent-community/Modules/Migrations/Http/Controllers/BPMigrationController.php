@@ -153,7 +153,7 @@ class BPMigrationController extends Controller
 
         foreach ($users as $user) {
             $lastUserId = $user->ID;
-            $this->syncUser($user);
+            BPMigratorHelper::syncUser($user);
         }
 
         $status['last_migrated_user_id'] = $lastUserId;
@@ -324,6 +324,32 @@ class BPMigrationController extends Controller
                 'serial'      => $serial ?: 1
             ];
 
+            $groupLogo = bp_core_fetch_avatar(
+                array(
+                    'item_id'    => $group->id,
+                    'avatar_dir' => 'group-avatars',
+                    'object'     => 'group',
+                    'type'       => 'full',
+                    'html'       => false,
+                )
+            );
+
+            if ($groupLogo) {
+                $groupData['logo'] = $groupLogo;
+            }
+
+            $group_cover_image = bp_attachments_get_attachment(
+                'url',
+                array(
+                    'object_dir' => 'groups',
+                    'item_id'    => $group->id,
+                )
+            );
+
+            if ($group_cover_image) {
+                $groupData['cover_photo'] = $group_cover_image;
+            }
+
             $exist = BaseSpace::where('slug', $groupData['slug'])
                 ->exists();
 
@@ -356,64 +382,6 @@ class BPMigrationController extends Controller
         }
 
         return $timeElapsed >= $timeLimit;
-    }
-
-    private function syncUser(User $user)
-    {
-        $xprofile = $user->syncXProfile();
-        // Let's sync the
-        if (!$xprofile->hasCustomAvatar()) {
-            $avatar = bp_core_fetch_avatar([
-                'item_id' => $user->ID,
-                'object'  => 'user',
-                'type'    => 'full',
-                'html'    => false,
-                'no_grav' => true
-            ]);
-
-            if ($avatar && !strpos($avatar, 'gravatar.com')) {
-                $xprofile->avatar = $avatar;
-                $xprofile->save();
-            }
-        }
-
-        if (!BPMigratorHelper::isBuddyBoss()) {
-            $favIds = get_user_meta($user->ID, 'bp_favorite_activities', true);
-            if ($favIds) {
-                $favFeedIds = fluentCommunityApp('db')->table('bp_activity_meta')
-                    ->whereIn('activity_id', $favIds)
-                    ->select(['meta_value'])
-                    ->where('meta_key', '_fcom_feed_id')
-                    ->get()
-                    ->pluck('meta_value')
-                    ->toArray();
-
-                if ($favFeedIds) {
-                    $favPosts = Feed::whereIn('id', $favFeedIds)->get();
-                    foreach ($favPosts as $favPost) {
-                        $exist = Reaction::where('user_id', $user->ID)
-                            ->where('object_id', $favPost->id)
-                            ->where('type', 'like')
-                            ->objectType('feed')
-                            ->exists();
-
-                        if (!$exist) {
-                            Reaction::create([
-                                'user_id'     => get_current_user_id(),
-                                'object_id'   => $favPost->id,
-                                'type'        => 'like',
-                                'object_type' => 'feed'
-                            ]);
-
-                            $favPost->reactions_count = (int)$favPost->reactions_count + 1;
-                            $favPost->save();
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
     }
 
     private function getCurrentStatus()

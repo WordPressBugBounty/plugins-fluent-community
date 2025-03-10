@@ -234,7 +234,7 @@ class ProfileHelper
 
         foreach ($fallbacks as $fallback) {
             // only take alphanumeric characters and _ -
-            $fallback = preg_replace('/[^a-z0-9_-]/', '', $fallback);
+            $fallback = preg_replace('/[^a-zA-Z0-9_-]/', '', $fallback);
             $userName = CustomSanitizer::sanitizeUserName($fallback);
             if (self::isUsernameAvailable($userName, $userId)) {
                 return $userName;

@@ -178,7 +178,7 @@ class PortalSettingsHandler
             'ajaxurl'             => admin_url('admin-ajax.php'),
             'rest'                => $this->getRestInfo(),
             'urls'                => [
-                'site_url'      => site_url('/'),
+                'site_url'      => home_url('/'),
                 'portal_base'   => Helper::baseUrl('/'),
                 'permalink_url' => admin_url('options-permalink.php')
             ],

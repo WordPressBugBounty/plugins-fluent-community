@@ -36,15 +36,16 @@ class FeedsController extends Controller
             }
         }
 
-        $feedsQuery = Feed::where('status', 'published')
+        $currentUserModel = $this->getUser();
+
+        $feedsQuery = Feed::byContentModerationAccessStatus($currentUserModel, $space)
             ->select(Feed::$publicColumns)
             ->with([
                     'xprofile'  => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
                     },
-                    'comments'  => function ($q) use ($space) {
-                        $q->where('status', 'published')
-                            ->pendingCommentsByUser($this->getUserId(), $space)
+                    'comments'  => function ($q) use ($space, $currentUserModel) {
+                        $q->byContentModerationAccessStatus($currentUserModel, $space)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }]);
@@ -87,8 +88,7 @@ class FeedsController extends Controller
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             },
                             'comments' => function ($q) use ($space) {
-                                $q->where('status', 'published')
-                                    ->pendingCommentsByUser($this->getUserId(), $space)
+                                $q->byContentModerationAccessStatus($this->getUser(), $space)
                                     ->with(['xprofile' => function ($q) {
                                         $q->select(ProfileHelper::getXProfilePublicFields());
                                     }]);
@@ -110,8 +110,6 @@ class FeedsController extends Controller
         } else {
             $feedsQuery->byUserAccess($currentUserId);
         }
-
-        $feedsQuery->pendingFeedsByUser($currentUserId, $space);
 
         do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all()]);
 
@@ -144,7 +142,6 @@ class FeedsController extends Controller
     public function getFeedBySlug(Request $request, $feed_slug)
     {
         $start = microtime(true);
-
         if ($request->get('context') == 'edit') {
             $feed = Feed::where('slug', $feed_slug)->first();
 
@@ -160,7 +157,6 @@ class FeedsController extends Controller
         }
 
         $feed = Feed::where('slug', $feed_slug)
-            ->where('status', 'published')
             ->select(Feed::$publicColumns)
             ->with([
                 'xprofile'  => function ($q) {
@@ -168,8 +164,7 @@ class FeedsController extends Controller
                 },
                 'space',
                 'comments'  => function ($q) {
-                    $q->where('status', 'published')
-                        ->pendingCommentsByUser($this->getUserId())
+                    $q->byContentModerationAccessStatus($this->getUser())
                         ->with(['xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
                         }]);
@@ -189,12 +184,17 @@ class FeedsController extends Controller
                 }
             ])
             ->byUserAccess($this->getUserId())
-            ->pendingFeedsByUser($this->getUserId())
             ->first();
 
         if (!$feed) {
             return $this->sendError([
                 'message' => __('The feed could not be found', 'fluent-commuity')
+            ], 404);
+        }
+
+        if ($feed->status != 'published' && !$feed->hasEditAccess($this->getUserId())) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this ', 'fluent-commuity')
             ], 404);
         }
 
@@ -214,7 +214,7 @@ class FeedsController extends Controller
 
     public function getBookmarks(Request $request)
     {
-        $userId = get_current_user_id();
+        $userId = $this->getUserId();
 
         $feedsQuery = Feed::where('status', 'published')
             ->select(Feed::$publicColumns)
@@ -222,9 +222,8 @@ class FeedsController extends Controller
                     'xprofile' => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
                     },
-                    'comments' => function ($q) use ($userId) {
-                        $q->where('status', 'published')
-                            ->pendingCommentsByUser($userId)
+                    'comments' => function ($q) {
+                        $q->byContentModerationAccessStatus($this->getUser())
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }]);
@@ -339,6 +338,10 @@ class FeedsController extends Controller
             $data['meta']['send_announcement_email'] = 'no';
         }
 
+        if ($mentions) {
+            $data['meta']['mentioned_user_ids'] = Arr::get($mentions, 'user_ids', []);
+        }
+
         $data = apply_filters('fluent_community/feed/new_feed_data', $data, $requestData);
 
         $formContentType = (string)Arr::get($requestData, 'content_type', '');
@@ -355,7 +358,6 @@ class FeedsController extends Controller
         }
 
         $feed->fill($data);
-
         $feed->save();
 
         if ($formContentType) {
@@ -365,8 +367,6 @@ class FeedsController extends Controller
         if ($mediaItems) {
             $this->saveMediaItems($feed, $mediaItems);
         }
-
-        $this->handleMentions($feed, $mentions ?? []);
 
         $feed->load(['xprofile', 'comments.xprofile']);
         if ($feed->space_id) {
@@ -378,6 +378,15 @@ class FeedsController extends Controller
                 $topicIds = array_slice($topicIds, 0, $topicsConfig['max_topics_per_post']);
                 $feed->attachTopics($topicIds, false);
             }
+        }
+
+        if ($feed->status != 'published') {
+            do_action('fluent_community/feed/new_feed_' . $feed->status, $feed);
+            return [
+                'feed'                   => FeedsHelper::transformFeed($feed),
+                'message'                => sprintf(__('Your post has been marked as %s', 'fluent-community'), $feed->status),
+                'last_fetched_timestamp' => current_time('timestamp')
+            ];
         }
 
         do_action('fluent_community/feed/created', $feed);
@@ -396,10 +405,16 @@ class FeedsController extends Controller
     public function update(Request $request, $feedId)
     {
         $requestData = $request->all();
-
         $data = $this->sanitizeAndValidateData($requestData);
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
+
+        if($existingFeed->status != 'published') {
+            return $this->sendError([
+                'message' => __('Sorry, You can only edit a post if it\'s in published state.', 'fluent-community')
+            ]);
+        }
+
         $user->canEditFeed($existingFeed, true);
 
         $message = $data['message'];
@@ -453,7 +468,6 @@ class FeedsController extends Controller
                 'time'    => current_time('mysql')
             ];
         }
-
 
         if ($newSpaceId = $request->get('new_space_id')) {
             if (!Helper::isUserInSpace($existingFeed->user_id, $newSpaceId)) {
@@ -614,13 +628,6 @@ class FeedsController extends Controller
             $media->is_active = 1;
             $media->object_source = 'feed';
             $media->save();
-        }
-    }
-
-    private function handleMentions($feed, $mentions)
-    {
-        if ($mentions) {
-            do_action('fluent_community/feed_mentioned', $feed, $mentions['users']);
         }
     }
 

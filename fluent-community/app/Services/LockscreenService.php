@@ -24,7 +24,8 @@ class LockscreenService
                 'button_color'      => '#2B2E33',
                 'button_text_color' => '#FFFFFF',
                 'background_image'  => '',
-                'overlay_color'     => '#798398'
+                'overlay_color'     => '#798398',
+                'new_tab'           => 'no'
             ],
             [
                 'hidden'  => false,
@@ -58,7 +59,8 @@ class LockscreenService
             'button_color'      => '#2B2E33',
             'button_text_color' => '#FFFFFF',
             'background_image'  => '',
-            'overlay_color'     => '#798398'
+            'overlay_color'     => '#798398',
+            'new_tab'           => 'no'
         ];
 
         $settings = $space->getCustomMeta('lockscreen_settings', $defaultSettings);
@@ -66,6 +68,10 @@ class LockscreenService
         foreach ($settings as &$setting) {
             if ($setting['type'] === 'block' && !empty($setting['content'])) {
                 $setting['content'] = do_blocks($setting['content']);
+            }
+
+            if ($setting['type'] == 'image' && empty($setting['new_tab'])) {
+                $setting['new_tab'] = 'no';
             }
         }
 
@@ -76,7 +82,7 @@ class LockscreenService
     {
         $currentSettings = self::getLockscreenSettings($space);
 
-        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color'];
+        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color', 'new_tab'];
         $urlFields = ['button_link'];
 
         $formattedFields = [];

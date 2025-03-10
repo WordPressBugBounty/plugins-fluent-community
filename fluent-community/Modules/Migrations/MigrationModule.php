@@ -2,6 +2,9 @@
 
 namespace FluentCommunity\Modules\Migrations;
 
+use FluentCommunity\App\Models\User;
+use FluentCommunity\Modules\Migrations\Helpers\BPMigratorHelper;
+
 class MigrationModule
 {
     public function register($app)

@@ -208,7 +208,7 @@ class AuthModdule
                 $pageVars['js_files'][] = FLUENT_AUTH_PLUGIN_URL . 'dist/public/fls_login.js';
                 $pageVars['js_vars']['fluentAuthPublic'] = [
                     'hide'              => false,
-                    'redirect_fallback' => site_url(),
+                    'redirect_fallback' => home_url(),
                     'fls_login_nonce'   => wp_create_nonce('fsecurity_login_nonce'),
                     'ajax_url'          => admin_url('admin-ajax.php'),
                     'i18n'              => [

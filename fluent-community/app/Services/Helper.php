@@ -55,7 +55,7 @@ class Helper
             return $slug;
         }
 
-        $siteUrl = get_site_url();
+        $siteUrl = get_home_url();
 
         $poralUrl = self::baseUrl('/');
 
@@ -1733,6 +1733,9 @@ class Helper
                 'is_enabled' => 'no',
                 'profanity_filter' => "",
                 'flag_after_threshold' => 0,
+                'flag_all_new_posts' => 'no',
+                'first_post_approval' => 'no',
+                'flag_all_new_posts_spaces' => [],
             ];
             return wp_parse_args($config, $default);
         }, WEEK_IN_SECONDS);
@@ -1764,11 +1767,14 @@ class Helper
         $profanity = array_map('trim', $profanity);
         $profanity = array_map('strtolower', $profanity);
         $text = strtolower($text);
-        foreach ($profanity as $p) {
-            if (strpos($text, $p) !== false) {
-                return $p;
-            }
+
+        // Convert words into a regex pattern (ensuring whole-word matching)
+        $pattern = '/\b(' . implode('|', array_map('preg_quote', $profanity)) . ')\b/i';
+
+        if (preg_match($pattern, $text, $matches)) {
+            return $matches[0];
         }
+
         return false;
     }
 }
