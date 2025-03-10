@@ -269,6 +269,7 @@ class FeedsController extends Controller
 
         $data = $this->sanitizeAndValidateData($requestData);
         $data['user_id'] = $user->ID;
+        $data['status'] = 'published';
 
         $feed = new Feed();
         $feed->user_id = $user->ID;
@@ -359,6 +360,8 @@ class FeedsController extends Controller
 
         $feed->fill($data);
         $feed->save();
+
+        $feed = Feed::find($feed->id); // just renewing the feed
 
         if ($formContentType) {
             do_action('fluent_community/feed/just_created_type_' . $formContentType, $feed, $requestData);

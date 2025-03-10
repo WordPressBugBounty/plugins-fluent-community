@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.10
+Stable tag: 1.2.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -244,7 +244,7 @@ OR
 
 == Changelog ==
 
-= 1.2.10 (Date: Mar 10, 2025) =
+= 1.2.11 (Date: Mar 10, 2025) =
 - Improved Moderation Module and Added new features
 - BuddyBoss & BuddyPress Migration Support for Media
 - Improved Database Queries for Feeds
