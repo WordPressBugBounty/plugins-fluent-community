@@ -41,12 +41,7 @@ class BPMigrationController extends Controller
             'featureConfig'  => [
                 'has_groups' => $hasGroups
             ],
-            'stats'          => [
-                'total_posts'           => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_update')->count(),
-                'total_comments'        => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_comment')->count(),
-                'total_reactions'       => class_exists('\BB_Reaction') ? fluentCommunityApp('db')->table('bb_user_reactions')->whereIn('item_type', ['activity_comment', 'activity'])->count() : 0,
-                'total_community_users' => User::count(),
-            ],
+            'stats'          => BPMigratorHelper::getBbDataStats(),
             'current_status' => $previousConfig,
             'has_previous'   => !empty($previousConfig['migrated_groups'])
         ];
@@ -71,7 +66,6 @@ class BPMigrationController extends Controller
                         $group->space_menu_id = $configMap[$group->id];
                     }
                 }
-
                 $createdMaps = $this->migrateGroups($groups);
                 $prevStatus['migrated_groups'] = $createdMaps;
             }

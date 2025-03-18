@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\Modules;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Foundation\Application;
 use FluentCommunity\Framework\Support\Arr;

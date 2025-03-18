@@ -88,6 +88,11 @@ class Feed extends Model
             if (empty($model->meta)) {
                 $model->meta = self::getDefaultMeta();
             }
+            
+            if (empty($model->status)) {
+                $model->status = 'published';
+            }
+
         });
 
         static::addGlobalScope('type', function ($builder) {

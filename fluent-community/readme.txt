@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.11
+Stable tag: 1.2.15
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -243,6 +243,14 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.2.15 (Date: Mar 18, 2025) =
+- Added Add Or Remove Verification Action for FluentCRM Integration (pro)
+- Added Custom CSS and Javascript Snippet Options (pro)
+- Added Custom Signup URL option for Auth Module
+- Improved BuddyBoss / BuddyPress migration for images
+- Fixed comment notification issues
+- Fixed object caching for moderator settings
 
 = 1.2.11 (Date: Mar 10, 2025) =
 - Improved Moderation Module and Added new features

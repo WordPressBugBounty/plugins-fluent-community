@@ -12,6 +12,16 @@ use FluentCommunity\Framework\Support\Arr;
 class BPMigratorHelper
 {
 
+    public static function getBbDataStats()
+    {
+        return [
+            'total_posts'           => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_update')->count(),
+            'total_comments'        => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_comment')->count(),
+            'total_reactions'       => class_exists('\BB_Reaction') ? fluentCommunityApp('db')->table('bb_user_reactions')->whereIn('item_type', ['activity_comment', 'activity'])->count() : 0,
+            'total_community_users' => User::count(),
+        ];
+    }
+
     public static function migratePost($post, $spaceId = null)
     {
         $content = self::cleanUpContent($post->content);
@@ -411,20 +421,18 @@ class BPMigratorHelper
         $xprofile = $user->syncXProfile();
         // Let's sync the
         if (!$xprofile->hasCustomAvatar()) {
-            $avatar = bp_core_fetch_avatar([
-                'item_id' => $user->ID,
-                'object'  => 'user',
-                'type'    => 'full',
-                'html'    => false,
-                'no_grav' => true
-            ]);
-
+            $avatar = get_avatar_url($user->ID, 'full', true);
+            if ($avatar) {
+                if (strpos($avatar, 'wp-content/plugins')) {
+                    $avatar = null;
+                }
+            }
 
             $coverPhoto = bp_attachments_get_attachment(
                 'url',
                 array(
                     'object_dir' => 'members',
-                    'item_id'    => 1,
+                    'item_id'    => $user->ID,
                 )
             );
 

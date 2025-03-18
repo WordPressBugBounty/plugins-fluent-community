@@ -64,7 +64,7 @@ class CommentsController extends Controller
         $text = $this->validateCommentText($request->all());
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
 
-        if($feed->status != 'published') {
+        if ($feed->status != 'published') {
             return $this->sendError([
                 'message' => __('This post is not published yet', 'fluent-community')
             ]);
@@ -145,7 +145,6 @@ class CommentsController extends Controller
         }
 
         do_action('fluent_community/comment_added_' . $feed->type, $comment, $feed);
-
         do_action('fluent_community/comment_added', $comment, $feed);
 
         return [

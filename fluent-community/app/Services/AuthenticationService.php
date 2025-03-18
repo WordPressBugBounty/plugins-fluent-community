@@ -17,89 +17,85 @@ class AuthenticationService
 
     public static function getAuthSettings()
     {
-        return Utility::getFromCache('auth_settings', function () {
+        $siteSettings = Helper::generalSettings();
 
-            $siteSettings = Helper::generalSettings();
+        $siteLogo = Arr::get($siteSettings, 'logo');
+        $siteTitle = Arr::get($siteSettings, 'site_title');
 
-            $siteLogo  = Arr::get($siteSettings, 'logo');
-            $siteTitle = Arr::get($siteSettings, 'site_title');
-
-            $defaults = [
-                'login'  => [
-                    'banner' => [
-                        'hidden'           => false,
-                        'type'             => 'banner',
-                        'position'         => 'left',
-                        'logo'             => $siteLogo,
-                        'title'            => 'Welcome to ' . $siteTitle,
-                        'description'      => 'Join our community and start your journey to success',
-                        'title_color'      => '#19283a',
-                        'text_color'       => '#525866',
-                        'background_image' => '',
-                        'background_color' => '#F5F7FA'
-                    ],
-                    'form' => [
-                        'type'               => 'form',
-                        'position'           => 'right',
-                        'title'              => 'Login to ' . $siteTitle,
-                        'description'        => 'Enter your email and password to login',
-                        'title_color'        => '#19283a',
-                        'text_color'         => '#525866',
-                        'button_label'       => 'Login',
-                        'button_color'       => '#2B2E33',
-                        'button_label_color' => '#ffffff',
-                        'background_image'   => '',
-                        'background_color'   => '#ffffff'
-                    ]
+        $defaults = [
+            'login'  => [
+                'banner' => [
+                    'hidden'           => false,
+                    'type'             => 'banner',
+                    'position'         => 'left',
+                    'logo'             => $siteLogo,
+                    'title'            => 'Welcome to ' . $siteTitle,
+                    'description'      => 'Join our community and start your journey to success',
+                    'title_color'      => '#19283a',
+                    'text_color'       => '#525866',
+                    'background_image' => '',
+                    'background_color' => '#F5F7FA'
                 ],
-                'signup' => [
-                    'banner' => [
-                        'hidden'           => false,
-                        'type'             => 'banner',
-                        'position'         => 'left',
-                        'logo'             => $siteLogo,
-                        'title'            => 'Welcome to ' . $siteTitle,
-                        'description'      => 'Join our community and start your journey to success',
-                        'title_color'      => '#19283a',
-                        'text_color'       => '#525866',
-                        'background_image' => '',
-                        'background_color' => '#F5F7FA',
-                    ],
-                    'form' => [
-                        'type'               => 'form',
-                        'position'           => 'right',
-                        'title'              => 'Sign Up to ' . $siteTitle,
-                        'description'        => 'Create an account to get started',
-                        'button_label'       => 'Sign up',
-                        'terms_label'        => '',
-                        'title_color'        => '#19283a',
-                        'text_color'         => '#525866',
-                        'button_color'       => '#2B2E33',
-                        'button_label_color' => '#ffffff',
-                        'background_image'   => '',
-                        'background_color'   => '#ffffff',
-                    ]
+                'form'   => [
+                    'type'               => 'form',
+                    'position'           => 'right',
+                    'title'              => 'Login to ' . $siteTitle,
+                    'description'        => 'Enter your email and password to login',
+                    'title_color'        => '#19283a',
+                    'text_color'         => '#525866',
+                    'button_label'       => 'Login',
+                    'button_color'       => '#2B2E33',
+                    'button_label_color' => '#ffffff',
+                    'background_image'   => '',
+                    'background_color'   => '#ffffff'
                 ]
+            ],
+            'signup' => [
+                'banner' => [
+                    'hidden'           => false,
+                    'type'             => 'banner',
+                    'position'         => 'left',
+                    'logo'             => $siteLogo,
+                    'title'            => 'Welcome to ' . $siteTitle,
+                    'description'      => 'Join our community and start your journey to success',
+                    'title_color'      => '#19283a',
+                    'text_color'       => '#525866',
+                    'background_image' => '',
+                    'background_color' => '#F5F7FA',
+                ],
+                'form'   => [
+                    'type'               => 'form',
+                    'position'           => 'right',
+                    'title'              => 'Sign Up to ' . $siteTitle,
+                    'description'        => 'Create an account to get started',
+                    'button_label'       => 'Sign up',
+                    'terms_label'        => '',
+                    'title_color'        => '#19283a',
+                    'text_color'         => '#525866',
+                    'button_color'       => '#2B2E33',
+                    'button_label_color' => '#ffffff',
+                    'background_image'   => '',
+                    'background_color'   => '#ffffff',
+                ]
+            ]
+        ];
+
+        $settings = Utility::getOption('auth_settings', []);
+
+        $authSettings = wp_parse_args($settings, $defaults);
+
+        if (!Arr::get($authSettings, 'signup.form.fields.terms')) {
+            $termsText = AuthHelper::getTermsText();
+            $authSettings['signup']['form']['fields']['terms'] = [
+                'disabled'     => false,
+                'required'     => true,
+                'type'         => 'inline_checkbox',
+                'label'        => Helper::htmlToMd($termsText),
+                'inline_label' => $termsText
             ];
+        }
 
-            $settings = Utility::getOption('auth_settings', []);
-
-            $authSettings = wp_parse_args($settings, $defaults);
-            
-            if (!Arr::get($authSettings, 'signup.form.fields.terms')) {
-                $termsText = AuthHelper::getTermsText();
-                $authSettings['signup']['form']['fields']['terms'] = [
-                    'disabled'     => false,
-                    'required'     => true,
-                    'type'         => 'inline_checkbox',
-                    'label'        => Helper::htmlToMd($termsText),
-                    'inline_label' => $termsText
-                ];
-            }
-
-            return apply_filters('fluent_community/auth/settings', $authSettings);
-
-        }, WEEK_IN_SECONDS);
+        return apply_filters('fluent_community/auth/settings', $authSettings);
     }
 
     public static function getFormattedAuthSettings($view = 'login')
@@ -139,7 +135,7 @@ class AuthenticationService
                 $formattedField['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($formattedField['description']));
 
                 $formattedField['hidden'] = Arr::isTrue($setting, 'hidden');
-                
+
                 $formattedFields[$section][$key] = $formattedField;
             }
         }
@@ -154,6 +150,13 @@ class AuthenticationService
         }
 
         return $formattedFields;
+    }
+
+    public static function getCustomSignupPageUrl()
+    {
+        $portalSettings = Helper::generalSettings();
+
+        return Arr::get($portalSettings, 'custom_signup_url');
     }
 
     protected static function handleMediaUrls($mediaUrls, $currentSetting, $section)
@@ -180,4 +183,5 @@ class AuthenticationService
 
         return $mediaUrls;
     }
+
 }

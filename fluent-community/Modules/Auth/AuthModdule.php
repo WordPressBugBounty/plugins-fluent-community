@@ -154,14 +154,21 @@ class AuthModdule
         $titleVar = Arr::get($portalSettings, 'site_title');
 
         $frameData = [
-            'logo'          => Arr::get($portalSettings, 'logo', ''),
-            'title'         => sprintf(__('Join %s', 'fluent-community'), $titleVar),
-            'description'   => __('Login or Signup to join the community', 'fluent-community'),
-            'button_label'  => __('Login', 'fluent-community'),
+            'logo'         => Arr::get($portalSettings, 'logo', ''),
+            'title'        => sprintf(__('Join %s', 'fluent-community'), $titleVar),
+            'description'  => __('Login or Signup to join the community', 'fluent-community'),
+            'button_label' => __('Login', 'fluent-community'),
         ];
 
-        if($targetForm == 'register') {
+        if ($targetForm == 'register') {
             $frameData['button_label'] = __('Signup', 'fluent-community');
+            if (!$inviation) {
+                $customSignupUrl = Arr::get($portalSettings, 'custom_signup_url');
+                if ($customSignupUrl) {
+                    wp_redirect($customSignupUrl);
+                    exit();
+                }
+            }
         }
 
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
@@ -180,8 +187,8 @@ class AuthModdule
             ],
             'js_vars'        => [
                 'fluentComRegistration' => [
-                    'ajax_url'     => admin_url('admin-ajax.php'),
-                    'is_logged_in' => is_user_logged_in(),
+                    'ajax_url'         => admin_url('admin-ajax.php'),
+                    'is_logged_in'     => is_user_logged_in(),
                     'redirecting_text' => __('Redirecting...', 'fluent-community')
                 ]
             ],
@@ -194,7 +201,7 @@ class AuthModdule
             ]
         ];
 
-        if(Utility::isDev()) {
+        if (Utility::isDev()) {
             $pageVars['js_files'] = [
                 Vite::getStaticSrcUrl('public/js/user_registration.js')
             ];
@@ -371,6 +378,13 @@ class AuthModdule
                 add_filter('fluent_community/auth/two_factor_enabled', '__return_false');
                 add_filter('fluent_auth/verify_signup_email', '__return_false');
             }
+        }
+
+        if (!$invitation && AuthenticationService::getCustomSignupPageUrl()) {
+            // we have custom signup page enabled
+            wp_send_json([
+                'message' => __('Direct Registration is disabled for this community', 'fluent-community')
+            ], 422);
         }
 
         $data['email'] = sanitize_email($data['email']);
@@ -650,6 +664,14 @@ class AuthModdule
             });
         }
 
+        $signupUrl = add_query_arg('form', 'register', $currentUrl);
+
+        if (!$invitation) {
+            if ($customSignupUrl = AuthenticationService::getCustomSignupPageUrl()) {
+                $signupUrl = $customSignupUrl;
+            }
+        }
+
         if ($isFluentAuth) {
             add_filter('login_form_top', function () {
                 $reditectUrl = Arr::get($_GET, 'redirect_to');
@@ -687,7 +709,7 @@ class AuthModdule
                             <?php if (AuthHelper::isRegistrationEnabled()): ?>
                                 <div class="fcom_alt_auth_text">
                                     <?php _e('Don\'t have an account?', 'fluent-community'); ?>
-                                    <a href="<?php echo esc_url(add_query_arg('form', 'register', $currentUrl)); ?>">
+                                    <a href="<?php echo esc_url($signupUrl); ?>">
                                         <?php _e('Signup', 'fluent-community'); ?>
                                     </a>
                                 </div>
@@ -721,7 +743,8 @@ class AuthModdule
         ];
 
         if (AuthHelper::isRegistrationEnabled()) {
-            $frameData['signupUrl'] = add_query_arg('form', 'register', $currentUrl);
+            $frameData['signupUrl'] = $signupUrl;
+            // $frameData['signupUrl'] = add_query_arg('form', 'register', $currentUrl);
         }
 
         $frameData['settings'] = $formSettings;

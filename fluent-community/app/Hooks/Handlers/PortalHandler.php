@@ -197,7 +197,6 @@ class PortalHandler
             $this->renderTopMenuRightItems();
             echo '</div>';
         });
-
     }
 
     public function renderTopMenuRightItems()
@@ -689,7 +688,6 @@ class PortalHandler
         }
 
         do_action('fluent_community/before_portal_rendered', $data);
-
 
         status_header(200);
         App::make('view')->render('portal_page', $data);

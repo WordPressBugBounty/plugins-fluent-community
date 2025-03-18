@@ -55,27 +55,4 @@ class Commands
 
         \WP_CLI::success('Points Recalculated Successfully for ' . count($xProfiles) . ' users');
     }
-
-    public function truncate_tables()
-    {
-        $db = App::make('db');
-        $db->table('users')->truncate();
-        $db->table('usermeta')->truncate();
-        $db->table('fcom_xprofile')->truncate();
-        $db->table('fcom_posts')->truncate();
-        $db->table('fcom_post_comments')->truncate();
-        $db->table('fcom_spaces')->truncate();
-        $db->table('fcom_space_user')->truncate();
-        $db->table('fcom_terms')->truncate();
-        $db->table('fcom_term_feed')->truncate();
-        $db->table('fcom_post_reactions')->truncate();
-        $db->table('fcom_user_activities')->truncate();
-        delete_option('_fcom_bp_migrations_meta');
-
-        $user_id = wp_create_user('admin', 'admin', 'admin@gmail.com');
-        $user = new \WP_User($user_id);
-        $user->set_role('administrator');
-
-        \WP_CLI::success('Tables Truncated Successfully');
-    }
 }

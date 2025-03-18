@@ -331,7 +331,9 @@ class Helper
             'auth_redirect'           => '',
             'restricted_role_content' => 'Sorry, you can not access to this page. Only authorized users can access this page.',
             'auth_url'                => '',
-            'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth')
+            'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth'),
+            'use_custom_signup_page'  => 'no',
+            'custom_signup_url'       => ''
         ];
 
         $settings = wp_parse_args($settings, $defaults);
@@ -1201,58 +1203,56 @@ class Helper
      */
     public static function getWelcomeBannerSettings()
     {
-        return Utility::getFromCache('welcome_banner_settings', function () {
-            $defaults = [
-                'login'  => [
-                    'enabled'     => 'no',
-                    'description' => '',
-                    'mediaType'   => 'image',
-                    'allowClose'  => 'no',
-                    'bannerImage' => '',
-                    'bannerVideo' => [
-                        'type'         => 'oembed',
-                        'url'          => '',
-                        'content_type' => '',
-                        'provider'     => '',
-                        'title'        => '',
-                        'author_name'  => '',
-                        'html'         => ''
-                    ],
-                    'ctaButtons'  => []
+        $defaults = [
+            'login'  => [
+                'enabled'     => 'no',
+                'description' => '',
+                'mediaType'   => 'image',
+                'allowClose'  => 'no',
+                'bannerImage' => '',
+                'bannerVideo' => [
+                    'type'         => 'oembed',
+                    'url'          => '',
+                    'content_type' => '',
+                    'provider'     => '',
+                    'title'        => '',
+                    'author_name'  => '',
+                    'html'         => ''
                 ],
-                'logout' => [
-                    'enabled'      => 'no',
-                    'description'  => '',
-                    'mediaType'    => 'image',
-                    'useCustomUrl' => 'no',
-                    'bannerImage'  => '',
-                    'bannerVideo'  => [
-                        'type'         => 'oembed',
-                        'url'          => '',
-                        'content_type' => '',
-                        'provider'     => '',
-                        'title'        => '',
-                        'author_name'  => '',
-                        'html'         => ''
-                    ],
-                    'ctaButtons'   => []
-                ]
-            ];
+                'ctaButtons'  => []
+            ],
+            'logout' => [
+                'enabled'      => 'no',
+                'description'  => '',
+                'mediaType'    => 'image',
+                'useCustomUrl' => 'no',
+                'bannerImage'  => '',
+                'bannerVideo'  => [
+                    'type'         => 'oembed',
+                    'url'          => '',
+                    'content_type' => '',
+                    'provider'     => '',
+                    'title'        => '',
+                    'author_name'  => '',
+                    'html'         => ''
+                ],
+                'ctaButtons'   => []
+            ]
+        ];
 
-            $settings = Utility::getOption('welcome_banner_settings', []);
+        $settings = Utility::getOption('welcome_banner_settings', []);
 
-            $settings = wp_parse_args($settings, $defaults);
+        $settings = wp_parse_args($settings, $defaults);
 
-            if (empty(Arr::get($settings, 'login.bannerVideo'))) {
-                $settings['login']['bannerVideo'] = $defaults['login']['bannerVideo'];
-            }
+        if (empty(Arr::get($settings, 'login.bannerVideo'))) {
+            $settings['login']['bannerVideo'] = $defaults['login']['bannerVideo'];
+        }
 
-            if (empty(Arr::get($settings, 'logout.bannerVideo'))) {
-                $settings['logout']['bannerVideo'] = $defaults['logout']['bannerVideo'];
-            }
+        if (empty(Arr::get($settings, 'logout.bannerVideo'))) {
+            $settings['logout']['bannerVideo'] = $defaults['logout']['bannerVideo'];
+        }
 
-            return $settings;
-        }, WEEK_IN_SECONDS);
+        return $settings;
     }
 
     public static function getWelcomeBanner($view = 'login')
@@ -1283,15 +1283,12 @@ class Helper
 
     public static function getFeedLinks()
     {
-        return Utility::getFromCache('feed_links', function () {
-            return Utility::getOption('feed_links', []);
-        }, WEEK_IN_SECONDS);
+        return Utility::getOption('feed_links', []);
     }
 
     public static function updateFeedLinks($links)
     {
         Utility::updateOption('feed_links', $links);
-        Utility::setCache('feed_links', $links, WEEK_IN_SECONDS);
     }
 
     /**
@@ -1714,42 +1711,40 @@ class Helper
 
     public static function getTopicsConfig()
     {
-        return Utility::getFromCache('topics_config', function () {
-            $config = Utility::getOption('topics_config', []);
-            $default = [
-                'max_topics_per_post'  => 1,
-                'max_topics_per_space' => 20,
-                'show_on_post_card'    => 'yes'
-            ];
-            return wp_parse_args($config, $default);
-        }, WEEK_IN_SECONDS);
+        $config = Utility::getOption('topics_config', []);
+        $default = [
+            'max_topics_per_post'  => 1,
+            'max_topics_per_space' => 20,
+            'show_on_post_card'    => 'yes'
+        ];
+        return wp_parse_args($config, $default);
     }
 
     public static function getModerationConfig()
     {
-        return Utility::getFromCache('moderation_config', function () {
-            $config = Utility::getOption('moderation_config', []);
-            $default = [
-                'is_enabled' => 'no',
-                'profanity_filter' => "",
-                'flag_after_threshold' => 0,
-                'flag_all_new_posts' => 'no',
-                'first_post_approval' => 'no',
-                'flag_all_new_posts_spaces' => [],
-            ];
-            return wp_parse_args($config, $default);
-        }, WEEK_IN_SECONDS);
+        $config = Utility::getOption('moderation_config', []);
+
+        $default = [
+            'is_enabled'                => 'no',
+            'profanity_filter'          => "",
+            'flag_after_threshold'      => 0,
+            'flag_all_new_posts'        => 'no',
+            'first_post_approval'       => 'no',
+            'flag_all_new_posts_spaces' => [],
+        ];
+
+        return wp_parse_args($config, $default);
     }
 
     public static function getReportReasons()
     {
         return apply_filters('fluent_community/report_reasons', [
-            'harassment' => __('Harassment', 'fluent-community'),
-            'spam' => __('Spam', 'fluent-community'),
-            'offensive' => __('Offensive', 'fluent-community'),
-            'incorrect_space' => __('Incorrect Space', 'fluent-community'),
+            'harassment'        => __('Harassment', 'fluent-community'),
+            'spam'              => __('Spam', 'fluent-community'),
+            'offensive'         => __('Offensive', 'fluent-community'),
+            'incorrect_space'   => __('Incorrect Space', 'fluent-community'),
             'against_community' => __('Against Community Rules', 'fluent-community'),
-            'other' => __('Other', 'fluent-community'),
+            'other'             => __('Other', 'fluent-community'),
         ]);
     }
 

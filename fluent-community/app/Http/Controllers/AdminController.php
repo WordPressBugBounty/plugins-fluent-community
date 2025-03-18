@@ -75,6 +75,23 @@ class AdminController extends Controller
         $settings['auth_form_type'] = sanitize_text_field(Arr::get($inputs, 'auth_form_type', ''));
         $settings['explicit_registration'] = sanitize_text_field(Arr::get($inputs, 'explicit_registration', 'no'));
 
+        $isCustomSignupPage = $settings['auth_form_type'] === 'default' && Arr::get($inputs, 'use_custom_signup_page', 'no') == 'yes';
+        if(!$isCustomSignupPage) {
+            $settings['custom_signup_url'] = '';
+            $settings['use_custom_signup_page'] = 'no';
+        } else {
+            $settings['use_custom_signup_page'] = 'yes';
+
+            $url = Arr::get($inputs, 'custom_signup_url', '');
+
+            if(!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+                return $this->sendError([
+                    'message' => __('Please provide a valid signup URL', 'fluent-community')
+                ]);
+            }
+            $settings['custom_signup_url'] = $url;
+        }
+
         if ($media) {
             $settings['logo'] = $media->public_url;
             $media->update([

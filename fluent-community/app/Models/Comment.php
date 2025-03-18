@@ -40,6 +40,11 @@ class Comment extends Model
                 $model->user_id = get_current_user_id();
             }
             $model->type = 'comment';
+
+            if(empty($model->status)) {
+                $model->status = 'published';
+            }
+
         });
 
         static::deleting(function ($comment) {
