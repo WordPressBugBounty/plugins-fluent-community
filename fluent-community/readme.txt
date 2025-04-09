@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,7 +247,10 @@ OR
 
 == Changelog ==
 
-= 1.3.1 (Date: Apr 09, 2024) =
+= 1.3.2 (Date: Apr 09, 2025) =
+- Hotfix: Editor Compitability fix with Elementor
+
+= 1.3.1 (Date: Apr 09, 2025) =
 - Introduced Gutenberg Block in Course Lesson Editor
 - Added Option to Move Lessons Between Sections
 - Added One to One Messaging Settings

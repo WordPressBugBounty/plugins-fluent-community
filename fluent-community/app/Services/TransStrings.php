@@ -591,6 +591,7 @@ class TransStrings
             'Leave empty for unlimited uses' => __('Leave empty for unlimited uses', 'fluent-community'),
             'Lesson %1s of %2s' => __('Lesson %1s of %2s', 'fluent-community'),
             'Lesson %1s of %2s - %3s' => __('Lesson %1s of %2s - %3s', 'fluent-community'),
+            'Lesson Content' => __('Lesson Content', 'fluent-community'),
             'Lesson Title' => __('Lesson Title', 'fluent-community'),
             'Lesson discussions' => __('Lesson discussions', 'fluent-community'),
             'Lesson name' => __('Lesson name', 'fluent-community'),

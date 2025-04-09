@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FluentCommunity - Community & LMS Plugin\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-09 14:25+0000\n"
+"POT-Creation-Date: 2025-04-09 19:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -562,7 +562,7 @@ msgstr ""
 msgid "Accept invitation & continue"
 msgstr ""
 
-#: app/Services/TransStrings.php:1296
+#: app/Services/TransStrings.php:1297
 msgid "Accepted"
 msgstr ""
 
@@ -610,7 +610,7 @@ msgstr ""
 msgid "Activate your account"
 msgstr ""
 
-#: app/Services/TransStrings.php:63 app/Services/TransStrings.php:1297
+#: app/Services/TransStrings.php:63 app/Services/TransStrings.php:1298
 msgid "Active"
 msgstr ""
 
@@ -666,7 +666,7 @@ msgstr ""
 msgid "Add a badge next to user profile name to highlight valued users"
 msgstr ""
 
-#: app/Services/TransStrings.php:1272
+#: app/Services/TransStrings.php:1273
 msgid ""
 "Add a personal touch by using emojis when creating a new article, post, or "
 "comment."
@@ -741,7 +741,7 @@ msgstr ""
 msgid "Add Student"
 msgstr ""
 
-#: app/Services/TransStrings.php:1287
+#: app/Services/TransStrings.php:1288
 msgid ""
 "Add the blocked words that you want to use for content filtering. Use comma-"
 "separated words. If these words found then the content will go in review "
@@ -781,7 +781,7 @@ msgstr ""
 msgid "Add your social media profile link."
 msgstr ""
 
-#: app/Services/TransStrings.php:1281
+#: app/Services/TransStrings.php:1282
 msgid ""
 "Add your team members as an Admin/Moderator of this community. This feature "
 "is available on the premium version of FluentCommunity. Please upgrade to pro"
@@ -836,12 +836,12 @@ msgstr ""
 msgid "Affiliate ID: %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1298
+#: app/Services/TransStrings.php:1299
 #, php-format
 msgid "after %s days of enrollment"
 msgstr ""
 
-#: app/Services/TransStrings.php:1274
+#: app/Services/TransStrings.php:1275
 msgid ""
 "After how many reports, a content will be unpublished automatically. Keep 0 "
 "to disable this feature."
@@ -855,12 +855,12 @@ msgstr ""
 msgid "Agencies"
 msgstr ""
 
-#: app/Services/TransStrings.php:103 app/Services/TransStrings.php:1299
+#: app/Services/TransStrings.php:103 app/Services/TransStrings.php:1300
 #: app/Hooks/Handlers/PortalHandler.php:557
 msgid "All"
 msgstr ""
 
-#: app/Services/TransStrings.php:1267
+#: app/Services/TransStrings.php:1268
 msgid ""
 "All Administrators or edit_pages permissions users can access regardless of "
 "the selected roles"
@@ -883,7 +883,7 @@ msgstr ""
 msgid "All Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1275
+#: app/Services/TransStrings.php:1276
 msgid ""
 "All new posts will be automatically flagged for review and hidden until "
 "approved."
@@ -1000,7 +1000,7 @@ msgstr ""
 msgid "Any Member Can Invite Other Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1288
+#: app/Services/TransStrings.php:1289
 msgid ""
 "Any member can view posts without joining. Only members can create posts"
 msgstr ""
@@ -1009,13 +1009,13 @@ msgstr ""
 msgid "Any Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1276
+#: app/Services/TransStrings.php:1277
 msgid ""
 "Any new post in these spaces will be flagged for review and hidden until "
 "approved."
 msgstr ""
 
-#: app/Services/TransStrings.php:1283
+#: app/Services/TransStrings.php:1284
 msgid "Any site member can see who's in the Space and what they post."
 msgstr ""
 
@@ -1027,7 +1027,7 @@ msgstr ""
 msgid "Anyone can view and enroll the course for free"
 msgstr ""
 
-#: app/Services/TransStrings.php:1285
+#: app/Services/TransStrings.php:1286
 msgid ""
 "Anyone can view the basic info of the space. Only members can view & create "
 "posts.<br />Admin needs to approve the joining request."
@@ -1207,7 +1207,7 @@ msgstr ""
 msgid "Available on Pro"
 msgstr ""
 
-#: app/Services/TransStrings.php:1300
+#: app/Services/TransStrings.php:1301
 msgid "avatar"
 msgstr ""
 
@@ -1298,7 +1298,7 @@ msgstr ""
 msgid "Background Image"
 msgstr ""
 
-#: app/Services/TransStrings.php:1301
+#: app/Services/TransStrings.php:1302
 msgid "bad, words, here"
 msgstr ""
 
@@ -1362,7 +1362,7 @@ msgstr ""
 msgid "BudyPress Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:1270
+#: app/Services/TransStrings.php:1271
 msgid ""
 "Build structured lessons within your courses. Control visibility by setting "
 "courses as public or private and so on."
@@ -1404,7 +1404,7 @@ msgstr ""
 msgid "Button Type"
 msgstr ""
 
-#: app/Services/TransStrings.php:1302
+#: app/Services/TransStrings.php:1303
 #, php-format
 msgid "by %s"
 msgstr ""
@@ -1429,7 +1429,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: app/Services/TransStrings.php:1303
+#: app/Services/TransStrings.php:1304
 msgid "cancel"
 msgstr ""
 
@@ -1464,7 +1464,7 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: app/Services/TransStrings.php:1304
+#: app/Services/TransStrings.php:1305
 msgid "change"
 msgstr ""
 
@@ -1515,7 +1515,7 @@ msgid ""
 "Amazon S3, or Cloudflare R2 for storing and serving your media assets"
 msgstr ""
 
-#: app/Services/TransStrings.php:1269
+#: app/Services/TransStrings.php:1270
 msgid ""
 "Choose where to store your media files. Options include Local File System, "
 "Amazon S3, or Cloudflare R2 for storing and serving your media assets."
@@ -1635,7 +1635,7 @@ msgstr ""
 msgid "Comment updated successfully"
 msgstr ""
 
-#: app/Services/TransStrings.php:1305
+#: app/Services/TransStrings.php:1306
 msgid "commented "
 msgstr ""
 
@@ -1670,7 +1670,7 @@ msgstr ""
 msgid "Comments are disabled for this post."
 msgstr ""
 
-#: app/Services/TransStrings.php:1306
+#: app/Services/TransStrings.php:1307
 msgid "comments disabled"
 msgstr ""
 
@@ -1802,13 +1802,13 @@ msgstr ""
 msgid "Content Moderation"
 msgstr ""
 
-#: app/Services/TransStrings.php:1280
+#: app/Services/TransStrings.php:1281
 msgid ""
 "Content Moderation feature is currently disabled. Enable it and let your "
 "users to report content or add automatted rules"
 msgstr ""
 
-#: app/Services/TransStrings.php:1282 app/Services/TransStrings.php:1289
+#: app/Services/TransStrings.php:1283 app/Services/TransStrings.php:1290
 msgid ""
 "Content Moderation is available on the pro version of FluentCommunity. "
 "Please upgrade to Pro to use this feature."
@@ -1872,7 +1872,7 @@ msgstr ""
 msgid "Course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1307
+#: app/Services/TransStrings.php:1308
 msgid "course"
 msgstr ""
 
@@ -1885,7 +1885,7 @@ msgid "Course content"
 msgstr ""
 
 #: app/Services/TransStrings.php:263 app/Services/TransStrings.php:278
-#: app/Services/TransStrings.php:1308
+#: app/Services/TransStrings.php:1309
 msgid "Course Creator"
 msgstr ""
 
@@ -1951,12 +1951,12 @@ msgid ""
 "Course starts on a specific date. Sections are dripped relative to that date."
 msgstr ""
 
-#: app/Services/TransStrings.php:1291
+#: app/Services/TransStrings.php:1292
 msgid ""
 "Course starts when a member enrolls. All content is available immediately."
 msgstr ""
 
-#: app/Services/TransStrings.php:1292
+#: app/Services/TransStrings.php:1293
 msgid ""
 "Course starts when a member enrolls. Sections are dripped relative to their "
 "enrollment date."
@@ -2022,7 +2022,7 @@ msgstr ""
 msgid "Create New Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:1293
+#: app/Services/TransStrings.php:1294
 msgid ""
 "Create Post Topic and assign to your spaces. Then users can choose one or "
 "multiple topic for each post. This feature is available on the premium "
@@ -2039,7 +2039,7 @@ msgstr ""
 msgid "Create your first course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1309
+#: app/Services/TransStrings.php:1310
 msgid "created a poll"
 msgstr ""
 
@@ -2072,7 +2072,7 @@ msgstr ""
 msgid "Custom CSS"
 msgstr ""
 
-#: app/Services/TransStrings.php:1271
+#: app/Services/TransStrings.php:1272
 msgid ""
 "Custom CSS and Javascript snippets are available on the pro version of "
 "FluentCommunity"
@@ -2320,7 +2320,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: app/Services/TransStrings.php:1310
+#: app/Services/TransStrings.php:1311
 msgid "disabled"
 msgstr ""
 
@@ -2722,7 +2722,7 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: app/Services/TransStrings.php:1311
+#: app/Services/TransStrings.php:1312
 msgid "enabled"
 msgstr ""
 
@@ -2740,7 +2740,7 @@ msgstr ""
 msgid "End Date:"
 msgstr ""
 
-#: app/Services/TransStrings.php:1312
+#: app/Services/TransStrings.php:1313
 #, php-format
 msgid "ended %s"
 msgstr ""
@@ -2750,7 +2750,7 @@ msgstr ""
 msgid "Ended at: %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1313
+#: app/Services/TransStrings.php:1314
 #, php-format
 msgid "ending %s"
 msgstr ""
@@ -2887,7 +2887,7 @@ msgstr ""
 msgid "Expire Date (Leave empty for no expiration)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1314
+#: app/Services/TransStrings.php:1315
 msgid "Expired"
 msgstr ""
 
@@ -3469,7 +3469,7 @@ msgstr ""
 msgid "Immediately"
 msgstr ""
 
-#: app/Services/TransStrings.php:1315
+#: app/Services/TransStrings.php:1316
 msgid "in "
 msgstr ""
 
@@ -3481,7 +3481,7 @@ msgstr ""
 msgid "in %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1316
+#: app/Services/TransStrings.php:1317
 #, php-format
 msgid "in %ss"
 msgstr ""
@@ -3875,7 +3875,11 @@ msgstr ""
 msgid "Lesson completion state updated."
 msgstr ""
 
-#: app/Services/TransStrings.php:595
+#: app/Services/TransStrings.php:594
+msgid "Lesson Content"
+msgstr ""
+
+#: app/Services/TransStrings.php:596
 msgid "Lesson discussions"
 msgstr ""
 
@@ -3904,15 +3908,15 @@ msgstr ""
 msgid "Lesson is not on published state."
 msgstr ""
 
-#: app/Services/TransStrings.php:596
+#: app/Services/TransStrings.php:597
 msgid "Lesson name"
 msgstr ""
 
-#: app/Services/TransStrings.php:594
+#: app/Services/TransStrings.php:595
 msgid "Lesson Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:597
+#: app/Services/TransStrings.php:598
 msgid "Lessons"
 msgstr ""
 
@@ -3920,19 +3924,19 @@ msgstr ""
 msgid "Let's build your community together!"
 msgstr ""
 
-#: app/Services/TransStrings.php:598
+#: app/Services/TransStrings.php:599
 msgid "Level %d"
 msgstr ""
 
-#: app/Services/TransStrings.php:599
+#: app/Services/TransStrings.php:600
 msgid "Level Tagline"
 msgstr ""
 
-#: app/Services/TransStrings.php:600
+#: app/Services/TransStrings.php:601
 msgid "Level Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:601
+#: app/Services/TransStrings.php:602
 msgid "Levels"
 msgstr ""
 
@@ -3948,19 +3952,19 @@ msgstr ""
 msgid "Light Mode"
 msgstr ""
 
-#: app/Services/TransStrings.php:602
+#: app/Services/TransStrings.php:603
 msgid "Likes"
 msgstr ""
 
-#: app/Services/TransStrings.php:603
+#: app/Services/TransStrings.php:604
 msgid "Limit"
 msgstr ""
 
-#: app/Services/TransStrings.php:604
+#: app/Services/TransStrings.php:605
 msgid "Limit the number of uses"
 msgstr ""
 
-#: app/Services/TransStrings.php:605
+#: app/Services/TransStrings.php:606
 msgid "Link"
 msgstr ""
 
@@ -3968,7 +3972,7 @@ msgstr ""
 msgid "Link Color"
 msgstr ""
 
-#: app/Services/TransStrings.php:606
+#: app/Services/TransStrings.php:607
 msgid "Link copied to clipboard"
 msgstr ""
 
@@ -3992,21 +3996,21 @@ msgstr ""
 msgid "Links have been updated."
 msgstr ""
 
-#: app/Services/TransStrings.php:607
+#: app/Services/TransStrings.php:608
 msgid "List"
 msgstr ""
 
-#: app/Services/TransStrings.php:608
+#: app/Services/TransStrings.php:609
 msgid "List View"
 msgstr ""
 
-#: app/Services/TransStrings.php:609
+#: app/Services/TransStrings.php:610
 msgid ""
 "List View: Member profiles will be shown as lists. Modern: Members profile "
 "will be shown as cards (Grid)"
 msgstr ""
 
-#: app/Services/TransStrings.php:610
+#: app/Services/TransStrings.php:611
 msgid "Load more"
 msgstr ""
 
@@ -4014,23 +4018,23 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: app/Services/TransStrings.php:611
+#: app/Services/TransStrings.php:612
 msgid "Loading editor. Please wait...."
 msgstr ""
 
-#: app/Services/TransStrings.php:612
+#: app/Services/TransStrings.php:613
 msgid "Loading....."
 msgstr ""
 
-#: app/Services/TransStrings.php:613
+#: app/Services/TransStrings.php:614
 msgid "Local"
 msgstr ""
 
-#: app/Services/TransStrings.php:614
+#: app/Services/TransStrings.php:615
 msgid "Lock Screen"
 msgstr ""
 
-#: app/Services/TransStrings.php:615
+#: app/Services/TransStrings.php:616
 msgid "Lock Screen Type"
 msgstr ""
 
@@ -4038,29 +4042,29 @@ msgstr ""
 msgid "Log In & Accept Invitation"
 msgstr ""
 
-#: app/Services/TransStrings.php:616
+#: app/Services/TransStrings.php:617
 msgid "Logged in"
 msgstr ""
 
-#: app/Services/TransStrings.php:617
+#: app/Services/TransStrings.php:618
 msgid "Logged out"
 msgstr ""
 
-#: app/Services/TransStrings.php:618 Modules/Auth/AuthModdule.php:161
+#: app/Services/TransStrings.php:619 Modules/Auth/AuthModdule.php:161
 #: app/Hooks/Handlers/PortalHandler.php:285
 #: app/Views/auth/user_invitation.php:55
 msgid "Login"
 msgstr ""
 
-#: app/Services/TransStrings.php:619
+#: app/Services/TransStrings.php:620
 msgid "Login / Registration URLs"
 msgstr ""
 
-#: app/Services/TransStrings.php:620 app/Hooks/Handlers/PortalHandler.php:283
+#: app/Services/TransStrings.php:621 app/Hooks/Handlers/PortalHandler.php:283
 msgid "Login / Signup"
 msgstr ""
 
-#: app/Services/TransStrings.php:622
+#: app/Services/TransStrings.php:623
 msgid "Login or Signup"
 msgstr ""
 
@@ -4073,27 +4077,27 @@ msgstr ""
 msgid "Login to %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:623
+#: app/Services/TransStrings.php:624
 msgid "Login to enroll this course"
 msgstr ""
 
-#: app/Services/TransStrings.php:624
+#: app/Services/TransStrings.php:625
 msgid "Login to see your courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:621
+#: app/Services/TransStrings.php:622
 msgid "Login URL for public Users"
 msgstr ""
 
-#: app/Services/TransStrings.php:625
+#: app/Services/TransStrings.php:626
 msgid "Login/Signup Form Type"
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:55 app/Services/TransStrings.php:626
+#: app/Services/AdminTransStrings.php:55 app/Services/TransStrings.php:627
 msgid "Logo"
 msgstr ""
 
-#: app/Services/TransStrings.php:627
+#: app/Services/TransStrings.php:628
 msgid "Logo for Email Header"
 msgstr ""
 
@@ -4119,15 +4123,15 @@ msgstr ""
 msgid "Lost your password?"
 msgstr ""
 
-#: app/Services/TransStrings.php:628
+#: app/Services/TransStrings.php:629
 msgid "Mailing Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:629
+#: app/Services/TransStrings.php:630
 msgid "Make members select a topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:630
+#: app/Services/TransStrings.php:631
 msgid "Manage"
 msgstr ""
 
@@ -4135,19 +4139,19 @@ msgstr ""
 msgid "Manage Advanced Features and Addons"
 msgstr ""
 
-#: app/Services/TransStrings.php:634
+#: app/Services/TransStrings.php:635
 msgid "Manage all topics."
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:59 app/Services/TransStrings.php:631
+#: app/Services/AdminTransStrings.php:59 app/Services/TransStrings.php:632
 msgid "Manage Courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:632
+#: app/Services/TransStrings.php:633
 msgid "Manage Links"
 msgstr ""
 
-#: app/Services/TransStrings.php:633 Modules/Migrations/MigrationModule.php:25
+#: app/Services/TransStrings.php:634 Modules/Migrations/MigrationModule.php:25
 msgid "Manage Migrations"
 msgstr ""
 
@@ -4167,51 +4171,51 @@ msgstr ""
 msgid "Map Fields"
 msgstr ""
 
-#: app/Services/TransStrings.php:635
+#: app/Services/TransStrings.php:636
 msgid "Mapped FluentCRM Tag"
 msgstr ""
 
-#: app/Services/TransStrings.php:636
+#: app/Services/TransStrings.php:637
 msgid "March"
 msgstr ""
 
-#: app/Services/TransStrings.php:637
+#: app/Services/TransStrings.php:638
 msgid "Mark all as read"
 msgstr ""
 
-#: app/Services/TransStrings.php:638
+#: app/Services/TransStrings.php:639
 msgid "Mark all new posts as Pending"
 msgstr ""
 
-#: app/Services/TransStrings.php:639
+#: app/Services/TransStrings.php:640
 msgid "Mark all new posts as Pending in the given spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:640
+#: app/Services/TransStrings.php:641
 msgid "Mark this account as verified"
 msgstr ""
 
-#: app/Services/TransStrings.php:641
+#: app/Services/TransStrings.php:642
 msgid "Maximum Number of Topics a space may have"
 msgstr ""
 
-#: app/Services/TransStrings.php:642
+#: app/Services/TransStrings.php:643
 msgid "Maximum Number of Topics a user can select when creating a post"
 msgstr ""
 
-#: app/Services/TransStrings.php:643
+#: app/Services/TransStrings.php:644
 msgid "May"
 msgstr ""
 
-#: app/Services/TransStrings.php:646
+#: app/Services/TransStrings.php:647
 msgid "Media image"
 msgstr ""
 
-#: app/Services/TransStrings.php:644
+#: app/Services/TransStrings.php:645
 msgid "Media Module"
 msgstr ""
 
-#: app/Services/TransStrings.php:645
+#: app/Services/TransStrings.php:646
 msgid "Media Preview image"
 msgstr ""
 
@@ -4219,11 +4223,11 @@ msgstr ""
 msgid "Media preview image has been removed successfully."
 msgstr ""
 
-#: app/Services/TransStrings.php:647
+#: app/Services/TransStrings.php:648
 msgid "Media type"
 msgstr ""
 
-#: app/Services/TransStrings.php:648
+#: app/Services/TransStrings.php:649
 msgid "Member"
 msgstr ""
 
@@ -4235,60 +4239,60 @@ msgstr ""
 msgid "Member status have been updated"
 msgstr ""
 
-#: app/Models/Space.php:68 app/Services/TransStrings.php:649
+#: app/Models/Space.php:68 app/Services/TransStrings.php:650
 #: app/Services/Helper.php:947
 msgid "Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:650
+#: app/Services/TransStrings.php:651
 msgid "Members Activities"
 msgstr ""
 
-#: app/Services/TransStrings.php:653
+#: app/Services/TransStrings.php:654
 msgid "Members analytics"
 msgstr ""
 
-#: app/Services/TransStrings.php:654
+#: app/Services/TransStrings.php:655
 msgid "Members can enable/disable their own digest status"
 msgstr ""
 
-#: app/Services/TransStrings.php:655
+#: app/Services/TransStrings.php:656
 msgid "Members have to be invited to this course."
 msgstr ""
 
-#: app/Services/TransStrings.php:656
+#: app/Services/TransStrings.php:657
 msgid "Members have to be invited to this space."
 msgstr ""
 
-#: app/Services/TransStrings.php:651
+#: app/Services/TransStrings.php:652
 msgid "Members List Layout"
 msgstr ""
 
-#: app/Services/TransStrings.php:657
+#: app/Services/TransStrings.php:658
 msgid "Members of this space"
 msgstr ""
 
-#: app/Services/TransStrings.php:652
+#: app/Services/TransStrings.php:653
 msgid "Members Only"
 msgstr ""
 
-#: app/Services/TransStrings.php:658
+#: app/Services/TransStrings.php:659
 msgid "Membership Request Under Review"
 msgstr ""
 
-#: app/Services/TransStrings.php:659
+#: app/Services/TransStrings.php:660
 msgid "Membership Role"
 msgstr ""
 
-#: app/Services/TransStrings.php:660
+#: app/Services/TransStrings.php:661
 msgid "Mentions"
 msgstr ""
 
-#: app/Services/TransStrings.php:661
+#: app/Services/TransStrings.php:662
 msgid "Menu Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:662
+#: app/Services/TransStrings.php:663
 #: app/Hooks/Handlers/PortalSettingsHandler.php:131
 msgid "Menu Settings"
 msgstr ""
@@ -4297,7 +4301,7 @@ msgstr ""
 msgid "Menu settings saved successfully."
 msgstr ""
 
-#: app/Services/TransStrings.php:663
+#: app/Services/TransStrings.php:664
 msgid "Message"
 msgstr ""
 
@@ -4305,55 +4309,55 @@ msgstr ""
 msgid "Message is required"
 msgstr ""
 
-#: app/Services/TransStrings.php:664
+#: app/Services/TransStrings.php:665
 msgid "Message to show for users without matching roles."
 msgstr ""
 
-#: app/Services/TransStrings.php:665
+#: app/Services/TransStrings.php:666
 msgid "Messaging Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:666
+#: app/Services/TransStrings.php:667
 msgid "Migrate Data from other plugins."
 msgstr ""
 
-#: app/Services/TransStrings.php:667
+#: app/Services/TransStrings.php:668
 msgid "Migrated"
 msgstr ""
 
-#: app/Services/TransStrings.php:668
+#: app/Services/TransStrings.php:669
 msgid "Migration Completed"
 msgstr ""
 
-#: app/Services/TransStrings.php:669
+#: app/Services/TransStrings.php:670
 msgid "Migrations Management"
 msgstr ""
 
-#: app/Services/TransStrings.php:1317
+#: app/Services/TransStrings.php:1318
 msgid "min"
 msgstr ""
 
-#: app/Services/TransStrings.php:670
+#: app/Services/TransStrings.php:671
 msgid "Minimum Points"
 msgstr ""
 
-#: app/Services/TransStrings.php:671
+#: app/Services/TransStrings.php:672
 msgid "Moderation"
 msgstr ""
 
-#: app/Services/TransStrings.php:672
+#: app/Services/TransStrings.php:673
 msgid "Moderation Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:673
+#: app/Services/TransStrings.php:674
 msgid "Moderator"
 msgstr ""
 
-#: app/Services/TransStrings.php:674
+#: app/Services/TransStrings.php:675
 msgid "Moderator Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:675
+#: app/Services/TransStrings.php:676
 msgid "Modern"
 msgstr ""
 
@@ -4361,68 +4365,68 @@ msgstr ""
 msgid "Monday"
 msgstr ""
 
-#: app/Services/TransStrings.php:676
+#: app/Services/TransStrings.php:677
 msgid "Month"
 msgstr ""
 
-#: app/Services/TransStrings.php:677
+#: app/Services/TransStrings.php:678
 msgid "Most Replied"
 msgstr ""
 
-#: app/Services/TransStrings.php:678
+#: app/Services/TransStrings.php:679
 msgid "Move"
 msgstr ""
 
-#: app/Services/TransStrings.php:679
+#: app/Services/TransStrings.php:680
 msgid "Move Lesson"
 msgstr ""
 
-#: app/Services/TransStrings.php:680
+#: app/Services/TransStrings.php:681
 msgid "Move Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:681
+#: app/Services/TransStrings.php:682
 msgid "Move to a different Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:682
+#: app/Services/TransStrings.php:683
 msgid "Move to a different Section"
 msgstr ""
 
-#: app/Services/TransStrings.php:683
+#: app/Services/TransStrings.php:684
 msgid "Move to a different space"
 msgstr ""
 
-#: app/Services/TransStrings.php:684
+#: app/Services/TransStrings.php:685
 msgid "My Courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:685
+#: app/Services/TransStrings.php:686
 msgid "My Profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:686 app/Services/Helper.php:1006
+#: app/Services/TransStrings.php:687 app/Services/Helper.php:1006
 msgid "My Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:1318
+#: app/Services/TransStrings.php:1319
 msgid "n/a"
 msgstr ""
 
-#: app/Services/TransStrings.php:687
+#: app/Services/TransStrings.php:688
 #: Modules/Integrations/FluentForms/Bootstrap.php:72
 msgid "Name"
 msgstr ""
 
-#: app/Services/TransStrings.php:688
+#: app/Services/TransStrings.php:689
 msgid "Name of the Link"
 msgstr ""
 
-#: app/Services/TransStrings.php:689
+#: app/Services/TransStrings.php:690
 msgid "Name that will be used for replyTo attribute"
 msgstr ""
 
-#: app/Services/TransStrings.php:690
+#: app/Services/TransStrings.php:691
 msgid "Name that will be used to send emails"
 msgstr ""
 
@@ -4434,15 +4438,15 @@ msgstr ""
 msgid "Navigations"
 msgstr ""
 
-#: app/Services/TransStrings.php:691
+#: app/Services/TransStrings.php:692
 msgid "New"
 msgstr ""
 
-#: app/Services/TransStrings.php:692
+#: app/Services/TransStrings.php:693
 msgid "New Activity"
 msgstr ""
 
-#: app/Services/TransStrings.php:693
+#: app/Services/TransStrings.php:694
 msgid "New Article"
 msgstr ""
 
@@ -4458,19 +4462,19 @@ msgstr ""
 msgid "New comment on a post on %1$s - %2$s"
 msgstr ""
 
-#: app/Services/TransStrings.php:694
+#: app/Services/TransStrings.php:695
 msgid "New Course"
 msgstr ""
 
-#: app/Services/TransStrings.php:695
+#: app/Services/TransStrings.php:696
 msgid "New Documents"
 msgstr ""
 
-#: app/Services/TransStrings.php:696
+#: app/Services/TransStrings.php:697
 msgid "New Invitation Link"
 msgstr ""
 
-#: app/Services/TransStrings.php:697
+#: app/Services/TransStrings.php:698
 msgid "New Invite"
 msgstr ""
 
@@ -4480,13 +4484,13 @@ msgstr ""
 msgid "New Post By %1$s: %2$s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1273
+#: app/Services/TransStrings.php:1274
 msgid ""
 "New posts by members will be flagged for review and hidden until their first "
 "post is approved."
 msgstr ""
 
-#: app/Services/TransStrings.php:698
+#: app/Services/TransStrings.php:699
 msgid "New Posts Notifications"
 msgstr ""
 
@@ -4502,15 +4506,15 @@ msgstr ""
 msgid "New reply on comment at %1$s - %2$s"
 msgstr ""
 
-#: app/Services/TransStrings.php:699
+#: app/Services/TransStrings.php:700
 msgid "New Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:700
+#: app/Services/TransStrings.php:701
 msgid "New Topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:701
+#: app/Services/TransStrings.php:702
 msgid "Next"
 msgstr ""
 
@@ -4519,30 +4523,30 @@ msgstr ""
 msgid "Next %s pages"
 msgstr ""
 
-#: app/Services/TransStrings.php:702
+#: app/Services/TransStrings.php:703
 msgid "No"
 msgstr ""
 
-#: app/Services/TransStrings.php:703
+#: app/Services/TransStrings.php:704
 #, php-format
 msgid "No %s members found in this community."
 msgstr ""
 
-#: app/Services/TransStrings.php:704
+#: app/Services/TransStrings.php:705
 msgid "No Activity"
 msgstr ""
 
-#: app/Services/TransStrings.php:710
+#: app/Services/TransStrings.php:711
 msgid "No badges have been configured."
 msgstr ""
 
-#: app/Services/TransStrings.php:711
+#: app/Services/TransStrings.php:712
 msgid ""
 "No comments from any lessons yet! Comments from all lessons will be shown "
 "here."
 msgstr ""
 
-#: app/Services/TransStrings.php:712
+#: app/Services/TransStrings.php:713
 msgid "No courses found based on your search criteria"
 msgstr ""
 
@@ -4550,11 +4554,11 @@ msgstr ""
 msgid "No courses found for this contact."
 msgstr ""
 
-#: app/Services/TransStrings.php:713
+#: app/Services/TransStrings.php:714
 msgid "No courses found in this topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:714
+#: app/Services/TransStrings.php:715
 msgid ""
 "No courses match your search criteria. Try adjusting your search terms or "
 "browse our course catalog."
@@ -4568,15 +4572,15 @@ msgstr ""
 msgid "No data"
 msgstr ""
 
-#: app/Services/TransStrings.php:705
+#: app/Services/TransStrings.php:706
 msgid "No Data Found"
 msgstr ""
 
-#: app/Services/TransStrings.php:715
+#: app/Services/TransStrings.php:716
 msgid "No digest email will be sent."
 msgstr ""
 
-#: app/Services/TransStrings.php:716
+#: app/Services/TransStrings.php:717
 msgid "No documents found in this space based on your search criteria."
 msgstr ""
 
@@ -4588,35 +4592,35 @@ msgstr ""
 msgid "No duplicate post please!"
 msgstr ""
 
-#: app/Services/TransStrings.php:717
+#: app/Services/TransStrings.php:718
 msgid "No email will be sent for comments on your post."
 msgstr ""
 
-#: app/Services/TransStrings.php:718
+#: app/Services/TransStrings.php:719
 msgid "No email will be sent when someone replies to your comments."
 msgstr ""
 
-#: app/Services/TransStrings.php:719
+#: app/Services/TransStrings.php:720
 msgid "No emails will be sent when someone mentions you."
 msgstr ""
 
-#: app/Services/TransStrings.php:706
+#: app/Services/TransStrings.php:707
 msgid "No Emoji Found"
 msgstr ""
 
-#: app/Services/TransStrings.php:720
+#: app/Services/TransStrings.php:721
 msgid "No existing users found based on your search."
 msgstr ""
 
-#: app/Services/TransStrings.php:721
+#: app/Services/TransStrings.php:722
 msgid "No invitations found"
 msgstr ""
 
-#: app/Services/TransStrings.php:722
+#: app/Services/TransStrings.php:723
 msgid "No link has been added for this section"
 msgstr ""
 
-#: app/Services/TransStrings.php:707
+#: app/Services/TransStrings.php:708
 msgid "No Mapping"
 msgstr ""
 
@@ -4624,51 +4628,51 @@ msgstr ""
 msgid "No matching data"
 msgstr ""
 
-#: app/Services/TransStrings.php:723
+#: app/Services/TransStrings.php:724
 msgid "No members found"
 msgstr ""
 
-#: app/Services/TransStrings.php:708
+#: app/Services/TransStrings.php:709
 msgid "No Menu Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:724
+#: app/Services/TransStrings.php:725
 msgid "No name"
 msgstr ""
 
-#: app/Services/TransStrings.php:725
+#: app/Services/TransStrings.php:726
 msgid "No notifications found"
 msgstr ""
 
-#: app/Services/TransStrings.php:726
+#: app/Services/TransStrings.php:727
 msgid "No posts found for the selected topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:727
+#: app/Services/TransStrings.php:728
 msgid "No posts found!"
 msgstr ""
 
-#: app/Services/TransStrings.php:728
+#: app/Services/TransStrings.php:729
 msgid "No published courses found"
 msgstr ""
 
-#: app/Services/TransStrings.php:729
+#: app/Services/TransStrings.php:730
 msgid "No recent activities found"
 msgstr ""
 
-#: app/Services/TransStrings.php:730
+#: app/Services/TransStrings.php:731
 msgid "No reports found"
 msgstr ""
 
-#: app/Services/TransStrings.php:731
+#: app/Services/TransStrings.php:732
 msgid "No results"
 msgstr ""
 
-#: app/Services/TransStrings.php:732
+#: app/Services/TransStrings.php:733
 msgid "No results found based on your search criteria"
 msgstr ""
 
-#: app/Services/TransStrings.php:733
+#: app/Services/TransStrings.php:734
 msgid "No results found. Please search by username"
 msgstr ""
 
@@ -4680,11 +4684,11 @@ msgstr ""
 msgid "No space or special characters"
 msgstr ""
 
-#: app/Services/TransStrings.php:734
+#: app/Services/TransStrings.php:735
 msgid "No spaces found"
 msgstr ""
 
-#: app/Services/TransStrings.php:735
+#: app/Services/TransStrings.php:736
 msgid "No spaces found based on your search criteria"
 msgstr ""
 
@@ -4692,17 +4696,17 @@ msgstr ""
 msgid "No spaces found for this contact."
 msgstr ""
 
-#: app/Services/TransStrings.php:709
+#: app/Services/TransStrings.php:710
 msgid "No Spaces found."
 msgstr ""
 
-#: app/Services/TransStrings.php:736
+#: app/Services/TransStrings.php:737
 msgid ""
 "No spaces match your search criteria. Try adjusting your search terms or "
 "browse our space catalog."
 msgstr ""
 
-#: app/Services/TransStrings.php:737
+#: app/Services/TransStrings.php:738
 msgid "No unread notifications found"
 msgstr ""
 
@@ -4710,7 +4714,7 @@ msgstr ""
 msgid "No user found for this contact"
 msgstr ""
 
-#: app/Services/TransStrings.php:738
+#: app/Services/TransStrings.php:739
 msgid "No voters yet"
 msgstr ""
 
@@ -4718,31 +4722,31 @@ msgstr ""
 msgid "Non-Profits"
 msgstr ""
 
-#: app/Services/TransStrings.php:739
+#: app/Services/TransStrings.php:740
 msgid "Not Matched User Roles"
 msgstr ""
 
-#: app/Services/TransStrings.php:740
+#: app/Services/TransStrings.php:741
 msgid "Notification"
 msgstr ""
 
-#: app/Services/TransStrings.php:741
+#: app/Services/TransStrings.php:742
 msgid "Notification Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:742
+#: app/Services/TransStrings.php:743
 msgid "Notifications"
 msgstr ""
 
-#: app/Services/TransStrings.php:743
+#: app/Services/TransStrings.php:744
 msgid "Notify for all posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:744
+#: app/Services/TransStrings.php:745
 msgid "Notify only for Admin Posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:745
+#: app/Services/TransStrings.php:746
 msgid "November"
 msgstr ""
 
@@ -4750,7 +4754,7 @@ msgstr ""
 msgid "Now you can access your community portal by clicking the button below."
 msgstr ""
 
-#: app/Services/TransStrings.php:747
+#: app/Services/TransStrings.php:748
 msgid "Objects"
 msgstr ""
 
@@ -4762,11 +4766,11 @@ msgstr ""
 msgid "Ocean Blue (Dark)"
 msgstr ""
 
-#: app/Services/TransStrings.php:748
+#: app/Services/TransStrings.php:749
 msgid "October"
 msgstr ""
 
-#: app/Services/TransStrings.php:749
+#: app/Services/TransStrings.php:750
 msgid "Oembed"
 msgstr ""
 
@@ -4778,27 +4782,27 @@ msgstr ""
 msgid "Offensive"
 msgstr ""
 
-#: app/Services/TransStrings.php:746
+#: app/Services/TransStrings.php:747
 msgid "OK"
 msgstr ""
 
-#: app/Services/TransStrings.php:750
+#: app/Services/TransStrings.php:751
 msgid "Oldest"
 msgstr ""
 
-#: app/Services/TransStrings.php:751
+#: app/Services/TransStrings.php:752
 msgid "Oldest Courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:752
+#: app/Services/TransStrings.php:753
 msgid "Oldest Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:753
+#: app/Services/TransStrings.php:754
 msgid "On my profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:754
+#: app/Services/TransStrings.php:755
 msgid "Onboarding Settings"
 msgstr ""
 
@@ -4806,89 +4810,89 @@ msgstr ""
 msgid "Onboarding settings have been updated."
 msgstr ""
 
-#: app/Services/TransStrings.php:755
+#: app/Services/TransStrings.php:756
 msgid "Once you enroll some courses, those will be shown here"
 msgstr ""
 
-#: app/Services/TransStrings.php:756
+#: app/Services/TransStrings.php:757
 msgid "Once you login, your enrolled courses will be shown here."
 msgstr ""
 
-#: app/Services/TransStrings.php:761
+#: app/Services/TransStrings.php:762
 msgid "Only admin or moderators can create post"
 msgstr ""
 
-#: app/Services/TransStrings.php:757
+#: app/Services/TransStrings.php:758
 msgid "Only Admin/Moderators"
 msgstr ""
 
-#: app/Services/TransStrings.php:762
+#: app/Services/TransStrings.php:763
 msgid "Only admins and moderators can select this topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1290
+#: app/Services/TransStrings.php:1291
 msgid "Only invited members can see who's in the space and what they post."
 msgstr ""
 
-#: app/Services/TransStrings.php:763
+#: app/Services/TransStrings.php:764
 msgid "Only invited members can view and post."
 msgstr ""
 
-#: app/Services/TransStrings.php:764
+#: app/Services/TransStrings.php:765
 msgid "Only invited students can view and enroll the course content."
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:64 app/Services/TransStrings.php:758
+#: app/Services/AdminTransStrings.php:64 app/Services/TransStrings.php:759
 msgid "Only Logged In Users"
 msgstr ""
 
-#: app/Services/TransStrings.php:765
+#: app/Services/TransStrings.php:766
 msgid "Only logged-in members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1284
+#: app/Services/TransStrings.php:1285
 msgid ""
 "Only members added by you or through automation can access the course. They "
 "can enroll by paying a fee."
 msgstr ""
 
-#: app/Services/TransStrings.php:1286
+#: app/Services/TransStrings.php:1287
 msgid "Only members can see who's in the space and what they post."
 msgstr ""
 
-#: app/Services/TransStrings.php:759
+#: app/Services/TransStrings.php:760
 msgid "Only Moderator and Admins"
 msgstr ""
 
-#: app/Services/TransStrings.php:760
+#: app/Services/TransStrings.php:761
 msgid "Only Selected User Roles"
 msgstr ""
 
-#: app/Services/TransStrings.php:766
+#: app/Services/TransStrings.php:767
 msgid "Open in New Tab"
 msgstr ""
 
-#: app/Services/TransStrings.php:767
+#: app/Services/TransStrings.php:768
 msgid "Open in new tab"
 msgstr ""
 
-#: app/Services/TransStrings.php:768
+#: app/Services/TransStrings.php:769
 msgid "Open this link in a new tab."
 msgstr ""
 
-#: app/Services/TransStrings.php:769
+#: app/Services/TransStrings.php:770
 msgid "Optional"
 msgstr ""
 
-#: app/Services/TransStrings.php:771
+#: app/Services/TransStrings.php:772
 msgid "Optional email"
 msgstr ""
 
-#: app/Services/TransStrings.php:770
+#: app/Services/TransStrings.php:771
 msgid "Optional Reply to email"
 msgstr ""
 
-#: app/Services/TransStrings.php:1319
+#: app/Services/TransStrings.php:1320
 msgid "or"
 msgstr ""
 
@@ -4909,19 +4913,19 @@ msgstr ""
 msgid "Other Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:772
+#: app/Services/TransStrings.php:773
 msgid "Other Spaces - No Assigned Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:773
+#: app/Services/TransStrings.php:774
 msgid "Others"
 msgstr ""
 
-#: app/Services/TransStrings.php:774
+#: app/Services/TransStrings.php:775
 msgid "Overlay Color"
 msgstr ""
 
-#: app/Services/TransStrings.php:775
+#: app/Services/TransStrings.php:776
 msgid "Overview"
 msgstr ""
 
@@ -4934,7 +4938,7 @@ msgstr ""
 msgid "page %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:776
+#: app/Services/TransStrings.php:777
 msgid "Page Blocks"
 msgstr ""
 
@@ -4959,15 +4963,15 @@ msgstr ""
 msgid "Password is required"
 msgstr ""
 
-#: app/Services/TransStrings.php:777
+#: app/Services/TransStrings.php:778
 msgid "Paste a URL to embed"
 msgstr ""
 
-#: app/Services/TransStrings.php:778
+#: app/Services/TransStrings.php:779
 msgid "Paste an iframe code"
 msgstr ""
 
-#: app/Services/TransStrings.php:779
+#: app/Services/TransStrings.php:780
 msgid "Paste your SVG here"
 msgstr ""
 
@@ -4981,23 +4985,23 @@ msgid ""
 "Recurring Donations, Customer Management"
 msgstr ""
 
-#: app/Services/TransStrings.php:780 app/Services/TransStrings.php:1320
+#: app/Services/TransStrings.php:781 app/Services/TransStrings.php:1321
 msgid "Pending"
 msgstr ""
 
-#: app/Services/TransStrings.php:781
+#: app/Services/TransStrings.php:782
 msgid "Pending Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:782
+#: app/Services/TransStrings.php:783
 msgid "People & Body"
 msgstr ""
 
-#: app/Services/TransStrings.php:783
+#: app/Services/TransStrings.php:784
 msgid "Per User Choice"
 msgstr ""
 
-#: app/Services/TransStrings.php:784
+#: app/Services/TransStrings.php:785
 msgid "Permission Denied"
 msgstr ""
 
@@ -5005,46 +5009,46 @@ msgstr ""
 msgid "Pick a Fluent Community Template"
 msgstr ""
 
-#: app/Services/TransStrings.php:785
+#: app/Services/TransStrings.php:786
 msgid "Pick Emoji"
 msgstr ""
 
-#: app/Services/TransStrings.php:786
+#: app/Services/TransStrings.php:787
 msgid "Pin to sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:787
+#: app/Services/TransStrings.php:788
 msgid "Pin to top"
 msgstr ""
 
-#: app/Services/TransStrings.php:788
+#: app/Services/TransStrings.php:789
 msgid "Pinned to sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:790
+#: app/Services/TransStrings.php:791
 msgid "Placeholder image"
 msgstr ""
 
-#: app/Services/TransStrings.php:789
+#: app/Services/TransStrings.php:790
 msgid "Placeholder Photo"
-msgstr ""
-
-#: app/Services/TransStrings.php:793
-msgid ""
-"Please check back later. We are in a process to publish some courses for you!"
 msgstr ""
 
 #: app/Services/TransStrings.php:794
 msgid ""
-"Please check back later. We are in a process to publish some spaces for you!"
+"Please check back later. We are in a process to publish some courses for you!"
 msgstr ""
 
 #: app/Services/TransStrings.php:795
 msgid ""
-"Please choose a username matching with your first/last name or full name"
+"Please check back later. We are in a process to publish some spaces for you!"
 msgstr ""
 
 #: app/Services/TransStrings.php:796
+msgid ""
+"Please choose a username matching with your first/last name or full name"
+msgstr ""
+
+#: app/Services/TransStrings.php:797
 msgid "Please enroll the course to join the conversation."
 msgstr ""
 
@@ -5056,7 +5060,7 @@ msgstr ""
 msgid "Please enter a valid slug"
 msgstr ""
 
-#: app/Services/TransStrings.php:797
+#: app/Services/TransStrings.php:798
 msgid "Please enter an email address"
 msgstr ""
 
@@ -5074,7 +5078,7 @@ msgstr ""
 msgid "Please fill in all required fields correctly."
 msgstr ""
 
-#: app/Services/TransStrings.php:798
+#: app/Services/TransStrings.php:799
 msgid "Please install FluentCRM to enable this feature."
 msgstr ""
 
@@ -5082,35 +5086,35 @@ msgstr ""
 msgid "Please join the space first to view the members"
 msgstr ""
 
-#: app/Services/TransStrings.php:799
+#: app/Services/TransStrings.php:800
 msgid "Please join the Space to post a comment."
 msgstr ""
 
-#: app/Services/TransStrings.php:800
+#: app/Services/TransStrings.php:801
 msgid "Please login"
 msgstr ""
 
-#: app/Services/TransStrings.php:801
+#: app/Services/TransStrings.php:802
 msgid "Please login to access this page."
 msgstr ""
 
-#: app/Services/TransStrings.php:802
+#: app/Services/TransStrings.php:803
 msgid "Please login to reply to this post"
 msgstr ""
 
-#: app/Services/TransStrings.php:803
+#: app/Services/TransStrings.php:804
 msgid "Please login to view your bookmarks"
 msgstr ""
 
-#: app/Services/TransStrings.php:804
+#: app/Services/TransStrings.php:805
 msgid "Please login/signup to enroll this course"
 msgstr ""
 
-#: app/Services/TransStrings.php:805
+#: app/Services/TransStrings.php:806
 msgid "Please login/signup to join this community"
 msgstr ""
 
-#: app/Services/TransStrings.php:806
+#: app/Services/TransStrings.php:807
 msgid ""
 "Please note: Existing contact with the tags will not get access "
 "automatically. To Give access to existing contacts with tags, please go to "
@@ -5133,7 +5137,7 @@ msgstr ""
 msgid "Please provide a valid username"
 msgstr ""
 
-#: app/Services/TransStrings.php:807
+#: app/Services/TransStrings.php:808
 msgid "Please provide your custom Authentication Url"
 msgstr ""
 
@@ -5149,7 +5153,7 @@ msgstr ""
 msgid "Please review the request in the portal"
 msgstr ""
 
-#: app/Services/TransStrings.php:808
+#: app/Services/TransStrings.php:809
 msgid "Please save the changes to update the view"
 msgstr ""
 
@@ -5157,19 +5161,19 @@ msgstr ""
 msgid "Please Select a Email"
 msgstr ""
 
-#: app/Services/TransStrings.php:809
+#: app/Services/TransStrings.php:810
 msgid "Please select a reason for reporting this content"
 msgstr ""
 
-#: app/Services/TransStrings.php:810
+#: app/Services/TransStrings.php:811
 msgid "Please select a space to post in."
 msgstr ""
 
-#: app/Services/TransStrings.php:811
+#: app/Services/TransStrings.php:812
 msgid "Please select a user and role"
 msgstr ""
 
-#: app/Services/TransStrings.php:812
+#: app/Services/TransStrings.php:813
 msgid "Please select a valid date and time"
 msgstr ""
 
@@ -5191,11 +5195,11 @@ msgstr ""
 msgid "Please Select Space or Course"
 msgstr ""
 
-#: app/Services/TransStrings.php:813
+#: app/Services/TransStrings.php:814
 msgid "Please send a join request and an admin will review your join request."
 msgstr ""
 
-#: app/Services/TransStrings.php:814
+#: app/Services/TransStrings.php:815
 msgid "Please share this url to your audience to join this space"
 msgstr ""
 
@@ -5206,21 +5210,21 @@ msgid ""
 "database"
 msgstr ""
 
-#: app/Services/TransStrings.php:791
+#: app/Services/TransStrings.php:792
 #, php-format
 msgid ""
 "Please Type %s to confirm. Please note, all the lessons, topics, students "
 "progress will be deleted."
 msgstr ""
 
-#: app/Services/TransStrings.php:792
+#: app/Services/TransStrings.php:793
 #, php-format
 msgid ""
 "Please Type %s to confirm. Please note, all the posts, comments, activities "
 "of this Space will be delete."
 msgstr ""
 
-#: app/Services/TransStrings.php:815
+#: app/Services/TransStrings.php:816
 msgid "Please upgrade to Pro to use this feature"
 msgstr ""
 
@@ -5236,7 +5240,7 @@ msgstr ""
 msgid "Please Wait..."
 msgstr ""
 
-#: app/Services/TransStrings.php:816
+#: app/Services/TransStrings.php:817
 msgid "Please write a reply first"
 msgstr ""
 
@@ -5244,39 +5248,39 @@ msgstr ""
 msgid "Plugin has been installed Successfully"
 msgstr ""
 
-#: app/Services/TransStrings.php:817
+#: app/Services/TransStrings.php:818
 msgid "Poll Options"
 msgstr ""
 
-#: app/Services/TransStrings.php:818
+#: app/Services/TransStrings.php:819
 msgid "Poll Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:819
+#: app/Services/TransStrings.php:820
 msgid "Popular"
 msgstr ""
 
-#: app/Services/TransStrings.php:822
+#: app/Services/TransStrings.php:823
 msgid "Popular day & time"
 msgstr ""
 
-#: app/Services/TransStrings.php:823
+#: app/Services/TransStrings.php:824
 msgid "Popular hour of the day and day of the week"
 msgstr ""
 
-#: app/Services/TransStrings.php:820
+#: app/Services/TransStrings.php:821
 msgid "Popular Posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:821
+#: app/Services/TransStrings.php:822
 msgid "Popular Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:824
+#: app/Services/TransStrings.php:825
 msgid "Portal Access Settings"
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:71 app/Services/TransStrings.php:825
+#: app/Services/AdminTransStrings.php:71 app/Services/TransStrings.php:826
 #: app/Hooks/Handlers/PortalSettingsHandler.php:56
 msgid "Portal Settings"
 msgstr ""
@@ -5285,11 +5289,11 @@ msgstr ""
 msgid "Portal Slug"
 msgstr ""
 
-#: app/Services/TransStrings.php:826
+#: app/Services/TransStrings.php:827
 msgid "Portal Slug is defined wp-config.php file"
 msgstr ""
 
-#: app/Services/TransStrings.php:827
+#: app/Services/TransStrings.php:828
 msgid "Post"
 msgstr ""
 
@@ -5297,41 +5301,41 @@ msgstr ""
 msgid "Post message is too long"
 msgstr ""
 
-#: app/Services/TransStrings.php:828
+#: app/Services/TransStrings.php:829
 msgid "Post Not Found"
 msgstr ""
 
-#: app/Services/TransStrings.php:831
+#: app/Services/TransStrings.php:832
 msgid "Post starters"
 msgstr ""
 
-#: app/Services/TransStrings.php:829
+#: app/Services/TransStrings.php:830
 msgid "Post Title & Content"
 msgstr ""
 
-#: app/Services/TransStrings.php:830
+#: app/Services/TransStrings.php:831
 msgid "Post Title Requirements"
 msgstr ""
 
-#: app/Services/TransStrings.php:1321
+#: app/Services/TransStrings.php:1322
 msgid "posted "
 msgstr ""
 
-#: app/Services/TransStrings.php:832
+#: app/Services/TransStrings.php:833
 #, php-format
 msgid "Posted in %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:833
+#: app/Services/TransStrings.php:834
 msgid "Posting in:"
 msgstr ""
 
-#: app/Models/Space.php:59 app/Services/TransStrings.php:834
+#: app/Models/Space.php:59 app/Services/TransStrings.php:835
 #: app/Http/Controllers/ProfileController.php:73
 msgid "Posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:835
+#: app/Services/TransStrings.php:836
 msgid "Posts & Activities"
 msgstr ""
 
@@ -5343,11 +5347,11 @@ msgstr ""
 msgid "Pretty Permalink is required"
 msgstr ""
 
-#: app/Services/TransStrings.php:836 app/Hooks/Handlers/PortalHandler.php:570
+#: app/Services/TransStrings.php:837 app/Hooks/Handlers/PortalHandler.php:570
 msgid "Preview"
 msgstr ""
 
-#: app/Services/TransStrings.php:837
+#: app/Services/TransStrings.php:838
 msgid "Preview Lesson"
 msgstr ""
 
@@ -5356,7 +5360,7 @@ msgstr ""
 msgid "Previous %s pages"
 msgstr ""
 
-#: app/Services/TransStrings.php:838
+#: app/Services/TransStrings.php:839
 msgid "Primary"
 msgstr ""
 
@@ -5376,19 +5380,19 @@ msgstr ""
 msgid "Primary Content Background"
 msgstr ""
 
-#: app/Services/TransStrings.php:839
+#: app/Services/TransStrings.php:840
 msgid "Primary Menu Items"
 msgstr ""
 
-#: app/Services/TransStrings.php:840
+#: app/Services/TransStrings.php:841
 msgid "Primary Storage Region"
 msgstr ""
 
-#: app/Services/TransStrings.php:841
+#: app/Services/TransStrings.php:842
 msgid "Privacy"
 msgstr ""
 
-#: app/Services/TransStrings.php:842
+#: app/Services/TransStrings.php:843
 #: app/Hooks/Handlers/PortalSettingsHandler.php:141
 msgid "Privacy Settings"
 msgstr ""
@@ -5397,15 +5401,15 @@ msgstr ""
 msgid "Privacy settings have been saved successfully."
 msgstr ""
 
-#: app/Services/TransStrings.php:843
+#: app/Services/TransStrings.php:844
 msgid "Private"
 msgstr ""
 
-#: app/Services/TransStrings.php:844
+#: app/Services/TransStrings.php:845
 msgid "Pro Feature"
 msgstr ""
 
-#: app/Services/TransStrings.php:845
+#: app/Services/TransStrings.php:846
 msgid "Pro Required"
 msgstr ""
 
@@ -5413,11 +5417,11 @@ msgstr ""
 msgid "Product"
 msgstr ""
 
-#: app/Services/TransStrings.php:846
+#: app/Services/TransStrings.php:847
 msgid "Profanity Filter"
 msgstr ""
 
-#: app/Services/TransStrings.php:847
+#: app/Services/TransStrings.php:848
 msgid "Profile Badges"
 msgstr ""
 
@@ -5425,7 +5429,7 @@ msgstr ""
 msgid "Profile bio should not exceed %d characters."
 msgstr ""
 
-#: app/Services/TransStrings.php:848
+#: app/Services/TransStrings.php:849
 msgid "Profile Dropdown Items"
 msgstr ""
 
@@ -5442,7 +5446,7 @@ msgstr ""
 msgid "Profile not found"
 msgstr ""
 
-#: app/Services/TransStrings.php:849
+#: app/Services/TransStrings.php:850
 msgid "Profile Social Media Links"
 msgstr ""
 
@@ -5450,50 +5454,50 @@ msgstr ""
 msgid "Profile updated"
 msgstr ""
 
-#: app/Services/TransStrings.php:850
+#: app/Services/TransStrings.php:851
 #: Modules/Integrations/FluentCRM/ProfileSection.php:107
 msgid "Progress"
 msgstr ""
 
-#: app/Services/TransStrings.php:852
+#: app/Services/TransStrings.php:853
 msgid "Provide an explanation (Optional)"
 msgstr ""
 
-#: app/Services/TransStrings.php:851
+#: app/Services/TransStrings.php:852
 msgid ""
 "Provide Valid Email Address email as per your domain/SMTP settings. This "
 "email will be used to send emails like notifications"
 msgstr ""
 
-#: app/Services/TransStrings.php:853
+#: app/Services/TransStrings.php:854
 msgid "Provide your CDN URL (without trailing /)"
 msgstr ""
 
-#: app/Services/TransStrings.php:854
+#: app/Services/TransStrings.php:855
 msgid "Provider"
 msgstr ""
 
-#: app/Services/TransStrings.php:855
+#: app/Services/TransStrings.php:856
 msgid "Public"
 msgstr ""
 
-#: app/Services/TransStrings.php:856
+#: app/Services/TransStrings.php:857
 msgid "Public Name of the item"
 msgstr ""
 
-#: app/Services/TransStrings.php:857
+#: app/Services/TransStrings.php:858
 msgid "Public users can view the lessons without enrolling the course"
 msgstr ""
 
-#: app/Services/TransStrings.php:858
+#: app/Services/TransStrings.php:859
 msgid "Publish"
 msgstr ""
 
-#: app/Services/TransStrings.php:859
+#: app/Services/TransStrings.php:860
 msgid "Publish as a post"
 msgstr ""
 
-#: app/Services/TransStrings.php:860
+#: app/Services/TransStrings.php:861
 msgid "Published"
 msgstr ""
 
@@ -5501,7 +5505,7 @@ msgstr ""
 msgid "Purchase one here"
 msgstr ""
 
-#: app/Services/TransStrings.php:861
+#: app/Services/TransStrings.php:862
 msgid "Ran count"
 msgstr ""
 
@@ -5509,7 +5513,7 @@ msgstr ""
 msgid "Re-type Account Password"
 msgstr ""
 
-#: app/Services/TransStrings.php:862
+#: app/Services/TransStrings.php:863
 msgid "Reacted Users"
 msgstr ""
 
@@ -5522,7 +5526,7 @@ msgstr ""
 msgid "Reaction has been removed"
 msgstr ""
 
-#: app/Services/TransStrings.php:863
+#: app/Services/TransStrings.php:864
 msgid "Read the documentation"
 msgstr ""
 
@@ -5530,15 +5534,15 @@ msgstr ""
 msgid "Ready to make your community stand-out?"
 msgstr ""
 
-#: app/Services/TransStrings.php:864
+#: app/Services/TransStrings.php:865
 msgid "Reason"
 msgstr ""
 
-#: app/Services/TransStrings.php:865
+#: app/Services/TransStrings.php:866
 msgid "Recent Activities"
 msgstr ""
 
-#: app/Services/TransStrings.php:866
+#: app/Services/TransStrings.php:867
 msgid "Recent Space Activities"
 msgstr ""
 
@@ -5546,23 +5550,23 @@ msgstr ""
 msgid "Recommended dimensions: 480 x 120, 4:1 aspect ratio"
 msgstr ""
 
-#: app/Services/TransStrings.php:869
+#: app/Services/TransStrings.php:870
 msgid "Recommended dimensions: 480 x 120, 4:1 aspect ratio."
 msgstr ""
 
-#: app/Services/TransStrings.php:867
+#: app/Services/TransStrings.php:868
 msgid "Recommended Plugins and Addons"
 msgstr ""
 
-#: app/Services/TransStrings.php:868
+#: app/Services/TransStrings.php:869
 msgid "Recommended Size: 1200 x 375px"
 msgstr ""
 
-#: app/Services/TransStrings.php:870
+#: app/Services/TransStrings.php:871
 msgid "Redirect URL"
 msgstr ""
 
-#: app/Services/TransStrings.php:871
+#: app/Services/TransStrings.php:872
 msgid "Redirect URL for Public Users"
 msgstr ""
 
@@ -5570,7 +5574,7 @@ msgstr ""
 msgid "Redirecting..."
 msgstr ""
 
-#: app/Services/TransStrings.php:872
+#: app/Services/TransStrings.php:873
 msgid "Refresh"
 msgstr ""
 
@@ -5582,7 +5586,7 @@ msgstr ""
 msgid "Registration is disabled for this community"
 msgstr ""
 
-#: app/Services/TransStrings.php:873
+#: app/Services/TransStrings.php:874
 msgid "Registration URL for public Users"
 msgstr ""
 
@@ -5590,120 +5594,120 @@ msgstr ""
 msgid "Reliable Email delivery with FluentSMTP"
 msgstr ""
 
-#: app/Services/TransStrings.php:874
+#: app/Services/TransStrings.php:875
 msgid "Remove"
 msgstr ""
 
-#: app/Services/TransStrings.php:875
+#: app/Services/TransStrings.php:876
 msgid "Remove From Bookmark"
 msgstr ""
 
-#: app/Services/TransStrings.php:882
+#: app/Services/TransStrings.php:883
 msgid "Remove from Courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:884
+#: app/Services/TransStrings.php:885
 msgid "Remove from space"
 msgstr ""
 
-#: app/Services/TransStrings.php:883
+#: app/Services/TransStrings.php:884
 msgid "Remove from Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:876
+#: app/Services/TransStrings.php:877
 msgid "Remove Media"
 msgstr ""
 
-#: app/Services/TransStrings.php:877
+#: app/Services/TransStrings.php:878
 msgid "Remove Member"
 msgstr ""
 
-#: app/Services/TransStrings.php:878
+#: app/Services/TransStrings.php:879
 msgid "Remove Member?"
 msgstr ""
 
-#: app/Services/TransStrings.php:879
+#: app/Services/TransStrings.php:880
 msgid "Remove Preview"
 msgstr ""
 
-#: app/Services/TransStrings.php:880
+#: app/Services/TransStrings.php:881
 msgid "Remove Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:881
+#: app/Services/TransStrings.php:882
 msgid "Remove Student?"
 msgstr ""
 
-#: app/Services/TransStrings.php:885
+#: app/Services/TransStrings.php:886
 msgid "Removed from bookmark"
 msgstr ""
 
-#: app/Services/TransStrings.php:886
+#: app/Services/TransStrings.php:887
 msgid "Reply"
 msgstr ""
 
-#: app/Services/TransStrings.php:887
+#: app/Services/TransStrings.php:888
 msgid "Reply to email (optional)"
 msgstr ""
 
-#: app/Services/TransStrings.php:888
+#: app/Services/TransStrings.php:889
 msgid "Reply to name (Optional)"
 msgstr ""
 
-#: app/Services/TransStrings.php:889
+#: app/Services/TransStrings.php:890
 msgid "Replying to"
 msgstr ""
 
-#: app/Services/TransStrings.php:890
+#: app/Services/TransStrings.php:891
 msgid "Report"
 msgstr ""
 
-#: app/Services/TransStrings.php:891
+#: app/Services/TransStrings.php:892
 msgid "Report Comment"
 msgstr ""
 
-#: app/Services/TransStrings.php:892
+#: app/Services/TransStrings.php:893
 msgid "Report Post"
 msgstr ""
 
-#: app/Services/TransStrings.php:893
+#: app/Services/TransStrings.php:894
 msgid "Reported at "
 msgstr ""
 
-#: app/Services/TransStrings.php:1322
+#: app/Services/TransStrings.php:1323
 msgid "reported for "
 msgstr ""
 
-#: app/Services/TransStrings.php:894
+#: app/Services/TransStrings.php:895
 msgid "Reporter"
 msgstr ""
 
-#: app/Services/TransStrings.php:895
+#: app/Services/TransStrings.php:896
 msgid "Reports"
 msgstr ""
 
-#: app/Services/TransStrings.php:896
+#: app/Services/TransStrings.php:897
 msgid "Request Access"
 msgstr ""
 
-#: app/Services/TransStrings.php:897
+#: app/Services/TransStrings.php:898
 #, php-format
 msgid "Requested %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:899
+#: app/Services/TransStrings.php:900
 msgid "Require approval for first post"
 msgstr ""
 
-#: app/Services/TransStrings.php:898
+#: app/Services/TransStrings.php:899
 msgid "Require Pro"
 msgstr ""
 
-#: app/Services/TransStrings.php:900
+#: app/Services/TransStrings.php:901
 msgid "Required"
 msgstr ""
 
-#: app/Services/TransStrings.php:901
+#: app/Services/TransStrings.php:902
 msgid "Resend"
 msgstr ""
 
@@ -5727,23 +5731,23 @@ msgid ""
 "enable this if you want to restart the automation for the same contact)"
 msgstr ""
 
-#: app/Services/TransStrings.php:902
+#: app/Services/TransStrings.php:903
 msgid "Review"
 msgstr ""
 
-#: app/Services/TransStrings.php:903
+#: app/Services/TransStrings.php:904
 msgid "Review Report"
 msgstr ""
 
-#: app/Services/TransStrings.php:904
+#: app/Services/TransStrings.php:905
 msgid "Review report"
 msgstr ""
 
-#: app/Services/TransStrings.php:905
+#: app/Services/TransStrings.php:906
 msgid "Rich Media Post Layout"
 msgstr ""
 
-#: app/Services/TransStrings.php:906
+#: app/Services/TransStrings.php:907
 msgid "Role"
 msgstr ""
 
@@ -5751,11 +5755,11 @@ msgstr ""
 msgid "Saturday"
 msgstr ""
 
-#: app/Services/TransStrings.php:909
+#: app/Services/TransStrings.php:910
 msgid "Save"
 msgstr ""
 
-#: app/Services/TransStrings.php:1323
+#: app/Services/TransStrings.php:1324
 msgid "save"
 msgstr ""
 
@@ -5763,23 +5767,23 @@ msgstr ""
 msgid "Save & Finish"
 msgstr ""
 
-#: app/Services/TransStrings.php:910
+#: app/Services/TransStrings.php:911
 msgid "Save Changes"
 msgstr ""
 
-#: app/Services/TransStrings.php:911
+#: app/Services/TransStrings.php:912
 msgid "Save Changes & Close"
 msgstr ""
 
-#: app/Services/TransStrings.php:912
+#: app/Services/TransStrings.php:913
 msgid "Save Changes (Pro Required)"
 msgstr ""
 
-#: app/Services/TransStrings.php:913
+#: app/Services/TransStrings.php:914
 msgid "Save Custom CSS & JS"
 msgstr ""
 
-#: app/Services/TransStrings.php:914 app/Hooks/Handlers/CustomizerHander.php:40
+#: app/Services/TransStrings.php:915 app/Hooks/Handlers/CustomizerHander.php:40
 msgid "Save Settings"
 msgstr ""
 
@@ -5787,72 +5791,72 @@ msgstr ""
 msgid "Save Settings (Pro Required)"
 msgstr ""
 
-#: app/Services/TransStrings.php:915
+#: app/Services/TransStrings.php:916
 msgid "Schedule"
 msgstr ""
 
-#: app/Services/TransStrings.php:916
+#: app/Services/TransStrings.php:917
 msgid "Schedule has been updated"
 msgstr ""
 
-#: app/Services/TransStrings.php:917
+#: app/Services/TransStrings.php:918
 msgid "Scheduled"
 msgstr ""
 
-#: app/Services/TransStrings.php:918
+#: app/Services/TransStrings.php:919
 msgid "Search"
 msgstr ""
 
-#: app/Services/TransStrings.php:919
+#: app/Services/TransStrings.php:920
 msgid "Search Courses..."
 msgstr ""
 
-#: app/Services/TransStrings.php:924
+#: app/Services/TransStrings.php:925
 msgid "Search for an existing user or Invite by Email"
 msgstr ""
 
-#: app/Services/TransStrings.php:925
+#: app/Services/TransStrings.php:926
 msgid "Search for anything"
 msgstr ""
 
-#: app/Services/TransStrings.php:920
+#: app/Services/TransStrings.php:921
 msgid "Search Gifs"
 msgstr ""
 
-#: app/Services/TransStrings.php:926
+#: app/Services/TransStrings.php:927
 msgid "Search here..."
 msgstr ""
 
-#: app/Services/TransStrings.php:927
+#: app/Services/TransStrings.php:928
 #, php-format
 msgid "Search in %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:928
+#: app/Services/TransStrings.php:929
 msgid "Search in:"
 msgstr ""
 
-#: app/Services/TransStrings.php:921
+#: app/Services/TransStrings.php:922
 msgid "Search Members..."
 msgstr ""
 
-#: app/Services/TransStrings.php:922
+#: app/Services/TransStrings.php:923
 msgid "Search Results"
 msgstr ""
 
-#: app/Services/TransStrings.php:923
+#: app/Services/TransStrings.php:924
 msgid "Search Space..."
 msgstr ""
 
-#: app/Services/TransStrings.php:929
+#: app/Services/TransStrings.php:930
 msgid "Search..."
 msgstr ""
 
-#: app/Services/TransStrings.php:1324
+#: app/Services/TransStrings.php:1325
 msgid "sec"
 msgstr ""
 
-#: app/Services/TransStrings.php:930
+#: app/Services/TransStrings.php:931
 msgid "Secondary"
 msgstr ""
 
@@ -5876,7 +5880,7 @@ msgstr ""
 msgid "Secondary Nav Text Color"
 msgstr ""
 
-#: app/Services/TransStrings.php:931
+#: app/Services/TransStrings.php:932
 msgid "Secret"
 msgstr ""
 
@@ -5888,7 +5892,7 @@ msgstr ""
 msgid "Section indexes have been updated successfully."
 msgstr ""
 
-#: app/Services/TransStrings.php:932
+#: app/Services/TransStrings.php:933
 msgid "Section Title"
 msgstr ""
 
@@ -5896,41 +5900,41 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: app/Services/TransStrings.php:953
+#: app/Services/TransStrings.php:954
 msgid ""
 "Select a menu group to where this course will be added to the sidebar. If "
 "you do not select a menu group, it will be available on the all courses page."
 msgstr ""
 
-#: app/Services/TransStrings.php:954
+#: app/Services/TransStrings.php:955
 msgid ""
 "Select a menu group to where this space will be added to the sidebar. If you "
 "do not select a menu group, it will be available on the all spaces page."
 msgstr ""
 
-#: app/Services/TransStrings.php:955
+#: app/Services/TransStrings.php:956
 msgid "Select a new Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:956
+#: app/Services/TransStrings.php:957
 msgid "Select a page"
 msgstr ""
 
-#: app/Services/TransStrings.php:957
+#: app/Services/TransStrings.php:958
 msgid "Select a topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:958
+#: app/Services/TransStrings.php:959
 msgid "Select a user registration page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1295
+#: app/Services/TransStrings.php:1296
 msgid ""
 "Select a user registration page. The page must include the "
 "[fluent_community_registration] shortcode."
 msgstr ""
 
-#: app/Services/TransStrings.php:933
+#: app/Services/TransStrings.php:934
 msgid "Select Access Roles"
 msgstr ""
 
@@ -5942,23 +5946,23 @@ msgstr ""
 msgid "Select Communities"
 msgstr ""
 
-#: app/Services/TransStrings.php:934
+#: app/Services/TransStrings.php:935
 msgid "Select Courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:935
+#: app/Services/TransStrings.php:936
 msgid "Select Courses that you want to remove from the user"
 msgstr ""
 
-#: app/Services/TransStrings.php:936
+#: app/Services/TransStrings.php:937
 msgid "Select Digest Email Day"
 msgstr ""
 
-#: app/Services/TransStrings.php:937
+#: app/Services/TransStrings.php:938
 msgid "Select Drip date"
 msgstr ""
 
-#: app/Services/TransStrings.php:938
+#: app/Services/TransStrings.php:939
 msgid "Select Group"
 msgstr ""
 
@@ -5968,39 +5972,39 @@ msgid ""
 "users."
 msgstr ""
 
-#: app/Services/TransStrings.php:939
+#: app/Services/TransStrings.php:940
 msgid "Select Menu Group"
 msgstr ""
 
-#: app/Services/TransStrings.php:959
+#: app/Services/TransStrings.php:960
 msgid "Select or paste your emoji here"
 msgstr ""
 
-#: app/Services/TransStrings.php:940
+#: app/Services/TransStrings.php:941
 msgid "Select Privacy"
 msgstr ""
 
-#: app/Services/TransStrings.php:941
+#: app/Services/TransStrings.php:942
 msgid "Select Role"
 msgstr ""
 
-#: app/Services/TransStrings.php:942
+#: app/Services/TransStrings.php:943
 msgid "Select S3 Location"
 msgstr ""
 
-#: app/Services/TransStrings.php:943
+#: app/Services/TransStrings.php:944
 msgid "Select Section"
 msgstr ""
 
-#: app/Services/TransStrings.php:944
+#: app/Services/TransStrings.php:945
 msgid "Select Shape Color:"
 msgstr ""
 
-#: app/Services/TransStrings.php:945
+#: app/Services/TransStrings.php:946
 msgid "Select Shape:"
 msgstr ""
 
-#: app/Services/TransStrings.php:946
+#: app/Services/TransStrings.php:947
 msgid "Select Space"
 msgstr ""
 
@@ -6009,7 +6013,7 @@ msgstr ""
 msgid "Select Space or Course"
 msgstr ""
 
-#: app/Services/TransStrings.php:947
+#: app/Services/TransStrings.php:948
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:80
 msgid "Select Spaces"
 msgstr ""
@@ -6018,11 +6022,11 @@ msgstr ""
 msgid "Select Spaces or Courses to Enroll"
 msgstr ""
 
-#: app/Services/TransStrings.php:948
+#: app/Services/TransStrings.php:949
 msgid "Select Spaces that you want to remove from the user"
 msgstr ""
 
-#: app/Services/TransStrings.php:960
+#: app/Services/TransStrings.php:961
 msgid "Select spaces where this topic will be visible."
 msgstr ""
 
@@ -6031,34 +6035,34 @@ msgstr ""
 msgid "Select Status"
 msgstr ""
 
-#: app/Services/TransStrings.php:949
+#: app/Services/TransStrings.php:950
 msgid "Select Storage Region"
 msgstr ""
 
-#: app/Services/TransStrings.php:961
+#: app/Services/TransStrings.php:962
 msgid ""
 "Select the corresponding FluentCRM Tag for each space/course. So when "
 "someone gets the tag, they will get access to the space/course. Similarly "
 "when someone join a space or course they will be tagged in FluentCRM."
 msgstr ""
 
-#: app/Services/TransStrings.php:950
+#: app/Services/TransStrings.php:951
 msgid "Select Type"
 msgstr ""
 
-#: app/Services/TransStrings.php:962
+#: app/Services/TransStrings.php:963
 msgid "Select type"
 msgstr ""
 
-#: app/Services/TransStrings.php:951
+#: app/Services/TransStrings.php:952
 msgid "Select User"
 msgstr ""
 
-#: app/Services/TransStrings.php:963
+#: app/Services/TransStrings.php:964
 msgid "Select user roles who can access the portal."
 msgstr ""
 
-#: app/Services/TransStrings.php:952
+#: app/Services/TransStrings.php:953
 msgid "Select Users"
 msgstr ""
 
@@ -6091,19 +6095,19 @@ msgstr ""
 msgid "Selected user is not active"
 msgstr ""
 
-#: app/Services/TransStrings.php:964 app/Services/TransStrings.php:965
+#: app/Services/TransStrings.php:965 app/Services/TransStrings.php:966
 msgid "Self Paced"
 msgstr ""
 
-#: app/Services/TransStrings.php:968
+#: app/Services/TransStrings.php:969
 msgid "Send an email to the author when a new comment is added to a post."
 msgstr ""
 
-#: app/Services/TransStrings.php:969
+#: app/Services/TransStrings.php:970
 msgid "Send announcement email to space members"
 msgstr ""
 
-#: app/Services/TransStrings.php:971
+#: app/Services/TransStrings.php:972
 msgid "Send default WordPress welcome email for new users"
 msgstr ""
 
@@ -6111,20 +6115,20 @@ msgstr ""
 msgid "Send default WordPress welcome email to user after registration"
 msgstr ""
 
-#: app/Services/TransStrings.php:970
+#: app/Services/TransStrings.php:971
 msgid "Send default WP welcome email when creating the user by tagging."
 msgstr ""
 
-#: app/Services/TransStrings.php:966
+#: app/Services/TransStrings.php:967
 msgid "Send Email Invitation"
 msgstr ""
 
-#: app/Services/TransStrings.php:972
+#: app/Services/TransStrings.php:973
 msgid ""
 "Send email notification on one-to-one messages (unread) to individual members"
 msgstr ""
 
-#: app/Services/TransStrings.php:967
+#: app/Services/TransStrings.php:968
 msgid "Send Invitation"
 msgstr ""
 
@@ -6134,55 +6138,55 @@ msgid ""
 "your community members with FluentCRM."
 msgstr ""
 
-#: app/Services/TransStrings.php:973
+#: app/Services/TransStrings.php:974
 msgid "Sending email to all members?"
 msgstr ""
 
-#: app/Services/TransStrings.php:974
+#: app/Services/TransStrings.php:975
 msgid "September"
 msgstr ""
 
-#: app/Services/TransStrings.php:975
+#: app/Services/TransStrings.php:976
 msgid "Server Storage"
 msgstr ""
 
-#: app/Services/TransStrings.php:976
+#: app/Services/TransStrings.php:977
 msgid "Session Expired"
 msgstr ""
 
-#: app/Services/TransStrings.php:979
+#: app/Services/TransStrings.php:980
 msgid ""
 "Set a featured image at the top of the welcome banner. Recommended image "
 "dimension: 1680x600"
 msgstr ""
 
-#: app/Services/TransStrings.php:977
+#: app/Services/TransStrings.php:978
 msgid "Set Logo"
 msgstr ""
 
-#: app/Services/TransStrings.php:978
+#: app/Services/TransStrings.php:979
 msgid "Set Open Graph Image"
 msgstr ""
 
-#: app/Services/TransStrings.php:980
+#: app/Services/TransStrings.php:981
 msgid ""
 "Set your from name, email, and email footer. These configurations will be "
 "used to send emails from FluentCommunity."
 msgstr ""
 
-#: app/Services/TransStrings.php:981 app/Hooks/Handlers/PortalHandler.php:166
+#: app/Services/TransStrings.php:982 app/Hooks/Handlers/PortalHandler.php:166
 msgid "Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:982
+#: app/Services/TransStrings.php:983
 msgid "Settings could not be loaded"
 msgstr ""
 
-#: app/Services/TransStrings.php:983
+#: app/Services/TransStrings.php:984
 msgid "Settings for Emoji & Reaction features"
 msgstr ""
 
-#: app/Services/TransStrings.php:984
+#: app/Services/TransStrings.php:985
 msgid "Settings for Leaderboard & Gamification features"
 msgstr ""
 
@@ -6194,7 +6198,7 @@ msgstr ""
 msgid "Settings have been saved successfully."
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:80 app/Services/TransStrings.php:985
+#: app/Services/AdminTransStrings.php:80 app/Services/TransStrings.php:986
 msgid "Settings saved successfully"
 msgstr ""
 
@@ -6202,66 +6206,66 @@ msgstr ""
 msgid "Setup who can access your portal & Setup Features"
 msgstr ""
 
-#: app/Services/TransStrings.php:986
+#: app/Services/TransStrings.php:987
 msgid "Shape"
 msgstr ""
 
-#: app/Services/TransStrings.php:987
+#: app/Services/TransStrings.php:988
 msgid "Short Bio"
 msgstr ""
 
-#: app/Services/TransStrings.php:988
+#: app/Services/TransStrings.php:989
 msgid "Short Description"
 msgstr ""
 
-#: app/Services/TransStrings.php:989
+#: app/Services/TransStrings.php:990
 msgid "Short title of this post"
 msgstr ""
 
-#: app/Services/TransStrings.php:996 app/Services/TransStrings.php:1294
+#: app/Services/TransStrings.php:997 app/Services/TransStrings.php:1295
 msgid ""
 "Show a customized badge on user profiles beside their names to easily "
 "recognize your admins or moderators, or to give appreciation to your power "
 "users."
 msgstr ""
 
-#: app/Services/TransStrings.php:990
+#: app/Services/TransStrings.php:991
 msgid "Show Default Feed link on left sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:997
+#: app/Services/TransStrings.php:998
 msgid "Show icon on header menu items"
 msgstr ""
 
-#: app/Services/TransStrings.php:991
+#: app/Services/TransStrings.php:992
 msgid "Show Label on Badge"
 msgstr ""
 
-#: app/Services/TransStrings.php:998
+#: app/Services/TransStrings.php:999
 msgid "Show last activity of a user on the profile card"
 msgstr ""
 
-#: app/Services/TransStrings.php:992
+#: app/Services/TransStrings.php:993
 msgid "Show More"
 msgstr ""
 
-#: app/Services/TransStrings.php:999
+#: app/Services/TransStrings.php:1000
 msgid "Show powered by text"
 msgstr ""
 
-#: app/Services/TransStrings.php:993
+#: app/Services/TransStrings.php:994
 msgid "Show Right Sidebar on Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:994
+#: app/Services/TransStrings.php:995
 msgid "Show Spaces even if the user is not a member of any space"
 msgstr ""
 
-#: app/Services/TransStrings.php:995
+#: app/Services/TransStrings.php:996
 msgid "Show Topics on Post Card"
 msgstr ""
 
-#: app/Services/TransStrings.php:1000
+#: app/Services/TransStrings.php:1001
 msgid "Show/Hide Topics On post Card"
 msgstr ""
 
@@ -6269,11 +6273,11 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:1001
+#: app/Services/TransStrings.php:1002
 msgid "Sidebar Bottom Link Groups"
 msgstr ""
 
-#: app/Services/TransStrings.php:1002
+#: app/Services/TransStrings.php:1003
 msgid "Sign Up"
 msgstr ""
 
@@ -6286,11 +6290,11 @@ msgstr ""
 msgid "Signup with"
 msgstr ""
 
-#: app/Services/TransStrings.php:1003
+#: app/Services/TransStrings.php:1004
 msgid "Site Logo (For Dark Mode)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1004
+#: app/Services/TransStrings.php:1005
 msgid "Site Logo (For Light Background)"
 msgstr ""
 
@@ -6302,11 +6306,11 @@ msgstr ""
 msgid "Sky Blue (Dark)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1005
+#: app/Services/TransStrings.php:1006
 msgid "Slug"
 msgstr ""
 
-#: app/Services/TransStrings.php:1006
+#: app/Services/TransStrings.php:1007
 msgid "Slug (optional)"
 msgstr ""
 
@@ -6327,23 +6331,23 @@ msgstr ""
 msgid "Slug is already taken. Please use a different slug"
 msgstr ""
 
-#: app/Services/TransStrings.php:1007
+#: app/Services/TransStrings.php:1008
 msgid "Slug of the topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1008
+#: app/Services/TransStrings.php:1009
 msgid "Slug of your topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1009
+#: app/Services/TransStrings.php:1010
 msgid "Smileys & Emotion"
 msgstr ""
 
-#: app/Services/TransStrings.php:1010
+#: app/Services/TransStrings.php:1011
 msgid "Social Links"
 msgstr ""
 
-#: app/Services/TransStrings.php:1011
+#: app/Services/TransStrings.php:1012
 msgid "Social Media Links Settings"
 msgstr ""
 
@@ -6364,7 +6368,7 @@ msgstr ""
 msgid "Something went wrong"
 msgstr ""
 
-#: app/Services/TransStrings.php:1012
+#: app/Services/TransStrings.php:1013
 msgid "Sorry you do not have permission to access this."
 msgstr ""
 
@@ -6374,7 +6378,7 @@ msgid ""
 "registered site user."
 msgstr ""
 
-#: app/Services/TransStrings.php:1013
+#: app/Services/TransStrings.php:1014
 msgid "Sorry! this community could not be loaded"
 msgstr ""
 
@@ -6386,23 +6390,23 @@ msgstr ""
 msgid "Sorry! you do not have access to this post or invalid request"
 msgstr ""
 
-#: app/Services/TransStrings.php:1014
+#: app/Services/TransStrings.php:1015
 msgid "Sorry, no lesson found"
 msgstr ""
 
-#: app/Services/TransStrings.php:1015
+#: app/Services/TransStrings.php:1016
 msgid "Sorry, the course can not be loaded"
 msgstr ""
 
-#: app/Services/TransStrings.php:1016
+#: app/Services/TransStrings.php:1017
 msgid "Sorry, the course could not be loaded."
 msgstr ""
 
-#: app/Services/TransStrings.php:1017
+#: app/Services/TransStrings.php:1018
 msgid "Sorry, the requested post could not be found."
 msgstr ""
 
-#: app/Services/TransStrings.php:1018
+#: app/Services/TransStrings.php:1019
 msgid "Sorry, the selected plugins could not be installed"
 msgstr ""
 
@@ -6428,56 +6432,56 @@ msgstr ""
 msgid "Sorry, you do not have permission to change the space for this post"
 msgstr ""
 
-#: app/Services/TransStrings.php:1019
+#: app/Services/TransStrings.php:1020
 msgid "Sorry, you do not have permission to view this page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1022
+#: app/Services/TransStrings.php:1023
 msgid "Sort by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1023
+#: app/Services/TransStrings.php:1024
 msgid "Sort by:"
 msgstr ""
 
-#: app/Services/TransStrings.php:1024
+#: app/Services/TransStrings.php:1025
 msgid "Sort comments by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1020
+#: app/Services/TransStrings.php:1021
 msgid "Sort Courses by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1025
+#: app/Services/TransStrings.php:1026
 msgid "Sort members by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1026
+#: app/Services/TransStrings.php:1027
 msgid "Sort posts by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1021
+#: app/Services/TransStrings.php:1022
 msgid "Sort Spaces by"
 msgstr ""
 
-#: app/Services/TransStrings.php:1027
+#: app/Services/TransStrings.php:1028
 #: Modules/Integrations/FluentForms/Bootstrap.php:177
 msgid "Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1325
+#: app/Services/TransStrings.php:1326
 msgid "space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1028
+#: app/Services/TransStrings.php:1029
 msgid "Space Activities"
 msgstr ""
 
-#: app/Services/TransStrings.php:1037
+#: app/Services/TransStrings.php:1038
 msgid "Space analytics"
 msgstr ""
 
-#: app/Services/TransStrings.php:1029
+#: app/Services/TransStrings.php:1030
 msgid "Space Description"
 msgstr ""
 
@@ -6517,19 +6521,19 @@ msgstr ""
 msgid "Space indexes have been updated."
 msgstr ""
 
-#: app/Services/TransStrings.php:1030
+#: app/Services/TransStrings.php:1031
 msgid "Space Links"
 msgstr ""
 
-#: app/Services/TransStrings.php:1031
+#: app/Services/TransStrings.php:1032
 msgid "Space Logo"
 msgstr ""
 
-#: app/Services/TransStrings.php:1032
+#: app/Services/TransStrings.php:1033
 msgid "Space Management Roles"
 msgstr ""
 
-#: app/Services/TransStrings.php:1033
+#: app/Services/TransStrings.php:1034
 msgid "Space Moderator"
 msgstr ""
 
@@ -6548,27 +6552,27 @@ msgstr ""
 msgid "Space not found"
 msgstr ""
 
-#: app/Services/TransStrings.php:1034
+#: app/Services/TransStrings.php:1035
 msgid "Space Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:1035
+#: app/Services/TransStrings.php:1036
 msgid "Space Slug (no space or special chars)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1036
+#: app/Services/TransStrings.php:1037
 msgid "Space Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1038
+#: app/Services/TransStrings.php:1039
 msgid "Space visibility"
 msgstr ""
 
-#: app/Services/TransStrings.php:1039
+#: app/Services/TransStrings.php:1040
 msgid "Space will be created under the selected Menu group."
 msgstr ""
 
-#: app/Services/TransStrings.php:1040 app/Services/Helper.php:926
+#: app/Services/TransStrings.php:1041 app/Services/Helper.php:926
 #: app/Http/Controllers/ProfileController.php:86
 #: Modules/Integrations/FluentCRM/ProfileSection.php:64
 msgid "Spaces"
@@ -6578,15 +6582,15 @@ msgstr ""
 msgid "Spam"
 msgstr ""
 
-#: app/Services/TransStrings.php:1041
+#: app/Services/TransStrings.php:1042
 msgid "Start Date"
 msgstr ""
 
-#: app/Services/TransStrings.php:1043
+#: app/Services/TransStrings.php:1044
 msgid "Start date"
 msgstr ""
 
-#: app/Services/TransStrings.php:1042
+#: app/Services/TransStrings.php:1043
 msgid "Start Migrating Data"
 msgstr ""
 
@@ -6598,17 +6602,17 @@ msgstr ""
 msgid "Start your journey with our expertly crafted templates"
 msgstr ""
 
-#: app/Services/TransStrings.php:1044
+#: app/Services/TransStrings.php:1045
 #: Modules/Integrations/FluentCRM/ProfileSection.php:80
 #: Modules/Integrations/FluentCRM/ProfileSection.php:106
 msgid "Status"
 msgstr ""
 
-#: app/Services/TransStrings.php:1045
+#: app/Services/TransStrings.php:1046
 msgid "Status:"
 msgstr ""
 
-#: app/Services/TransStrings.php:1046
+#: app/Services/TransStrings.php:1047
 msgid "Storage Location"
 msgstr ""
 
@@ -6616,7 +6620,7 @@ msgstr ""
 msgid "Storage settings have been updated successfully"
 msgstr ""
 
-#: app/Services/TransStrings.php:1047
+#: app/Services/TransStrings.php:1048
 msgid "Structured"
 msgstr ""
 
@@ -6624,7 +6628,7 @@ msgstr ""
 msgid "Student has been removed from this course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1048
+#: app/Services/TransStrings.php:1049
 msgid "Students"
 msgstr ""
 
@@ -6633,7 +6637,7 @@ msgstr ""
 msgid "Su_Mo_Tu_We_Th_Fr_Sa"
 msgstr ""
 
-#: app/Services/TransStrings.php:1049
+#: app/Services/TransStrings.php:1050
 msgid "Sub-title of your topic"
 msgstr ""
 
@@ -6641,7 +6645,7 @@ msgstr ""
 msgid "Subscribe to feature updates email newsletter"
 msgstr ""
 
-#: app/Services/TransStrings.php:1050
+#: app/Services/TransStrings.php:1051
 msgid "Subscribe to new posts notifications by space"
 msgstr ""
 
@@ -6682,27 +6686,27 @@ msgstr ""
 msgid "Sunset Sands (Dark)"
 msgstr ""
 
-#: app/Services/TransStrings.php:907
+#: app/Services/TransStrings.php:908
 msgid "SVG Code for Icon (Simplified SVG Code) / Emoji"
 msgstr ""
 
-#: app/Services/TransStrings.php:908
+#: app/Services/TransStrings.php:909
 msgid "SVG Code. No url please / You can use emoji"
 msgstr ""
 
-#: app/Services/TransStrings.php:1051
+#: app/Services/TransStrings.php:1052
 msgid "Switch to List View"
 msgstr ""
 
-#: app/Services/TransStrings.php:1052
+#: app/Services/TransStrings.php:1053
 msgid "Switch to Timeline View"
 msgstr ""
 
-#: app/Services/TransStrings.php:1053
+#: app/Services/TransStrings.php:1054
 msgid "Symbols"
 msgstr ""
 
-#: app/Services/TransStrings.php:1054
+#: app/Services/TransStrings.php:1055
 #, php-format
 msgid "Sync this tag with the %s access"
 msgstr ""
@@ -6715,15 +6719,15 @@ msgstr ""
 msgid "Targeted Spaces"
 msgstr ""
 
-#: app/Services/TransStrings.php:1055
+#: app/Services/TransStrings.php:1056
 msgid "Terms"
 msgstr ""
 
-#: app/Services/TransStrings.php:1056
+#: app/Services/TransStrings.php:1057
 msgid "Text"
 msgstr ""
 
-#: app/Services/TransStrings.php:1057
+#: app/Services/TransStrings.php:1058
 #: app/Hooks/Handlers/CustomizerHander.php:69
 msgid "Text Color"
 msgstr ""
@@ -6788,11 +6792,11 @@ msgstr ""
 msgid "The Blazing-Fast ⚡️ Community Solution for"
 msgstr ""
 
-#: app/Services/TransStrings.php:1060
+#: app/Services/TransStrings.php:1061
 msgid "The button background color of the form"
 msgstr ""
 
-#: app/Services/TransStrings.php:1061
+#: app/Services/TransStrings.php:1062
 msgid "The button text color of the form"
 msgstr ""
 
@@ -6800,7 +6804,7 @@ msgstr ""
 msgid "the community"
 msgstr ""
 
-#: app/Services/TransStrings.php:1062
+#: app/Services/TransStrings.php:1063
 msgid "The email address is required!"
 msgstr ""
 
@@ -6808,7 +6812,7 @@ msgstr ""
 msgid "The file must be an image type."
 msgstr ""
 
-#: app/Services/TransStrings.php:1063
+#: app/Services/TransStrings.php:1064
 msgid "The main background color of the form"
 msgstr ""
 
@@ -6816,11 +6820,11 @@ msgstr ""
 msgid "The main background color of the sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:1065
+#: app/Services/TransStrings.php:1066
 msgid "The post has been deleted"
 msgstr ""
 
-#: app/Services/TransStrings.php:1064
+#: app/Services/TransStrings.php:1065
 msgid "The post URL may be incorrect"
 msgstr ""
 
@@ -6828,7 +6832,7 @@ msgstr ""
 msgid "The super-fast Community Plugin for WordPress"
 msgstr ""
 
-#: app/Services/TransStrings.php:1066
+#: app/Services/TransStrings.php:1067
 msgid "The text color of the form"
 msgstr ""
 
@@ -6836,7 +6840,7 @@ msgstr ""
 msgid "The text/link color of the sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:1067
+#: app/Services/TransStrings.php:1068
 msgid "The title color of the form"
 msgstr ""
 
@@ -6844,29 +6848,29 @@ msgstr ""
 msgid "The title is already taken. Please use a different title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1058
+#: app/Services/TransStrings.php:1059
 msgid ""
 "The URLs of this course lessons will be changed to the new slug. If you have "
 "lots of lessons and sections in this course, you should not change it. Are "
 "you sure you want to change it?"
 msgstr ""
 
-#: app/Services/TransStrings.php:1059
+#: app/Services/TransStrings.php:1060
 msgid ""
 "The URLs of this space posts will be changed to the new slug. If you have "
 "lots of contents in this space, you should not change it. Are you sure you "
 "want to change it?"
 msgstr ""
 
-#: app/Services/TransStrings.php:1068
+#: app/Services/TransStrings.php:1069
 msgid "The user cannot access the portal."
 msgstr ""
 
-#: app/Services/TransStrings.php:1069
+#: app/Services/TransStrings.php:1070
 msgid "The verification string does not match"
 msgstr ""
 
-#: app/Services/TransStrings.php:1070
+#: app/Services/TransStrings.php:1071
 msgid "These files will be available to your students to view and download"
 msgstr ""
 
@@ -6876,21 +6880,21 @@ msgid ""
 "registered WordPress user"
 msgstr ""
 
-#: app/Services/TransStrings.php:1071
-msgid "These settings will be applied across all spaces you're a member of."
-msgstr ""
-
 #: app/Services/TransStrings.php:1072
-#, php-format
-msgid "This %1s has been flagged automatically by the site rule."
+msgid "These settings will be applied across all spaces you're a member of."
 msgstr ""
 
 #: app/Services/TransStrings.php:1073
 #, php-format
-msgid "This %1s has been flagged with %2s report"
+msgid "This %1s has been flagged automatically by the site rule."
 msgstr ""
 
 #: app/Services/TransStrings.php:1074
+#, php-format
+msgid "This %1s has been flagged with %2s report"
+msgstr ""
+
+#: app/Services/TransStrings.php:1075
 #, php-format
 msgid "This %1s has been flagged with %2s reports"
 msgstr ""
@@ -6914,17 +6918,17 @@ msgid ""
 "your account. If you did not initiate this request, please ignore this email."
 msgstr ""
 
-#: app/Services/TransStrings.php:1075
+#: app/Services/TransStrings.php:1076
 msgid ""
 "This content has been unpublished by community moderation. Only the author "
 "and moderators can view it."
 msgstr ""
 
-#: app/Services/TransStrings.php:1076
+#: app/Services/TransStrings.php:1077
 msgid "This course is in Draft status and only visible to Admin / Moderators"
 msgstr ""
 
-#: app/Services/TransStrings.php:1077
+#: app/Services/TransStrings.php:1078
 msgid ""
 "This email footer will be used for all emails sent from FluentCommunity. "
 "It's highly recommended to use your business name and address in the footer "
@@ -6936,17 +6940,17 @@ msgstr ""
 msgid "This email has been sent from %1$s. Site: %2$s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1078
+#: app/Services/TransStrings.php:1079
 msgid "This feature is available on the pro version of FluentCommunity"
 msgstr ""
 
-#: app/Services/TransStrings.php:1079
+#: app/Services/TransStrings.php:1080
 msgid ""
 "This feature is only available in the Pro version of FluentCommunity. Please "
 "upgrade"
 msgstr ""
 
-#: app/Services/TransStrings.php:1080
+#: app/Services/TransStrings.php:1081
 msgid "This feature is only available in the pro version."
 msgstr ""
 
@@ -6955,62 +6959,62 @@ msgid ""
 "This form cannot be used to log in. Please reload the page and try again."
 msgstr ""
 
-#: app/Services/TransStrings.php:1081
+#: app/Services/TransStrings.php:1082
 msgid ""
 "This image will be used on social sharing preview. Recommended size: 1200 x "
 "630 px"
 msgstr ""
 
-#: app/Services/TransStrings.php:1082
+#: app/Services/TransStrings.php:1083
 msgid "This is a private course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1083
+#: app/Services/TransStrings.php:1084
 msgid "This is a private space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1084
+#: app/Services/TransStrings.php:1085
 msgid ""
 "This is the default settings that will be applied to all the community "
 "members. Individual members can over-write the settings for their own "
 "preference"
 msgstr ""
 
-#: app/Services/TransStrings.php:1085
+#: app/Services/TransStrings.php:1086
 msgid ""
 "This is your default email sending frequency. Individual users can customize "
 "the frequency or disable the notification."
 msgstr ""
 
-#: app/Services/TransStrings.php:1086
-msgid "This lesson is not published for you yet"
-msgstr ""
-
 #: app/Services/TransStrings.php:1087
-#, php-format
-msgid "This lesson will be available to you on %s"
+msgid "This lesson is not published for you yet"
 msgstr ""
 
 #: app/Services/TransStrings.php:1088
 #, php-format
+msgid "This lesson will be available to you on %s"
+msgstr ""
+
+#: app/Services/TransStrings.php:1089
+#, php-format
 msgid "This lesson will be unlocked on %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1279
+#: app/Services/TransStrings.php:1280
 msgid ""
 "This lock screen will not be shown to the non-members as you set to the lock "
 "screen type to Default in the general settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:1089
+#: app/Services/TransStrings.php:1090
 msgid "This may be due to one of the following reasons:"
 msgstr ""
 
-#: app/Services/TransStrings.php:1090
+#: app/Services/TransStrings.php:1091
 msgid "This page is only visible to non-members viewing a private space."
 msgstr ""
 
-#: app/Services/TransStrings.php:1091
+#: app/Services/TransStrings.php:1092
 msgid "This poll has ended."
 msgstr ""
 
@@ -7018,7 +7022,7 @@ msgstr ""
 msgid "This post is not published yet"
 msgstr ""
 
-#: app/Services/TransStrings.php:1092
+#: app/Services/TransStrings.php:1093
 msgid ""
 "This title will be used for the meta title and email notification references."
 " It should match your site title."
@@ -7029,17 +7033,17 @@ msgstr ""
 msgid "This week on %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1093
+#: app/Services/TransStrings.php:1094
 msgid ""
 "This will be displayed under the title in the topic when selecting in post "
 "creation form"
 msgstr ""
 
-#: app/Services/TransStrings.php:1094
+#: app/Services/TransStrings.php:1095
 msgid "Thumbnail / Open Graph Image"
 msgstr ""
 
-#: app/Services/TransStrings.php:1095
+#: app/Services/TransStrings.php:1096
 msgid "Thumbnail / Open Graph Image (Recommended Size: 1200 x 630)"
 msgstr ""
 
@@ -7047,31 +7051,31 @@ msgstr ""
 msgid "Thursday"
 msgstr ""
 
-#: app/Services/TransStrings.php:1096
+#: app/Services/TransStrings.php:1097
 msgid "Time to send the digest email"
 msgstr ""
 
-#: app/Services/TransStrings.php:1097
+#: app/Services/TransStrings.php:1098
 msgid "Timeline"
 msgstr ""
 
-#: app/Services/TransStrings.php:1098
+#: app/Services/TransStrings.php:1099
 msgid "Tip: Quick-launch search with"
 msgstr ""
 
-#: app/Services/TransStrings.php:1099
+#: app/Services/TransStrings.php:1100
 msgid "Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1100
+#: app/Services/TransStrings.php:1101
 msgid "Title & Description"
 msgstr ""
 
-#: app/Services/TransStrings.php:1101
+#: app/Services/TransStrings.php:1102
 msgid "Title (optional)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1102
+#: app/Services/TransStrings.php:1103
 msgid "Title Color"
 msgstr ""
 
@@ -7079,27 +7083,27 @@ msgstr ""
 msgid "Title is required. Please provide a title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1103
+#: app/Services/TransStrings.php:1104
 msgid "Title must be at least 2 characters long"
 msgstr ""
 
-#: app/Services/TransStrings.php:1104
+#: app/Services/TransStrings.php:1105
 msgid "Title of the topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1105
+#: app/Services/TransStrings.php:1106
 msgid "Title of your topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1106
+#: app/Services/TransStrings.php:1107
 msgid "To join the discussion of this community, please login or signup"
 msgstr ""
 
-#: app/Services/TransStrings.php:1107
+#: app/Services/TransStrings.php:1108
 msgid "Toggle Bookmark"
 msgstr ""
 
-#: app/Services/TransStrings.php:1108
+#: app/Services/TransStrings.php:1109
 msgid "Toggle Sticky"
 msgstr ""
 
@@ -7107,31 +7111,31 @@ msgstr ""
 msgid "Too many requests. Please try again later"
 msgstr ""
 
-#: app/Services/TransStrings.php:1109
+#: app/Services/TransStrings.php:1110
 msgid "Top 10 spaces with most activities"
 msgstr ""
 
-#: app/Services/TransStrings.php:1110
+#: app/Services/TransStrings.php:1111
 msgid "Top Commenters"
 msgstr ""
 
-#: app/Services/TransStrings.php:1111
+#: app/Services/TransStrings.php:1112
 msgid "Top Links (At Sidebar)"
 msgstr ""
 
-#: app/Services/TransStrings.php:1112
+#: app/Services/TransStrings.php:1113
 msgid "Top Member who commented the most"
 msgstr ""
 
-#: app/Services/TransStrings.php:1113
+#: app/Services/TransStrings.php:1114
 msgid "Top Member who started the most posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:1114
+#: app/Services/TransStrings.php:1115
 msgid "Top Members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1115
+#: app/Services/TransStrings.php:1116
 msgid "Top members by Activity count"
 msgstr ""
 
@@ -7144,27 +7148,27 @@ msgstr ""
 msgid "Topic has been updated successfully."
 msgstr ""
 
-#: app/Services/TransStrings.php:1118
+#: app/Services/TransStrings.php:1119
 msgid "Topic navigation"
 msgstr ""
 
-#: app/Services/TransStrings.php:1116
+#: app/Services/TransStrings.php:1117
 msgid "Topic Slug"
 msgstr ""
 
-#: app/Services/TransStrings.php:1119
+#: app/Services/TransStrings.php:1120
 msgid "Topic sub-title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1117
+#: app/Services/TransStrings.php:1118
 msgid "Topic Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1120
+#: app/Services/TransStrings.php:1121
 msgid "Topics"
 msgstr ""
 
-#: app/Services/TransStrings.php:1121
+#: app/Services/TransStrings.php:1122
 msgid "Topics Settings"
 msgstr ""
 
@@ -7173,15 +7177,15 @@ msgstr ""
 msgid "Total %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1122
+#: app/Services/TransStrings.php:1123
 msgid "Travel & Places"
 msgstr ""
 
-#: app/Services/TransStrings.php:1123 app/Services/Libs/DailyDigest.php:231
+#: app/Services/TransStrings.php:1124 app/Services/Libs/DailyDigest.php:231
 msgid "Trending Posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:1124
+#: app/Services/TransStrings.php:1125
 msgid "Try searching for keywords in posts"
 msgstr ""
 
@@ -7189,98 +7193,98 @@ msgstr ""
 msgid "Tuesday"
 msgstr ""
 
-#: app/Services/TransStrings.php:1125
+#: app/Services/TransStrings.php:1126
 #: Modules/Integrations/FluentCRM/ProfileSection.php:81
 msgid "Type"
 msgstr ""
 
-#: app/Services/TransStrings.php:1126
+#: app/Services/TransStrings.php:1127
 #, php-format
 msgid "Type %s to confirm"
 msgstr ""
 
-#: app/Services/TransStrings.php:1127
+#: app/Services/TransStrings.php:1128
 msgid "Type your message here!"
 msgstr ""
 
-#: app/Services/TransStrings.php:1128
+#: app/Services/TransStrings.php:1129
 msgid "Type:"
 msgstr ""
 
-#: app/Services/TransStrings.php:1130
+#: app/Services/TransStrings.php:1131
 msgid "Unanswered"
 msgstr ""
 
-#: app/Services/TransStrings.php:1326
+#: app/Services/TransStrings.php:1327
 msgid "unavailable"
 msgstr ""
 
-#: app/Services/TransStrings.php:1131
+#: app/Services/TransStrings.php:1132
 msgid ""
 "Unlock potential by creating new feeds and earning points for likes. Advance "
 "in rank based on your total points using this module"
 msgstr ""
 
-#: app/Services/TransStrings.php:1277
+#: app/Services/TransStrings.php:1278
 msgid ""
 "Unlock potential by creating new feeds and earning points for likes. Advance "
 "in rank based on your total points using this module."
 msgstr ""
 
-#: app/Services/TransStrings.php:1132
+#: app/Services/TransStrings.php:1133
 msgid ""
 "Unlock potential by using giphy when creating a new article , post or comment"
 msgstr ""
 
-#: app/Services/TransStrings.php:1133
+#: app/Services/TransStrings.php:1134
 msgid "Unlock section after"
 msgstr ""
 
-#: app/Services/TransStrings.php:1135
+#: app/Services/TransStrings.php:1136
 msgid "Unpin from sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:1134
+#: app/Services/TransStrings.php:1135
 msgid "Unpin from Top"
 msgstr ""
 
-#: app/Services/TransStrings.php:1136
+#: app/Services/TransStrings.php:1137
 msgid "Unpinned from sidebar"
 msgstr ""
 
-#: app/Services/TransStrings.php:1137
+#: app/Services/TransStrings.php:1138
 msgid "Unpublish"
 msgstr ""
 
-#: app/Services/TransStrings.php:1138
+#: app/Services/TransStrings.php:1139
 msgid "Unpublished"
 msgstr ""
 
-#: app/Services/TransStrings.php:1139 app/Services/Libs/DailyDigest.php:171
+#: app/Services/TransStrings.php:1140 app/Services/Libs/DailyDigest.php:171
 msgid "Unread Notifications"
 msgstr ""
 
-#: app/Services/TransStrings.php:1140
+#: app/Services/TransStrings.php:1141
 msgid "Unread only"
 msgstr ""
 
-#: app/Services/TransStrings.php:1141
+#: app/Services/TransStrings.php:1142
 msgid "Update"
 msgstr ""
 
-#: app/Services/TransStrings.php:1142
+#: app/Services/TransStrings.php:1143
 msgid "Update Date"
 msgstr ""
 
-#: app/Services/TransStrings.php:1143
+#: app/Services/TransStrings.php:1144
 msgid "Update Info"
 msgstr ""
 
-#: app/Services/TransStrings.php:1144
+#: app/Services/TransStrings.php:1145
 msgid "Update Role"
 msgstr ""
 
-#: app/Services/TransStrings.php:1145
+#: app/Services/TransStrings.php:1146
 msgid "Update Status"
 msgstr ""
 
@@ -7288,11 +7292,11 @@ msgstr ""
 msgid "Update this information anytime stress-free!"
 msgstr ""
 
-#: app/Services/TransStrings.php:1146
+#: app/Services/TransStrings.php:1147
 msgid "Update Topic"
 msgstr ""
 
-#: app/Services/TransStrings.php:1147
+#: app/Services/TransStrings.php:1148
 msgid "Update Webhook"
 msgstr ""
 
@@ -7300,48 +7304,48 @@ msgstr ""
 msgid "Upgrade"
 msgstr ""
 
-#: app/Services/TransStrings.php:1148
+#: app/Services/TransStrings.php:1149
 msgid "Upgrade Now"
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:88 app/Services/TransStrings.php:1149
+#: app/Services/AdminTransStrings.php:88 app/Services/TransStrings.php:1150
 msgid "Upgrade to Pro"
 msgstr ""
 
-#: app/Services/TransStrings.php:1150
+#: app/Services/TransStrings.php:1151
 msgid "Upload Cover"
 msgstr ""
 
-#: app/Services/TransStrings.php:1151
+#: app/Services/TransStrings.php:1152
 msgid "Upload Documents"
 msgstr ""
 
-#: app/Services/TransStrings.php:1152
+#: app/Services/TransStrings.php:1153
 msgid "Upload Files"
 msgstr ""
 
-#: app/Services/AdminTransStrings.php:89 app/Services/TransStrings.php:1153
+#: app/Services/AdminTransStrings.php:89 app/Services/TransStrings.php:1154
 msgid "Upload Logo"
 msgstr ""
 
-#: app/Services/TransStrings.php:1155
+#: app/Services/TransStrings.php:1156
 msgid "Upload new"
 msgstr ""
 
-#: app/Services/TransStrings.php:1154
+#: app/Services/TransStrings.php:1155
 msgid "Upload Photo"
 msgstr ""
 
-#: app/Services/TransStrings.php:1156
+#: app/Services/TransStrings.php:1157
 #, php-format
 msgid "Uploaded %s files"
 msgstr ""
 
-#: app/Services/TransStrings.php:1157
+#: app/Services/TransStrings.php:1158
 msgid "Uploading..."
 msgstr ""
 
-#: app/Services/TransStrings.php:1129
+#: app/Services/TransStrings.php:1130
 msgid "URL"
 msgstr ""
 
@@ -7349,48 +7353,48 @@ msgstr ""
 msgid "URL change canceled"
 msgstr ""
 
-#: app/Services/TransStrings.php:1158
+#: app/Services/TransStrings.php:1159
 msgid "Url of the item"
 msgstr ""
 
-#: app/Services/TransStrings.php:1159
+#: app/Services/TransStrings.php:1160
 msgid "Usage"
 msgstr ""
 
-#: app/Services/TransStrings.php:1160
+#: app/Services/TransStrings.php:1161
 #, php-format
 msgid ""
 "Use %1s tag to insert dynamic notification settings URL. Other Smartcode: "
 "%2s for Site Name with permalink"
 msgstr ""
 
-#: app/Services/TransStrings.php:1161
+#: app/Services/TransStrings.php:1162
 msgid "Use Custom Login Page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1165
+#: app/Services/TransStrings.php:1166
 msgid "Use custom signup URL instead of default signup page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1162
+#: app/Services/TransStrings.php:1163
 msgid "Use Default"
 msgstr ""
 
-#: app/Services/TransStrings.php:1166
+#: app/Services/TransStrings.php:1167
 msgid ""
 "Use emojis to add a personal touch and make your new article, post, or "
 "comment more expressive"
 msgstr ""
 
-#: app/Services/TransStrings.php:1163
+#: app/Services/TransStrings.php:1164
 msgid "Use Gravatar Photo Service for default user photo"
 msgstr ""
 
-#: app/Services/TransStrings.php:1164
+#: app/Services/TransStrings.php:1165
 msgid "Use Modal UI for quick post view"
 msgstr ""
 
-#: app/Services/TransStrings.php:1167
+#: app/Services/TransStrings.php:1168
 msgid "User"
 msgstr ""
 
@@ -7402,19 +7406,19 @@ msgstr ""
 msgid "User already exists."
 msgstr ""
 
-#: app/Services/TransStrings.php:1168
+#: app/Services/TransStrings.php:1169
 msgid "User Badge Module"
 msgstr ""
 
-#: app/Services/TransStrings.php:1169
+#: app/Services/TransStrings.php:1170
 msgid "User Badge Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:1170
+#: app/Services/TransStrings.php:1171
 msgid "User Badges"
 msgstr ""
 
-#: app/Services/TransStrings.php:1173
+#: app/Services/TransStrings.php:1174
 msgid "User can change the layout style to their own preference."
 msgstr ""
 
@@ -7442,15 +7446,15 @@ msgstr ""
 msgid "User Profile  Field"
 msgstr ""
 
-#: app/Services/TransStrings.php:1171
+#: app/Services/TransStrings.php:1172
 msgid "User Profile Badge"
 msgstr ""
 
-#: app/Services/TransStrings.php:1172
+#: app/Services/TransStrings.php:1173
 msgid "User Roles"
 msgstr ""
 
-#: app/Services/TransStrings.php:1174 Modules/Auth/AuthHelper.php:178
+#: app/Services/TransStrings.php:1175 Modules/Auth/AuthHelper.php:178
 msgid "Username"
 msgstr ""
 
@@ -7479,15 +7483,15 @@ msgstr ""
 msgid "Username should be at least 3 characters long."
 msgstr ""
 
-#: app/Services/TransStrings.php:1175
+#: app/Services/TransStrings.php:1176
 msgid "Users"
 msgstr ""
 
-#: app/Services/TransStrings.php:1176
+#: app/Services/TransStrings.php:1177
 msgid "Users can choose multiple options"
 msgstr ""
 
-#: app/Services/TransStrings.php:1177
+#: app/Services/TransStrings.php:1178
 msgid "Valid Email address"
 msgstr ""
 
@@ -7516,27 +7520,27 @@ msgstr ""
 msgid "Verify License"
 msgstr ""
 
-#: app/Services/TransStrings.php:1178
+#: app/Services/TransStrings.php:1179
 msgid "Video"
 msgstr ""
 
-#: app/Services/TransStrings.php:1179
+#: app/Services/TransStrings.php:1180
 msgid "Video length"
 msgstr ""
 
-#: app/Services/TransStrings.php:1180
+#: app/Services/TransStrings.php:1181
 msgid "View"
 msgstr ""
 
-#: app/Services/TransStrings.php:1188
+#: app/Services/TransStrings.php:1189
 msgid "View actions"
 msgstr ""
 
-#: app/Services/TransStrings.php:1181
+#: app/Services/TransStrings.php:1182
 msgid "View All"
 msgstr ""
 
-#: app/Services/TransStrings.php:1189
+#: app/Services/TransStrings.php:1190
 msgid "View all courses"
 msgstr ""
 
@@ -7548,7 +7552,7 @@ msgstr ""
 msgid "View and Manage all of your courses"
 msgstr ""
 
-#: app/Services/TransStrings.php:1190
+#: app/Services/TransStrings.php:1191
 msgid "View comment actions"
 msgstr ""
 
@@ -7556,11 +7560,11 @@ msgstr ""
 msgid "View Community Profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:1182
+#: app/Services/TransStrings.php:1183
 msgid "View Course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1191
+#: app/Services/TransStrings.php:1192
 msgid "View more comments"
 msgstr ""
 
@@ -7568,27 +7572,27 @@ msgstr ""
 msgid "View Pending Join Requests"
 msgstr ""
 
-#: app/Services/TransStrings.php:1192
+#: app/Services/TransStrings.php:1193
 msgid "View pending members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1183
+#: app/Services/TransStrings.php:1184
 msgid "View Post actions"
 msgstr ""
 
-#: app/Services/TransStrings.php:1184
+#: app/Services/TransStrings.php:1185
 msgid "View Profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:1185
+#: app/Services/TransStrings.php:1186
 msgid "View Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:1186
+#: app/Services/TransStrings.php:1187
 msgid "View Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1187
+#: app/Services/TransStrings.php:1188
 msgid "View Space Groups"
 msgstr ""
 
@@ -7596,7 +7600,7 @@ msgstr ""
 msgid "View the comment"
 msgstr ""
 
-#: app/Services/TransStrings.php:1193
+#: app/Services/TransStrings.php:1194
 msgid "Visibility:"
 msgstr ""
 
@@ -7612,13 +7616,13 @@ msgstr ""
 msgid "Want to deactivate this license?"
 msgstr ""
 
-#: app/Services/TransStrings.php:1194
+#: app/Services/TransStrings.php:1195
 msgid ""
 "Want to use awesome GIF, upgrade to pro plan now and enjoy your surfing on "
 "Fluent community"
 msgstr ""
 
-#: app/Services/TransStrings.php:1195
+#: app/Services/TransStrings.php:1196
 msgid "Warning"
 msgstr ""
 
@@ -7636,15 +7640,15 @@ msgstr ""
 msgid "We recommend to install FluentSMTP."
 msgstr ""
 
-#: app/Services/TransStrings.php:1196
+#: app/Services/TransStrings.php:1197
 msgid "Webhook URL"
 msgstr ""
 
-#: app/Services/TransStrings.php:1197
+#: app/Services/TransStrings.php:1198
 msgid "Website"
 msgstr ""
 
-#: app/Services/TransStrings.php:1198
+#: app/Services/TransStrings.php:1199
 msgid "Website URL"
 msgstr ""
 
@@ -7652,11 +7656,11 @@ msgstr ""
 msgid "Wednesday"
 msgstr ""
 
-#: app/Services/TransStrings.php:1199
+#: app/Services/TransStrings.php:1200
 msgid "Weekly"
 msgstr ""
 
-#: app/Services/TransStrings.php:1200
+#: app/Services/TransStrings.php:1201
 #, php-format
 msgid "Weekly digest on %s"
 msgstr ""
@@ -7672,7 +7676,7 @@ msgstr ""
 msgid "Welcome back!"
 msgstr ""
 
-#: app/Services/TransStrings.php:1201
+#: app/Services/TransStrings.php:1202
 msgid "Welcome Banner"
 msgstr ""
 
@@ -7685,48 +7689,48 @@ msgstr ""
 msgid "Welcome to %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1202
+#: app/Services/TransStrings.php:1203
 #, php-format
 msgid "What's happening, %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1203
+#: app/Services/TransStrings.php:1204
 msgid "When creating a new post, check if the post title is required or not"
 msgstr ""
 
-#: app/Services/TransStrings.php:1204
+#: app/Services/TransStrings.php:1205
 msgid ""
 "When enabled, members can change their email address of the account "
 "(WordPress User account)."
 msgstr ""
 
-#: app/Services/TransStrings.php:1205
+#: app/Services/TransStrings.php:1206
 msgid ""
 "When enabled, members can change their username on their own. Otherwise, an "
 "admin or moderator can change the username."
 msgstr ""
 
-#: app/Services/TransStrings.php:1206
+#: app/Services/TransStrings.php:1207
 msgid ""
 "When enabled, the Gravatar Photo Service automatically fetches user avatars "
 "based on their email address. Gravatar is a built-in feature of WP and "
 "powered by WordPress.com"
 msgstr ""
 
-#: app/Services/TransStrings.php:1207
+#: app/Services/TransStrings.php:1208
 msgid ""
 "When enabled, the page header will remain visible at the top of the screen "
 "as users scroll down the page."
 msgstr ""
 
-#: app/Services/TransStrings.php:1208
+#: app/Services/TransStrings.php:1209
 msgid ""
 "When enabled, users will be automatically logged in to the portal when they "
 "click on the email notification links. This feature is secure and uses "
 "signed URLs. User with post edit access will not be logged in automatically."
 msgstr ""
 
-#: app/Services/TransStrings.php:1209
+#: app/Services/TransStrings.php:1210
 msgid "Who can access the portal."
 msgstr ""
 
@@ -7734,44 +7738,44 @@ msgstr ""
 msgid "Who can access your portal"
 msgstr ""
 
-#: app/Services/TransStrings.php:1210
+#: app/Services/TransStrings.php:1211
 msgid "Who can initiate an one-to-one message with the other members?"
 msgstr ""
 
-#: app/Services/TransStrings.php:1211
+#: app/Services/TransStrings.php:1212
 msgid "Who can upload the documents?"
 msgstr ""
 
-#: app/Services/TransStrings.php:1212
+#: app/Services/TransStrings.php:1213
 msgid "Who can view all members page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1213
+#: app/Services/TransStrings.php:1214
 msgid "Who can view leaderboard top members."
 msgstr ""
 
-#: app/Services/TransStrings.php:1214
+#: app/Services/TransStrings.php:1215
 msgid "Who can view membership spaces on the user profile page."
 msgstr ""
 
-#: app/Services/TransStrings.php:1215
+#: app/Services/TransStrings.php:1216
 msgid "Who can view space members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1216
+#: app/Services/TransStrings.php:1217
 msgid "Will be used on card preview and social sharing preview."
 msgstr ""
 
-#: app/Services/TransStrings.php:1217
+#: app/Services/TransStrings.php:1218
 msgid "Will be used on course card preview and social sharing preview."
 msgstr ""
 
-#: app/Services/TransStrings.php:1218
+#: app/Services/TransStrings.php:1219
 #, php-format
 msgid "Will end at: %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1327
+#: app/Services/TransStrings.php:1328
 #, php-format
 msgid "will unlock at %s"
 msgstr ""
@@ -7786,15 +7790,15 @@ msgstr ""
 msgid "WPManageNinja LLC"
 msgstr ""
 
-#: app/Services/TransStrings.php:1219
+#: app/Services/TransStrings.php:1220
 msgid "Write a comment"
 msgstr ""
 
-#: app/Services/TransStrings.php:1220
+#: app/Services/TransStrings.php:1221
 msgid "Write a reply"
 msgstr ""
 
-#: app/Services/TransStrings.php:1221
+#: app/Services/TransStrings.php:1222
 msgid "Write something here..."
 msgstr ""
 
@@ -7802,11 +7806,11 @@ msgstr ""
 msgid "XProfile not found"
 msgstr ""
 
-#: app/Services/TransStrings.php:1222
+#: app/Services/TransStrings.php:1223
 msgid "Year"
 msgstr ""
 
-#: app/Services/TransStrings.php:1223
+#: app/Services/TransStrings.php:1224
 msgid "Yes"
 msgstr ""
 
@@ -7814,36 +7818,36 @@ msgstr ""
 msgid "Yes, Change"
 msgstr ""
 
-#: app/Services/TransStrings.php:1224
+#: app/Services/TransStrings.php:1225
 msgid "Yes, Delete"
 msgstr ""
 
-#: app/Services/TransStrings.php:1225
+#: app/Services/TransStrings.php:1226
 #, php-format
 msgid "Yes, Delete the %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1227
+#: app/Services/TransStrings.php:1228
 msgid "Yes, Delete the course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1226
+#: app/Services/TransStrings.php:1227
 msgid "Yes, Delete the Space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1228
+#: app/Services/TransStrings.php:1229
 msgid "Yes, Delete this group"
 msgstr ""
 
-#: app/Services/TransStrings.php:1229
+#: app/Services/TransStrings.php:1230
 msgid "Yes, Ignore"
 msgstr ""
 
-#: app/Services/TransStrings.php:1230
+#: app/Services/TransStrings.php:1231
 msgid "Yes, Remove"
 msgstr ""
 
-#: app/Services/TransStrings.php:1231
+#: app/Services/TransStrings.php:1232
 msgid "Yes, Unpublished"
 msgstr ""
 
@@ -7892,7 +7896,7 @@ msgstr ""
 msgid "You are not allowed to update this profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:1232
+#: app/Services/TransStrings.php:1233
 msgid "You are not allowed to upload media here."
 msgstr ""
 
@@ -7908,7 +7912,7 @@ msgstr ""
 msgid "You are not allowed to view this space"
 msgstr ""
 
-#: app/Services/TransStrings.php:1328
+#: app/Services/TransStrings.php:1329
 msgid "you can edit your role here"
 msgstr ""
 
@@ -7916,7 +7920,7 @@ msgstr ""
 msgid "You can not change the slug as it is defined in the config file"
 msgstr ""
 
-#: app/Services/TransStrings.php:1233
+#: app/Services/TransStrings.php:1234
 msgid ""
 "You can not delete a group with spaces. Please move the spaces to a "
 "different group first."
@@ -7935,24 +7939,24 @@ msgid ""
 "You can not update the storage settings as it is defined in the config file"
 msgstr ""
 
-#: app/Services/TransStrings.php:1234
+#: app/Services/TransStrings.php:1235
 #, php-format
 msgid "You can upload a maximum of %s images per post."
 msgstr ""
 
-#: app/Services/TransStrings.php:1235
+#: app/Services/TransStrings.php:1236
 msgid ""
 "You can use this Webhook URL to send POST request to trigger the actions"
 msgstr ""
 
-#: app/Services/TransStrings.php:1236
+#: app/Services/TransStrings.php:1237
 #, php-format
 msgid ""
 "You can write your custom CSS here for the portal. Please do not include %1s "
 "tag"
 msgstr ""
 
-#: app/Services/TransStrings.php:1237
+#: app/Services/TransStrings.php:1238
 msgid ""
 "You can write your custom JavaScript (with script tag), analytics code, and "
 "more here for the portal"
@@ -7970,7 +7974,7 @@ msgstr ""
 msgid "You do not have permission to perform this action"
 msgstr ""
 
-#: app/Services/TransStrings.php:1238
+#: app/Services/TransStrings.php:1239
 msgid "You do not have permission to view all members"
 msgstr ""
 
@@ -7978,15 +7982,15 @@ msgstr ""
 msgid "You do not have permission to view members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1239
+#: app/Services/TransStrings.php:1240
 msgid "You do not have permission to view this page"
 msgstr ""
 
-#: app/Services/TransStrings.php:1240
+#: app/Services/TransStrings.php:1241
 msgid "You do not have permission to view this post"
 msgstr ""
 
-#: app/Services/TransStrings.php:1278
+#: app/Services/TransStrings.php:1279
 msgid ""
 "You earn points when other members like your posts, articles or comments. <b>"
 "1 like = 1 point</b>. This encourages users to produce quality content and "
@@ -8017,7 +8021,7 @@ msgstr ""
 msgid "You have been enrolled in this course."
 msgstr ""
 
-#: app/Services/TransStrings.php:1241
+#: app/Services/TransStrings.php:1242
 msgid "You have cancelled the action."
 msgstr ""
 
@@ -8061,7 +8065,7 @@ msgstr ""
 msgid "You must need to be invited to view this course"
 msgstr ""
 
-#: app/Services/TransStrings.php:1242
+#: app/Services/TransStrings.php:1243
 #, php-format
 msgid "You must type %s to confirm"
 msgstr ""
@@ -8070,7 +8074,7 @@ msgstr ""
 msgid "You need to be logged in to perform this action"
 msgstr ""
 
-#: app/Services/TransStrings.php:1243
+#: app/Services/TransStrings.php:1244
 msgid "You need to enroll in this course to access this lesson"
 msgstr ""
 
@@ -8078,7 +8082,7 @@ msgstr ""
 msgid "You need to login to enroll in this course."
 msgstr ""
 
-#: app/Services/TransStrings.php:1244
+#: app/Services/TransStrings.php:1245
 msgid "You need to upgrade to Pro to upload documents"
 msgstr ""
 
@@ -8086,35 +8090,35 @@ msgstr ""
 msgid "You request is on pending"
 msgstr ""
 
-#: app/Services/TransStrings.php:1245
+#: app/Services/TransStrings.php:1246
 msgid "You should enable this. Currently disabled."
 msgstr ""
 
-#: app/Services/TransStrings.php:1246
+#: app/Services/TransStrings.php:1247
 msgid "You will get a digest email with curated activities in the community"
 msgstr ""
 
-#: app/Services/TransStrings.php:1247
+#: app/Services/TransStrings.php:1248
 #, php-format
 msgid ""
 "You will get email notifications on new messages from your last notification."
 " Frequency: %1s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1248
+#: app/Services/TransStrings.php:1249
 msgid "You will not get any email on new messages from any members"
 msgstr ""
 
-#: app/Services/TransStrings.php:1249
+#: app/Services/TransStrings.php:1250
 msgid "You will receive an email when someone leaves a comment on your post."
 msgstr ""
 
-#: app/Services/TransStrings.php:1250
+#: app/Services/TransStrings.php:1251
 msgid ""
 "You will receive an email when someone mentions you in a comment or post."
 msgstr ""
 
-#: app/Services/TransStrings.php:1251
+#: app/Services/TransStrings.php:1252
 msgid "You will receive an email when someone replies to your comments."
 msgstr ""
 
@@ -8126,15 +8130,15 @@ msgstr ""
 msgid "Your account password"
 msgstr ""
 
-#: app/Services/TransStrings.php:1260
+#: app/Services/TransStrings.php:1261
 msgid "Your affiliate ID"
 msgstr ""
 
-#: app/Services/TransStrings.php:1252
+#: app/Services/TransStrings.php:1253
 msgid "Your Bookmarks"
 msgstr ""
 
-#: app/Services/TransStrings.php:1268
+#: app/Services/TransStrings.php:1269
 msgid ""
 "Your cloud storage settings have been defined in the wp-config.php file. "
 "These cannot be edited."
@@ -8149,11 +8153,11 @@ msgstr ""
 msgid "Your Community is Ready 🚀"
 msgstr ""
 
-#: app/Services/TransStrings.php:1254
+#: app/Services/TransStrings.php:1255
 msgid "Your Course Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1253
+#: app/Services/TransStrings.php:1254
 msgid "Your CSS Code"
 msgstr ""
 
@@ -8165,7 +8169,7 @@ msgstr ""
 msgid "Your email address"
 msgstr ""
 
-#: app/Services/TransStrings.php:1261
+#: app/Services/TransStrings.php:1262
 msgid "Your enrolled courses will be shown here"
 msgstr ""
 
@@ -8173,7 +8177,7 @@ msgstr ""
 msgid "Your Feed Name"
 msgstr ""
 
-#: app/Services/TransStrings.php:1262
+#: app/Services/TransStrings.php:1263
 msgid "Your files will be stored in the default Uploads folder"
 msgstr ""
 
@@ -8181,11 +8185,11 @@ msgstr ""
 msgid "Your first & last name"
 msgstr ""
 
-#: app/Services/TransStrings.php:1255
+#: app/Services/TransStrings.php:1256
 msgid "Your Group Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1256
+#: app/Services/TransStrings.php:1257
 msgid "Your Javascript or Analytics Code"
 msgstr ""
 
@@ -8205,11 +8209,11 @@ msgstr ""
 msgid "Your Name"
 msgstr ""
 
-#: app/Services/TransStrings.php:1263
+#: app/Services/TransStrings.php:1264
 msgid "Your option text"
 msgstr ""
 
-#: app/Services/TransStrings.php:1257
+#: app/Services/TransStrings.php:1258
 msgid "Your Photo"
 msgstr ""
 
@@ -8231,28 +8235,28 @@ msgstr ""
 msgid "Your registration verification code for %s"
 msgstr ""
 
-#: app/Services/TransStrings.php:1264
+#: app/Services/TransStrings.php:1265
 msgid "Your request to join this course is pending"
 msgstr ""
 
-#: app/Services/TransStrings.php:1265
+#: app/Services/TransStrings.php:1266
 msgid "Your saved posts"
 msgstr ""
 
-#: app/Services/TransStrings.php:1266
+#: app/Services/TransStrings.php:1267
 msgid ""
 "Your session has expired due to inactivity. Please refresh the page to "
 "continue."
 msgstr ""
 
-#: app/Services/TransStrings.php:1258
+#: app/Services/TransStrings.php:1259
 msgid "Your Space Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1259
+#: app/Services/TransStrings.php:1260
 msgid "Your Webhook Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:1329
+#: app/Services/TransStrings.php:1330
 msgid "🔔 new post available"
 msgstr ""
