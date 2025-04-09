@@ -79,6 +79,10 @@ class CourseAdminController extends Controller
             'serial'      => $serial
         ];
 
+        if($request->get('privacy') == 'public' && $request->get('course_type') == 'self_paced') {
+            $courseData['settings']['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
+        }
+
         $slug = $request->get('slug');
 
         if (!$slug) {
@@ -221,6 +225,13 @@ class CourseAdminController extends Controller
         $existingSettings['shape_svg'] = CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', ''));
         $existingSettings['disable_comments'] = $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no';
         $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
+
+
+        if($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
+            $existingSettings['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
+        } else {
+            unset($existingSettings['public_lesson_view']);
+        }
 
         $courseData['settings'] = $existingSettings;
 
@@ -478,6 +489,25 @@ class CourseAdminController extends Controller
         ];
     }
 
+    public function moveLesson(Request $request, $courseId)
+    {
+        $lessonId = $request->getSafe('lesson_id', 'intval');
+        $sectionId = $request->getSafe('section_id', 'intval');
+
+        Course::findOrFail($courseId);
+        CourseTopic::findOrFail($sectionId);
+
+        $lesson = CourseLesson::findOrFail($lessonId);
+
+        $lesson->update([
+            'parent_id' => $sectionId
+        ]);
+
+        return [
+            'message' => __('Lesson has been moved successfully', 'fluent-community')
+        ];
+    }
+
     public function createSection(Request $request, $courseId)
     {
         $this->validate($request->all(), [
@@ -652,6 +682,8 @@ class CourseAdminController extends Controller
 
     public function updateLesson(Request $request, $courseId, $lessionId)
     {
+        $course = Course::findOrFail($courseId);
+
         $lessonData = $request->get('lesson');
 
         $this->validate($lessonData, [
@@ -675,9 +707,20 @@ class CourseAdminController extends Controller
         $updatedMeta = CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []));
         $updatedMeta['document_ids'] = Arr::get($lesson->meta, 'document_ids', []);
 
+        if($mediaId = Arr::get($updatedMeta, 'featured_image_id')) {
+            $mediaUrl = wp_get_attachment_image_url($mediaId);
+            if($mediaUrl) {
+                $lesson->featured_image = $mediaUrl;
+            } else {
+                $lesson->featured_image = NULL;
+            }
+        } else {
+            $lesson->featured_image = NULL;
+        }
+
         $updateData = array_filter([
             'title'   => sanitize_text_field(Arr::get($lessonData, 'title')),
-            'message' => wp_kses_post(Arr::get($lessonData, 'message')),
+            'message' => CourseHelper::santizeLessonBody(Arr::get($lessonData, 'message')),
             'status'  => Arr::get($lessonData, 'status'),
             'meta'    => wp_parse_args($updatedMeta, $lesson->meta)
         ]);

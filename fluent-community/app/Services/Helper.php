@@ -6,6 +6,7 @@ use FluentCommunity\App\App;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Hooks\Handlers\ActivationHandler;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Meta;
@@ -445,19 +446,16 @@ class Helper
      */
     public static function getCurrentProfile($cached = true)
     {
-        $userId = get_current_user_id();
-        if (!$userId) {
-            return null;
-        }
-
         static $profile;
-
         if ($profile && $cached) {
             return $profile;
         }
 
+        $userId = get_current_user_id();
+
         if (!$userId) {
-            return null;
+            $profile = null;
+            return $profile;
         }
 
         $profile = XProfile::where('user_id', $userId)->first();
@@ -725,6 +723,9 @@ class Helper
 
             foreach ($spaces as $space) {
                 $validSpace = self::transformSpaceToLink($space);
+                if ($user) {
+                    $validSpace['unread_badge'] = self::getUnreadFeedsCounts($space->id);
+                }
 
                 if ($isComModerator && $space->type != 'course') {
                     $validSpaces[] = $validSpace;
@@ -772,6 +773,36 @@ class Helper
         }
 
         return apply_filters('fluent_community/menu_groups_for_user', $formattedGroups, $user);
+    }
+
+    public static function getUnreadFeedsCounts($spaceId)
+    {
+        static $coutsCache = null;
+        if ($coutsCache !== null) {
+            return Arr::get((array)$coutsCache, $spaceId);
+        }
+
+        $xprofile = Helper::getCurrentProfile();
+
+        if (!$xprofile || !$xprofile->last_activity) {
+            return 0;
+        }
+
+        $lastActivityDate = date('Y-m-d H:i:s', strtotime($xprofile->last_activity) - 300);
+
+        $unreadCounts = Feed::query()
+            ->select('space_id', Utility::getApp('db')->raw('COUNT(*) as feed_count'))
+            ->where('status', 'published')
+            ->where('created_at', '>', $lastActivityDate)
+            ->groupBy('space_id')
+            ->get();
+
+        $coutsCache = [];
+        foreach ($unreadCounts as $unreadCount) {
+            $coutsCache[$unreadCount->space_id] = $unreadCount->feed_count > 10 ? '10+' : $unreadCount->feed_count;
+        }
+
+        return Arr::get($coutsCache, $spaceId);
     }
 
     /**
@@ -1485,7 +1516,7 @@ class Helper
         } ?>>
             <?php $renderIcon && self::printLinkIcon($link, $fallback); ?>
             <span class="community_name"><?php echo wp_kses_post(Arr::get($link, 'title')); ?></span>
-            <?php if (Arr::get($link, 'show_lock')): ?>
+            <?php if (Arr::get($link, 'show_lock')) : ?>
                 <span class="fcom_space_lock">
                     <i class="el-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -1496,8 +1527,11 @@ class Helper
                         </svg>
                     </i>
                 </span>
+            <?php elseif ($unreadBardge = Arr::get($link, 'unread_badge')) : ?>
+                <span class="fcom_space_lock fcom_unread_count">
+                    <?php echo wp_kses_post($unreadBardge); ?>
+                </span>
             <?php endif; ?>
-
         </a>
         <?php
     }
@@ -1689,6 +1723,7 @@ class Helper
         if ($portalSlug == $requestUri) {
             return 'portal_home';
         }
+
         if (!$requestUri) {
             return false;
         }
@@ -1700,6 +1735,10 @@ class Helper
 
         $parts = explode('/', $requestUri);
         $start = $parts[0];
+
+        if (!$portalSlug && $start == 'fcom_route') {
+            return $start;
+        }
 
         $routeStats = self::portalRoutePaths();
 

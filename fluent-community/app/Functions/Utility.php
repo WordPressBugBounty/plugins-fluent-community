@@ -378,6 +378,7 @@ class Utility
             'reply_to_name'       => '',
             'email_footer'        => 'You are getting this email because you are a member of {{site_name_with_url}}.' . PHP_EOL . PHP_EOL . '{{manage_email_notification_url|Manage Your Email Notifications Preference}}.',
             'disable_powered_by'  => 'no',
+            'logo'                => ''
         ];
 
         $settings = array_filter(self::getOption('global_email_settings', $default));
@@ -1108,5 +1109,43 @@ class Utility
         $status = Arr::get($settings, 'status');
 
         return $status === 'yes';
+    }
+
+    public static function getPortalSidebarData($scope = 'sidebar')
+    {
+        $userModel = Helper::getCurrentUser();
+        $spaceGroups = Helper::getCommunityMenuGroups($userModel);
+        $settingsMenu = apply_filters('fluent_community/settings_menu', [], $userModel);
+        $menuGroups = Helper::getMenuItemsGroup('view');
+        $topInlines = Arr::get($menuGroups, 'beforeCommunityMenuItems', []);
+        $bottomLinkGroups = Arr::get($menuGroups, 'afterCommunityLinkGroups', []);
+        $primaryMenuItems = Arr::get($menuGroups, 'mainMenuItems', []);
+        $primaryMenuItems = apply_filters('fluent_community/main_menu_items', $primaryMenuItems, $scope);
+
+        return apply_filters('fluent_community/sidebar_menu_groups_config', [
+            'primaryItems'     => $primaryMenuItems,
+            'spaceGroups'      => $spaceGroups,
+            'settingsItems'    => $settingsMenu,
+            'topInlineLinks'   => $topInlines,
+            'bottomLinkGroups' => $bottomLinkGroups,
+            'is_admin'         => Helper::isSiteAdmin(),
+            'has_color_scheme' => Helper::hasColorScheme(),
+            'context'          => $scope,
+        ], $userModel);
+    }
+
+    public static function safeUnserialize($data)
+    {
+        if (!$data) {
+            return $data;
+        }
+        
+        if (is_serialized($data)) { // Don't attempt to unserialize data that wasn't serialized going in.
+            return @unserialize(trim($data), [
+                'allowed_classes' => false,
+            ]);
+        }
+
+        return $data;
     }
 }

@@ -12,7 +12,7 @@ class NotificationPref
     public static function getGlobalPrefs()
     {
         $pref = Utility::getEmailNotificationSettings();
-        $valids = ['com_my_post_mail', 'reply_my_com_mail', 'mention_mail', 'digest_email_status'];
+        $valids = ['com_my_post_mail', 'reply_my_com_mail', 'mention_mail', 'digest_email_status', 'messaging_email_status'];
 
         $pref = Arr::only($pref, $valids);
 
@@ -60,8 +60,10 @@ class NotificationPref
             if (in_array($key, $validKeys)) {
                 $validPrefs[$key] = $value ? 1 : 0;
             } else if (strpos($key, 'np_by_') === 0) {
-                // now remove the _{number} from the key
+                // This is the notification by object. We are processing per key when updating
                 $validPrefs[$key] = $value ? 1 : 0;
+            } else if ($key == 'message_email_frequency') {
+                $validPrefs[$key] = $value;
             }
         }
 
@@ -70,11 +72,11 @@ class NotificationPref
             $exist = NotificationSubscription::where('user_id', $userId)
                 ->where('notification_type', $key)
                 ->first();
+
             if ($exist) {
                 $exist->is_read = $value;
                 $exist->save();
                 $ids[] = $exist->id;
-
             } else {
                 $newData = [
                     'user_id'           => $userId,
@@ -95,10 +97,19 @@ class NotificationPref
                             // Now remove the last _{number} from the key. Make sure you are removing the last one
                             $newData['notification_type'] = substr($key, 0, strrpos($key, '_'));
                             $newData['object_id'] = $objectId;
+                            $exist = NotificationSubscription::where('user_id', $userId)
+                                ->where('notification_type', $newData['notification_type'])
+                                ->where('object_id', $objectId)
+                                ->first();
+                            if($exist) {
+                                $exist->is_read = $value;
+                                $exist->save();
+                                $ids[] = $exist->id;
+                                continue;
+                            }
                         }
                     }
                 }
-
                 $created = NotificationSubscription::create($newData);
                 $ids[] = $created->id;
             }

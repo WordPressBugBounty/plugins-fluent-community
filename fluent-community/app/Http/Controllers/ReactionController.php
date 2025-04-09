@@ -8,6 +8,7 @@ use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
+use FluentCommunity\Framework\Support\Arr;
 
 class ReactionController extends Controller
 {
@@ -95,14 +96,14 @@ class ReactionController extends Controller
             }
 
             return [
-                'message'   => 'Reaction has been removed',
+                'message'   => __('Reaction has been removed', 'fluent-community'),
                 'new_count' => $feed->reactions_count
             ];
         }
 
         if ($react) {
             return [
-                'message'   => 'You have already reacted to this post',
+                'message'   => __('You have already reacted to this post', 'fluent-community'),
                 'new_count' => $feed->reactions_count
             ];
         }
@@ -123,7 +124,7 @@ class ReactionController extends Controller
         }
 
         return [
-            'message'   => 'Reaction has been added',
+            'message'   => __('Reaction has been added', 'fluent-community'),
             'new_count' => $feed->reactions_count
         ];
     }
@@ -140,10 +141,18 @@ class ReactionController extends Controller
             ]);
         }
 
-        $voteIndexes = $request->get('vote_indexes', []);
-
-        $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $this->getUserId());
         $surveyConfig = $feed->meta['survey_config'];
+        $endDate = Arr::get($surveyConfig, 'end_date');
+        if ($endDate && strtotime($endDate) < current_time('timestamp')) {
+            return $this->sendError([
+                'message' => __('Sorry! This survey has ended', 'fluent-community')
+            ]);
+        }
+
+        $voteIndexes = $request->get('vote_indexes', []);
+        $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $this->getUserId());
+
+
         $votedOptions = $feed->getSurveyCastsByUserId($this->getUserId());
 
         foreach ($surveyConfig['options'] as $index => $option) {

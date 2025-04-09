@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.15
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,6 +220,9 @@ Absolutely! If you’re not satisfied, just request a refund within 14 days of y
 = Do I need other Fluent plugins to use FluentCommunity? =
 No, FluentCommunity works perfectly on its own. You don’t need any other Fluent or WPManageNinja plugins to use it. However, you can quickly access all the WPManageNinja right from the FluentCommunity platform.
 
+= I found a security issue, where can I report? =
+We take every security report very seriously. Please report to our website here: [Security Report Page](https://fluentcommunity.co/security-report/)
+
 
 == Installation ==
 This section describes how to install the plugin and get it working.
@@ -243,6 +246,30 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.3.1 (Date: Apr 09, 2024) =
+- Introduced Gutenberg Block in Course Lesson Editor
+- Added Option to Move Lessons Between Sections
+- Added One to One Messaging Settings
+- Added Email Notification Settings for Messaging
+- Added User Blocking Functionality for Messaging
+- Added Poll Ended Date Time
+- Added Refresh Feed Option
+- Added Option for BB Migration from Scratch
+- Added New Tab for Terms and Conditions Link
+- Added Ungrouped Spaces to the Space Groups
+- Added LightSpeed Caching issues handling
+- Added 100% Public Course!
+- Added Hook in Feeds Query
+- Added Missing Translations
+- Security: Updated Framework library to fix data unserialization issue (props to patchstack)
+- Fixed Document Lists
+- Fixed Issue with Privacy Url
+- Fixed Moderation Email Not Sending Issue
+- Fixed Course Not Deleting From Space Groups
+- Fixed Notification for Mentioned User in Comment
+- Fixed BuddyBoss Avatar and Cover Mismatch Issue
+- Improved UI-UX
 
 = 1.2.15 (Date: Mar 18, 2025) =
 - Added Add Or Remove Verification Action for FluentCRM Integration (pro)

@@ -147,6 +147,11 @@ class User extends Model
         return $this->hasMany(UserMeta::class, 'user_id', 'ID');
     }
 
+    public function messages()
+    {
+        return $this->hasMany(\FluentMessaging\App\Models\Message::class, 'user_id', 'ID');
+    }
+
     public function getGeneralData()
     {
         $user = get_user_by('ID', $this->ID);
@@ -413,9 +418,9 @@ class User extends Model
         $globalRoles = $this->getCommunityRoles();
 
         if (array_intersect($globalRoles, ['admin', 'moderator'])) {
-            $spaces = Space::get();
+            $spaces = BaseSpace::withoutGlobalScopes()->get();
         } else {
-            $spaces = Space::whereHas('members', function ($query) {
+            $spaces = BaseSpace::withoutGlobalScopes()->whereHas('members', function ($query) {
                 $query->where('user_id', $this->ID)
                     ->where('status', 'active');
             })->orWhere('privacy', 'public')->get();
@@ -492,6 +497,7 @@ class User extends Model
             $permissions = [
                 'can_create_post'    => false,
                 'registered'         => true,
+                'can_comment'        => false,
                 'can_view_posts'     => true,
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => false,
@@ -510,6 +516,7 @@ class User extends Model
                 'can_create_post'    => false,
                 'registered'         => true,
                 'can_view_posts'     => true,
+                'can_comment'        => false,
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => true,
                 'can_view_info'      => $space->privacy !== 'secret',
@@ -710,5 +717,10 @@ class User extends Model
     public function getUserMeta($metaKey, $default = null)
     {
         return get_user_meta($this->ID, $metaKey, true) ?? $default;
+    }
+
+    public function getWpUser()
+    {
+        return get_user_by('ID', $this->ID);
     }
 }

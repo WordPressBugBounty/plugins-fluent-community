@@ -350,9 +350,10 @@ class CommentsController extends Controller
 
     private function verifySpacePermission($feed)
     {
+
         if ($feed->space_id && $feed->space) {
             $user = $this->getUser(true);
-            $user->verifySpacePermission('registered', $feed->space);
+            $user->verifySpacePermission('can_comment', $feed->space);
 
             if ($feed->space->type == 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
                 throw new \Exception(esc_html__('Comments are disabled for this course', 'fluent-community'));
@@ -409,14 +410,14 @@ class CommentsController extends Controller
             }
 
             return [
-                'message'   => 'Reaction has been removed',
+                'message'   => __('Reaction has been removed', 'fluent-community'),
                 'new_count' => $feed->reactions_count
             ];
         }
 
         if ($react) {
             return [
-                'message'   => 'You have already reacted to this post',
+                'message'   => __('You have already reacted to this post', 'fluent-community'),
                 'new_count' => $feed->reactions_count
             ];
         }
@@ -449,14 +450,14 @@ class CommentsController extends Controller
 
         if ($comment->post_id != $feed->id) {
             return $this->sendError([
-                'message' => 'Invalid comment'
+                'message' => __('Invalid comment', 'fluent-community')
             ]);
         }
 
         $user = User::find(get_current_user_id());
         if ($comment->user_id != get_current_user_id() && !$user->can('delete_any_comment', $feed->space)) {
             return $this->sendError([
-                'message' => 'You are not allowed to delete this comment'
+                'message' => __('You are not allowed to delete this comment', 'fluent-community')
             ]);
         }
 
@@ -486,7 +487,7 @@ class CommentsController extends Controller
 
         if ($comment->post_id != $feed->id) {
             return $this->sendError([
-                'message' => 'Invalid comment'
+                'message' => __('Invalid comment', 'fluent-community')
             ]);
         }
 

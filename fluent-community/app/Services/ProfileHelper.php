@@ -411,4 +411,67 @@ class ProfileHelper
 
         return Helper::isModerator($currentUser);
     }
+
+
+    /**
+     * Sends a confirmation request email when a change of user email address is attempted.
+     *
+     * @param \WP_User $current_user The current user object.
+     * @param $new_email string The new email address.
+     * @return  \WP_Error|boolean $error WP_Error object.
+     */
+    public static function sendConfirmationOnProfileEmailChange(\WP_User $current_user, $newEmail)
+    {
+        if ($current_user->user_email == $newEmail) {
+            return false;
+        }
+
+        if (!is_email($newEmail)) {
+            return new \WP_Error('user_email', __('Error: The email address is not correct.', 'fluent-community'));
+        }
+
+        if (email_exists($newEmail)) {
+            delete_user_meta($current_user->ID, '_new_email');
+            return new \WP_Error('user_email', __('Error: The email address is already used.', 'fluent-community'));
+        }
+
+        $hash = md5($newEmail . time() . wp_rand());
+        $new_user_email = array(
+            'hash'     => $hash,
+            'newemail' => $newEmail
+        );
+        update_user_meta($current_user->ID, '_new_email', $new_user_email);
+
+        $sitename = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+
+        /* translators: Do not translate USERNAME, ADMIN_URL, EMAIL, SITENAME, SITEURL: those are placeholders. */
+        $email_text = __(
+            'Howdy ###USERNAME###,
+
+You recently requested to have the email address on your account changed.
+
+If this is correct, please click on the following link to change it:
+###ADMIN_URL###
+
+You can safely ignore and delete this email if you do not want to
+take this action.
+
+This email has been sent to ###EMAIL###
+
+Regards,
+All at ###SITENAME###
+###SITEURL###'
+        );
+
+        $content = apply_filters('new_user_email_content', $email_text, $new_user_email);
+
+        $content = str_replace('###USERNAME###', $current_user->user_login, $content);
+        $content = str_replace('###ADMIN_URL###', esc_url(self_admin_url('profile.php?newuseremail=' . $hash)), $content);
+        $content = str_replace('###EMAIL###', $newEmail, $content);
+        $content = str_replace('###SITENAME###', $sitename, $content);
+        $content = str_replace('###SITEURL###', home_url(), $content);
+
+        /* translators: New email address notification email subject. %s: Site title. */
+        return wp_mail($newEmail, sprintf(__('[%s] Email Change Request'), $sitename), $content);
+    }
 }

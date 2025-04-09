@@ -105,7 +105,7 @@ class CustomSanitizer
         $dom->loadXML($svg_content);
         libxml_clear_errors();
 
-        if($dom->documentElement) {
+        if ($dom->documentElement) {
             // Sanitize by removing unwanted tags and attributes
             self::sanitizeNode($dom->documentElement, $allowed_tags);
         }
@@ -416,6 +416,10 @@ class CustomSanitizer
         $settings['daily_digest_time'] = $time;
         $settings['email_footer'] = wp_kses_post(self::unslashMarkdown(Arr::get($settings, 'email_footer')));
         $settings['email_footer_rendered'] = FeedsHelper::mdToHtml($settings['email_footer']);
+
+        if (!empty($settings['logo'])) {
+            $settings['logo'] = sanitize_url($settings['logo']);
+        }
 
         return $settings;
     }

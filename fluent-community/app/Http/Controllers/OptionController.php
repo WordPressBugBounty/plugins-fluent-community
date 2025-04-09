@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Hooks\Handlers\PortalHandler;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\LockscreenService;
@@ -10,6 +11,18 @@ use FluentCommunity\Framework\Http\Request\Request;
 
 class OptionController extends Controller
 {
+
+    public function getAppVars()
+    {
+        $appVars = (new PortalHandler())->appVars();
+        unset($appVars['rest']);
+
+        return [
+            'appVars'           => $appVars,
+            'menu_links_groups' => Utility::getPortalSidebarData('sidebar')
+        ];
+    }
+
     public function getSidebarMenuHtml(Request $request)
     {
         ob_start();

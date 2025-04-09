@@ -76,7 +76,7 @@ class AdminController extends Controller
         $settings['explicit_registration'] = sanitize_text_field(Arr::get($inputs, 'explicit_registration', 'no'));
 
         $isCustomSignupPage = $settings['auth_form_type'] === 'default' && Arr::get($inputs, 'use_custom_signup_page', 'no') == 'yes';
-        if(!$isCustomSignupPage) {
+        if (!$isCustomSignupPage) {
             $settings['custom_signup_url'] = '';
             $settings['use_custom_signup_page'] = 'no';
         } else {
@@ -84,7 +84,7 @@ class AdminController extends Controller
 
             $url = Arr::get($inputs, 'custom_signup_url', '');
 
-            if(!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+            if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
                 return $this->sendError([
                     'message' => __('Please provide a valid signup URL', 'fluent-community')
                 ]);
@@ -144,8 +144,14 @@ class AdminController extends Controller
 
     public function getEmailSettings(Request $request)
     {
+        $emailSettings = Utility::getEmailNotificationSettings();
+        $globalSettings = Helper::generalSettings(false);
+        if (empty($emailSettings['logo'])) {
+            $emailSettings['global_logo'] = $globalSettings['logo'];
+        }
+
         return [
-            'email_settings' => Utility::getEmailNotificationSettings()
+            'email_settings' => $emailSettings
         ];
     }
 
@@ -153,6 +159,20 @@ class AdminController extends Controller
     {
         $prevSettings = Utility::getEmailNotificationSettings();
         $newSettings = $request->get('email_settings', []);
+
+        $logo = Arr::get($newSettings, 'logo', '');
+
+        if ($logo) {
+            $logoMedia = Helper::getMediaFromUrl($logo);
+            if ($logoMedia) {
+                $newSettings['logo'] = $logoMedia->public_url;
+                $logoMedia->update([
+                    'is_active'     => true,
+                    'user_id'       => get_current_user_id(),
+                    'object_source' => 'general'
+                ]);
+            }
+        }
 
         $newSettings = wp_parse_args($newSettings, $prevSettings);
         $newSettings = CustomSanitizer::santizeEmailSettings($newSettings);
@@ -194,13 +214,13 @@ class AdminController extends Controller
     {
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             return $this->sendError([
-                'message' => 'Sorry, you can not update this config. Please activate pro'
+                'message' => __('Sorry, you can not update this config. Please activate pro', 'fluent-community')
             ]);
         }
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
             return $this->sendError([
-                'message' => 'You can not update the storage settings as it is defined in the config file'
+                'message' => __('You can not update the storage settings as it is defined in the config file', 'fluent-community')
             ]);
         }
 
@@ -256,14 +276,14 @@ class AdminController extends Controller
 
             if (!$driver) {
                 return $this->sendError([
-                    'message' => 'Could not connect to the remote storage service. Please check your credentials'
+                    'message' => __('Could not connect to the remote storage service. Please check your credentials', 'fluent-community')
                 ]);
             }
 
             $test = $driver->testConnection();
             if (!$test || is_wp_error($test)) {
                 return $this->sendError([
-                    'message' => 'Could not connect to the remote storage service. Error: ' . is_wp_error($test) ? $test->get_error_message() : 'Unknow Error'
+                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . is_wp_error($test) ? $test->get_error_message() : 'Unknow Error'
                 ]);
             }
         }
@@ -376,8 +396,13 @@ class AdminController extends Controller
         $settings['install_fluentsmtp'] = 'yes';
         $settings['subscribe_to_newsletter'] = 'yes';
         $settings['share_data'] = 'no';
-        $settings['user_full_name'] = $currentUser->first_name ? $currentUser->first_name . ' ' . $currentUser->last_name : $currentUser->display_name;
-        $settings['user_email_address'] = $currentUser->user_email;
+        if ($currentUser) {
+            $settings['user_full_name'] = $currentUser->first_name ? $currentUser->first_name . ' ' . $currentUser->last_name : $currentUser->display_name;
+            $settings['user_email_address'] = $currentUser->user_email;
+        } else {
+            $settings['user_full_name'] = '';
+            $settings['user_email_address'] = '';
+        }
 
         return [
             'settings' => $settings

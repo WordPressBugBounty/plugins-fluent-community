@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
 
@@ -189,7 +190,7 @@ class Comment extends Model
 
     public function getMetaAttribute($value)
     {
-        $meta = maybe_unserialize($value);
+        $meta = Utility::safeUnserialize($value);
 
         if (!$meta) {
             $meta = [];

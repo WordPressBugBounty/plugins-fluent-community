@@ -32,11 +32,18 @@ class FeedsController extends Controller
             // just for validation
             $space = BaseSpace::where('slug', $bySpace)->first();
             if (!$space) {
-                return $this->sendError('Invalid space slug');
+                return $this->sendError(__('Invalid space slug', 'fluent-community'));
             }
         }
 
         $currentUserModel = $this->getUser();
+
+        $queryArgs = [
+            'selected_topic' => $selectedTopic,
+            'per_page'       => $request->get('per_page', 10),
+            'page'           => $request->get('page', 1),
+            'search'         => $search,
+        ];
 
         $feedsQuery = Feed::byContentModerationAccessStatus($currentUserModel, $space)
             ->select(Feed::$publicColumns)
@@ -76,6 +83,7 @@ class FeedsController extends Controller
 
         if ($bySpace) {
             $feedsQuery = $feedsQuery->filterBySpaceSlug($bySpace);
+            $queryArgs['space_slug'] = $bySpace;
         }
 
         if ($bySpace && !$disableSticky) {
@@ -107,11 +115,16 @@ class FeedsController extends Controller
             if ($userId != $currentUserId) {
                 $feedsQuery = $feedsQuery->byUserAccess($currentUserId);
             }
+
+            $queryArgs['user_id'] = $bySpace;
         } else {
             $feedsQuery->byUserAccess($currentUserId);
         }
 
-        do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all()]);
+        $queryArgs = array_filter($queryArgs);
+        $queryArgs['is_main_query'] = empty($queryArgs['space_slug']) && empty($queryArgs['user_id']) && empty($queryArgs['search']);
+
+        do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all(), $queryArgs]);
 
         $feeds = $feedsQuery->paginate();
 
@@ -147,7 +160,7 @@ class FeedsController extends Controller
 
             if (!$feed || !$feed->hasEditAccess(get_current_user_id())) {
                 return $this->sendError([
-                    'message' => 'You do not have permission to edit this feed'
+                    'message' => __('You do not have permission to edit this feed', 'fluent-community')
                 ]);
             }
 
@@ -412,7 +425,7 @@ class FeedsController extends Controller
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
 
-        if($existingFeed->status != 'published') {
+        if ($existingFeed->status != 'published') {
             return $this->sendError([
                 'message' => __('Sorry, You can only edit a post if it\'s in published state.', 'fluent-community')
             ]);
@@ -660,7 +673,7 @@ class FeedsController extends Controller
             ->first();
 
         if ($exist) {
-            return $this->sendError(['message' => 'No duplicate post please!']);
+            return $this->sendError(['message' => __('No duplicate post please!', 'fluent-community')]);
         }
 
         return false;
@@ -871,7 +884,7 @@ class FeedsController extends Controller
 
         if (!$mediaData) {
             return $this->sendError([
-                'message' => 'Error while uploading the media'
+                'message' => __('Error while uploading the media', 'fluent-community')
             ]);
         }
 
@@ -973,7 +986,7 @@ class FeedsController extends Controller
         $start = microtime(true);
 
         do_action('fluent_communit/track_activity');
-        $lastLoadedTimeStamp = $request->get('last_fetched_timestamp');
+        $lastLoadedTimeStamp = (int) $request->get('last_fetched_timestamp');
 
         //check if $lastLoadedTimeStamp is valid date
         if (!$lastLoadedTimeStamp || (current_time('timestamp') - $lastLoadedTimeStamp) > HOUR_IN_SECONDS) {

@@ -12,7 +12,7 @@ class FileSystem
     {
         $arr = explode('/', $file);
         $fileName = end($arr);
-        return file_get_contents( $this->getDir() . '/' . $fileName ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        return file_get_contents($this->getDir() . '/' . $fileName); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
     }
 
     /**
@@ -124,22 +124,22 @@ class FileSystem
 
         $folderName = apply_filters('fluent_community/upload_folder_name', FLUENT_COMMUNITY_UPLOAD_DIR);
 
-        $param['url'] = $param['baseurl'] .'/'. $folderName;
+        $param['url'] = $param['baseurl'] . '/' . $folderName;
 
-        $param['path'] = $param['basedir'] .'/'. $folderName;
+        $param['path'] = $param['basedir'] . '/' . $folderName;
 
         if (!is_dir($param['path'])) {
-             mkdir($param['path'], 0755); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
-             $htaccessContent = '# END FluentCommunity\n# Disable parsing of PHP for some server configurations.\n<Files *>\nSetHandler none\nSetHandler default-handler\nOptions -ExecCGI\nRemoveHandler .cgi .php .php3 .php4 .php5 .phtml .pl .py .pyc .pyo\n</Files>\n<IfModule mod_php5.c>\nphp_flag engine off\n</IfModule>\n# END FluentCommunity';
+            mkdir($param['path'], 0755); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+            $htaccessContent = '# END FluentCommunity\n# Disable parsing of PHP for some server configurations.\n<Files *>\nSetHandler none\nSetHandler default-handler\nOptions -ExecCGI\nRemoveHandler .cgi .php .php3 .php4 .php5 .phtml .pl .py .pyc .pyo\n</Files>\n<IfModule mod_php5.c>\nphp_flag engine off\n</IfModule>\n# END FluentCommunity';
 
-             file_put_contents( $param['basedir'].'/'.$folderName.'/.htaccess', $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            file_put_contents($param['basedir'] . '/' . $folderName . '/.htaccess', $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         }
 
-        if(!file_exists($param['basedir'].'/'.$folderName.'/index.php')) {
+        if (!file_exists($param['basedir'] . '/' . $folderName . '/index.php')) {
 
             $indexStubContent = "<?php\n// Silence is golden.\n";
 
-            file_put_contents( $param['basedir'].'/'.$folderName.'/index.php', $indexStubContent ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            file_put_contents($param['basedir'] . '/' . $folderName . '/index.php', $indexStubContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         }
 
         return $param;
@@ -153,8 +153,9 @@ class FileSystem
     public function _renameFileName($file)
     {
         $prefix = 'fluentcom-' . md5(wp_generate_uuid4()) . '-fluentcom-';
+        $originalName = $file['name'];
         $file['name'] = $prefix . $file['name'];
-
+        $file['name'] = apply_filters('fluent_community/generated_upload_file_name', $file['name'], $originalName, $file);
         return $file;
     }
 

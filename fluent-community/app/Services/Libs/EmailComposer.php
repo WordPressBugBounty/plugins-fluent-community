@@ -83,7 +83,7 @@ class EmailComposer
         if ($block['type'] == 'boxed_content') {
             return (string)App::make('view')->make('email.Default._user_box_content', [
                 'user_name'    => $block['options']['user']->display_name,
-                'user_avatar' => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
+                'user_avatar'  => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
                 'content'      => $block['content'],
                 'permalink'    => $block['options']['permalink'],
                 'post_content' => $block['options']['post_content']
@@ -102,7 +102,7 @@ class EmailComposer
         }
 
         if ($block['type'] == 'html_content') {
-            return $block['content'];
+            return (string)$block['content'];
         }
 
         return $block['content'];
@@ -115,6 +115,23 @@ class EmailComposer
         }
 
         return $this;
+    }
+
+    public function setDefaultLogo()
+    {
+        $emailSettings = Utility::getEmailNotificationSettings();
+
+        if (!empty($emailSettings['logo'])) {
+            $this->logo = $emailSettings['logo'];
+        } else {
+            $generalSettings = Helper::generalSettings();
+            if (!empty($generalSettings['logo'])) {
+                $this->logo = $generalSettings['logo'];
+            }
+        }
+
+        return $this;
+
     }
 
     public function addFooterLine($type, $line)
@@ -134,7 +151,7 @@ class EmailComposer
 
         if (!$footerTextHtml) {
             if ($settings['disable_powered_by'] == 'no') {
-                $poweredBy = '<a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; margin: 10px 0; text-decoration: none;">Powered by FluentCommunity</a>';
+                $poweredBy = '<a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; margin: 15px 0; display: block; text-decoration: none;color: #9a9ea6;">Powered by FluentCommunity</a>';
                 $this->addFooterLine('paragraph', $poweredBy);
             }
             return $this;
@@ -169,7 +186,7 @@ class EmailComposer
         $this->addFooterLine('paragraph', $footerTextHtml);
 
         if ($settings['disable_powered_by'] == 'no') {
-            $poweredBy = '<p class="powered_by"><a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; text-decoration: none;">Powered by FluentCommunity</a></p>';
+            $poweredBy = '<p style="margin-top: 10px;" class="powered_by"><a href="https://fluentcommunity.co/discount-deal/?utm_campaign=email&utm_source=footer&utm_medium=email" target="_blank" style="font-size: 12px; margin: 15px 0; text-decoration: none;color: #9a9ea6; display: block;">Powered by FluentCommunity</a></p>';
             $this->addFooterLine('paragraph', $poweredBy);
         }
 
@@ -198,7 +215,6 @@ class EmailComposer
         }
 
         $data['footerLines'] = $footerLines;
-
 
         if ($this->headingBlocks) {
             $data['headingContent'] = $this->complileHeadingBlocks();

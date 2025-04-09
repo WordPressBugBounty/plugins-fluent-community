@@ -2,6 +2,8 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
+
 class Term extends Model
 {
     protected $table = 'fcom_terms';
@@ -55,7 +57,7 @@ class Term extends Model
 
     public function getSettingsAttribute($value)
     {
-        $settings = maybe_unserialize($value);
+        $settings = Utility::safeUnserialize($value);
 
         if (!$settings) {
             $settings = [];

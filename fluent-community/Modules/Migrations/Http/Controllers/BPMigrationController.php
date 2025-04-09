@@ -5,8 +5,6 @@ namespace FluentCommunity\Modules\Migrations\Http\Controllers;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
-use FluentCommunity\App\Models\Feed;
-use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
@@ -43,7 +41,7 @@ class BPMigrationController extends Controller
             ],
             'stats'          => BPMigratorHelper::getBbDataStats(),
             'current_status' => $previousConfig,
-            'has_previous'   => !empty($previousConfig['migrated_groups'])
+            'has_previous'   => !empty($previousConfig['migrated_groups']) || !empty($previousConfig['last_migrated_user_id'])
         ];
 
         return $data;
@@ -53,6 +51,10 @@ class BPMigrationController extends Controller
     {
         if ($request->get('reset_migration') === 'yes') {
             update_option('_fcom_bp_migrations_status', [], 'no');
+        }
+
+        if ($request->get('delete_current_data') === 'yes') {
+            $this->deleteCurrentData();
         }
 
         $configMap = (array)$request->get('config', []);
@@ -417,4 +419,18 @@ class BPMigrationController extends Controller
         return $newData;
     }
 
+    private function deleteCurrentData()
+    {
+        // reset fluent community data
+        \FluentCommunity\App\Models\Feed::truncate();
+        \FluentCommunity\App\Models\Comment::truncate();
+        \FluentCommunity\App\Models\Reaction::truncate();
+        \FluentCommunity\App\Models\Media::truncate();
+        \FluentCommunity\App\Models\Activity::truncate();
+        \FluentCommunity\App\Models\XProfile::truncate();
+
+        // reset buddypress meta data
+        fluentCommunityApp('db')->table('bp_groups_groupmeta')->where('meta_key', '_fcom_space_id')->delete();
+        fluentCommunityApp('db')->table('bp_activity_meta')->where('meta_key', '_fcom_feed_id')->delete();
+    }
 }

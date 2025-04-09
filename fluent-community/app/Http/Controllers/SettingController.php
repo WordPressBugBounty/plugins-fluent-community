@@ -113,7 +113,7 @@ class SettingController extends Controller
 
             $formattedAfterCommunityGroups[] = [
                 'title' => sanitize_text_field($afterCommunityLinkGroup['title']),
-                'slug'  => $afterCommunityLinkGroup['slug'] ?: 'custom_footer_group_' . time(),
+                'slug'  => !empty($afterCommunityLinkGroup['slug']) ? $afterCommunityLinkGroup['slug'] : 'custom_footer_group_' . time(),
                 'items' => $this->formatMenuGroup($afterCommunityLinkGroup['items'], [])
             ];
         }
@@ -241,7 +241,7 @@ class SettingController extends Controller
     {
         if (!current_user_can('install_plugins')) {
             return $this->sendError([
-                'message' => 'You do not have permission to install plugins'
+                'message' => __('You do not have permission to install plugins', 'fluent-community')
             ]);
         }
 

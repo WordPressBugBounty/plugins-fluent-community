@@ -306,7 +306,7 @@ class BaseSpace extends Model
 
     public function getSettingsAttribute($value)
     {
-        $settings = maybe_unserialize($value);
+        $settings = Utility::safeUnserialize($value);
 
         if (!$settings) {
             $settings = [];

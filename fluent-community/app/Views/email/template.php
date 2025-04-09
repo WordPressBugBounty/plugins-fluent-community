@@ -82,6 +82,10 @@
                 font-weight: inherit;
                 line-height: inherit;
             }
+
+            img {
+                max-width: 100%;
+            }
         }
 
         .footer p {

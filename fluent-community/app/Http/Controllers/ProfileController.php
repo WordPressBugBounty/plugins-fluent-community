@@ -44,7 +44,6 @@ class ProfileController extends Controller
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
 
-
         $isOwn = $xprofile->user_id == get_current_user_id();
 
         $isAdmin = Helper::isSiteAdmin();
@@ -61,16 +60,20 @@ class ProfileController extends Controller
 
         $profile['profile_navs'] = [
             [
-                'title' => __('About', 'fluent-community'),
-                'url'   => $profileBaseUrl,
-                'route' => [
+                'slug'          => 'user_profile',
+                'title'         => __('About', 'fluent-community'),
+                'url'           => $profileBaseUrl,
+                'wrapper_class' => 'fcom_profile_about',
+                'route'         => [
                     'name' => 'user_profile'
                 ]
             ],
             [
-                'title' => __('Posts', 'fluent-community'),
-                'url'   => $profileBaseUrl . 'posts',
-                'route' => [
+                'slug'          => 'user_profile_feeds',
+                'title'         => __('Posts', 'fluent-community'),
+                'wrapper_class' => 'fcom_profile_posts',
+                'url'           => $profileBaseUrl . 'posts',
+                'route'         => [
                     'name' => 'user_profile_feeds'
                 ]
             ]
@@ -78,18 +81,22 @@ class ProfileController extends Controller
 
         if ($profile['canViewUserSpaces']) {
             $profile['profile_navs'][] = [
-                'title' => __('Spaces', 'fluent-community'),
-                'url'   => $profileBaseUrl . 'spaces',
-                'route' => [
+                'slug'          => 'user_spaces',
+                'wrapper_class' => 'fcom_profile_spaces',
+                'title'         => __('Spaces', 'fluent-community'),
+                'url'           => $profileBaseUrl . 'spaces',
+                'route'         => [
                     'name' => 'user_spaces'
                 ]
             ];
         }
 
         $profile['profile_navs'][] = [
-            'title' => __('Comments', 'fluent-community'),
-            'url'   => $profileBaseUrl . 'comments',
-            'route' => [
+            'slug'          => 'user_comments',
+            'wrapper_class' => 'fcom_profile_comments',
+            'title'         => __('Comments', 'fluent-community'),
+            'url'           => $profileBaseUrl . 'comments',
+            'route'         => [
                 'name' => 'user_comments'
             ]
         ];
@@ -116,7 +123,7 @@ class ProfileController extends Controller
                 $media = Helper::getMediaFromUrl($updateData[$type]);
                 if (!$media || $media->is_active) {
                     return $this->sendError([
-                        'message' => 'Invalid media image. Please upload a new one.'
+                        'message' => __('Invalid media image. Please upload a new one.', 'fluent-community')
                     ]);
                 }
 
@@ -180,7 +187,7 @@ class ProfileController extends Controller
             $xProfile = XProfile::where('username', $userName)->firstOrFail();
             if ($xProfile->user_id != get_current_user_id()) {
                 return $this->sendError([
-                    'message' => 'You are not allowed to update this profile'
+                    'message' => __('You are not allowed to update this profile', 'fluent-community')
                 ]);
             }
         }
@@ -277,6 +284,7 @@ class ProfileController extends Controller
         }
 
         $updateData['display_name'] = trim(sanitize_text_field(Arr::get($data, 'first_name') . ' ' . Arr::get($data, 'last_name')));
+
         $updateData['short_description'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim(Arr::get($data, 'short_description'))));
         $meta['website'] = sanitize_url(Arr::get($data, 'website'));
         $socialLinks = Arr::get($data, 'social_links', []);
@@ -319,15 +327,27 @@ class ProfileController extends Controller
         }
 
         $isOwn = $xProfile->user_id == get_current_user_id();
-        if (current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn)) {
+        $canEditUsers = current_user_can('edit_users');
+        if ($canEditUsers || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn)) {
             $emailAddress = Arr::get($data, 'email');
 
             if ($emailAddress && is_email($emailAddress) && $emailAddress != $xProfile->user->user_email) {
-                $emailTaken = User::where('user_email', $emailAddress)->where('ID', '!=', $xProfile->user_id)->exists();
-                if ($emailTaken) {
+                $owner_id = email_exists($xProfile->user->user_email);
+                if ($owner_id != $xProfile->user_id) {
                     return $this->sendError([
                         'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community')
                     ]);
+                }
+
+                // Let's check if it's their own
+                $requireVerification = $isOwn && !$canEditUsers;
+                if ($requireVerification) {
+                    $currentUser = get_user_by('ID', $xProfile->user_id);
+                    ProfileHelper::sendConfirmationOnProfileEmailChange($currentUser, $emailAddress);
+                    return [
+                        'message' => __('Email address change is pending. Please check your inbox to verify the new email address.', 'fluent-community'),
+                        'profile' => $xProfile
+                    ];
                 }
 
                 wp_update_user([
@@ -381,7 +401,7 @@ class ProfileController extends Controller
 
         if (!$xProfile) {
             return $this->sendError([
-                'message' => 'Profile not found'
+                'message' => __('Profile not found', 'fluent-community')
             ]);
         }
 
@@ -422,6 +442,7 @@ class ProfileController extends Controller
         $xProfile = $this->verfifyAndGetProfile($userName);
 
         $globalPreferances = NotificationPref::getGlobalPrefs();
+
         $userPrefs = NotificationSubscription::where('user_id', $xProfile->user_id)
             ->select(['notification_type', 'is_read', 'object_id'])
             ->get();
@@ -430,6 +451,21 @@ class ProfileController extends Controller
         $spaceWisePrefs = [];
         foreach ($userPrefs as $pref) {
             if (!$pref->object_id) {
+                if ($pref->notification_type === 'message_email_frequency') {
+                    $maps = [
+                        0 => 'disabled',
+                        1 => 'hourly',
+                        2 => 'daily',
+                        3 => 'weekly'
+                    ];
+
+                    if ($maps[$pref->is_read]) {
+                        $userGlobalPrefs[$pref->notification_type] = $maps[$pref->is_read];
+                    } else {
+                        $userGlobalPrefs[$pref->notification_type] = 'default';
+                    }
+                    continue;
+                }
                 $userGlobalPrefs[$pref->notification_type] = $pref->is_read ? 'yes' : 'no';
             } else {
                 if (empty($spaceWisePrefs[$pref->object_id])) {
@@ -439,12 +475,17 @@ class ProfileController extends Controller
             }
         }
 
+        $messagingConfig = Utility::getOption('_messaging_settings', []);
+        $isGlobalPerUser = Arr::get($messagingConfig, 'messaging_email_frequency') == 'disabled';
+
         $userGlobalPrefsDefaults = [
-            'digest_mail'       => Arr::get($globalPreferances, 'digest_email_status') ? 'yes' : 'no',
-            'mention_mail'      => Arr::get($globalPreferances, 'mention_mail') ? 'yes' : 'no',
-            'reply_my_com_mail' => Arr::get($globalPreferances, 'reply_my_com_mail') ? 'yes' : 'no',
-            'com_my_post_mail'  => Arr::get($globalPreferances, 'com_my_post_mail') ? 'yes' : 'no',
+            'digest_mail'             => Arr::get($globalPreferances, 'digest_email_status') ? 'yes' : 'no',
+            'mention_mail'            => Arr::get($globalPreferances, 'mention_mail') ? 'yes' : 'no',
+            'reply_my_com_mail'       => Arr::get($globalPreferances, 'reply_my_com_mail') ? 'yes' : 'no',
+            'com_my_post_mail'        => Arr::get($globalPreferances, 'com_my_post_mail') ? 'yes' : 'no',
+            'message_email_frequency' => $isGlobalPerUser ? 'disabled' : 'default'
         ];
+
         $userGlobalPrefs = wp_parse_args($userGlobalPrefs, $userGlobalPrefsDefaults);
 
         $spaceGroups = SpaceGroup::with(['spaces' => function ($query) {
@@ -490,7 +531,6 @@ class ProfileController extends Controller
             }
         }
 
-
         // let's find the other spaces
         $otherSpaces = Space::whereHas('members', function ($q) use ($xProfile) {
             $q->where('user_id', $xProfile->user_id);
@@ -500,9 +540,7 @@ class ProfileController extends Controller
             ->get();
 
         if (!$otherSpaces->isEmpty()) {
-
             $formattedSpaces = [];
-
             foreach ($otherSpaces as $space) {
                 $pref = '';
                 if (isset($spaceWisePrefs[$space->id])) {
@@ -546,10 +584,11 @@ class ProfileController extends Controller
         }
 
         return [
-            'user_globals'   => (object)$userGlobalPrefs,
-            'spaceGroups'    => $formattedSpaceGroups,
-            'space_prefs'    => $spaceWisePrefs,
-            'digestEmailDay' => $digestDay
+            'user_globals'                      => (object)$userGlobalPrefs,
+            'spaceGroups'                       => $formattedSpaceGroups,
+            'space_prefs'                       => $spaceWisePrefs,
+            'digestEmailDay'                    => $digestDay,
+            'default_messaging_email_frequency' => Arr::get($messagingConfig, 'messaging_email_status') !== 'yes' ? 'no' : Arr::get($messagingConfig, 'messaging_email_frequency'),
         ];
     }
 
@@ -560,9 +599,23 @@ class ProfileController extends Controller
         $userPrefs = $request->get('user_globals', []);
         $sapcePrefs = $request->get('space_prefs', []);
 
+        $messagingPref = Arr::get($userPrefs, 'message_email_frequency');
+
         $userPrefs = array_map(function ($item) {
             return $item == 'yes' ? 1 : 0;
         }, $userPrefs);
+
+        if ($messagingPref == 'hourly') {
+            $userPrefs['message_email_frequency'] = 1;
+        } else if ($messagingPref == 'daily') {
+            $userPrefs['message_email_frequency'] = 2;
+        } else if ($messagingPref == 'disabled') {
+            $userPrefs['message_email_frequency'] = 0;
+        } else if ($messagingPref == 'weekly') {
+            $userPrefs['message_email_frequency'] = 3;
+        } else {
+            unset($userPrefs['message_email_frequency']);
+        }
 
         foreach ($sapcePrefs as $spaceId => $pref) {
             $spaceId = (int)$spaceId;
@@ -577,7 +630,6 @@ class ProfileController extends Controller
                 $userPrefs['np_by_admin_mail_' . $spaceId] = 1;
             }
         }
-
 
         NotificationPref::updateUserPrefs($xProfile->user_id, $userPrefs);
 

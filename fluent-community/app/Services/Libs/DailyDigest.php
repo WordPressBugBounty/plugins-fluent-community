@@ -87,9 +87,9 @@ class DailyDigest
                     'link' => ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications/'), $this->user->ID)
                 ]);
             }
-
         }
-        $emailComposer->setLogo(\FluentCommunity\Framework\Support\Arr::get($settings, 'logo'));
+
+        $emailComposer->setDefaultLogo();
 
         $emailComposer->setDefaultFooter();
 

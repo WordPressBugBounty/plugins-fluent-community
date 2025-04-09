@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Models;
 
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\Framework\Support\Arr;
 
 class SpaceGroup extends Model
@@ -124,7 +125,7 @@ class SpaceGroup extends Model
 
     public function getSettingsAttribute($value)
     {
-        $settings = maybe_unserialize($value);
+        $settings = Utility::safeUnserialize($value);
 
         if (!$settings) {
             $settings = [];

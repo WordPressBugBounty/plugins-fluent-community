@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Auth\Classes;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\User;
@@ -76,7 +77,7 @@ class Invitation extends Model
 
     public function getMetaAttribute($value)
     {
-        $meta = maybe_unserialize($value);
+        $meta = Utility::safeUnserialize($value);
 
         if (!$meta) {
             $meta = [

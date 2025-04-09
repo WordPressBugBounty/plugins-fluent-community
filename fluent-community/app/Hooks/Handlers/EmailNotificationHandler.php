@@ -171,7 +171,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep(1000000 - ($timeTaken * 1000000));
+                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -296,7 +296,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep(1000000 - ($timeTaken * 1000000));
+                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -394,7 +394,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep(1000000 - ($timeTaken * 1000000));
+                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -436,7 +436,7 @@ class EmailNotificationHandler
             'link' => $postPermalink
         ]);
 
-        // $emailComposer->setLogo(\FluentCommunity\Framework\Support\Arr::get($settting, 'logo'));
+        // $emailComposer->setDefaultLogo();
         $emailComposer->setDefaultFooter($withPlaceholder);
 
         return $emailComposer->getHtml();
@@ -467,7 +467,7 @@ class EmailNotificationHandler
             'link' => $postPermalink
         ]);
 
-        //  $emailComposer->setLogo(\FluentCommunity\Framework\Support\Arr::get($settting, 'logo'));
+        //  $emailComposer->setDefaultLogo();
 //        $emailComposer->addFooterLine('paragraph', sprintf(__('You are getting this email because you are a member of %s', 'fluent-community'), '<a style="text-decoration: underline !important;" href="' . Helper::baseUrl() . '">' . get_bloginfo('name') . '</a>'));
 
         $emailComposer->setDefaultFooter();
@@ -535,7 +535,6 @@ class EmailNotificationHandler
 
         $startAt = microtime(true);
         $maxSendPerSecond = 10;
-
         $sentCount = 0;
 
         foreach ($users as $user) {
@@ -554,7 +553,7 @@ class EmailNotificationHandler
             if ($sentCount % $maxSendPerSecond === 0) {
                 $timeTaken = microtime(true) - $startAt;
                 if ($timeTaken < 1) {
-                    usleep(1000000 - ($timeTaken * 1000000));
+                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
                 }
                 $startAt = microtime(true);
             }
@@ -589,7 +588,7 @@ class EmailNotificationHandler
             'link' => Helper::baseUrl('space/' . $space->slug . '/members?view_pending=yes')
         ]);
 
-        $emailComposer->setLogo(\FluentCommunity\Framework\Support\Arr::get($settting, 'logo'));
+        $emailComposer->setDefaultLogo();
 
         $emailComposer->addFooterLine('paragraph', sprintf(__('You are getting this email because you are an admin/moderator at %s', 'fluent-community'), '<a style="text-decoration: underline !important;" href="' . $space->getPermalink() . '">' . $space->title . '</a>'));
 

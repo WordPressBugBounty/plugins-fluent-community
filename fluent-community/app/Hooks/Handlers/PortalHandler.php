@@ -18,6 +18,7 @@ use FluentCommunity\App\Vite;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Modules\Auth\AuthHelper;
+use FluentCommunity\Modules\Course\Model\CourseLesson;
 
 class PortalHandler
 {
@@ -185,7 +186,8 @@ class PortalHandler
                         <a href="<?php echo esc_url(Helper::baseUrl('admin/settings')); ?>">
                             <span class="el-icon">
                             <svg viewBox="0 0 1024 1024" data-v-d2e47025="">
-                                <path fill="currentColor" d="M600.704 64a32 32 0 0 1 30.464 22.208l35.2 109.376c14.784 7.232 28.928 15.36 42.432 24.512l112.384-24.192a32 32 0 0 1 34.432 15.36L944.32 364.8a32 32 0 0 1-4.032 37.504l-77.12 85.12a357.12 357.12 0 0 1 0 49.024l77.12 85.248a32 32 0 0 1 4.032 37.504l-88.704 153.6a32 32 0 0 1-34.432 15.296L708.8 803.904c-13.44 9.088-27.648 17.28-42.368 24.512l-35.264 109.376A32 32 0 0 1 600.704 960H423.296a32 32 0 0 1-30.464-22.208L357.696 828.48a351.616 351.616 0 0 1-42.56-24.64l-112.32 24.256a32 32 0 0 1-34.432-15.36L79.68 659.2a32 32 0 0 1 4.032-37.504l77.12-85.248a357.12 357.12 0 0 1 0-48.896l-77.12-85.248A32 32 0 0 1 79.68 364.8l88.704-153.6a32 32 0 0 1 34.432-15.296l112.32 24.256c13.568-9.152 27.776-17.408 42.56-24.64l35.2-109.312A32 32 0 0 1 423.232 64H600.64zm-23.424 64H446.72l-36.352 113.088-24.512 11.968a294.113 294.113 0 0 0-34.816 20.096l-22.656 15.36-116.224-25.088-65.28 113.152 79.68 88.192-1.92 27.136a293.12 293.12 0 0 0 0 40.192l1.92 27.136-79.808 88.192 65.344 113.152 116.224-25.024 22.656 15.296a294.113 294.113 0 0 0 34.816 20.096l24.512 11.968L446.72 896h130.688l36.48-113.152 24.448-11.904a288.282 288.282 0 0 0 34.752-20.096l22.592-15.296 116.288 25.024 65.28-113.152-79.744-88.192 1.92-27.136a293.12 293.12 0 0 0 0-40.256l-1.92-27.136 79.808-88.128-65.344-113.152-116.288 24.96-22.592-15.232a287.616 287.616 0 0 0-34.752-20.096l-24.448-11.904L577.344 128zM512 320a192 192 0 1 1 0 384 192 192 0 0 1 0-384m0 64a128 128 0 1 0 0 256 128 128 0 0 0 0-256"></path>
+                                <path fill="currentColor"
+                                      d="M600.704 64a32 32 0 0 1 30.464 22.208l35.2 109.376c14.784 7.232 28.928 15.36 42.432 24.512l112.384-24.192a32 32 0 0 1 34.432 15.36L944.32 364.8a32 32 0 0 1-4.032 37.504l-77.12 85.12a357.12 357.12 0 0 1 0 49.024l77.12 85.248a32 32 0 0 1 4.032 37.504l-88.704 153.6a32 32 0 0 1-34.432 15.296L708.8 803.904c-13.44 9.088-27.648 17.28-42.368 24.512l-35.264 109.376A32 32 0 0 1 600.704 960H423.296a32 32 0 0 1-30.464-22.208L357.696 828.48a351.616 351.616 0 0 1-42.56-24.64l-112.32 24.256a32 32 0 0 1-34.432-15.36L79.68 659.2a32 32 0 0 1 4.032-37.504l77.12-85.248a357.12 357.12 0 0 1 0-48.896l-77.12-85.248A32 32 0 0 1 79.68 364.8l88.704-153.6a32 32 0 0 1 34.432-15.296l112.32 24.256c13.568-9.152 27.776-17.408 42.56-24.64l35.2-109.312A32 32 0 0 1 423.232 64H600.64zm-23.424 64H446.72l-36.352 113.088-24.512 11.968a294.113 294.113 0 0 0-34.816 20.096l-22.656 15.36-116.224-25.088-65.28 113.152 79.68 88.192-1.92 27.136a293.12 293.12 0 0 0 0 40.192l1.92 27.136-79.808 88.192 65.344 113.152 116.224-25.024 22.656 15.296a294.113 294.113 0 0 0 34.816 20.096l24.512 11.968L446.72 896h130.688l36.48-113.152 24.448-11.904a288.282 288.282 0 0 0 34.752-20.096l22.592-15.296 116.288 25.024 65.28-113.152-79.744-88.192 1.92-27.136a293.12 293.12 0 0 0 0-40.256l-1.92-27.136 79.808-88.128-65.344-113.152-116.288 24.96-22.592-15.232a287.616 287.616 0 0 0-34.752-20.096l-24.448-11.904L577.344 128zM512 320a192 192 0 1 1 0 384 192 192 0 0 1 0-384m0 64a128 128 0 1 0 0 256 128 128 0 0 0 0-256"></path>
                             </svg>
                         </a>
                     </li>
@@ -295,7 +297,7 @@ class PortalHandler
         <?php
     }
 
-    protected function appVars()
+    public function appVars()
     {
         $userModel = User::where('ID', get_current_user_id())->first();
         $xprofile = null;
@@ -551,40 +553,45 @@ class PortalHandler
                     'prevPages'          => \sprintf(__('Previous %s pages', 'fluent-community'), '{pager}'),
                     'total'              => \sprintf(__('Total %s', 'fluent-community'), '{total}'),
                 ],
-                'table' => [
-                    'clearFilter' => __('All', 'fluent-community'),
+                'table'      => [
+                    'clearFilter'   => __('All', 'fluent-community'),
                     'confirmFilter' => __('Confirm', 'fluent-community'),
-                    'emptyText' => __('No Data', 'fluent-community'),
-                    'resetFilter' => __('Reset', 'fluent-community'),
-                    'sumText' => __('Sum', 'fluent-community'),
+                    'emptyText'     => __('No Data', 'fluent-community'),
+                    'resetFilter'   => __('Reset', 'fluent-community'),
+                    'sumText'       => __('Sum', 'fluent-community'),
                 ],
-                'image' => [
+                'image'      => [
                     'error' => __('Failed to Load', 'fluent-community'),
                 ],
-                'upload' => [
-                    'continue' => __('Continue', 'fluent-community'),
-                    'delete' => __('Delete', 'fluent-community'),
+                'upload'     => [
+                    'continue'  => __('Continue', 'fluent-community'),
+                    'delete'    => __('Delete', 'fluent-community'),
                     'deleteTip' => __('press delete to remove', 'fluent-community'),
-                    'preview' => __('Preview', 'fluent-community'),
+                    'preview'   => __('Preview', 'fluent-community'),
                 ],
-                'select' => [
-                    'loading' => __('Loading', 'fluent-community'),
-                    'noData' => __('No data', 'fluent-community'),
-                    'noMatch' => __('No matching data', 'fluent-community'),
+                'select'     => [
+                    'loading'     => __('Loading', 'fluent-community'),
+                    'noData'      => __('No data', 'fluent-community'),
+                    'noMatch'     => __('No matching data', 'fluent-community'),
                     'placeholder' => __('Select', 'fluent-community'),
                 ]
+            ],
+            'wp_lesson_editor_frame'    => site_url('?fluent_community_block_editor=1'),
+            'lazy_styles'               => [
+                'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
+                'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
             ]
         ]);
 
         if ($xprofile) {
             $portalVars['mobileMenuItems'][] = [
-                'route' => [
+                'route'    => [
                     'name'   => 'user_profile',
                     'params' => [
                         'username' => $xprofile->username
                     ]
                 ],
-                'icon_svg'  => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
+                'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
             ];
         }
 
@@ -615,6 +622,7 @@ class PortalHandler
 
     protected function renderFullApp()
     {
+        do_action('litespeed_control_set_nocache', 'fluentcommunity api request');
         // set no cache headers
         nocache_headers();
 
@@ -673,7 +681,6 @@ class PortalHandler
             }
 
             do_action('fluent_community/portal_render_for_user', $xprofile);
-            do_action('fluent_communit/track_activity');
         }
 
         $data = $this->getAppData();
@@ -799,7 +806,8 @@ class PortalHandler
             'user_profile',
             'community_view',
             'course_view',
-            'feed_view'
+            'feed_view',
+            'lesson_view'
         ];
 
         if (!in_array($dynamicRoute, $validGroups)) {
@@ -854,10 +862,9 @@ class PortalHandler
 
         if ($dynamicRoute == 'feed_view') {
             $uriParts = explode('/', $this->currentPath);
-
             if (count($uriParts) >= 2) {
                 $postSlug = end($uriParts);
-                $feed = Feed::where('slug', $postSlug)
+                $feed = Feed::query()->withoutGlobalScopes()->where('slug', $postSlug)
                     ->with([
                         'xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
@@ -892,6 +899,25 @@ class PortalHandler
                     }
                 }
             }
+            return $data;
+        }
+
+        if ($dynamicRoute == 'lesson_view') {
+            $uriParts = explode('/', $this->currentPath);
+
+            $lessonSlug = Arr::get($uriParts, 3);
+            if (!$lessonSlug) {
+                return $data;
+            }
+
+            $lesson = CourseLesson::query()->where('slug', $lessonSlug)->first();
+
+            if (!$lesson) {
+                return $data;
+            }
+
+            $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
+            $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
 
             return $data;
         }
@@ -990,27 +1016,7 @@ class PortalHandler
 
     public function getPortalSidebar($echo = false, $context = 'headless')
     {
-        $primaryMenuItems = $this->getMainMenuItems('sidebar');
-
-        $userModel = Helper::getCurrentUser();
-        $spaceGroups = Helper::getCommunityMenuGroups($userModel);
-
-        $settingsMenu = apply_filters('fluent_community/settings_menu', [], $userModel);
-
-        $menuGroups = Helper::getMenuItemsGroup('view');
-        $topInlines = Arr::get($menuGroups, 'beforeCommunityMenuItems', []);
-        $bottomLinkGroups = Arr::get($menuGroups, 'afterCommunityLinkGroups', []);
-
-        $data = [
-            'primaryItems'     => $primaryMenuItems,
-            'spaceGroups'      => $spaceGroups,
-            'settingsItems'    => $settingsMenu,
-            'topInlineLinks'   => $topInlines,
-            'bottomLinkGroups' => $bottomLinkGroups,
-            'is_admin'         => Helper::isSiteAdmin(),
-            'has_color_scheme' => Helper::hasColorScheme(),
-            'context'          => $context
-        ];
+        $data = Utility::getPortalSidebarData('sidebar');
 
         if ($echo) {
             App::make('view')->render('portal.main_sidebar', $data);

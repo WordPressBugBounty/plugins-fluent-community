@@ -7,6 +7,7 @@ use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Models\SpaceGroup;
 
@@ -102,8 +103,17 @@ class Course extends BaseSpace
         return $this;
     }
 
-    public function isCourseAdmin(User $user)
+    public function isCourseAdmin($user = null)
     {
+        if(!$user) {
+            $user = Helper::getCurrentUser();
+        }
+
+        if(!$user) {
+            return false;
+        }
+
+
         $permissions = $user->getPermissions();
 
         if (!empty($permissions['course_admin'])) {

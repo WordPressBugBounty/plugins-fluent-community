@@ -129,7 +129,7 @@ class CourseLesson extends Model
 
     public function getMetaAttribute($value)
     {
-        $meta = maybe_unserialize($value);
+        $meta = Utility::safeUnserialize($value);
 
         if (!$meta) {
             $meta = self::getDefaultMeta();
@@ -217,4 +217,21 @@ class CourseLesson extends Model
         // return the first $length chars of the content with ... at the end
         return mb_substr($content, 0, $length) . '...';
     }
+
+    public function getPublicLessonMeta()
+    {
+        $meta = $this->meta;
+        if(!empty($meta['document_lists'])) {
+            $docLists = $meta['document_lists'];
+            foreach ($docLists as $index => $docList) {
+                if(!empty($docList['media_key']) && !empty($docList['id'])) {
+                    $docLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key='.$docList['media_key'].'&media_id='.$docList['id']);
+                }
+            }
+            $meta['document_lists'] = $docLists;
+        }
+
+        return $meta;
+    }
+
 }

@@ -21,7 +21,7 @@
         }
     ],
     "require": {
-        "wpfluent/framework": "^2.2",
+        "wpfluent/framework": "^2.10",
         "woocommerce/action-scheduler": "^3.8"
     },
     "autoload": {

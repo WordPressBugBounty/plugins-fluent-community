@@ -13,12 +13,13 @@ return function ($file) {
 
         if (function_exists('\as_next_scheduled_action')) {
             if (!\as_next_scheduled_action('fluent_community_scheduled_hour_jobs')) {
-                as_schedule_recurring_action(time(), 3600, 'fluent_community_scheduled_hour_jobs', [], 'fluent-community');
+                \as_schedule_recurring_action(time(), 3600, 'fluent_community_scheduled_hour_jobs', [], 'fluent-community', true);
             }
 
             if (!\as_next_scheduled_action('fluent_community_daily_jobs')) {
-                as_schedule_recurring_action(time(), 86400, 'fluent_community_daily_jobs', [], 'fluent-community');
+                \as_schedule_recurring_action(time(), 86400, 'fluent_community_daily_jobs', [], 'fluent-community', true);
             }
+
         }
 
     });
@@ -50,7 +51,6 @@ return function ($file) {
         if (!\as_next_scheduled_action('fluent_community_daily_jobs')) {
             \as_schedule_recurring_action(time(), 86400, 'fluent_community_daily_jobs', [], 'fluent-community');
         }
-
         /*
          * We will remove this after final release
          */
@@ -61,7 +61,7 @@ return function ($file) {
         }
 
 
-        if(defined('FLUENT_COMMUNITY_PRO_VERSION')) {
+        if (defined('FLUENT_COMMUNITY_PRO_VERSION')) {
             add_filter('fluent_community/portal_notices', function ($notices) {
                 if (FLUENT_COMMUNITY_MIN_PRO_VERSION !== FLUENT_COMMUNITY_PRO_VERSION && version_compare(FLUENT_COMMUNITY_MIN_PRO_VERSION, FLUENT_COMMUNITY_PRO_VERSION, '>')) {
                     $updateUrl = admin_url('plugins.php?s=fluent-community&plugin_status=all&fluent-fluent-community-pro-check-update=' . time());

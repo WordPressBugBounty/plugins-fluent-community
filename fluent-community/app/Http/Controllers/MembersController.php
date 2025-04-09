@@ -47,7 +47,7 @@ class MembersController extends Controller
                     $space = BaseSpace::find($spaceId);
                     if (!$space || !Helper::isUserInSpace(get_current_user_id(), $space->id)) {
                         return $this->sendError([
-                            'message' => 'Space not found',
+                            'message' => __('Space not found', 'fluent-community'),
                             'permission_failed' => true
                         ]);
                     }
@@ -125,7 +125,7 @@ class MembersController extends Controller
 
         if ($wpUser->isCommunityAdmin() && $newStatus != 'active') {
             return $this->sendError([
-                'message' => 'Sorry, you can not change status of another admin. Remove the user from moderators'
+                'message' => __('Sorry, you can not change status of another admin. Remove the user from moderators', 'fluent-community')
             ]);
         }
 

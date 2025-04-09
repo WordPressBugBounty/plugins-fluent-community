@@ -146,7 +146,7 @@ class AuthHelper
 
         $termsText = __('I agree to the terms and conditions', 'fluent-community');
         if ($policyUrl) {
-            $termsText = sprintf(__('I agree to the %1sterms and conditions%2s', 'fluent-community'), '<a rel="nooppener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
+            $termsText = sprintf(__('I agree to the %1$s terms and conditions %2$s', 'fluent-community'), '<a rel="noopener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
         }
 
         return $termsText;

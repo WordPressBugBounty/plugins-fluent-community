@@ -345,6 +345,7 @@ class CourseHelper
             'enable_media',
             'media',
             'video_length',
+            'featured_image_id'
         ];
 
         $meta = Arr::only($meta, $validFields);
@@ -419,5 +420,14 @@ class CourseHelper
                 $q->where('user_id', $userId);
             })
             ->get();
+    }
+
+    public static function santizeLessonBody($body)
+    {
+        if (current_user_can('unfiltered_html')) {
+            return $body;
+        }
+
+        return wp_kses_post($body);
     }
 }

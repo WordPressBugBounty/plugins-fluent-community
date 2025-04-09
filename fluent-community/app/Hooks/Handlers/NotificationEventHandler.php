@@ -284,7 +284,7 @@ class NotificationEventHandler
 
         $userIds = $comments->pluck('user_id')->toArray();
 
-        $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
+        $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
 
         if (!$userIds && !$mentionedUserIds) {
             return;

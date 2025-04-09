@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
@@ -86,7 +87,7 @@ class Media extends Model
 
     public function getSettingsAttribute($value)
     {
-        $settings = maybe_unserialize($value);
+        $settings = Utility::safeUnserialize($value);
 
         if (!$settings) {
             $settings = [];

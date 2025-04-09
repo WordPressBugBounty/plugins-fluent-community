@@ -37,6 +37,7 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
 
     $router->get('/{cousre_id}/lessons', 'CourseAdminController@getLessons')->int('cousre_id');
     $router->post('/{cousre_id}/lessons', 'CourseAdminController@createLesson')->int('cousre_id');
+    $router->put('/{cousre_id}/move-lesson', 'CourseAdminController@moveLesson')->int('cousre_id');
     $router->get('/{cousre_id}/lessons/{lesson_id}', 'CourseAdminController@getLesson')->int('cousre_id')->int('lesson_id');
     $router->put('/{cousre_id}/lessons/{lesson_id}', 'CourseAdminController@updateLesson')->int('cousre_id')->int('lesson_id');
     $router->patch('/{cousre_id}/lessons/{lesson_id}', 'CourseAdminController@patchLesson')->int('cousre_id')->int('lesson_id');

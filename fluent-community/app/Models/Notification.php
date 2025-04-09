@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\XProfile;
 
 /**
@@ -48,7 +49,7 @@ class Notification extends Model
 
     public function getRouteAttribute($value)
     {
-        return maybe_unserialize($value);
+        return Utility::safeUnserialize($value);
     }
 
     public function subscribers()

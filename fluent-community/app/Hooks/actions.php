@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 (new \FluentCommunity\App\Hooks\Handlers\ActivityMonitorHandler())->register();
 (new \FluentCommunity\App\Hooks\Handlers\Scheduler())->register();
 (new \FluentCommunity\App\Hooks\Handlers\CleanupHandler())->register();
+(new \FluentCommunity\App\Hooks\Handlers\FluentBlockEditorHandler())->register();
 
 // Rate limit handler
 (new \FluentCommunity\App\Hooks\Handlers\RateLimitHandler())->register();

@@ -27,9 +27,7 @@ class FeaturesHandler
             $cssFiles = Arr::get($data, 'css_files', []);
             foreach ($cssFiles as $file) {
                 ?>
-                <link rel="stylesheet"
-                      href="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-                      media="screen"/>
+<link rel="stylesheet" href="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
                 <?php
             }
         });
@@ -51,7 +49,7 @@ class FeaturesHandler
 
             foreach ($jsFiles as $file) {
                 ?>
-                <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
+<script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
                 <?php
             }
         });

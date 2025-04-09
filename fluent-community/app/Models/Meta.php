@@ -2,6 +2,8 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
+
 /**
  *  Meta Model - DB Model for Meta table
  *
@@ -33,7 +35,7 @@ class Meta extends Model
 
     public function getValueAttribute($value)
     {
-        return maybe_unserialize($value);
+        return Utility::safeUnserialize($value);
     }
 
     public function scopeByType($query, $type)

@@ -156,7 +156,7 @@ class Feed extends Model
 
     public function getMetaAttribute($value)
     {
-        $meta = maybe_unserialize($value);
+        $meta = Utility::safeUnserialize($value);
 
         if (!$meta) {
             $meta = [];

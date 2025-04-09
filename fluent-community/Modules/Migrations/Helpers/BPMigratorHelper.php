@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Migrations\Helpers;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
@@ -11,7 +12,6 @@ use FluentCommunity\Framework\Support\Arr;
 
 class BPMigratorHelper
 {
-
     public static function getBbDataStats()
     {
         return [
@@ -298,8 +298,7 @@ class BPMigratorHelper
                 ];
             }
         } else if (!empty($mediaMetas['_gif_raw_data'])) {
-            $giphyMeta = maybe_unserialize($mediaMetas['_gif_raw_data']->meta_value, true);
-
+            $giphyMeta = Utility::safeUnserialize($mediaMetas['_gif_raw_data']->meta_value);
             $giphyMedia = Arr::get($giphyMeta, 'images.downsized_medium', []);
             if (!$giphyMedia || empty($giphyMedia['url'])) {
                 return null;
@@ -418,15 +417,15 @@ class BPMigratorHelper
 
     public static function syncUser(User $user)
     {
-        $xprofile = $user->syncXProfile();
-        // Let's sync the
+        $syncedXprofile = $user->syncXProfile();
+        if (!$syncedXprofile) {
+            return false;
+        }
+
+        $xprofile = $user->xprofile;
+        // Let's sync the cover photo and avatar
         if (!$xprofile->hasCustomAvatar()) {
             $avatar = get_avatar_url($user->ID, 'full', true);
-            if ($avatar) {
-                if (strpos($avatar, 'wp-content/plugins')) {
-                    $avatar = null;
-                }
-            }
 
             $coverPhoto = bp_attachments_get_attachment(
                 'url',

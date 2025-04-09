@@ -213,7 +213,7 @@ class XProfile extends Model
 
     public function getMetaAttribute($value)
     {
-        $settings = maybe_unserialize($value);
+        $settings = Utility::safeUnserialize($value);
 
         if (!$settings) {
             $settings = [

@@ -4,7 +4,9 @@ namespace FluentCommunity\Modules\Course\Http\Controllers;
 
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\SpaceUserPivot;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\LockscreenService;
+use FluentCommunity\App\Services\SmartCodeParser;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
@@ -84,7 +86,7 @@ class CourseController extends Controller
 
         if (!$course) {
             return $this->sendError([
-                'message' => 'Course not found. maybe the course is not published yet!'
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
             ]);
         }
 
@@ -102,14 +104,14 @@ class CourseController extends Controller
 
         if (!$course) {
             return $this->sendError([
-                'message' => 'Course not found. maybe the course is not published yet!'
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
             ]);
         }
 
         return $this->processCourse($course, $isCourseCreator);
     }
 
-    private function processCourse($course, $isCourseCreator)
+    private function processCourse(Course $course, $isCourseCreator)
     {
         $sections = CourseTopic::where('space_id', $course->id)
             ->orderBy('priority', 'ASC')
@@ -123,17 +125,20 @@ class CourseController extends Controller
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
         $formattedSections = [];
 
+        $currentUser = Helper::getCurrentUser();
+
         if ($course->privacy == 'private' && !$enrollment) {
             $course->lockscreen_config = LockscreenService::getLockscreenConfig($course);
         }
 
         if ($course->privacy == 'secret' && !$enrollment && !$isCourseCreator) {
             return $this->sendError([
-                'message' => 'You must need to be invited to view this course'
+                'message' => __('You must need to be invited to view this course', 'fluent-community')
             ]);
         }
 
         $courseType = $course->getCourseType();
+        $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
 
         foreach ($sections as $section) {
             if ($section->lessons->isEmpty()) {
@@ -154,11 +159,18 @@ class CourseController extends Controller
 
             $formattedLessons = [];
             foreach ($section->lessons as $lesson) {
-                if ($hasAcessSectionAcess || $isCourseCreator) {
+                $canViewLesson = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
+                $canViewLesson = apply_filters('fluent_community/course/can_view_lesson', $canViewLesson, $lesson, $course, $this->getUser());
+
+                if ($canViewLesson) {
                     $content = $lesson->message_rendered;
                     if (!$content && $lesson->message) {
-                        $content = apply_filters('widget_block_content', do_blocks($lesson->message));
+                        $content = apply_filters('the_content', $lesson->message);
                     }
+                    if(!$content) {
+                        $content = '';
+                    }
+                    $content = (new SmartCodeParser())->parse($content, $currentUser);
                 } else {
                     $content = '';
                 }
@@ -170,11 +182,12 @@ class CourseController extends Controller
                     'slug'           => $lesson->slug,
                     'course_id'      => $lesson->space_id,
                     'section_id'     => $lesson->parent_id,
-                    'created_at'     => $lesson->created_at,
-                    'meta'           => $lesson->meta,
+                    'created_at'     => $lesson->created_at->format('Y-m-d H:i:s'),
+                    'meta'           => $lesson->getPublicLessonMeta(),
                     'comments_count' => $lesson->comments_count,
                     'is_locked'      => !$hasAcessSectionAcess && !$isCourseCreator,
-                    'unclock_date'   => $unlockDate
+                    'unclock_date'   => $unlockDate,
+                    'can_view'       => $canViewLesson
                 ];
             }
 
@@ -247,7 +260,7 @@ class CourseController extends Controller
 
         if (!CourseHelper::isEnrolled($courseId)) {
             return $this->sendError([
-                'message' => 'You are not enrolled in this action.'
+                'message' => __('Please enroll this course first', 'fluent-community')
             ]);
         }
 
@@ -258,7 +271,7 @@ class CourseController extends Controller
 
         if (!$lesson) {
             return $this->sendError([
-                'message' => 'Lesson is not on published state.'
+                'message' => __('Lesson is not on published state.', 'fluent-community')
             ]);
         }
 
@@ -266,7 +279,7 @@ class CourseController extends Controller
 
         if (!in_array($state, ['completed', 'incomplete'])) {
             return $this->sendError([
-                'message' => 'Invalid state.'
+                'message' => __('Invalid state.', 'fluent-community')
             ]);
         }
 
@@ -279,7 +292,7 @@ class CourseController extends Controller
         }
 
         return [
-            'message'      => 'Lesson completion state updated.',
+            'message'      => __('Lesson completion state updated.', 'fluent-community'),
             'track'        => $track,
             'is_completed' => $isCompleted
         ];

@@ -83,8 +83,8 @@ $router->prefix('profile')->withPolicy('PortalPolicy')->group(function ($router)
     $router->get('/{username}/spaces', 'ProfileController@getSpaces')->alphaNumDash('username');
     $router->get('/{username}/comments', 'ProfileController@getComments')->alphaNumDash('username');
 
-    $router->get('/{username}/notificatin-preferance', 'ProfileController@getNotificationPreferance')->alphaNumDash('username');
-    $router->post('/{username}/notificatin-preferance', 'ProfileController@saveNotificationPreferance')->alphaNumDash('username');
+    $router->get('/{username}/notification-preferences', 'ProfileController@getNotificationPreferance')->alphaNumDash('username');
+    $router->post('/{username}/notification-preferences', 'ProfileController@saveNotificationPreferance')->alphaNumDash('username');
 });
 
 $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
@@ -133,6 +133,7 @@ $router->prefix('comments')->withPolicy('PortalPolicy')->group(function ($router
 });
 
 $router->prefix('options')->withPolicy('PortalPolicy')->group(function ($router) {
+    $router->get('/app-vars', 'ProfileController@getAppVars');
     $router->get('/sidebar-menu-html', 'OptionController@getSidebarMenuHtml');
 });
 

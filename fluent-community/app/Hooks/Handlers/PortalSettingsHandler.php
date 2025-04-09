@@ -32,7 +32,6 @@ class PortalSettingsHandler
                 exit();
             }
 
-
             $isRtl = Helper::isRtl();
             unset($vars['js_files']['fcom_app_admin']);
             $vars['js_files']['fcom_app'] = [

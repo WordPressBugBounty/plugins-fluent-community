@@ -53,7 +53,7 @@ class FeedsHelper
         $html = (new \FluentCommunity\App\Services\Parsedown([
         ]))
             ->setBreaksEnabled(true)
-          //  ->setSafeMode(true)
+            //  ->setSafeMode(true)
             ->text($text);
 
         if (!Arr::get($options, 'disable_link_process')) {
@@ -89,6 +89,29 @@ class FeedsHelper
 
         // Perform the replacement
         return preg_replace_callback($pattern, $callback, $html);
+    }
+
+    public static function addNewTabToLinks($html)
+    {
+        if (empty($html) || !is_string($html)) {
+            return '';
+        }
+        // Regular expression to match <a> tags
+        $pattern = '/<a\s[^>]*href=("|\')(https?:\/\/.*?)(?<!\.(jpg|jpeg|png|gif))("|\')\s?([^>]*)>/i';
+        // Callback function to modify each matched <a> tag
+        $callback = function ($matches) {
+            $url = $matches[2];
+            $attr = $matches[4];
+
+            // Remove existing target attribute if present
+            $attr = preg_replace('/\starget=("|\').*?("|\')/i', '', $attr);
+
+            // Add target="_blank"
+            return '<a rel="noopenner" href="' . $url . '" target="_blank" ' . trim($attr) . '>';
+        };
+        // Perform the replacement
+        return preg_replace_callback($pattern, $callback, $html);
+
     }
 
     public static function findFirstUrl($html)
@@ -186,7 +209,7 @@ class FeedsHelper
 
         $data = [
             'user_ids' => $userIds,
-            'text'  => strtr($text, $userMentions)
+            'text'     => strtr($text, $userMentions)
         ];
 
         if ($withUsers) {
@@ -383,10 +406,18 @@ class FeedsHelper
                 ];
             }
 
+            $endDate = Arr::get($survey, 'end_date', '');
+            if ($endDate) {
+                $endDate = date('Y-m-d H:i:s', strtotime($endDate));
+            } else {
+                $endDate = '';
+            }
+
             if ($formattedOptions) {
                 $processedData['survey'] = [
-                    'type'    => Arr::get($survey, 'type') == 'single_choice' ? 'single_choice' : 'multi_choice',
-                    'options' => $formattedOptions
+                    'type'     => Arr::get($survey, 'type') == 'single_choice' ? 'single_choice' : 'multi_choice',
+                    'options'  => $formattedOptions,
+                    'end_date' => $endDate
                 ];
             }
         }
@@ -435,7 +466,8 @@ class FeedsHelper
         if ($surveyConfig) {
             $feed->survey = [
                 'type'    => Arr::get($surveyConfig, 'type'),
-                'options' => Arr::get($surveyConfig, 'options', [])
+                'options' => Arr::get($surveyConfig, 'options', []),
+                'end_date' => Arr::get($surveyConfig, 'end_date', '')
             ];
         } else if ($feed->content_type == 'document') {
             $documents = Media::where('object_source', 'space_document')
@@ -495,7 +527,6 @@ class FeedsHelper
         }
 
         $uplaodedDocs = [];
-
         // Handle Survey
         if (!empty($data['survey'])) {
             $surveyConfig = $data['survey'];
@@ -519,6 +550,12 @@ class FeedsHelper
                 } else {
                     $surveyConfig = $data['survey'];
                 }
+            }
+
+            if($endDate = Arr::get($data['survey'], 'end_date', '')) {
+                $surveyConfig['end_date'] = date('Y-m-d H:i:s', strtotime($endDate));
+            } else {
+                $surveyConfig['end_date'] = '';
             }
 
             $data['meta']['survey_config'] = $surveyConfig;
@@ -680,7 +717,7 @@ class FeedsHelper
         }
 
         if ($feed->content_type == 'document') {
-            $feedMeta  = $feed->meta;
+            $feedMeta = $feed->meta;
             $documentLists = Arr::get($feedMeta, 'document_lists', []);
             foreach ($documentLists as $index => $document) {
                 $documentLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key=' . $document['media_key'] . '&media_id=' . $document['id']);

@@ -9,6 +9,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\AuthenticationService;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\App\Vite;
@@ -47,7 +48,7 @@ class AuthModdule
     public function maybeAutoLogin($requestData)
     {
         $urlHash = Arr::get($requestData, 'fcom_url_hash');
-        if ($urlHash) {
+        if ($urlHash && !get_current_user_id()) {
             $tagetUser = ProfileHelper::getUserByUrlHash($urlHash);
             if ($tagetUser) {
                 $willAtoLogin = apply_filters('fluent_community/allow_auto_login_by_url', !user_can($tagetUser, 'delete_pages'), $tagetUser);
@@ -764,8 +765,13 @@ class AuthModdule
 
         $termsField = Arr::get($authSettings, 'signup.form.fields.terms');
 
+
         if ($termsField) {
             unset($termsField['label']);
+
+            // add new tab on the link for $termsField['inline_label']
+            $termsField['inline_label'] = FeedsHelper::addNewTabToLinks($termsField['inline_label']);
+
             $formFields['terms'] = $termsField;
         }
 

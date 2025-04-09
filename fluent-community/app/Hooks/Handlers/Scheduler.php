@@ -15,17 +15,17 @@ class Scheduler
         add_action('fluent_community_scheduled_hour_jobs', function () {
             $this->checkDailyDigestSchedule();
             do_action('fluent_community/maybe_delete_draft_medias');
-        });
+        }, 10);
 
         add_action('fluent_community_send_daily_digest_init', function () {
             do_action('fluent_community_send_daily_digest');
-        });
+        }, 10);
 
         add_action('fluent_community_daily_jobs', function () {
             // let's fire the old email notifications hook
             do_action('fluent_community/remove_old_notifications');
             $this->maybeRemoveOldScheuledActionLogs();
-        });
+        }, 10);
 
     }
 

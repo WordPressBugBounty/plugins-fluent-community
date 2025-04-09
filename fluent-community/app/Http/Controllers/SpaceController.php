@@ -132,8 +132,8 @@ class SpaceController extends Controller
         $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
 
         $spaces = Space::with(['space_pivot' => function ($q) {
-                $q->where('user_id', get_current_user_id());
-            }])
+            $q->where('user_id', get_current_user_id());
+        }])
             ->where(function ($q) {
                 $q->whereHas('space_pivot', function ($q) {
                     $q->where('user_id', get_current_user_id());
@@ -211,7 +211,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -224,7 +224,7 @@ class SpaceController extends Controller
 
             if ($taken) {
                 return $this->sendError([
-                    'message' => 'Slug is already taken. Please use a different slug'
+                    'message' => __('Slug is already taken. Please use a different slug', 'fluent-community')
                 ]);
             }
         }
@@ -345,7 +345,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -355,7 +355,7 @@ class SpaceController extends Controller
 
         if ($membership) {
             return $this->sendError([
-                'message' => 'You are already a member of this space. Please reload this page'
+                'message' => __('You are already a member of this space. Please reload this page', 'fluent-community')
             ]);
         }
 
@@ -363,7 +363,7 @@ class SpaceController extends Controller
 
         if (!$roles && $space->privacy == 'secret') {
             return $this->sendError([
-                'message' => 'You are not allowed to join this space'
+                'message' => __('You are not allowed to join this space', 'fluent-community')
             ]);
         }
 
@@ -410,7 +410,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -418,7 +418,7 @@ class SpaceController extends Controller
 
         if (!$membership) {
             return $this->sendError([
-                'message' => 'You are not a member of this community'
+                'message' => __('You are not a member of this community', 'fluent-community')
             ]);
         }
 
@@ -435,7 +435,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -476,7 +476,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -514,7 +514,7 @@ class SpaceController extends Controller
                 }
 
                 return $this->sendError([
-                    'message' => 'Selected user is already a member of this community'
+                    'message' => __('Selected user is already a member of this community', 'fluent-community')
                 ]);
             }
 
@@ -551,7 +551,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -563,7 +563,7 @@ class SpaceController extends Controller
 
         if (!$pivot) {
             return $this->sendError([
-                'message' => 'Selected user is not a member of this community'
+                'message' => __('Selected user is not a member of this community', 'fluent-community')
             ]);
         }
 
@@ -597,7 +597,7 @@ class SpaceController extends Controller
 
         if (!$space->verifyUserPermisson($currentUser, 'can_add_member', false)) {
             return $this->sendError([
-                'message' => 'You are not allowed to add members to this space'
+                'message' => __('You are not allowed to add members to this space', 'fluent-community')
             ]);
         }
 
@@ -617,7 +617,7 @@ class SpaceController extends Controller
             global $wpdb;
             $blogId = get_current_blog_id();
             $blogPrefix = $wpdb->get_blog_prefix($blogId);
-            $userQuery->whereHas('usermeta', function($q) use ($blogPrefix) {
+            $userQuery->whereHas('usermeta', function ($q) use ($blogPrefix) {
                 $q->where('meta_key', $blogPrefix . 'capabilities');
             });
         }
@@ -642,7 +642,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => 'Space not found'
+                'message' => __('Space not found', 'fluent-community')
             ]);
         }
 
@@ -669,6 +669,7 @@ class SpaceController extends Controller
             $groups = SpaceGroup::orderBy('serial', 'ASC')
                 ->select(['id', 'title'])
                 ->get();
+
             return [
                 'groups' => $groups
             ];
@@ -684,8 +685,19 @@ class SpaceController extends Controller
             }
         }
 
+        $orphanedSpaces = BaseSpace::withoutGlobalScopes()
+            ->whereNull('parent_id')
+            ->whereIn('type', ['community', 'course'])
+            ->orderBy('title', 'ASC')
+            ->get();
+
+        foreach ($orphanedSpaces as $space) {
+            $space->permalink = $space->getPermalink();
+        }
+
         return [
-            'groups' => $groups
+            'groups'          => $groups,
+            'orphaned_spaces' => $orphanedSpaces
         ];
     }
 
@@ -734,7 +746,7 @@ class SpaceController extends Controller
 
         if ($taken) {
             return $this->sendError([
-                'message' => 'The title is already taken. Please use a different title'
+                'message' => __('The title is already taken. Please use a different title', 'fluent-community')
             ]);
         }
 
@@ -762,7 +774,7 @@ class SpaceController extends Controller
 
         if (!$group->spaces->isEmpty()) {
             return $this->sendError([
-                'message' => 'You can not delete this group. It has spaces'
+                'message' => __('You can not delete this group. It has spaces', 'fluent-community')
             ]);
         }
 
