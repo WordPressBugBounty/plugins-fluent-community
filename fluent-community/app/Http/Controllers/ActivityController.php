@@ -16,7 +16,7 @@ class ActivityController extends Controller
     {
         $context = $request->get('context', []);
 
-        $activities = Activity::where(function ($q) {
+        $latestActivityIds = Activity::where(function ($q) {
             $userId = get_current_user_id();
             $q->where('is_public', 1);
             if (!$userId) {
@@ -32,11 +32,15 @@ class ActivityController extends Controller
             });
         })
             ->whereIn('action_name', ['feed_published', 'comment_added'])
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('feed_id', 'action_name')
+            ->pluck('id');
+
+        $activities = Activity::whereIn('id', $latestActivityIds)
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }, 'feed', 'space'])
-            ->orderBy('id', 'DESC')
-            ->groupBy('feed_id', 'action_name');
+            ->orderBy('id', 'DESC');
 
         $spaceId = null;
         $userId = null;
@@ -107,7 +111,7 @@ class ActivityController extends Controller
             $returnData['pinned_posts'] = $this->getPinnedPosts($spaceId, $request->get('is_trending'));
         }
 
-        if ($request->get('with_pening_count')) {
+        if ($request->get('with_pending_count')) {
             $pendingCount = 0;
             $user = $this->getUser();
 

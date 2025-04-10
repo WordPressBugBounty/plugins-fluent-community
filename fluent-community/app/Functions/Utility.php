@@ -1041,6 +1041,19 @@ class Utility
         return $lightCss . $darkCss;
     }
 
+    public static function getColorSchemaConfig()
+    {
+        $customSchemaConfig = self::getColorConfig('view');
+        $lightName = Arr::get($customSchemaConfig, 'light_schema', 'default');
+        $darkName = Arr::get($customSchemaConfig, 'dark_schema', 'default');
+        $schemas = self::getColorSchemas();
+
+        return [
+            'dark'  => Arr::get($schemas, "lightSkins.$darkName.selectors"),
+            'light' => Arr::get($schemas, "darkSkins.$lightName.selectors"),
+        ];
+    }
+
     public static function getSuggestedColors()
     {
         $pallets = current((array)get_theme_support('editor-color-palette'));
@@ -1139,7 +1152,7 @@ class Utility
         if (!$data) {
             return $data;
         }
-        
+
         if (is_serialized($data)) { // Don't attempt to unserialize data that wasn't serialized going in.
             return @unserialize(trim($data), [
                 'allowed_classes' => false,

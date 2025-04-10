@@ -96,22 +96,42 @@ class FeedsHelper
         if (empty($html) || !is_string($html)) {
             return '';
         }
-        // Regular expression to match <a> tags
-        $pattern = '/<a\s[^>]*href=("|\')(https?:\/\/.*?)(?<!\.(jpg|jpeg|png|gif))("|\')\s?([^>]*)>/i';
+
+        // return is there has no href
+        if (strpos($html, 'href=') === false) {
+            return $html;
+        }
+
+        // More comprehensive regex to capture existing attributes
+        $pattern = '/<a\s+([^>]*)>/i';
+
         // Callback function to modify each matched <a> tag
         $callback = function ($matches) {
-            $url = $matches[2];
-            $attr = $matches[4];
+            $full_tag = $matches[0];
+            $attributes = $matches[1];
 
-            // Remove existing target attribute if present
-            $attr = preg_replace('/\starget=("|\').*?("|\')/i', '', $attr);
+            // Extract href
+            preg_match('/href=("|\')([^"\']+)("|\')/', $full_tag, $href_matches);
+            if (empty($href_matches)) {
+                return $full_tag;
+            }
+            $url = $href_matches[2];
 
-            // Add target="_blank"
-            return '<a rel="noopenner" href="' . $url . '" target="_blank" ' . trim($attr) . '>';
+            // Check if it's an external URL and not an image
+            if (preg_match('/^https?:\/\//i', $url) && !preg_match('/\.(jpg|jpeg|png|gif|svg)$/i', $url)) {
+                // Check if target already exists
+                if (!preg_match('/\btarget=/i', $full_tag)) {
+                    // Preserve existing attributes, add target="_blank"
+                    return '<a ' . $attributes . ' target="_blank" rel="noopener noreferrer">';
+                }
+            }
+
+            // Return original tag if no modification needed
+            return $full_tag;
         };
+
         // Perform the replacement
         return preg_replace_callback($pattern, $callback, $html);
-
     }
 
     public static function findFirstUrl($html)

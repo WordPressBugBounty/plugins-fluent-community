@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FluentCommunity - Community & LMS Plugin\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-09 19:03+0000\n"
+"POT-Creation-Date: 2025-04-10 13:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -705,7 +705,7 @@ msgstr ""
 msgid "Add Lesson"
 msgstr ""
 
-#: app/Hooks/Handlers/FluentBlockEditorHandler.php:414
+#: app/Hooks/Handlers/FluentBlockEditorHandler.php:957
 msgid "Add Lesson title"
 msgstr ""
 
@@ -5297,7 +5297,7 @@ msgstr ""
 msgid "Post"
 msgstr ""
 
-#: app/Services/FeedsHelper.php:427
+#: app/Services/FeedsHelper.php:447
 msgid "Post message is too long"
 msgstr ""
 
@@ -6594,7 +6594,7 @@ msgstr ""
 msgid "Start Migrating Data"
 msgstr ""
 
-#: app/Hooks/Handlers/FluentBlockEditorHandler.php:415
+#: app/Hooks/Handlers/FluentBlockEditorHandler.php:876
 msgid "Start writing or type / to choose a block for your lesson content"
 msgstr ""
 
@@ -7079,7 +7079,7 @@ msgstr ""
 msgid "Title Color"
 msgstr ""
 
-#: app/Services/FeedsHelper.php:435
+#: app/Services/FeedsHelper.php:455
 msgid "Title is required. Please provide a title"
 msgstr ""
 

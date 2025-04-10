@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Framework\Http\Request;
 
+use ArrayAccess;
 use SplFileInfo;
 use JsonSerializable;
 use RuntimeException;
@@ -9,7 +10,7 @@ use FluentCommunity\Framework\Support\Util;
 use FluentCommunity\Framework\Foundation\App;
 use FluentCommunity\Framework\Validator\Contracts\File as Contract;
 
-class File extends SplFileInfo implements Contract, JsonSerializable
+class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAccess
 {
     /**
      * Original file name.
@@ -103,11 +104,22 @@ class File extends SplFileInfo implements Contract, JsonSerializable
 
         if (!$mimeType) {
             $path = $this->getPathname() ?: $this->getRealPath();
+
+            if (!file_exists($path)) {
+                throw new RuntimeException(
+                    "File does not exist at path: $path"
+                );
+            }
+
             if ($handle = @fopen($path, 'rb')) {
                 $data = fread($handle, 8192);
                 $finfo = new \finfo(FILEINFO_MIME_TYPE);
                 $mimeType = $finfo->buffer($data);
                 fclose($handle);
+            } else {
+                throw new RuntimeException(
+                    "Failed to open file at path: $path"
+                );
             }
         }
 
@@ -275,7 +287,7 @@ class File extends SplFileInfo implements Contract, JsonSerializable
 
         @chmod($target, 0666 & ~umask());
 
-        return $target;
+        return new static($target, basename($target));
     }
 
     /**
@@ -353,19 +365,21 @@ class File extends SplFileInfo implements Contract, JsonSerializable
             }
         );
         
-        $path = rtrim(
+        $path = trim(
             ($default . DIRECTORY_SEPARATOR . $path), DIRECTORY_SEPARATOR
         );
+
+        $baseDir = trim(wp_upload_dir()['basedir'], DIRECTORY_SEPARATOR);
+
+        if (strpos($path, $baseDir) !== 0) {
+            $path = $baseDir . DIRECTORY_SEPARATOR . $path;
+        }
 
         if (is_file($path)) {
             throw new RuntimeException("Invalid file upload path: {$path}");
         }
 
-        if (!is_dir($path = dirname($this->getTargetFile($path)))) {
-            throw new RuntimeException("Invalid file upload path: {$path}");
-        }
-        
-        return $path;
+        return DIRECTORY_SEPARATOR.$path;
     }
 
     /**
@@ -426,11 +440,18 @@ class File extends SplFileInfo implements Contract, JsonSerializable
             );
         }
 
-        $target = rtrim($directory, "/\\") . DIRECTORY_SEPARATOR . (
-            null === $name ? $this->originalName : $this->getName($name)
+        return $directory . DIRECTORY_SEPARATOR . (
+            $name ? $this->getName($name) : $this->originalName
         );
+    }
 
-        return new self($target, false);
+    protected function newInstance($directory, $targetName)
+    {
+        $sep = DIRECTORY_SEPARATOR;
+
+        $path = rtrim($directory, "/\\") . $sep . $targetName;
+
+        return new static($path, '');
     }
 
     /**
@@ -446,8 +467,9 @@ class File extends SplFileInfo implements Contract, JsonSerializable
             'size'          => size_format($this->size),
             'name'          => $this->getSavedFileName(),
             'path'          => $this->getPathname(),
-            'tmp_name' => $this->getPathname(),
             'url'           => $this->getUrl(),
+            'tmp_name'      => $this->getPathname(),
+            'error'         => $this->getError(),
         ];
     }
 
@@ -459,5 +481,44 @@ class File extends SplFileInfo implements Contract, JsonSerializable
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /* ArrayAccess methods */
+    
+    /**
+     * Check if the property exists.
+     * @param string $offset
+     * @return bool
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetExists($offset)
+    {
+        return array_key_exists($offset, $this->toArray());
+    }
+
+    /**
+     * Get the property.
+     * 
+     * @param  string $offset
+     * @return string        
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset)
+    {
+        $array = $this->toArray();
+        
+        return $array[$offset] ?? null;
+    }
+
+    #[\ReturnTypeWillChange]
+    public function offsetSet($offset, $value)
+    {
+        //...
+    }
+
+    #[\ReturnTypeWillChange]
+    public function offsetUnset($offset)
+    {
+        //...
     }
 }

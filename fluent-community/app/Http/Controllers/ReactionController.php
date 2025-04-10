@@ -151,7 +151,7 @@ class ReactionController extends Controller
 
         $voteIndexes = $request->get('vote_indexes', []);
         $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $this->getUserId());
-
+        $surveyConfig = $feed->meta['survey_config'];
 
         $votedOptions = $feed->getSurveyCastsByUserId($this->getUserId());
 
