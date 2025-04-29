@@ -327,12 +327,12 @@ class AuthHelper
         <div class="fls_signup_verification">
             <input type="hidden" name="__two_fa_signed_token" value="<?php echo esc_attr($signedToken); ?>"/>
             <p><?php echo esc_html(\sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
-            <div class="fcom_form-group fcom_field_vefication">
+            <div class="fcom_form-group fcom_field_verification">
                 <div class="fcom_form_label">
-                    <label for="fcom_field_vefication"><?php _e('Verification Code', 'fluent-community'); ?></label>
+                    <label for="fcom_field_verification"><?php _e('Verification Code', 'fluent-community'); ?></label>
                 </div>
                 <div class="fs_input_wrap">
-                    <input type="text" id="fcom_field_vefication"
+                    <input type="text" id="fcom_field_verification"
                            placeholder="<?php _e('2FA Code', 'fluent-community'); ?>" name="_email_verification_code"
                            required/>
                 </div>

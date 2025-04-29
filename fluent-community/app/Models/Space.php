@@ -37,6 +37,7 @@ class Space extends BaseSpace
             'document_upload'      => 'admin_only',
             'topic_required'       => 'no',
             'hide_members_count'   => 'no', // yes / no
+            'onboard_redirect_url' => '',
             'members_page_status'  => 'members_only', // members_only, everybody, logged_in, admin_only
         ];
     }
@@ -50,7 +51,7 @@ class Space extends BaseSpace
         $this->membership = $this->getMembership($userId);
         $this->topics = Utility::getTopicsBySpaceId($this->id);
 
-        if (!Helper::isSiteAdmin()) {
+        if (!Helper::isSiteAdmin($userId, $user)) {
             $this->lockscreen_config = LockscreenService::getLockscreenConfig($this, $this->membership);
         }
 

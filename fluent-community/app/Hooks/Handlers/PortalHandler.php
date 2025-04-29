@@ -15,6 +15,7 @@ use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\App\Services\TransStrings;
 use FluentCommunity\App\Vite;
+use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Modules\Auth\AuthHelper;
@@ -74,20 +75,17 @@ class PortalHandler
         });
 
         add_action('fluent_community/enqueue_global_assets', function ($useDefaultTheme = true) {
-            wp_enqueue_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss'), [], time(), 'screen');
+            $isRtl = Helper::isRtl();
+            wp_enqueue_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', $isRtl), [], time(), 'screen');
             if ($useDefaultTheme) {
-                wp_enqueue_style('fluent_community_default_theme', Vite::getDynamicSrcUrl('theme-default.scss'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+                wp_enqueue_style('fluent_community_default_theme', Vite::getDynamicSrcUrl('theme-default.scss', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
             }
-
             $css = Utility::getColorCssVariables();
-
             wp_add_inline_style('fluent_community_global', $css);
-
-            wp_enqueue_script('portal_general', Vite::getStaticSrcUrl('portal_general.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, true);
-
-            wp_localize_script('portal_general', 'fcom_portal_general', [
-                'is_wp' => true
+            wp_enqueue_script('portal_general', Vite::getStaticSrcUrl('portal_general.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, [
+                'in_footer' => true
             ]);
+            wp_localize_script('portal_general', 'fcom_portal_general', $this->getGlobalScriptVars());
         });
 
         add_action('admin_bar_menu', function ($wp_admin_bar) {
@@ -195,13 +193,13 @@ class PortalHandler
                 });
             }
 
-            echo '<div class="fcom_side_footer">';
-            $this->renderTopMenuRightItems();
-            echo '</div>';
+            // echo '<div class="fcom_side_footer">';
+            // $this->renderTopMenuRightItems();
+            // echo '</div>';
         });
     }
 
-    public function renderTopMenuRightItems()
+    public function renderTopMenuRightItems($context = 'headless')
     {
         $auth_url = $this->getAuthUrl();
         $auth = Helper::getCurrentProfile();
@@ -211,8 +209,8 @@ class PortalHandler
         <ul class="fcom_user_context_menu_items">
             <?php do_action('fluent_community/before_header_right_menu_items', $auth); ?>
             <?php if ($has_color_scheme): ?>
-                <li>
-                    <button class="fcom_color_mode_core el-button el-button--small is-text">
+                <li class="top_menu_item fcom_color_mode">
+                    <button class="fcom_color_mode_core fcom_menu_button">
                         <span class="fcom_color_mode_action fcom_mode_switch el-icon">
                             <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none"
                                  xmlns="http://www.w3.org/2000/svg">
@@ -221,22 +219,58 @@ class PortalHandler
                                     stroke="#525866" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <svg class="show_on_dark" width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_2906_20675)">
-                                <path
-                                    d="M14.1663 10.0007C14.1663 12.3018 12.3009 14.1673 9.99967 14.1673C7.69849 14.1673 5.83301 12.3018 5.83301 10.0007C5.83301 7.69946 7.69849 5.83398 9.99967 5.83398C12.3009 5.83398 14.1663 7.69946 14.1663 10.0007Z"
-                                    stroke="currentColor" stroke-width="1.5"/><path
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_2906_20675)">
+                                    <path
+                                        d="M14.1663 10.0007C14.1663 12.3018 12.3009 14.1673 9.99967 14.1673C7.69849 14.1673 5.83301 12.3018 5.83301 10.0007C5.83301 7.69946 7.69849 5.83398 9.99967 5.83398C12.3009 5.83398 14.1663 7.69946 14.1663 10.0007Z"
+                                        stroke="currentColor" stroke-width="1.5"/>
+                                    <path
                                         d="M9.99984 1.66699V2.91699M9.99984 17.0837V18.3337M15.8922 15.8931L15.0083 15.0092M4.99089 4.99137L4.107 4.10749M18.3332 10.0003H17.0832M2.9165 10.0003H1.6665M15.8926 4.10758L15.0087 4.99147M4.99129 15.0093L4.10741 15.8932"
-                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></g><defs><clipPath
-                                        id="clip0_2906_20675"><rect width="20" height="20"
-                                                                    fill="correntColor"/></clipPath></defs>
+                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_2906_20675">
+                                        <rect width="20" height="20" fill="currentColor"/>
+                                    </clipPath>
+                                </defs>
                             </svg>
                         </span>
                     </button>
                 </li>
             <?php endif; ?>
             <li class="top_menu_item fcom_search_holder"></li>
-            <li class="top_menu_item fcom_notification_holder"></li>
-            <?php do_action('fluent_community/before_header_menu_items', $auth); ?>
+            <?php if ($auth): ?>
+                <li class="top_menu_item fcom_notification_holder fcom_countable_notification_holder">
+                    <?php if ($context != 'headless'): ?>
+                        <?php
+                        $notificationCount = NotificationSubscriber::unread()
+                            ->where('user_id', $auth->user_id)
+                            ->count();
+                        ?>
+                        <a href="<?php echo esc_url(Helper::baseUrl('/notifications')); ?>" type="button"
+                           class="fcom_menu_button fcom_theme_button">
+                            <i class="el-icon">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M2.10794 11.9954C1.93073 13.1229 2.72301 13.9055 3.69305 14.2955C7.41201 15.7908 12.5873 15.7908 16.3063 14.2955C17.2763 13.9055 18.0686 13.1229 17.8914 11.9954C17.7825 11.3024 17.244 10.7254 16.845 10.162C16.3224 9.41493 16.2705 8.60009 16.2704 7.73317C16.2704 4.38291 13.4629 1.66699 9.99968 1.66699C6.53645 1.66699 3.72895 4.38291 3.72895 7.73317C3.72887 8.60009 3.67694 9.41493 3.15435 10.162C2.75537 10.7254 2.21685 11.3024 2.10794 11.9954Z"
+                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M7.5 17.5C8.16345 18.0182 9.03956 18.3333 10 18.3333C10.9604 18.3333 11.8366 18.0182 12.5 17.5"
+                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                </svg>
+                            </i>
+                            <?php if ($notificationCount): ?>
+                                <sup
+                                    class="el-badge__content fcomc_unread_badge el-badge__content--danger is-fixed"><?php echo $notificationCount > 20 ? '20+' : $notificationCount; ?></sup>
+                            <?php endif; ?>
+                        </a>
+                    <?php endif; ?>
+                </li>
+            <?php endif; ?>
+            <?php do_action('fluent_community/before_header_menu_items', $auth, $context); ?>
             <?php if ($auth): ?>
                 <li class="top_menu_item fcom_menu_item_user">
                     <div class="fcom_user_menu_item">
@@ -246,7 +280,7 @@ class PortalHandler
                                     <img alt="User Photo" src="<?php echo esc_url($auth->avatar); ?>"/>
                                     <span class="avatar_icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" height="8" width="8"
-                                             viewBox="0 0 1024 1024" data-v-d2e47025="">
+                                             viewBox="0 0 1024 1024">
                                             <path fill="currentColor"
                                                   d="M104.704 338.752a64 64 0 0 1 90.496 0l316.8 316.8 316.8-316.8a64 64 0 0 1 90.496 90.496L557.248 791.296a64 64 0 0 1-90.496 0L104.704 429.248a64 64 0 0 1 0-90.496z"></path>
                                         </svg>
@@ -444,22 +478,9 @@ class PortalHandler
             'unread_feed_ids'           => $userModel ? $userModel->getUnreadNotificationFeedIds() : [],
             'date_offset'               => time() - current_time('timestamp'),
             'portal_slug'               => Helper::getPortalSlug(true),
-            'mobileMenuItems'           => apply_filters('fluent_community/mobile_menu', [
-                [
-                    'route'    => [
-                        'name' => 'all_feeds'
-                    ],
-                    'icon_svg' => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"></path><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"></path><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>'
-                ],
-                [
-                    'route'    => [
-                        'name' => 'spaces'
-                    ],
-                    'icon_svg' => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>'
-                ]
-            ]),
             'socialLinkProviders'       => ProfileHelper::socialLinkProviders(true),
             'space_groups'              => $spaceGroups,
+            'mobileMenuItems'           => Helper::getMobileMenuItems(),
             'feed_links'                => Helper::getEnabledFeedLinks(),
             'routing_system'            => Helper::getPortalRouteType(),
             'portal_url'                => Helper::baseUrl('/'),
@@ -583,18 +604,6 @@ class PortalHandler
             ]
         ]);
 
-        if ($xprofile) {
-            $portalVars['mobileMenuItems'][] = [
-                'route'    => [
-                    'name'   => 'user_profile',
-                    'params' => [
-                        'username' => $xprofile->username
-                    ]
-                ],
-                'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
-            ];
-        }
-
         $portalVars['welcome_banner'] = Helper::getWelcomeBanner($userModel ? 'login' : 'logout');
 
         if (!$xprofile) {
@@ -603,6 +612,17 @@ class PortalHandler
         }
 
         return $portalVars;
+    }
+
+    public function getGlobalScriptVars($scope = 'wp')
+    {
+        return apply_filters('fluent_community/general_portal_vars', [
+            'scope'                    => $scope,
+            'theme'                    => get_option('template'),
+            'default_color'            => 'light',
+            'color_switch_cookie_name' => '',
+            'has_color_scheme'         => Helper::hasColorScheme(),
+        ]);
     }
 
     protected function getRestInfo()
@@ -744,10 +764,15 @@ class PortalHandler
         $generalSettings = Helper::generalSettings();
 
         $dataVars = [
-            'title'          => Arr::get($generalSettings, 'site_title'),
-            'description'    => get_bloginfo('description'),
-            'featured_image' => Arr::get($generalSettings, 'featured_image', ''),
-            'js_files'       => [
+            'title'           => Arr::get($generalSettings, 'site_title'),
+            'description'     => get_bloginfo('description'),
+            'featured_image'  => Arr::get($generalSettings, 'featured_image', ''),
+            'header_js_files' => [],
+            'js_files'        => [
+                'fcom_general' => [
+                    'url'  => Vite::getStaticSrcUrl('portal_general.js'),
+                    'deps' => []
+                ],
                 'fcom_strat'   => [
                     'url'  => Vite::getStaticSrcUrl('start.js'),
                     'deps' => []
@@ -755,16 +780,13 @@ class PortalHandler
                 'fcom_app'     => [
                     'url'  => Vite::getStaticSrcUrl('app.js'),
                     'deps' => []
-                ],
-                'fcom_general' => [
-                    'url'  => Vite::getStaticSrcUrl('portal_general.js'),
-                    'deps' => []
                 ]
             ],
-            'js_vars'        => [
-                'fluentComAdmin' => $appVars,
+            'js_vars'         => [
+                'fluentComAdmin'      => $appVars,
+                'fcom_portal_general' => $this->getGlobalScriptVars('portal'),
             ],
-            'css_files'      => array_filter([
+            'css_files'       => array_filter([
                 'fcom_theme_default' => [
                     'url' => Vite::getDynamicSrcUrl('theme-default.scss', $isRtl)
                 ],
@@ -772,11 +794,11 @@ class PortalHandler
                     'url' => Vite::getDynamicSrcUrl('global.scss', $isRtl)
                 ]
             ]),
-            'url'            => $url,
-            'current_route'  => $this->currentPath,
-            'contact'        => $appVars['auth'],
-            'user'           => $userId ? get_user_by('ID', $userId) : null,
-            'route_group'    => Helper::getRouteNameByRequestPath($this->currentPath)
+            'url'             => $url,
+            'current_route'   => $this->currentPath,
+            'contact'         => $appVars['auth'],
+            'user'            => $userId ? get_user_by('ID', $userId) : null,
+            'route_group'     => Helper::getRouteNameByRequestPath($this->currentPath)
         ];
 
         if (!Utility::isDev()) {
@@ -939,13 +961,13 @@ class PortalHandler
         $settings = Helper::generalSettings();
         $userId = get_current_user_id();
 
+        $xprofile = null;
         if ($userId) {
-            $xprofile = XProfile::where('user_id', get_current_user_id())
-                ->first();
-        } else {
-            $xprofile = null;
+            $userModel = Helper::getCurrentUser();
+            if ($userModel) {
+                $xprofile = $userModel->syncXProfile(false);
+            }
         }
-
 
         $authUrl = $this->getAuthUrl();
 
@@ -964,10 +986,11 @@ class PortalHandler
             'logo'        => $logo,
             'white_logo'  => $whiteLogo,
             'site_title'  => Arr::get($settings, 'site_title'),
-            'profile_url' => $userId ? Helper::baseUrl('u/' . $xprofile->username . '/') : '',
+            'profile_url' => $xprofile ? Helper::baseUrl('u/' . $xprofile->username . '/') : '',
             'auth'        => $xprofile ? $xprofile : null,
             'auth_url'    => $authUrl,
-            'menuItems'   => $this->getMainMenuItems('header')
+            'menuItems'   => $this->getMainMenuItems('header'),
+            'context'     => $context
         ]);
 
         if ($echo) {
@@ -1048,5 +1071,4 @@ class PortalHandler
         App::make('view')->render('error_page', $data);
         exit();
     }
-
 }

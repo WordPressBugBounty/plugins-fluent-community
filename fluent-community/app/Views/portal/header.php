@@ -2,8 +2,6 @@
 
 <?php
 
-use FluentCommunity\Framework\Support\Arr;
-
 $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('icon_on_header_menu');
 
 /**
@@ -18,6 +16,7 @@ $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('ic
  * @var array $menuItems
  * @var array $profileLinks
  * @var bool $has_color_scheme
+ * @var string $context
  **/
 ?>
 <div class="fcom_top_menu">
@@ -71,9 +70,9 @@ $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('ic
                 </ul>
             </nav>
         <?php endif; ?>
-        <?php do_action('fluent_community/after_header_menu'); ?>
+        <?php do_action('fluent_community/after_header_menu', $context); ?>
     </div>
     <div class="top_menu_right">
-        <?php  do_action('fluent_community/top_menu_right_items'); ?>
+        <?php  do_action('fluent_community/top_menu_right_items', $context); ?>
     </div>
 </div>

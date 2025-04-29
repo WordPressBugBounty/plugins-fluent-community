@@ -35,6 +35,10 @@ class ActivationHandler
         add_rewrite_rule('^' . $slug . '/(.+)/?', 'index.php?fcom_route=$matches[1]', 'top');
         // flush rewrite rules
         flush_rewrite_rules(true);
+
+        // remove the default WordPress templates caching
+        wp_cache_delete( 'wp_get_global_stylesheet', 'theme_json' );
+        wp_cache_delete( 'wp_get_theme_data_template_parts', 'theme_json' );
     }
 
     public function maybeCreateDefaultSpaceGroup()

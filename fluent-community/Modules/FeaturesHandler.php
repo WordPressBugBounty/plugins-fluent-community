@@ -30,6 +30,21 @@ class FeaturesHandler
 <link rel="stylesheet" href="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
                 <?php
             }
+            $jsFiles = Arr::get($data, 'header_js_files', []);
+            foreach ($jsFiles as $file) {
+                $jsVars = Arr::get($file, 'vars', []);
+                foreach ($jsVars as $varKey => $values) {
+            ?>
+            <script>
+                var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
+            </script>
+                    <?php
+                }
+                ?>
+<script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
+                <?php
+            }
+
         });
 
         add_action('fluent_community/before_js_loaded', function () use ($data) {
@@ -44,9 +59,7 @@ class FeaturesHandler
         });
 
         add_action('fluent_community/portal_footer', function () use ($data) {
-
             $jsFiles = Arr::get($data, 'js_files', []);
-
             foreach ($jsFiles as $file) {
                 ?>
 <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
@@ -58,38 +71,7 @@ class FeaturesHandler
 
     public function maybePushDarkModeScript()
     {
-        static $pushed;
-        if ($pushed) {
-            return;
-        }
-        $pushed = true;
 
-        if (!Helper::hasColorScheme()) {
-            return;
-        }
-
-        ?>
-        <script type="text/javascript">
-            (function () {
-                var globalStorage = localStorage.getItem('fcom_global_storage');
-                var currentMode = '';
-                if (globalStorage) {
-                    globalStorage = JSON.parse(globalStorage);
-                    if (globalStorage) {
-                        currentMode = globalStorage.fcom_color_mode;
-                    }
-                }
-
-                if (!currentMode) {
-                    currentMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                }
-
-                if (currentMode === 'dark') {
-                    document.documentElement.classList.add('dark');
-                }
-            })();
-        </script>
-        <?php
     }
 
     public function maybeOembedRequest()

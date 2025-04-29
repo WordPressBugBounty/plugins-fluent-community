@@ -453,12 +453,11 @@ class CustomSanitizer
         return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
     }
 
-    public static function santizeSpaceSettings($settings = [])
+    public static function santizeSpaceSettings($settings = [], $privacy = 'public')
     {
         $yesNotFields = [
             'restricted_post_only',
             'can_request_join',
-            'custom_lock_screen',
             'show_sidebar',
             'hide_members_count',
             'document_library'
@@ -475,6 +474,21 @@ class CustomSanitizer
             $settings['emoji'] = self::sanitizeEmoji(Arr::get($settings, 'emoji', ''));
         } else {
             $settings['emoji'] = '';
+        }
+
+        $lockScreenType = Arr::get($settings, 'custom_lock_screen');
+        if (!in_array($lockScreenType, ['yes', 'no', 'redirect']) || $privacy !== 'private') {
+            $lockScreenType = 'no';
+        }
+        $settings['custom_lock_screen'] = $lockScreenType;
+
+
+        if ($lockScreenType === 'redirect') {
+            $redirectUrl = Arr::get($settings, 'onboard_redirect_url');
+            if (!$redirectUrl || !filter_var($redirectUrl, FILTER_VALIDATE_URL)) {
+                return new \WP_Error('invalid_redirect_url', __('Invalid redirect URL.', 'fluent-community'));
+            }
+            $settings['onboard_redirect_url'] = sanitize_url($redirectUrl);
         }
 
         return $settings;

@@ -241,6 +241,11 @@ class AuthModdule
         }
 
         add_action('fluent_community/headless/content', function ($context) use ($targetForm, $currentUrl, $frameData, $inviation, $formSettings) {
+            $preContent = apply_filters('fluent_community/auth/pre_content', '', $context, $targetForm, $frameData);
+            if ($preContent) {
+                return;
+            }
+
             if ($targetForm == 'login') {
                 $this->showLoginForm($frameData, $inviation);
             } else if ($targetForm == 'reset_password') {

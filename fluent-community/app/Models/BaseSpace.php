@@ -182,8 +182,7 @@ class BaseSpace extends Model
         $roles = ['admin'];
 
         if ($checkModerator) {
-            $user = User::find($userId);
-            if ($user && $user->hasCommunityModeratorAccess()) {
+            if (Helper::isModerator()) {
                 return true;
             }
             $roles[] = 'moderator';
@@ -235,7 +234,12 @@ class BaseSpace extends Model
         }
 
         if (isset($data['settings'])) {
-            $settings = CustomSanitizer::santizeSpaceSettings($data['settings']);
+
+            $settings = CustomSanitizer::santizeSpaceSettings($data['settings'], $this->privacy);
+
+            if(is_wp_error($settings)) {
+                return $settings;
+            }
 
             $exisitingSetting = $this->settings;
             $settings['links'] = Arr::get($exisitingSetting, 'links', []);

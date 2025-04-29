@@ -209,7 +209,7 @@ class CleanupHandler
         if (defined('FLUENT_MESSAGING_CHAT_VERSION')) {
             Utility::getApp('db')->table('fcom_chat_messages')->where('user_id', $userId)->delete();
             Utility::getApp('db')->table('fcom_chat_thread_users')->where('user_id', $userId)->delete();
-            Utility::getApp('db')->table('fcom_chat_thread_users')->where('user_id', $userId)->delete();
+            Utility::getApp('db')->table('fcom_chat_threads')->where('user_id', $userId)->delete();
         }
 
         // meta

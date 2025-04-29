@@ -1,15 +1,14 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
-<table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; box-sizing: border-box; width: 100%; min-width: 100%; margin-top: 10px;" width="100%">
+<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
+<table align="left" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
+       style="text-align: left;margin-bottom:10px; margin-top:10px">
     <tbody>
     <tr>
-        <td align="left" style="font-family: Arial, sans-serif; font-size: 16px; vertical-align: top; padding-bottom: 16px;" valign="top">
-            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
-                <tbody>
-                <tr>
-                    <td style="font-family: Arial, sans-serif; font-size: 16px; vertical-align: top; border-radius: 4px; text-align: center; background-color: #0867ec;" valign="top" align="center" bgcolor="#0867ec"> <a href="<?php echo esc_url($link); ?>" target="_blank" style="border: solid 2px #0867ec; border-radius: 4px; box-sizing: border-box; cursor: pointer; display: inline-block; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 24px; text-decoration: none; background-color: #0867ec; border-color: #0867ec; color: #ffffff;"><?php echo wp_kses_post($btnText); ?></a></td>
-                </tr>
-                </tbody>
-            </table>
+        <td>
+            <a href="<?php echo esc_url($link); ?>" style="background-color:#0867ec;color:rgb(255,255,255);font-weight:700;padding-top:12px;padding-bottom:12px;padding-left:24px;padding-right:24px;border-radius:4px;text-decoration-line:none;text-align:center;box-sizing:border-box;line-height:100%;text-decoration:none;display:inline-block;max-width:100%;mso-padding-alt:0px;padding:12px 24px 12px 24px" target="_blank">
+                <span><!--[if mso]><i style="mso-font-width:400%;mso-text-raise:18" hidden>&#8202;&#8202;&#8202;</i><![endif]--></span>
+                <span style="max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:9px"><?php echo wp_kses_post($btnText); ?></span>
+                <span><!--[if mso]><i style="mso-font-width:400%" hidden>&#8202;&#8202;&#8202;&#8203;</i><![endif]--></span>
+            </a>
         </td>
     </tr>
     </tbody>

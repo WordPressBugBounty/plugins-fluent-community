@@ -171,6 +171,7 @@
                 </table>
                 <?php if($footerLines): ?>
                 <div class="footer" style="clear: both; padding-top: 24px; padding-bottom: 24px; text-align: center; width: 100%;">
+                    <!--before_footer_section-->
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
                         <?php foreach ($footerLines as $line):  ?>
                         <tr>

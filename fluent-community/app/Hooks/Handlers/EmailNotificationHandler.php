@@ -158,6 +158,11 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+            }
+
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
             $mailer->send();
@@ -171,7 +176,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
+                    usleep((int)(1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -182,6 +187,12 @@ class EmailNotificationHandler
 
     public function handleNewCommentEvent(Comment $comment, $feed)
     {
+        // Check the comment mentioned users or not
+        if (Arr::get($comment->meta, 'mentioned_user_ids', [])) {
+            as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
+            return;
+        }
+
         if ($comment->parent_id) {
             $globalCommentStatus = $this->isEnabled('reply_my_com_mail');
         } else {
@@ -241,6 +252,15 @@ class EmailNotificationHandler
             $notificationUserIds[] = $feed->user_id;
         }
 
+        // the mentioned user ids
+        if ($mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', [])) {
+            foreach ($mentionedUserIds as $mentionedUserId) {
+                if (NotificationPref::willGetMentionEmail($mentionedUserId, $this->isEnabled('mention_mail'))) {
+                    $notificationUserIds[] = $mentionedUserId;
+                }
+            }
+        }
+
         if (!$notificationUserIds) {
             return;
         }
@@ -283,6 +303,11 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+            }
+
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
             $mailer->send();
@@ -296,7 +321,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
+                    usleep((int)(1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -381,6 +406,11 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+            }
+
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
             $mailer->send();
@@ -394,7 +424,7 @@ class EmailNotificationHandler
             if (($index + 1) % $maxSendPerSecond == 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
-                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
+                    usleep((int)(1000000 - ($timeTaken * 1000000)));
                 }
                 $startTime = microtime(true);
             }
@@ -436,7 +466,7 @@ class EmailNotificationHandler
             'link' => $postPermalink
         ]);
 
-        // $emailComposer->setDefaultLogo();
+        $emailComposer->setDefaultLogo();
         $emailComposer->setDefaultFooter($withPlaceholder);
 
         return $emailComposer->getHtml();
@@ -467,10 +497,10 @@ class EmailNotificationHandler
             'link' => $postPermalink
         ]);
 
-        //  $emailComposer->setDefaultLogo();
-//        $emailComposer->addFooterLine('paragraph', sprintf(__('You are getting this email because you are a member of %s', 'fluent-community'), '<a style="text-decoration: underline !important;" href="' . Helper::baseUrl() . '">' . get_bloginfo('name') . '</a>'));
+        $emailComposer->setDefaultLogo();
 
         $emailComposer->setDefaultFooter();
+
 
         return $emailComposer->getHtml();
     }
@@ -553,7 +583,7 @@ class EmailNotificationHandler
             if ($sentCount % $maxSendPerSecond === 0) {
                 $timeTaken = microtime(true) - $startAt;
                 if ($timeTaken < 1) {
-                    usleep( (int) (1000000 - ($timeTaken * 1000000)));
+                    usleep((int)(1000000 - ($timeTaken * 1000000)));
                 }
                 $startAt = microtime(true);
             }
@@ -669,5 +699,27 @@ class EmailNotificationHandler
         }
 
         return $feedHtml;
+    }
+
+    private function getNotificationBadges($userId)
+    {
+        $unreadCount = Notification::byStatus('unread', $userId)->count();
+        $unreadMessages = apply_filters('fluent_messaging/get_unread_message_count', 0, $userId);
+
+        $html = '';
+        if ($unreadCount) {
+            $notificationUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications'), $userId);
+            $html = '<a style="text-decoration: none;" href="' . $notificationUrl . '">' . sprintf(__('🔔 %d Unread Notifications.', 'fluent-communtiy'), $unreadCount) . '</a>';
+            if ($unreadMessages) {
+                $html .= '<span style="margin: 0 10px;"> | </span>';
+            }
+        }
+
+        if ($unreadMessages) {
+            $chatUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('chat'), $userId);
+            $html .= '<a style="text-decoration: none;" href="' . $chatUrl . '">' . sprintf(__('✉️ %d Unread Messages', 'fluent-communtiy'), $unreadMessages) . '</a>';
+        }
+
+        return $html;
     }
 }

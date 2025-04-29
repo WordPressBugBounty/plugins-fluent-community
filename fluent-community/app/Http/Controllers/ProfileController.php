@@ -44,10 +44,13 @@ class ProfileController extends Controller
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
 
-        $isOwn = $xprofile->user_id == get_current_user_id();
+        $currentUserId = get_current_user_id();
 
-        $isAdmin = Helper::isSiteAdmin();
-        if ($xprofile->user_id == get_current_user_id() || $isAdmin) {
+        $isOwn = $xprofile->user_id == $currentUserId;
+
+        $isAdmin = Helper::isSiteAdmin($currentUserId, $xprofile->user);
+
+        if ($xprofile->user_id == $currentUserId || $isAdmin) {
             $profile['email'] = $user->user_email;
             $profile['first_name'] = $user->first_name;
             $profile['last_name'] = $user->last_name;

@@ -390,6 +390,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/MigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\MigrationModule' => __DIR__ . '/../..' . '/Modules/Migrations/MigrationModule.php',
+        'FluentCommunity\\Modules\\Theming\\TemplateLoader' => __DIR__ . '/../..' . '/Modules/Theming/TemplateLoader.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

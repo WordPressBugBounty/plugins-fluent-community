@@ -42,9 +42,7 @@
     <?php do_action('fluent_community/headless/head_early', $scope); ?>
 
     <?php foreach ($css_files as $css_file): ?>
-        <link rel="stylesheet"
-              href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-              media="screen"/>
+        <link rel="stylesheet" href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
     <?php endforeach; ?>
     <?php do_action('fluent_community/headless/head', $scope); ?>
 </head>
@@ -94,9 +92,7 @@
 <?php do_action('fluent_community/headless/before_js_loaded', $scope); ?>
 
 <?php foreach ($js_files as $file): ?>
-    <script type="module"
-            src="<?php echo esc_url($file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-            defer="defer"></script>
+    <script type="module" src="<?php echo esc_url($file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
 <?php endforeach; ?>
 
 <?php do_action('fluent_community/headless/footer', $scope); ?>

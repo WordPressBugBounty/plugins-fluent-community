@@ -54,7 +54,7 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                 <?php endif; ?>
                 <?php foreach ($topInlineLinks as $itemKey => $topInline): ?>
                     <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
-                        <?php Helper::renderLink($topInline, 'fcom_menu_link'); ?>
+                        <?php Helper::renderLink($topInline, 'fcom_menu_link fcom_custom_link'); ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -114,7 +114,7 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                         <ul>
                             <?php foreach ($bottomLinkGroup['items'] as $buttomLink): ?>
                                 <li class="space_menu_item">
-                                    <?php Helper::renderLink($buttomLink, 'fcom_menu_link space_menu_item route_url', '🔗'); ?>
+                                    <?php Helper::renderLink($buttomLink, 'fcom_menu_link space_menu_item route_url fcom_custom_link', '🔗'); ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

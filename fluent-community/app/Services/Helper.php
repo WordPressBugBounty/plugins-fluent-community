@@ -103,13 +103,7 @@ class Helper
         return apply_filters('fluent_community/has_color_scheme', $status);
     }
 
-    /**
-     * Check if the user is a site admin.
-     *
-     * @param int|null $userId The user ID to check. If null, checks the current user.
-     * @return bool True if the user is a site admin, false otherwise.
-     */
-    public static function isSiteAdmin($userId = null)
+    public static function isSuperAdmin($userId = null)
     {
         $capability = apply_filters('fluent_community/super_admin_capability', 'manage_options');
 
@@ -128,13 +122,32 @@ class Helper
         return user_can($userId, $capability);
     }
 
+    /**
+     * Check if the user is a site admin.
+     *
+     * @param int|null $userId The user ID to check. If null, checks the current user.
+     * @return bool True if the user is a site admin, false otherwise.
+     */
+    public static function isSiteAdmin($userId = null, $user = null)
+    {
+        if (self::isSuperAdmin($userId)) {
+            return true;
+        }
+
+        if (!$user) {
+            $user = self::getCurrentUser();
+        }
+
+        return $user && Arr::get($user->getPermissions(), 'community_admin');
+    }
+
     public static function isModerator($user = null)
     {
         if (!$user) {
             $user = self::getCurrentUser();
         }
 
-        return $user && $user->isCommunityModerator();
+        return $user && $user->hasCommunityModeratorAccess();
     }
 
     /**
@@ -1312,6 +1325,46 @@ class Helper
         return array_values($links);
     }
 
+    public static function getMobileMenuItems($context = 'headless')
+    {
+        $xprofile = Helper::getCurrentProfile();
+
+        $mobileMenuItems = [
+            [
+                'route'    => [
+                    'name' => 'all_feeds'
+                ],
+                'icon_svg' => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"></path><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"></path><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>'
+            ],
+            [
+                'route'    => [
+                    'name' => 'spaces'
+                ],
+                'icon_svg' => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>'
+            ]
+        ];
+
+        if ($xprofile) {
+            $mobileMenuItems[] = [
+                'route'    => [
+                    'name'   => 'user_profile',
+                    'params' => [
+                        'username' => $xprofile->username
+                    ]
+                ],
+                'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
+            ];
+        } else if (!get_current_user_id()) {
+            $mobileMenuItems[] = [
+                'name'      => 'login',
+                'permalink' => Helper::getAuthUrl(),
+                'icon_svg'  => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
+            ];
+        }
+
+        return apply_filters('fluent_community/mobile_menu', $mobileMenuItems, $xprofile, $context);
+    }
+
     public static function getFeedLinks()
     {
         return Utility::getOption('feed_links', []);
@@ -1504,11 +1557,15 @@ class Helper
      */
     public static function renderLink($link, $linkClass = '', $fallback = '<span class="fcom_no_avatar"></span>', $renderIcon = true)
     {
+        $isCustom = Arr::get($link, 'is_custom') == 'yes';
+
         $linkAtts = array_filter([
-            'class'  => trim($linkClass . ' ' . Arr::get($link, 'link_classes')) . ' fcom_compt_link',
+            'class'  => trim($linkClass . ' ' . Arr::get($link, 'link_classes')) . ' fcom_compt_link' . ($isCustom ? ' fcom_custom_link' : ''),
             'target' => Arr::get($link, 'new_tab') === 'yes' ? '_blank' : '',
             'rel'    => Arr::get($link, 'new_tab') === 'yes' ? 'noopener noreferrer' : '',
         ]);
+
+
         ?>
         <a aria-label="Go to <?php echo esc_attr(Arr::get($link, 'title')); ?> page"
            href="<?php echo esc_url($link['permalink']); ?>" <?php foreach ($linkAtts as $key => $value) {

@@ -327,7 +327,7 @@ class User extends Model
 
     public function getCommunityRoles()
     {
-        if (Helper::isSiteAdmin($this->ID)) {
+        if (Helper::isSuperAdmin($this->ID)) {
             return ['admin'];
         }
 
@@ -446,7 +446,7 @@ class User extends Model
 
         $permissions = [
             'admin'               => $isAdmin,
-            'super_admin'         => Helper::isSiteAdmin(),
+            'super_admin'         => Helper::isSuperAdmin(),
             'community_admin'     => $isAdmin,
             'community_moderator' => $isModerator,
             'delete_any_feed'     => $isModerator,
@@ -553,7 +553,7 @@ class User extends Model
                 'delete_any_feed'      => $isMod,
                 'edit_any_comment'     => $isMod,
                 'delete_any_comment'   => $isMod,
-                'super_admin'          => Helper::isSiteAdmin(),
+                'super_admin'          => Helper::isSuperAdmin(),
                 'read'                 => true,
                 'can_remove_member'    => $isAdmin,
                 'can_add_member'       => $isAdmin,

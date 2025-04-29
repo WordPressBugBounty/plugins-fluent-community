@@ -133,10 +133,17 @@ class LockscreenService
         $showCustom = Arr::get($space->settings, 'custom_lock_screen', 'no') === 'yes';
         $canSendRequest = Arr::get($space->settings, 'can_request_join', 'no') === 'yes';
 
+        $isRedirect = Arr::get($space->settings, 'custom_lock_screen', 'no') == 'redirect' && Arr::get($space->settings, 'onboard_redirect_url', false);
+        $redirectUrl = '';
+        if($isRedirect) {
+            $redirectUrl = Arr::get($space->settings, 'onboard_redirect_url', false);
+        }
+
         return [
             'showCustom'     => $showCustom,
             'canSendRequest' => $canSendRequest,
-            'lockScreen'     => $showCustom ? self::getLockscreenSettings($space) : null
+            'lockScreen'     => $showCustom ? self::getLockscreenSettings($space) : null,
+            'redirect_url' => $redirectUrl,
         ];
     }
 

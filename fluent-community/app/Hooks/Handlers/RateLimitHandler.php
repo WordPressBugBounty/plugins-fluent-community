@@ -31,7 +31,7 @@ class RateLimitHandler
 
     public function maybeLimitComment(User $user)
     {
-        if (Helper::isSiteAdmin()) {
+        if (Helper::isSiteAdmin($user->ID, $user)) {
             return;
         }
 

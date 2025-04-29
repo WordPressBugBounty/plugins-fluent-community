@@ -39,12 +39,10 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
     <style id="fcom_css_vars">
         <?php echo \FluentCommunity\App\Functions\Utility::getColorCssVariables(); ?>
-
         .dark body .el-dialog {
             --el-dialog-bg-color: #2B2E33;
         }
     </style>
-
 </head>
 <body>
 <div class="fcom_wrap">

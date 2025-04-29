@@ -22,9 +22,11 @@ class Integrations
                 new \FluentCommunity\Modules\Integrations\FluentCRM\CourseEnrollmentTrigger();
             }
         }
-    
+        
         if (defined('FLUENTFORM')) {
-            new \FluentCommunity\Modules\Integrations\FluentForms\Bootstrap();
+            add_action('init', function () {
+                new \FluentCommunity\Modules\Integrations\FluentForms\Bootstrap();
+            });
         }
     }
 }

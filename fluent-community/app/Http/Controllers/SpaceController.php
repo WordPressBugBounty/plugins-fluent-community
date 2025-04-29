@@ -9,6 +9,7 @@ use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Comment;
@@ -59,12 +60,19 @@ class SpaceController extends Controller
             $serial = BaseSpace::max('serial') + 1;
         }
 
+        $settings = CustomSanitizer::santizeSpaceSettings(Arr::get($data, 'settings', []), $data['privacy']);
+        if (is_wp_error($settings)) {
+            return $this->sendError([
+                'message' => $settings->get_error_message()
+            ]);
+        }
+
         $spaceData = apply_filters('fluent_community/space/create_data', [
             'title'       => sanitize_text_field($data['title']),
             'slug'        => $data['slug'],
             'privacy'     => $data['privacy'],
             'description' => sanitize_textarea_field($data['description']),
-            'settings'    => CustomSanitizer::santizeSpaceSettings(Arr::get($data, 'settings', [])),
+            'settings'    => $settings,
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
             'serial'      => $serial ?: 1
         ]);
@@ -258,6 +266,13 @@ class SpaceController extends Controller
         }
 
         $space = $space->updateCustomData($data, true);
+
+        if(is_wp_error($space)) {
+            return $this->sendError([
+                'message' => $space->get_error_message()
+            ]);
+        }
+
 
         if (Arr::has($data, 'topic_ids')) {
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
@@ -682,6 +697,7 @@ class SpaceController extends Controller
         foreach ($groups as $group) {
             foreach ($group->spaces as $space) {
                 $space->permalink = $space->getPermalink();
+                $space->topics = Utility::getTopicsBySpaceId($space->id);
             }
         }
 
@@ -693,6 +709,7 @@ class SpaceController extends Controller
 
         foreach ($orphanedSpaces as $space) {
             $space->permalink = $space->getPermalink();
+            $space->topics = Utility::getTopicsBySpaceId($space->id);
         }
 
         return [

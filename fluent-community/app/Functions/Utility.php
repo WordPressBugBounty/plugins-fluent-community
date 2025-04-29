@@ -14,7 +14,6 @@ use FluentCommunity\Modules\Course\Model\Course;
 
 class Utility
 {
-
     public static function isDev()
     {
         static $isDev = null;
@@ -1141,7 +1140,7 @@ class Utility
             'settingsItems'    => $settingsMenu,
             'topInlineLinks'   => $topInlines,
             'bottomLinkGroups' => $bottomLinkGroups,
-            'is_admin'         => Helper::isSiteAdmin(),
+            'is_admin'         => Helper::isSiteAdmin(null, $userModel),
             'has_color_scheme' => Helper::hasColorScheme(),
             'context'          => $scope,
         ], $userModel);

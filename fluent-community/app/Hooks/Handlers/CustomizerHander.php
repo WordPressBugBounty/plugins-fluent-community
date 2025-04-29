@@ -11,11 +11,11 @@ class CustomizerHander
     public function register()
     {
         add_filter('fluent_community/portal_data_vars', function ($vars) {
-            if (Arr::get($vars, 'route_group') == 'admin') {
+            if (Arr::get($vars, 'route_group') == 'admin' && Helper::isSiteAdmin()) {
                 add_action('fluent_community/before_header_right_menu_items', function () {
                     ?>
                     <li>
-                        <a style="border: 1px solid; padding: 3px 15px; color: var(--fcom-menu-text, #545861);background: var(--fcom-active-bg, #f0f3f5);"
+                        <a style="border: 1px solid; padding: 3px 15px; margin-right: 8px; color: var(--fcom-menu-text, #545861);background: var(--fcom-active-bg, #f0f3f5);"
                            href="<?php echo esc_url(Helper::baseUrl('/?customizer_panel=1')); ?>"><?php _e('Customize Colors', 'fluent-community'); ?></a>
                     </li>
                     <?php

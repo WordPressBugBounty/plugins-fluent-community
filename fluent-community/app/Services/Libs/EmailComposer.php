@@ -120,18 +120,11 @@ class EmailComposer
     public function setDefaultLogo()
     {
         $emailSettings = Utility::getEmailNotificationSettings();
-
         if (!empty($emailSettings['logo'])) {
             $this->logo = $emailSettings['logo'];
-        } else {
-            $generalSettings = Helper::generalSettings();
-            if (!empty($generalSettings['logo'])) {
-                $this->logo = $generalSettings['logo'];
-            }
         }
 
         return $this;
-
     }
 
     public function addFooterLine($type, $line)

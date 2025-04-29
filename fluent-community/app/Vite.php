@@ -3,7 +3,6 @@
 namespace FluentCommunity\App;
 
 use FluentCommunity\App\Functions\Utility;
-use FluentCommunity\App\Services\Helper;
 
 class Vite
 {

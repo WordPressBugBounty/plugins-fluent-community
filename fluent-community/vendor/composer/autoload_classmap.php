@@ -352,4 +352,5 @@ return array(
     'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => $baseDir . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
     'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => $baseDir . '/Modules/Migrations/Http/Controllers/MigrationController.php',
     'FluentCommunity\\Modules\\Migrations\\MigrationModule' => $baseDir . '/Modules/Migrations/MigrationModule.php',
+    'FluentCommunity\\Modules\\Theming\\TemplateLoader' => $baseDir . '/Modules/Theming/TemplateLoader.php',
 );
