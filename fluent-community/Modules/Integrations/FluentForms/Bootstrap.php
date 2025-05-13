@@ -19,7 +19,7 @@ class Bootstrap extends IntegrationManagerController
     {
         parent::__construct(
             null,
-            'Fluent Community',
+            'FluentCommunity',
             'fluent_community',
             '_fluentform_fluent_community_settings',
             'fluent_community_feeds',
@@ -28,7 +28,7 @@ class Bootstrap extends IntegrationManagerController
 
         $this->logo = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/logo.png';
 
-        $this->description = __('Connect Fluent Forms with Fluent Community', 'fluent-community');
+        $this->description = __('Connect Fluent Forms with FluentCommunity', 'fluent-community');
 
         $this->registerAdminHooks();
         add_filter("fluentform/save_integration_value_{$this->integrationKey}", array($this, 'validateSettings'), 10, 2);
@@ -200,7 +200,7 @@ class Bootstrap extends IntegrationManagerController
             'category'                => 'wp_core',
             'disable_global_settings' => 'yes',
             'logo'                    => '',
-            'title'                   => sprintf(__(' %s Integration', 'fluent-community'), 'Fluent Community'),
+            'title'                   => sprintf(__(' %s Integration', 'fluent-community'), 'FluentCommunity'),
             'is_active'               => $this->isConfigured()
         ];
 

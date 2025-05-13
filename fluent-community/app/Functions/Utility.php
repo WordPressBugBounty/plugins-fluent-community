@@ -202,6 +202,8 @@ class Utility
             'rich_post_layout'     => 'classic',
             'member_list_layout'   => 'classic', // grid, classic
             'post_title_pref'      => 'optional',
+            'disable_feed_sort_by' => 'no',
+            'default_feed_sort_by' => ''
         ];
 
         $settings = self::getOption('customization_settings', $defaults);

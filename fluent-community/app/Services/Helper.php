@@ -708,7 +708,7 @@ class Helper
      * @param User|null $user The user to get menu groups for.
      * @return array The community menu groups.
      */
-    public static function getCommunityMenuGroups($user = null)
+    public static function getCommunityMenuGroups($user = null, $view = true)
     {
         if (!$user) {
             $user = self::getCurrentUser();
@@ -735,7 +735,7 @@ class Helper
             }
 
             foreach ($spaces as $space) {
-                $validSpace = self::transformSpaceToLink($space);
+                $validSpace = $view ? self::transformSpaceToLink($space) : $space;
                 if ($user) {
                     $validSpace['unread_badge'] = self::getUnreadFeedsCounts($space->id);
                 }
@@ -1867,5 +1867,33 @@ class Helper
         }
 
         return false;
+    }
+
+    public static function getFullDayName($day)
+    {
+        $dayMap = [
+            'sun' => 'sunday',
+            'mon' => 'monday',
+            'tue' => 'tuesday',
+            'wed' => 'wednesday',
+            'thu' => 'thursday',
+            'fri' => 'friday',
+            'sat' => 'saturday'
+        ];
+        
+        return isset($dayMap[$day]) ? $dayMap[$day] : $day . 'day';
+    }
+
+    public static function getPostOrderOptions()
+    {
+        return [
+            'new_activity'  => __('New Activity', 'fluent-community'),
+            'latest'        => __('Latest', 'fluent-community'),
+            'oldest'        => __('Oldest', 'fluent-community'),
+            'popular'       => __('Popular', 'fluent-community'),
+            'likes'         => __('Likes', 'fluent-community'),
+            'alphabetical'  => __('Alphabetical', 'fluent-community'),
+            'unanswered'    => __('Unanswered', 'fluent-community'),
+        ];
     }
 }

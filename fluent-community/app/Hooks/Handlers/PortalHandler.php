@@ -47,6 +47,7 @@ class PortalHandler
 
         add_action('template_redirect', function () {
             $hook_path = get_query_var('fcom_route');
+
             if ($hook_path) {
                 $this->currentPath = $hook_path;
                 $this->renderFullApp();
@@ -431,6 +432,7 @@ class PortalHandler
             'permissions'               => $userModel ? $userModel->getPermissions() : ['read' => true],
             'logo'                      => Arr::get($settings, 'logo'),
             'site_title'                => Arr::get($settings, 'site_title'),
+            'access_level'              => Arr::get($settings, 'access.acess_level'),
             'user_membership_slugs'     => $spaceSlugs,
             'block_editor_assets'       => [
                 'scripts' => [
@@ -458,6 +460,8 @@ class PortalHandler
                 'skicky_sidebar'        => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'post_layout'           => Utility::getCustomizationSetting('rich_post_layout'),
                 'member_list_layout'    => Utility::getCustomizationSetting('member_list_layout'),
+                'disable_feed_sort_by'  => Utility::getCustomizationSetting('disable_feed_sort_by'),
+                'default_feed_sort_by'  => Utility::getCustomizationSetting('default_feed_sort_by'),
                 'video_embeder'         => apply_filters('fluent_community/has_video_embeder', true),
                 'has_topics'            => !!Utility::getTopics(),
                 'show_post_modal'       => Utility::isCustomizationEnabled('show_post_modal'),
@@ -482,6 +486,7 @@ class PortalHandler
             'space_groups'              => $spaceGroups,
             'mobileMenuItems'           => Helper::getMobileMenuItems(),
             'feed_links'                => Helper::getEnabledFeedLinks(),
+            'post_order_by_options'     => Helper::getPostOrderOptions(),
             'routing_system'            => Helper::getPortalRouteType(),
             'portal_url'                => Helper::baseUrl('/'),
             'upgrade_url'               => 'https://fluentcommunity.co/discount-deal/?utm_source=wp&utm_medium=upgrade&utm_campaign=upgrade',
@@ -595,6 +600,73 @@ class PortalHandler
                     'noData'      => __('No data', 'fluent-community'),
                     'noMatch'     => __('No matching data', 'fluent-community'),
                     'placeholder' => __('Select', 'fluent-community'),
+                ],
+                'datepicker' => [
+                    'now' => __('Now', 'fluent-community'),
+                    'today' => __('Today', 'fluent-community'),
+                    'cancel' => __('Cancel', 'fluent-community'),
+                    'clear' => __('Clear', 'fluent-community'),
+                    'confirm' => __('OK', 'fluent-community'),
+                    'dateTablePrompt' => __('Use the arrow keys and enter to select the day of the month', 'fluent-community'),
+                    'monthTablePrompt' => __('Use the arrow keys and enter to select the month', 'fluent-community'),
+                    'yearTablePrompt' => __('Use the arrow keys and enter to select the year', 'fluent-community'),
+                    'selectedDate' => __('Selected date', 'fluent-community'),
+                    'selectDate' => __('Select date', 'fluent-community'),
+                    'selectTime' => __('Select time', 'fluent-community'),
+                    'startDate' => __('Start Date', 'fluent-community'),
+                    'startTime' => __('Start Time', 'fluent-community'),
+                    'endDate' => __('End Date', 'fluent-community'),
+                    'endTime' => __('End Time', 'fluent-community'),
+                    'prevYear' => __('Previous Year', 'fluent-community'),
+                    'nextYear' => __('Next Year', 'fluent-community'),
+                    'prevMonth' => __('Previous Month', 'fluent-community'),
+                    'nextMonth' => __('Next Month', 'fluent-community'),
+                    'year' => __('', 'fluent-community'),
+                    'month1' => __('January', 'fluent-community'),
+                    'month2' => __('February', 'fluent-community'),
+                    'month3' => __('March', 'fluent-community'),
+                    'month4' => __('April', 'fluent-community'),
+                    'month5' => __('May', 'fluent-community'),
+                    'month6' => __('June', 'fluent-community'),
+                    'month7' => __('July', 'fluent-community'),
+                    'month8' => __('August', 'fluent-community'),
+                    'month9' => __('September', 'fluent-community'),
+                    'month10' => __('October', 'fluent-community'),
+                    'month11' => __('November', 'fluent-community'),
+                    'month12' => __('December', 'fluent-community'),
+                    'week' => __('week', 'fluent-community'),
+                    'weeks' => [
+                        'sun' => __('Sun', 'fluent-community'),
+                        'mon' => __('Mon', 'fluent-community'),
+                        'tue' => __('Tue', 'fluent-community'),
+                        'wed' => __('Wed', 'fluent-community'),
+                        'thu' => __('Thu', 'fluent-community'),
+                        'fri' => __('Fri', 'fluent-community'),
+                        'sat' => __('Sat', 'fluent-community'),
+                    ],
+                    'weeksFull' => [
+                        'sun' => __('Sunday', 'fluent-community'),
+                        'mon' => __('Monday', 'fluent-community'),
+                        'tue' => __('Tuesday', 'fluent-community'),
+                        'wed' => __('Wednesday', 'fluent-community'),
+                        'thu' => __('Thursday', 'fluent-community'),
+                        'fri' => __('Friday', 'fluent-community'),
+                        'sat' => __('Saturday', 'fluent-community'),
+                    ],
+                    'months' => [
+                        'jan' => __('Jan', 'fluent-community'),
+                        'feb' => __('Feb', 'fluent-community'),
+                        'mar' => __('Mar', 'fluent-community'),
+                        'apr' => __('Apr', 'fluent-community'),
+                        'may' => __('May', 'fluent-community'),
+                        'jun' => __('Jun', 'fluent-community'),
+                        'jul' => __('Jul', 'fluent-community'),
+                        'aug' => __('Aug', 'fluent-community'),
+                        'sep' => __('Sep', 'fluent-community'),
+                        'oct' => __('Oct', 'fluent-community'),
+                        'nov' => __('Nov', 'fluent-community'),
+                        'dec' => __('Dec', 'fluent-community'),
+                    ],
                 ]
             ],
             'wp_lesson_editor_frame'    => site_url('?fluent_community_block_editor=1'),
@@ -650,6 +722,9 @@ class PortalHandler
             $action = sanitize_text_field(wp_unslash($_REQUEST['fcom_action'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             do_action('fluent_community/portal_action_' . $action, $_GET); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
+
+        $pathParts = explode('/', $this->currentPath);
+        do_action('fluent_community/rendering_path_ssr_' . $pathParts[0], $pathParts);
 
         $userId = get_current_user_id();
 
@@ -824,6 +899,8 @@ class PortalHandler
     {
         $dynamicRoute = Arr::get($data, 'route_group');
 
+        $data['landing_route'] = $dynamicRoute;
+
         $validGroups = [
             'user_profile',
             'community_view',
@@ -842,7 +919,7 @@ class PortalHandler
                 $userName = $uriParts[1];
                 $xProfile = XProfile::where('username', $userName)->first();
                 if ($xProfile) {
-                    $data['title'] = esc_html($xProfile->display_name) . ' - ' . $data['title'];
+                    $data['title'] = 'User ' . esc_html($xProfile->display_name) . ' - ' . $data['title'];
                     if ($xProfile->short_description) {
                         $data['description'] = Helper::getHumanExcerpt($xProfile->short_description, 100);
                     }
@@ -858,9 +935,7 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $paceSlug = $uriParts[1];
-
                 $space = BaseSpace::query()->withoutGlobalScopes()->where('slug', $paceSlug)->first();
-
                 if ($space && $space->privacy != 'secret') {
 
                     if ($dynamicRoute == 'course_view') {
@@ -903,11 +978,14 @@ class PortalHandler
                 if ($feed->title) {
                     $data['title'] = esc_html($feed->title) . ' - ' . $data['title'];
                 } else {
-                    $data['title'] = esc_html($feed->xprofile->display_name) . ' posted at ' . $data['title'];
+                    $data['title'] = esc_html($feed->xprofile ? $feed->xprofile->display_name : 'Someone') . ' posted at ' . $data['title'];
                 }
 
+                $feedUrl = $feed->getPermalink();
+                $data['canonical_url'] = $feedUrl;
+
                 if ($feed->message) {
-                    $data['description'] = esc_html(Helper::getHumanExcerpt($feed->message, 100));
+                    $data['description'] = esc_html(Helper::getHumanExcerpt($feed->message, 160));
                 }
 
                 if ($mediaPreview = Arr::get($feed->meta, 'media_preview.image')) {
@@ -920,6 +998,8 @@ class PortalHandler
                         $data['featured_image'] = $space->cover_photo;
                     }
                 }
+
+                $data['json_ld'] = apply_filters('fluent_community/feed_view_json_ld', [], $feed, $data);
             }
             return $data;
         }

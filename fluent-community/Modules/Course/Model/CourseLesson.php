@@ -119,7 +119,7 @@ class CourseLesson extends Model
 
     public function course()
     {
-        return $this->belongsTo(Course::class, 'space_id');
+        return $this->belongsTo(Course::class, 'space_id', 'id');
     }
 
     public function setMetaAttribute($value)
@@ -173,7 +173,8 @@ class CourseLesson extends Model
 
     public function getPermalink()
     {
-        return Helper::baseUrl() . '/course/' . $this->course ? $this->course->slug : 'undefined' . '/lessons/' . $this->slug . '/view';
+        $uri = '/course/' . ($this->course ? $this->course->slug : 'undefined') . '/lessons/' . $this->slug . '/view';
+        return Helper::baseUrl($uri);
     }
 
     public function hasUserReact($userId, $type = 'like')

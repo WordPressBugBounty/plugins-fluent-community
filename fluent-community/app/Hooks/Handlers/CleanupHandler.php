@@ -7,7 +7,6 @@ use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\Reaction;
-use FluentCommunity\App\Services\Helper;
 
 class CleanupHandler
 {
@@ -207,9 +206,14 @@ class CleanupHandler
          *
          */
         if (defined('FLUENT_MESSAGING_CHAT_VERSION')) {
+            \FluentMessaging\App\Models\Thread::whereHas('thread_users', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+                ->whereNull('space_id')
+                ->delete();
+
             Utility::getApp('db')->table('fcom_chat_messages')->where('user_id', $userId)->delete();
             Utility::getApp('db')->table('fcom_chat_thread_users')->where('user_id', $userId)->delete();
-            Utility::getApp('db')->table('fcom_chat_threads')->where('user_id', $userId)->delete();
         }
 
         // meta

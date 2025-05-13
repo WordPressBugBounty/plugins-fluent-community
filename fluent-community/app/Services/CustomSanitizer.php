@@ -460,13 +460,14 @@ class CustomSanitizer
             'can_request_join',
             'show_sidebar',
             'hide_members_count',
-            'document_library'
+            'document_library',
+            'disable_post_sort_by'
         ];
 
         $settings = Arr::only($settings, array_keys((new Space())->defaultSettings()));
 
         foreach ($yesNotFields as $field) {
-            $defaults[$field] = Arr::get($settings, $field) === 'yes' ? 'yes' : 'no';
+            $settings[$field] = Arr::get($settings, $field) === 'yes' ? 'yes' : 'no';
         }
 
         $settings['shape_svg'] = self::sanitizeSvg(Arr::get($settings, 'shape_svg', ''));
@@ -490,6 +491,10 @@ class CustomSanitizer
             }
             $settings['onboard_redirect_url'] = sanitize_url($redirectUrl);
         }
+
+        $validOrderOptions = array_keys(Helper::getPostOrderOptions());
+        $defaultOrder = Arr::get($settings, 'default_post_sort_by', '');
+        $settings['default_post_sort_by'] = in_array($defaultOrder, $validOrderOptions) ? $defaultOrder : '';
 
         return $settings;
     }

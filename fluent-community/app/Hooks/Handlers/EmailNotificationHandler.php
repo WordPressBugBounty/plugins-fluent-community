@@ -19,7 +19,6 @@ use FluentCommunity\Framework\Support\Arr;
 
 class EmailNotificationHandler
 {
-
     private $maxRunTime = 0;
 
     public function register()
@@ -545,14 +544,14 @@ class EmailNotificationHandler
                 $query->where('notification_type', 'digest_mail')
                     ->where('is_read', 1);
             })
-                ->orderBy('ID', 'ASC')
-                ->whereHas('xprofile', function ($query) {
-                    return $query->where('status', 'active');
-                })
-                ->when($lastSentUserId, function ($q) use ($lastSentUserId) {
-                    $q->where('ID', '>', $lastSentUserId);
-                })
+            ->whereHas('xprofile', function ($query) {
+                $query->where('status', 'active');
+            })
+            ->when($lastSentUserId, function ($q) use ($lastSentUserId) {
+                $q->where('ID', '>', $lastSentUserId);
+            })
                 ->limit(100)
+                ->orderBy('ID', 'ASC')
                 ->get();
         }
 

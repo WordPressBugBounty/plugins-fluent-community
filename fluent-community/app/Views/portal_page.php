@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * @var string $description
  * @var string $url
  * @var string $featured_image
+ * @var string $landing_route
  * @var bool $isHeadless
  */
 ?>
@@ -24,6 +25,15 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
         <meta property="og:description" content="<?php echo esc_attr($description); ?>">
         <?php if ($featured_image): ?>
             <meta property="og:image" content="<?php echo esc_url($featured_image); ?>"/>
+            <meta name="twitter:card" content="summary_large_image">
+        <?php endif; ?>
+        <?php do_action('fluent_community/portal_head_meta', $landing_route); ?>
+
+        <?php if(!empty($canonical_url)): ?>
+        <link rel="canonical" href="<?php echo esc_url($canonical_url); ?>">
+        <?php endif; ?>
+
+        <?php if(!empty($json_ld)): ?><script type="application/ld+json"><?php echo json_encode($json_ld); ?></script>
         <?php endif; ?>
     <?php endif; ?>
 

@@ -105,6 +105,11 @@ class XProfile extends Model
         return $this->hasMany(Feed::class, 'user_id', 'user_id');
     }
 
+    public function scheduledPosts()
+    {
+        return $this->posts()->where('status', 'scheduled')->where('scheduled_at', '!=', null);
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class, 'user_id', 'user_id');

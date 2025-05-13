@@ -96,7 +96,7 @@ class LockscreenService
             $formattedField['hidden'] = Arr::isTrue($value, 'hidden');
 
             if ($value['type'] == 'block') {
-                $formattedField['content'] = wp_kses_post(Arr::get($value, 'content'));
+                $formattedField['content'] = CustomSanitizer::sanitizeHtml(Arr::get($value, 'content'));
             }
 
             if (isset($value['background_image'])) {

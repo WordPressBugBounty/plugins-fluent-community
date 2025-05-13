@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,16 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.6.0 (Date: May 13, 2025) =
+- New: Auto SEO Manager
+- New: Post Scheduling
+- New: Default Feed Sorting Select Option
+- New: Post Preview Before Publishing
+- Fixed: Digest Email Delivery Issue
+- Fixed: User Deletion Bug
+- Fixed: Text Domain Warning
+- Improved: Multiple UI/UX Enhancements
 
 = 1.5.0 (Date: Apr 29, 2025) =
 - Introducing Theme Compilability with all the major themes and page builders 🚀

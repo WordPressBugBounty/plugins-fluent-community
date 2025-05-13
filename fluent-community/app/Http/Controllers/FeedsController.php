@@ -75,7 +75,7 @@ class FeedsController extends Controller
             )
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
-            ->customOrderBy($request->get('type', ''));
+            ->customOrderBy($request->get('order_by_type', ''));
 
         $stickyFeed = null;
 
@@ -101,7 +101,20 @@ class FeedsController extends Controller
                                         $q->select(ProfileHelper::getXProfilePublicFields());
                                     }]);
                             },
-                            'space'
+                            'space',
+                            'reactions' => function ($q) {
+                                $q->with([
+                                    'xprofile' => function ($query) {
+                                        $query->select(['user_id', 'avatar', 'display_name']);
+                                    }
+                                ])
+                                    ->where('type', 'like')
+                                    ->limit(3);
+                            },
+                            'terms'     => function ($q) {
+                                $q->select(['title', 'slug'])
+                                    ->where('taxonomy_name', 'post_topic');
+                            }
                         ]
                     )
                     ->first();
@@ -342,7 +355,7 @@ class FeedsController extends Controller
         // replace new line with br
         $data['message_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($message));
 
-        $requestData['is_admin'] = $user->hasSpacePermission('community_moderator', $space);
+        $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $space);
 
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData);
 
@@ -396,6 +409,16 @@ class FeedsController extends Controller
             }
         }
 
+        if ($feed->status == 'scheduled') {
+            do_action('fluent_community/feed/scheduled', $feed);
+            return [
+                'feed'                   => FeedsHelper::transformFeed($feed),
+                'scheduled_at'           => $feed->scheduled_at,
+                'message'                => sprintf(__('Your post has been scheduled for %s', 'fluent-community'), $feed->scheduled_at),
+                'last_fetched_timestamp' => current_time('timestamp')
+            ];
+        }
+
         if ($feed->status != 'published') {
             do_action('fluent_community/feed/new_feed_' . $feed->status, $feed);
             return [
@@ -425,7 +448,9 @@ class FeedsController extends Controller
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
 
-        if ($existingFeed->status != 'published') {
+        $edibaleStatuses = ['published', 'unlisted', 'scheduled'];
+
+        if ( !in_array($existingFeed->status, $edibaleStatuses)) {
             return $this->sendError([
                 'message' => __('Sorry, You can only edit a post if it\'s in published state.', 'fluent-community')
             ]);
@@ -1033,19 +1058,27 @@ class FeedsController extends Controller
         }
 
         return $this->send([
-            'message' => 'No oembed data found',
+            'message' => __('No oembed data found', 'fluent-community'),
             'url'     => $url
         ]);
     }
 
     public function markdownToHtml(Request $request)
     {
-        $message = trim(sanitize_textarea_field($request->get('text', '')));
+        $message = CustomSanitizer::unslashMarkdown($request->get('text', ''));
 
-        $html = FeedsHelper::mdToHtml($message);
-
-        return [
+        $html = wp_kses_post(FeedsHelper::mdToHtml($message));
+        
+        $data = [
             'html' => $html
         ];
+
+        $data['message_rendered'] = $html;
+        
+        if (in_array('meta', $request->get('with', [])) && $request->get('feed')) {
+            [$data, ] = FeedsHelper::processFeedMetaData($data, $request->get('feed'));
+        }
+
+        return $data;
     }
 }

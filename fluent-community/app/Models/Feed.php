@@ -88,7 +88,7 @@ class Feed extends Model
             if (empty($model->meta)) {
                 $model->meta = self::getDefaultMeta();
             }
-            
+
             if (empty($model->status)) {
                 $model->status = 'published';
             }
@@ -288,9 +288,9 @@ class Feed extends Model
 
     public function scopeCustomOrderBy($query, $type)
     {
-        $acceptedTypes = ['new_activity', 'oldest', 'popular', 'likes', 'alphabetical', 'unanswered'];
+        $acceptedTypes = array_keys(Helper::getPostOrderOptions());
 
-        if (!in_array($type, $acceptedTypes)) {
+        if (!in_array($type, $acceptedTypes) || $type == 'latest') {
             return $query->orderBy('created_at', 'DESC');
         }
 

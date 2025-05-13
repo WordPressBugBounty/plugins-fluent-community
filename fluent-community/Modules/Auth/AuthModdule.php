@@ -310,6 +310,13 @@ class AuthModdule
             <?php
         });
 
+        $pageVars['load_wp'] = 'yes';
+
+        // document title hook
+        add_filter('pre_get_document_title', function ($title) use ($frameData) {
+            return $frameData['title'];
+        }, 9999, 1);
+
         status_header(200);
         App::make('view')->render('headless_page', $pageVars);
         exit(200);

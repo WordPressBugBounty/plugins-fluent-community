@@ -394,6 +394,12 @@ class CommentsController extends Controller
         $type = $request->get('react_type', 'like');
         $willRemove = $request->get('remove');
 
+        if ($feed->status != 'published') {
+            return $this->sendError([
+                'message' => __('This post is not published yet', 'fluent-community')
+            ]);
+        }
+
         $react = Reaction::where('user_id', get_current_user_id())
             ->where('object_id', $feed->id)
             ->where('type', $type)

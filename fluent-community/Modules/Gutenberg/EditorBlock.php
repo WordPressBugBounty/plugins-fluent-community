@@ -5,6 +5,7 @@ namespace FluentCommunity\Modules\Gutenberg;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Vite;
 use FluentCommunity\Framework\Support\Arr;
+use function Clue\StreamFilter\fun;
 
 class EditorBlock
 {
@@ -137,6 +138,23 @@ class EditorBlock
             add_filter('body_class', function ($classes) {
                 $classes[] = 'fcom_disable_dark_mode';
                 return $classes;
+            });
+        } else if (Helper::hasColorScheme()) {
+            add_action('wp_head', function () {
+                ?>
+                <script>
+                    (function () {
+                        var globalStates = localStorage.getItem('fcom_global_storage');
+                        if (globalStates) {
+                            globalStates = JSON.parse(globalStates);
+                            if (globalStates && globalStates.fcom_color_mode == 'dark') {
+                                document.documentElement.classList.add('dark');
+                                document.documentElement.setAttribute('data-color-mode', 'dark');
+                            }
+                        }
+                    })();
+                </script>
+                <?php
             });
         }
 

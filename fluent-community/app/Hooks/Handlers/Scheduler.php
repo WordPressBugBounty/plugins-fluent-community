@@ -6,10 +6,10 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Framework\Support\DateTime;
+use FluentCommunity\App\Services\Helper;
 
 class Scheduler
 {
-
     public function register()
     {
         add_action('fluent_community_scheduled_hour_jobs', function () {
@@ -52,9 +52,10 @@ class Scheduler
 
         $notificationDay = Arr::get($notificationSettings, 'digest_mail_day');
         $digestTime = Arr::get($notificationSettings, 'daily_digest_time', '09:00');
+
         // Let's check if we have the daily digest action scheduled or not
         if (!\as_next_scheduled_action('fluent_community_send_daily_digest_init')) {
-            $timestamp = $this->getNextOccurrenceTimestamp($notificationDay . 'day', $digestTime);
+            $timestamp = $this->getNextOccurrenceTimestamp(Helper::getFullDayName($notificationDay), $digestTime);
             if ($timestamp) {
                 \as_schedule_single_action($timestamp, 'fluent_community_send_daily_digest_init', [], 'fluent-community', true);
             }
@@ -112,10 +113,8 @@ class Scheduler
         // Create target DateTime with "next" modifier in WordPress timezone
         $target = new \DateTime('next ' . $dayname . ' ' . $time, wp_timezone());
 
-
         $targetDate = $target->format('Ymd');
         $currentDate = $current->format('Ymd');
-
 
         // If it's the same day and time has passed, move to next week
         if ($targetDate === $currentDate || $currentDate > $targetDate) {
