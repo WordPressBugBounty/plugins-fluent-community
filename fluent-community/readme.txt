@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.6.0
+Stable tag: 1.6.03
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,7 +247,11 @@ OR
 
 == Changelog ==
 
-= 1.6.0 (Date: May 13, 2025) =
+= 1.6.03 (Date: May 13, 2025) =
+- Hotfix: timezone issue fixed on the post scheduling
+- Fixed: post edit issue
+
+= 1.6.01 (Date: May 13, 2025) =
 - New: Auto SEO Manager
 - New: Post Scheduling
 - New: Default Feed Sorting Select Option

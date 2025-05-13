@@ -5,7 +5,7 @@ defined('ABSPATH') or die;
 /**
  * Plugin Name: FluentCommunity
  * Description: The super-fast Community Plugin for WordPress
- * Version: 1.6.0
+ * Version: 1.6.03
  * Author: WPManageNinja LLC
  * Author URI: https://fluentcommunity.co
  * Plugin URI: https://fluentcommunity.co
@@ -14,7 +14,7 @@ defined('ABSPATH') or die;
  * Domain Path: /language
  */
 
-define('FLUENT_COMMUNITY_PLUGIN_VERSION', '1.6.0');
+define('FLUENT_COMMUNITY_PLUGIN_VERSION', '1.6.03');
 define('FLUENT_COMMUNITY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FLUENT_COMMUNITY_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FLUENT_COMMUNITY_DIR_FILE', __FILE__);

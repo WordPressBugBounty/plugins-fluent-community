@@ -447,7 +447,8 @@ class Helper
             'u',
             'post',
             'admin',
-            'course'
+            'course',
+            'site-maps'
         ]);
     }
 
