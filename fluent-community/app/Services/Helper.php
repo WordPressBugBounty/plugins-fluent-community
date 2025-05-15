@@ -333,6 +333,8 @@ class Helper
             'slug'                    => 'portal',
             'logo'                    => '',
             'white_logo'              => '',
+            'logo_permalink_type'     => 'default',
+            'logo_permalink'          => '',
             'featured_image'          => '',
             'access'                  => [
                 'acess_level'  => 'public', // logged_in, public, role_based
@@ -947,7 +949,7 @@ class Helper
             ],
             'all_courses' => [
                 'slug'           => 'all_courses',
-                'title'          => 'Courses',
+                'title'          => __('Courses', 'fluent-community'),
                 'link_classes'   => 'fcom_courses route_url',
                 'is_system'      => 'yes',
                 'is_locked'      => 'yes',
@@ -1896,5 +1898,113 @@ class Helper
             'alphabetical'  => __('Alphabetical', 'fluent-community'),
             'unanswered'    => __('Unanswered', 'fluent-community'),
         ];
+    }
+
+    public static function convertPhpDateToDayJSFormay($phpFormat)
+    {
+        // Mapping PHP date format characters to Day.js format characters
+        $replacements = [
+            // Day
+            'd' => 'DD', // Day of the month, 2 digits with leading zeros
+            'D' => 'ddd', // A textual representation of a day, three letters
+            'j' => 'D',   // Day of the month without leading zeros
+            'l' => 'dddd', // A full textual representation of the day of the week
+            'N' => 'E',   // ISO-8601 numeric representation of the day of the week
+            'S' => 'o',   // English ordinal suffix for the day of the month, 2 characters
+            'w' => 'd',   // Numeric representation of the day of the week
+            'z' => 'DDD', // The day of the year (starting from 0)
+
+            // Week
+            'W' => 'W',   // ISO-8601 week number of year, weeks starting on Monday
+
+            // Month
+            'F' => 'MMMM', // A full textual representation of a month
+            'm' => 'MM',   // Numeric representation of a month, with leading zeros
+            'M' => 'MMM',  // A short textual representation of a month, three letters
+            'n' => 'M',    // Numeric representation of a month, without leading zeros
+            't' => '',     // Not supported in Day.js (Number of days in the given month)
+
+            // Year
+            'L' => '',     // Not supported in Day.js (Whether it's a leap year)
+            'o' => 'GGGG', // ISO-8601 week-numbering year
+            'Y' => 'YYYY', // A full numeric representation of a year, 4 digits
+            'y' => 'YY',   // A two digit representation of a year
+
+            // Time
+            'a' => 'a',    // Lowercase Ante meridiem and Post meridiem
+            'A' => 'A',    // Uppercase Ante meridiem and Post meridiem
+            'B' => '',     // Not supported in Day.js (Swatch Internet time)
+            'g' => 'h',    // 12-hour format of an hour without leading zeros
+            'G' => 'H',    // 24-hour format of an hour without leading zeros
+            'h' => 'hh',   // 12-hour format of an hour with leading zeros
+            'H' => 'HH',   // 24-hour format of an hour with leading zeros
+            'i' => 'mm',   // Minutes with leading zeros
+            's' => 'ss',   // Seconds with leading zeros
+            'u' => 'SSS',  // Milliseconds (Day.js uses SSS for fractional seconds)
+            'v' => 'SSS',  // Milliseconds (Day.js uses SSS for fractional seconds)
+
+            // Timezone
+            'e' => '',     // Not supported in Day.js (Timezone identifier)
+            'I' => '',     // Not supported in Day.js (Whether or not the date is in daylight saving time)
+            'O' => 'ZZ',   // Difference to Greenwich time (GMT) in hours
+            'P' => 'Z',    // Difference to Greenwich time (GMT) with colon between hours and minutes
+            'T' => '',     // Not supported in Day.js (Timezone abbreviation)
+            'Z' => '',     // Not supported in Day.js (Timezone offset in seconds)
+
+            // Full Date/Time
+            'c' => 'YYYY-MM-DDTHH:mm:ssZ', // ISO 8601 date
+            'r' => 'ddd, DD MMM YYYY HH:mm:ss ZZ', // RFC 2822 formatted date
+            'U' => 'X',   // Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
+        ];
+
+        // Replace each PHP date format character with Day.js equivalent
+        $dayjsFormat = "";
+
+        for ($i = 0; $i < strlen($phpFormat); $i++) {
+            $char = $phpFormat[$i];
+
+            // Special handling for G\hi pattern
+            if ($char === 'G' && $i + 2 < strlen($phpFormat) && 
+                $phpFormat[$i + 1] === '\\' && $phpFormat[$i + 2] === 'h') {
+                $dayjsFormat .= 'H[h]';
+                $i += 2;
+                continue;
+            }
+
+            // Check if the character is escaped
+            if ($char === "\\") {
+                // Add the next character to the result as is, without mapping
+                $i++;
+                if ($i < strlen($phpFormat)) {
+                    $dayjsFormat .= "\\" . $phpFormat[$i];
+                }
+                continue;
+            }
+
+            // Add the mapped character or the character itself if not found in the mapping
+            $dayjsFormat .= $replacements[$char] ?? $char;
+        }
+
+        return $dayjsFormat;
+    }
+
+    public static function getDateFormatter($isDayJs = false)
+    {
+        $format = get_option('date_format');
+        if ($isDayJs) {
+            return self::convertPhpDateToDayJSFormay($format);
+        }
+
+        return $format;
+    }
+
+    public static function getTimeFormatter($isDayJs = false)
+    {
+        $format = get_option('time_format');
+        if ($isDayJs) {
+            return self::convertPhpDateToDayJSFormay($format);
+        }
+
+        return $format;
     }
 }

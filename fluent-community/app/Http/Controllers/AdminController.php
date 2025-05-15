@@ -67,6 +67,8 @@ class AdminController extends Controller
         $settings['auth_content'] = wp_kses_post(Arr::get($inputs, 'auth_content', ''));
         $settings['auth_redirect'] = sanitize_url(Arr::get($inputs, 'auth_redirect', ''));
         $settings['restricted_role_content'] = wp_kses_post(Arr::get($inputs, 'restricted_role_content', ''));
+        $settings['logo_permalink'] = sanitize_url(Arr::get($inputs, 'logo_permalink', ''));
+        $settings['logo_permalink_type'] = sanitize_text_field(Arr::get($inputs, 'logo_permalink_type', 'default'));
         $settings['auth_url'] = sanitize_url(Arr::get($inputs, 'auth_url', ''));
         $media = Helper::getMediaFromUrl($settings['logo']);
         $whiteMedia = Helper::getMediaFromUrl($settings['white_logo']);

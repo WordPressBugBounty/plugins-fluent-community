@@ -35,7 +35,7 @@ class CustomizerHander
                 $vars['js_vars']['customizerI18n'] = [
                     'Light Mode'                                                                                                                                    => __('Light Mode', 'fluent-community'),
                     'Dark Mode'                                                                                                                                     => __('Dark Mode', 'fluent-community'),
-                    'color_inst'                                                                                                                                    => __('The following styles will be applied when a member views your community in'),
+                    'color_inst'                                                                                                                                    => __('The following styles will be applied when a member views your community in', 'fluent-community'),
                     'Exit'                                                                                                                                          => __('Exit', 'fluent-community'),
                     'Save Settings'                                                                                                                                 => __('Save Settings', 'fluent-community'),
                     'Color Schema'                                                                                                                                  => __('Color Schema', 'fluent-community'),
@@ -87,8 +87,8 @@ class CustomizerHander
                     'Text color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.'       => __('Text color of the secondary buttons on active state. This includes the buttons in the space, user profile, and other secondary headers.', 'fluent-community'),
                     'Secondary Nav Active Color'                                                                                                                    => __('Secondary Nav Active Color', 'fluent-community'),
                     'Sidebar'                                                                                                                                       => __('Sidebar', 'fluent-community'),
-                    'General'                                                                                                                                       => __('General', 'fluent-comunity'),
-                    'Save Settings (Pro Required)' => __('Save Settings (Pro Required)', 'fluent-community'),
+                    'General'                                                                                                                                       => __('General', 'fluent-community'),
+                    'Save Settings (Pro Required)'                                                                                                                  => __('Save Settings (Pro Required)', 'fluent-community'),
                 ];
             }
 

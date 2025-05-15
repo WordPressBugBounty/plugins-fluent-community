@@ -312,7 +312,7 @@ class FeedsController extends Controller
                 }
             }
 
-            if (Arr::get($space->settings, 'topic_required') == 'yes') {
+            if ($space && Arr::get($space->settings, 'topic_required') == 'yes') {
                 $topicIds = (array)$request->get('topic_ids', []);
                 $spaceTopics = Utility::getTopicsBySpaceId($space->id);
                 $spaceTopicsIds = [];
@@ -775,10 +775,21 @@ class FeedsController extends Controller
             ])
         );
 
+        $maxFileUnit = apply_filters('fluent_community/media_upload_max_file_unit', 'MB');
+        $maxFileSize = apply_filters('fluent_community/media_upload_max_file_size', 100);
+
+        $allowedFileSize = $maxFileSize;
+        if (strtoupper($maxFileUnit) == 'MB') {
+            $allowedFileSize = $maxFileSize * 1024;
+        } else if (strtoupper($maxFileUnit) == 'GB') {
+            $allowedFileSize = $maxFileSize * 1024 * 1024;
+        }
+
         $files = $this->validate($this->request->files(), [
-            'file' => 'mimetypes:' . $allowedTypes,
+            'file' => 'mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
         ], [
-            'file.mimetypes' => __('The file must be an image type.', 'fluent-community')
+            'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
+            'file.max' => sprintf(__('The file size must be less than %s%s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
         ]);
 
         add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);

@@ -345,15 +345,15 @@ class BaseSpace extends Model
     public function getPublicPermissions()
     {
         if ($this->privacy == 'public') {
-            
+
             $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') == 'yes';
-            
+
             return [
                 'can_view_info'    => true,
                 'can_view_posts'   => true,
                 'can_view_members' => $this->canViewMembers(null),
                 'can_create_post'  => false,
-               'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody'
+                'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody'
             ];
         }
 

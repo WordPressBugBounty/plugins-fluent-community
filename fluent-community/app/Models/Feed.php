@@ -63,6 +63,7 @@ class Feed extends Model
         'user_id',
         'status',
         'is_sticky',
+        'scheduled_at',
         'comments_count',
         'reactions_count'
     ];

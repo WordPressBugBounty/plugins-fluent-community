@@ -9,6 +9,7 @@ $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('ic
  * @var string $portal_url
  * @var string $logo
  * @var string $white_logo
+ * @var string $logo_permalink
  * @var string $site_title
  * @var string $profile_url
  * @var array | null $auth
@@ -47,7 +48,7 @@ $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('ic
         <div id="fcom_before_logo"></div>
         <?php do_action('fluent_community/before_header_logo', $auth); ?>
         <div class="fhr_logo">
-            <a class="fcom_route" href="<?php echo esc_url(\FluentCommunity\App\Services\Helper::baseUrl('/')); ?>">
+            <a class="fcom_route" href="<?php echo esc_url($logo_permalink); ?>">
                 <?php if ($logo): ?>
                     <img class="show_on_light" src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($site_title); ?>"/>
                     <img class="show_on_dark" src="<?php echo esc_url($white_logo); ?>" alt="<?php echo esc_attr($site_title); ?>"/>

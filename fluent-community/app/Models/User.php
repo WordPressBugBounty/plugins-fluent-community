@@ -493,6 +493,8 @@ class User extends Model
 
         $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') == 'yes';
 
+        $documentAccess = Arr::get($space->settings, 'document_access');
+
         if (!$role) {
             $permissions = [
                 'can_create_post'    => false,
@@ -503,7 +505,7 @@ class User extends Model
                 'is_pending'         => false,
                 'is_non_member'      => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && Arr::get($space->settings, 'document_access') == 'everybody'
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in'])
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
@@ -520,7 +522,7 @@ class User extends Model
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && Arr::get($space->settings, 'document_access') == 'everybody'
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in'])
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
