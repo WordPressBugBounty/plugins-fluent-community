@@ -157,10 +157,10 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-            $notificationBagde = $this->getNotificationBadges($user->ID);
-            if ($notificationBagde) {
-                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-            }
+//            $notificationBagde = $this->getNotificationBadges($user->ID);
+//            if ($notificationBagde) {
+//              //  $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+//            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
@@ -302,10 +302,10 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-            $notificationBagde = $this->getNotificationBadges($user->ID);
-            if ($notificationBagde) {
-                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-            }
+          //  $notificationBagde = $this->getNotificationBadges($user->ID);
+//            if ($notificationBagde) {
+//             //   $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+//            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
@@ -405,10 +405,10 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-            $notificationBagde = $this->getNotificationBadges($user->ID);
-            if ($notificationBagde) {
-                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-            }
+//            $notificationBagde = $this->getNotificationBadges($user->ID);
+//            if ($notificationBagde) {
+//                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
+//            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.6.10
+Stable tag: 1.6.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,9 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.6.11 (Date: May 16, 2025) =
+- Hotfix: Remove Notification Badge from email
 
 = 1.6.10 (Date: May 15, 2025) =
 - New: Custom Logo Permalink Option
