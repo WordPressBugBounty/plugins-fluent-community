@@ -271,7 +271,9 @@ class BaseSpace extends Model
         }
 
         if (!empty($data['slug']) && $data['slug'] !== $this->slug) {
-            $newSlug = sanitize_title($data['slug']);
+            $newSlug = preg_replace('/[^a-zA-Z0-9-_]/', '', $data['slug']);
+
+            $newSlug = sanitize_title($newSlug);
 
             if (empty($newSlug)) {
                 throw new \Exception('Invalid slug', 400);
@@ -349,10 +351,10 @@ class BaseSpace extends Model
             $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') == 'yes';
 
             return [
-                'can_view_info'    => true,
-                'can_view_posts'   => true,
-                'can_view_members' => $this->canViewMembers(null),
-                'can_create_post'  => false,
+                'can_view_info'      => true,
+                'can_view_posts'     => true,
+                'can_view_members'   => $this->canViewMembers(null),
+                'can_create_post'    => false,
                 'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody'
             ];
         }

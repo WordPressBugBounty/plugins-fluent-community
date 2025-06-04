@@ -13,6 +13,7 @@ class CleanupHandler
     public function register()
     {
         add_action('fluent_community/feed/before_deleted', [$this, 'handleFeedDeleted'], 10, 1);
+        add_action('fluent_community/lesson/before_deleted', [$this, 'handleLessonDeleted'], 10, 1);
         add_action('fluent_community/remove_old_notifications', [$this, 'maybeDeleteOldNotifications']);
 
         add_action('fluent_community/comment/media_deleted', [$this, 'queueMediaDelete'], 10, 1);
@@ -59,6 +60,14 @@ class CleanupHandler
         }
 
         Utility::getApp('db')->table('fcom_term_feed')->where('post_id', $feed->id)->delete();
+    }
+
+    public function handleLessonDeleted($lesson)
+    {
+        $lesson->comments()->delete();
+        $lesson->reactions()->delete();
+        $lesson->lessonCompleted()->delete();
+        $this->queueMediaDelete($lesson->media);
     }
 
     public function queueMediaDelete($media)

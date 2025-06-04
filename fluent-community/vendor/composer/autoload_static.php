@@ -381,6 +381,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Course\\Services\\CourseHelper' => __DIR__ . '/../..' . '/Modules/Course/Services/CourseHelper.php',
         'FluentCommunity\\Modules\\FeaturesHandler' => __DIR__ . '/../..' . '/Modules/FeaturesHandler.php',
         'FluentCommunity\\Modules\\Gutenberg\\EditorBlock' => __DIR__ . '/../..' . '/Modules/Gutenberg/EditorBlock.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseCompletedTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/CourseCompletedTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseEnrollmentTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\ProfileSection' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/ProfileSection.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\SpaceJoinTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/SpaceJoinTrigger.php',

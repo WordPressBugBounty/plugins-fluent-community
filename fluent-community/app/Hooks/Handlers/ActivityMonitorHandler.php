@@ -14,7 +14,7 @@ class ActivityMonitorHandler
         add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 2);
         add_action('fluent_community/feed/created', [$this, 'handleFeedCreated'], 10, 1);
 
-        add_action('fluent_communit/track_activity', [$this, 'trackActivity'], 10);
+        add_action('fluent_community/track_activity', [$this, 'trackActivity'], 10);
 
         add_action('profile_update', function ($userId) {
             $user = get_user_by('ID', $userId);
@@ -71,7 +71,7 @@ class ActivityMonitorHandler
 
         Activity::create($data);
 
-        do_action('fluent_communit/track_activity');
+        do_action('fluent_community/track_activity');
     }
 
     public function handleFeedCreated($feed)
@@ -92,7 +92,7 @@ class ActivityMonitorHandler
 
         Activity::create($data);
 
-        do_action('fluent_communit/track_activity');
+        do_action('fluent_community/track_activity');
     }
 
     public function trackActivity()

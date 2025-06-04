@@ -329,28 +329,30 @@ class Utility
         return isset($settings[$key]) && $settings[$key] === $matchingValue;
     }
 
-    public static function getProductUrl($isPowered = false)
+    public static function getProductUrl($isPowered = false, $params = [])
     {
         $url = 'https://fluentcommunity.co/';
         if ($isPowered) {
-            $params = [
+            $defaultParams = [
                 'utm_source'   => 'power_footer',
                 'utm_medium'   => 'site',
                 'utm_campaign' => 'powered_by'
             ];
+            $params = wp_parse_args($params, $defaultParams);
+
             $settings = self::getCustomizationSettings();
             $affId = Arr::get($settings, 'affiliate_id');
             if ($affId) {
                 $params['ref'] = $affId;
             }
 
-            $url = add_query_arg($params, $url);
+            return add_query_arg($params, $url);
         }
 
         return add_query_arg([
             'utm_source'   => 'plugin',
             'utm_medium'   => 'site',
-            'utm_campaign' => 'pligin_ui'
+            'utm_campaign' => 'plugin_ui'
         ], $url);
     }
 

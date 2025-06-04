@@ -458,6 +458,12 @@ class FeedsController extends Controller
 
         $user->canEditFeed($existingFeed, true);
 
+        if ($status = Arr::get($requestData, 'status')) {
+            if (in_array($status, $edibaleStatuses)) {
+                $data['status'] = $status;
+            }
+        }
+
         $message = $data['message'];
         $mentions = FeedsHelper::getMentions($data['message'], Arr::get($data, 'space_id'));
         if ($mentions) {
@@ -470,7 +476,9 @@ class FeedsController extends Controller
 
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData, $existingFeed);
 
-        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $user->hasSpacePermission('community_moderator', $existingFeed->space)) {
+        $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $existingFeed->space);
+
+        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
             $data['meta']['send_announcement_email'] = 'yes';
         } else if (Arr::get($existingFeed->meta, 'send_announcement_email')) {
             $data['meta']['send_announcement_email'] = Arr::get($existingFeed->meta, 'send_announcement_email');
@@ -1021,7 +1029,7 @@ class FeedsController extends Controller
     {
         $start = microtime(true);
 
-        do_action('fluent_communit/track_activity');
+        do_action('fluent_community/track_activity');
         $lastLoadedTimeStamp = (int) $request->get('last_fetched_timestamp');
 
         //check if $lastLoadedTimeStamp is valid date

@@ -17,6 +17,7 @@ class EditorBlock
     public function registerBlock()
     {
         global $pagenow;
+
         $asset_file = include(plugin_dir_path(__FILE__) . 'build/index.asset.php');
         wp_register_style(
             'custom-layout-block-editor-style',
@@ -53,7 +54,7 @@ class EditorBlock
                 array(
                     'editor_script'   => 'custom-layout-block-editor',
                     'editor_style'    => 'custom-layout-block-editor-style',
-                    'style'           => 'fluent_community_global',
+                    //'style'           => 'fluent_community_global',
                     'render_callback' => [$this, 'render'],
                     'supports'        => [
                         'html' => false

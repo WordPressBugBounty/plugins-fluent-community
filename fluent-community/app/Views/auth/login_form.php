@@ -1,4 +1,4 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
 <div id="fcom_user_onboard_wrap" class="fcom_user_onboard">
     <?php do_action('fluent_community/before_auth_form_header', 'login'); ?>
     <div class="fcom_onboard_header">
@@ -13,42 +13,17 @@
     </div>
     <div class="fcom_onboard_body">
         <div class="fcom_onboard_form">
-            <form method="post" id="fcom_user_login_form">
-                <div id="fcom_group_log" class="fcom_form-group">
-                    <input type="hidden" name="action" value="fcom_user_login_form" />
-                    <?php if(!empty($redirect_to)): ?>
-                        <input type="hidden" name="redirect_to" value="<?php echo esc_url_raw($redirect_to); ?>" />
-                    <?php endif; ?>
-                    <?php foreach ($hiddenFields as $key => $value): ?>
-                        <input type="hidden" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($value); ?>" />
-                    <?php endforeach; ?>
-                    <div class="fcom_form_label">
-                        <label for="fcom_user_email">
-                            <?php echo _e('Email Address', 'fluent-community'); ?>
-                        </label>
-                    </div>
-                    <div class="fcom_form_input">
-                        <input value="<?php echo esc_attr(\FluentCommunity\Framework\Support\Arr::get($defaults, 'email')); ?>" type="text" id="fcom_user_email" name="log" placeholder="<?php _e('Your account email address', 'fluent-community'); ?>"/>
-                    </div>
-                </div>
-                <div id="fcom_group_pwd" class="fcom_form-group">
-                    <div class="fcom_form_label">
-                        <label for="fcom_user_pwd">
-                            <?php echo _e('Password', 'fluent-community'); ?>
-                        </label>
-                    </div>
-                    <div class="fcom_form_input">
-                        <input type="password" id="fcom_user_pwd" name="pwd" placeholder="<?php _e('Your account password', 'fluent-community'); ?>"/>
-                    </div>
-                </div>
-                <div class="fcom_form-group">
-                    <div class="fcom_form_input">
-                        <button type="submit" class="fcom_btn fcom_btn_submit fcom_btn_primary">
-                            <?php echo esc_html($settings['button_label']); ?>
-                        </button>
-                    </div>
-                </div>
-            </form>
+
+            <?php
+            \FluentCommunity\Modules\Auth\AuthHelper::nativeLoginForm([
+                'echo'    => true,
+                'form_id' => 'fcom_user_login_form',
+                'value_remember' => true,
+                'redirect' => !empty($redirect_to) ? $redirect_to : '',
+                'value_username' => $defaults ? \FluentCommunity\Framework\Support\Arr::get($defaults, 'email') : '',
+                'label_log_in' => $settings['button_label'],
+            ], $hiddenFields);
+            ?>
 
             <div class="fcom_spaced_divider">
                 <?php if (!empty($signupUrl)): ?>

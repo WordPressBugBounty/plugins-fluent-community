@@ -131,6 +131,7 @@ class TemplateLoader
 
     private function loadScriptsAndStyles()
     {
+
         add_filter('body_class', function ($classes) {
             $classes[] = 'fluent_com_wp_pages';
             return $classes;

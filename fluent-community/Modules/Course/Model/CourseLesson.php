@@ -8,7 +8,10 @@ use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Models\Media;
+use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\Framework\Support\Arr;
 
 /**
  *  Clourse Lesson Model - DB Model for Individual Clourse Lesson
@@ -43,6 +46,7 @@ class CourseLesson extends Model
         'featured_image',
         'is_sticky',
         'expired_at',
+        'content_type',
         'comments_count',
         'reactions_count',
         'meta',
@@ -55,7 +59,7 @@ class CourseLesson extends Model
     ];
 
     public static $publicColumns = [
-        'id', 'slug', 'title', 'message_rendered', 'featured_image', 'created_at', 'privacy', 'type', 'status', 'slug', 'space_id', 'user_id', 'meta', 'comments_count', 'reactions_count'
+        'id', 'slug', 'title', 'message_rendered', 'featured_image', 'created_at', 'privacy', 'type', 'status', 'slug', 'space_id', 'user_id', 'meta', 'content_type', 'comments_count', 'reactions_count'
     ];
 
     protected static $type = 'course_lesson';
@@ -71,6 +75,14 @@ class CourseLesson extends Model
             }
 
             $model->type = self::$type;
+
+            if (empty($model->content_type)) {
+                $model->content_type = 'text';
+            }
+
+            if (empty($model->message)) {
+                $model->message = '';
+            }
 
             if (empty($model->meta)) {
                 $model->meta = self::getDefaultMeta();
@@ -138,6 +150,26 @@ class CourseLesson extends Model
         return $meta;
     }
 
+    public function getQuestionsAttribute()
+    {
+        return Arr::get($this->meta, 'quiz_questions', []);
+    }
+
+    public function getEnabledQuestionsAttribute()
+    {
+        return array_filter($this->questions, function($question) {
+            return Arr::isTrue($question, 'enabled');
+        });
+    }
+
+    public function getPassingScoreAttribute()
+    {
+        if (Arr::isTrue($this->meta, 'enable_passing_score')) {
+            return Arr::get($this->meta, 'passing_score', 0);
+        }
+        return 0;
+    }
+
     public function scopeSearchBy($query, $search)
     {
         if (!$search) {
@@ -160,10 +192,26 @@ class CourseLesson extends Model
         return $this->belongsTo(User::class, 'user_id', 'ID');
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'post_id', 'id');
+    }
+
     public function reactions()
     {
+        return $this->hasMany(Reaction::class, 'parent_id', 'id')
+            ->where('object_type', 'comment');
+    }
+
+    public function lessonCompleted()
+    {
         return $this->hasMany(Reaction::class, 'object_id', 'id')
-            ->where('object_type', 'feed');
+            ->where('object_type', 'lesson_completed');
+    }
+
+    public function media()
+    {
+        return $this->hasMany(Media::class, 'feed_id', 'id');
     }
 
     public function terms()
@@ -171,6 +219,11 @@ class CourseLesson extends Model
         return $this->belongsToMany(Term::class, 'fcom_term_feed', 'post_id', 'term_id');
     }
 
+    public function isQuizType()
+    {
+        return $this->content_type == 'quiz';
+    }
+    
     public function getPermalink()
     {
         $uri = '/course/' . ($this->course ? $this->course->slug : 'undefined') . '/lessons/' . $this->slug . '/view';
@@ -222,6 +275,7 @@ class CourseLesson extends Model
     public function getPublicLessonMeta()
     {
         $meta = $this->meta;
+
         if(!empty($meta['document_lists'])) {
             $docLists = $meta['document_lists'];
             foreach ($docLists as $index => $docList) {
@@ -232,7 +286,8 @@ class CourseLesson extends Model
             $meta['document_lists'] = $docLists;
         }
 
+        $meta = apply_filters('fluent_community/lesson/get_public_meta', $meta, $this);
+
         return $meta;
     }
-
 }

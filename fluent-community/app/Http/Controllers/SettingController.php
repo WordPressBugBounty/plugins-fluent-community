@@ -209,7 +209,7 @@ class SettingController extends Controller
                 'title'          => __('Fluent Support', 'fluent-community'),
                 'logo'           => Helper::assetUrl('images/brands/fluent-support.svg'),
                 'is_installed'   => defined('FLUENT_SUPPORT_VERSION'),
-                'learn_more_url' => 'https://wordpress.org/plugins/fluent-connect/',
+                'learn_more_url' => 'https://wordpress.org/plugins/fluent-support/',
                 'settings_url'   => admin_url('admin.php?page=fluent-support#/'),
                 'action_text'    => $this->isPluginInstalled('fluent-support/fluent-support.php') ? __('Active Fluent Support', 'fluent-community') : __('Install Fluent Support', 'fluent-community'),
                 'description'    => __('WordPress Helpdesk and Customer Support Ticket Plugin. Provide awesome support and manage customer queries right from your WordPress dashboard.', 'fluent-community')

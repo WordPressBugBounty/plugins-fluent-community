@@ -343,6 +343,7 @@ return array(
     'FluentCommunity\\Modules\\Course\\Services\\CourseHelper' => $baseDir . '/Modules/Course/Services/CourseHelper.php',
     'FluentCommunity\\Modules\\FeaturesHandler' => $baseDir . '/Modules/FeaturesHandler.php',
     'FluentCommunity\\Modules\\Gutenberg\\EditorBlock' => $baseDir . '/Modules/Gutenberg/EditorBlock.php',
+    'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseCompletedTrigger' => $baseDir . '/Modules/Integrations/FluentCRM/CourseCompletedTrigger.php',
     'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseEnrollmentTrigger' => $baseDir . '/Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php',
     'FluentCommunity\\Modules\\Integrations\\FluentCRM\\ProfileSection' => $baseDir . '/Modules/Integrations/FluentCRM/ProfileSection.php',
     'FluentCommunity\\Modules\\Integrations\\FluentCRM\\SpaceJoinTrigger' => $baseDir . '/Modules/Integrations/FluentCRM/SpaceJoinTrigger.php',

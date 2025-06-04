@@ -48,9 +48,9 @@ class ProfileController extends Controller
 
         $isOwn = $xprofile->user_id == $currentUserId;
 
-        $isAdmin = Helper::isSiteAdmin($currentUserId, $xprofile->user);
+        $isAdmin = Helper::isSiteAdmin($currentUserId);
 
-        if ($xprofile->user_id == $currentUserId || $isAdmin) {
+        if ($isOwn || $isAdmin) {
             $profile['email'] = $user->user_email;
             $profile['first_name'] = $user->first_name;
             $profile['last_name'] = $user->last_name;
@@ -390,6 +390,13 @@ class ProfileController extends Controller
         }
 
         foreach ($spaces as $space) {
+
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
+            if ($shouldHideMembersCount && !$canViewMembers) {
+                $space->members_count = 0;
+                continue;
+            }
             $space->members_count = $space->members()->count();
         }
 

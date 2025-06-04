@@ -338,7 +338,7 @@ class CourseHelper
         return gmdate('Y-m-d H:i:s', strtotime($enrollment->created_at) + $accessAfterEnrollment * 86400);
     }
 
-    public static function sanitizeLessonMeta($meta)
+    public static function sanitizeLessonMeta($meta, $lesson)
     {
         $validFields = [
             'enable_comments',
@@ -348,9 +348,14 @@ class CourseHelper
             'featured_image_id'
         ];
 
+        if ($lesson->isQuizType()) {
+            $quizFields = ['quiz_questions', 'passing_score', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
+            $validFields = wp_parse_args($validFields, $quizFields);
+        }
+
         $meta = Arr::only($meta, $validFields);
 
-        $yesNoFields = ['enable_comments', 'enable_media'];
+        $yesNoFields = ['enable_comments', 'enable_media', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
 
         foreach ($yesNoFields as $field) {
             $meta[$field] = Arr::get($meta, $field, 'no') == 'yes' ? 'yes' : 'no';
@@ -358,16 +363,7 @@ class CourseHelper
 
         if (Arr::get($meta, 'enable_media') == 'yes') {
             if ($media = Arr::get($meta, 'media', [])) {
-                $media = array_filter([
-                    'type'         => sanitize_text_field(Arr::get($media, 'type', '')),
-                    'url'          => sanitize_url(Arr::get($media, 'url', '')),
-                    'content_type' => sanitize_text_field(Arr::get($media, 'content_type', '')),
-                    'provider'     => sanitize_url(Arr::get($media, 'provider', '')),
-                    'title'        => sanitize_text_field(Arr::get($media, 'title', '')),
-                    'author_name'  => sanitize_text_field(Arr::get($media, 'author_name', '')),
-                    'html'         => CustomSanitizer::sanitizeRichText(Arr::get($media, 'html', '')),
-                ]);
-                $meta['media'] = $media;
+                $meta['media'] = self::sanitizeMedia($media);
             }
         } else {
             $meta['media'] = [
@@ -375,13 +371,26 @@ class CourseHelper
             ];
         }
 
-        $numericFields = ['video_length'];
+        $numericFields = ['video_length', 'passing_score'];
 
         foreach ($numericFields as $field) {
             $meta[$field] = absint(Arr::get($meta, $field, 0));
         }
 
-        return $meta;
+        return apply_filters('fluent_community/lesson/sanitize_meta', $meta, $lesson);
+    }
+
+    public static function sanitizeMedia($media)
+    {
+        return array_filter([
+            'type'         => sanitize_text_field(Arr::get($media, 'type', '')),
+            'url'          => sanitize_url(Arr::get($media, 'url', '')),
+            'content_type' => sanitize_text_field(Arr::get($media, 'content_type', '')),
+            'provider'     => sanitize_url(Arr::get($media, 'provider', '')),
+            'title'        => sanitize_text_field(Arr::get($media, 'title', '')),
+            'author_name'  => sanitize_text_field(Arr::get($media, 'author_name', '')),
+            'html'         => CustomSanitizer::sanitizeRichText(Arr::get($media, 'html', '')),
+        ]);
     }
 
     public static function getCourseCategories()

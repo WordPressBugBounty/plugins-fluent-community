@@ -45,16 +45,14 @@
     <?php do_action('fluent_community/headless/head_early', $scope); ?>
 
     <?php foreach ($css_files as $css_file): ?>
-        <link rel="stylesheet"
-              href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-              media="screen"/>
+        <link rel="stylesheet" href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
     <?php endforeach; ?>
     <?php do_action('fluent_community/headless/head', $scope); ?>
 </head>
 <body class="fcom_headless_page fcom_headless_scope_<?php echo esc_attr($scope); ?>">
 
 <?php if ($layout == 'signup'): ?>
-    <div class="fcom_full_layout" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
+    <div class="fcom_full_layout fluent_com_auth" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
         <div class="fcom_layout_side"
              style="<?php if (!empty($portal['background_image'])) echo 'background-image: url(' . esc_url($portal['background_image']) . ');'; ?>
              <?php if (!empty($portal['background_color'])) echo 'background-color: ' . esc_attr($portal['background_color']) . ';'; ?>
@@ -76,7 +74,7 @@
             </div>
         </div>
         <div class="fcom_layout_main" style="<?php if (!empty($portal['form']['background_image'])): ?>background-image: url(<?php echo esc_url($portal['form']['background_image']); ?>);<?php endif; ?>">
-            <div class="fluent_com">
+            <div class="fluent_com fluent_com_auth">
                 <?php do_action('fluent_community/headless/content', $scope); ?>
             </div>
         </div>
@@ -96,9 +94,7 @@
 <?php do_action('fluent_community/headless/before_js_loaded', $scope); ?>
 
 <?php foreach ($js_files as $file): ?>
-    <script type="module"
-            src="<?php echo esc_url($file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-            defer="defer"></script>
+    <script type="module" src="<?php echo esc_url($file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
 <?php endforeach; ?>
 
 <?php if (!empty($load_wp)) { wp_footer(); } ?>

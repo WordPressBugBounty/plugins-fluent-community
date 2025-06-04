@@ -68,6 +68,7 @@ class AuthModdule
 
     public function viewAuthPage()
     {
+
         add_filter('login_form_defaults', function ($defaults) {
             $defaults['label_username'] = __('Email Address', 'fluent-community');
             return $defaults;
@@ -174,25 +175,27 @@ class AuthModdule
 
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
 
+        do_action('fluent_community/enqueue_global_assets', true);
+        add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm) {
+            wp_enqueue_style('fluent_auth_styles', Vite::getStaticSrcUrl('user_registration.css'), [], FLUENT_COMMUNITY_PLUGIN_VERSION);
+            if(!$isFluentAuth || $targetForm == 'register') {
+                wp_enqueue_script('fluent_auth_scripts', Vite::getStaticSrcUrl('user_registration.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, true);
+                wp_localize_script('fluent_auth_scripts', 'fluentComRegistration', array(
+                    'ajax_url'         => admin_url('admin-ajax.php'),
+                    'is_logged_in'     => is_user_logged_in(),
+                    'redirecting_text' => __('Redirecting...', 'fluent-community')
+                ));
+            }
+        }, 10);
+
         $pageVars = [
             'title'          => $frameData['title'],
             'description'    => $frameData['description'],
             'url'            => $currentUrl,
             'featured_image' => '',
-            'css_files'      => [
-                Vite::getDynamicSrcUrl('theme-default.scss'),
-                Vite::getStaticSrcUrl('user_registration.css')
-            ],
-            'js_files'       => [
-                Vite::getStaticSrcUrl('user_registration.js')
-            ],
-            'js_vars'        => [
-                'fluentComRegistration' => [
-                    'ajax_url'         => admin_url('admin-ajax.php'),
-                    'is_logged_in'     => is_user_logged_in(),
-                    'redirecting_text' => __('Redirecting...', 'fluent-community')
-                ]
-            ],
+            'css_files'      => [],
+            'js_files'       => [],
+            'js_vars'        => [],
             'scope'          => 'user_registration',
             'layout'         => 'signup',
             'portal'         => [
@@ -210,29 +213,6 @@ class AuthModdule
 
         $formType = ($targetForm == 'register') ? 'signup' : 'login';
 
-        if ($isFluentAuth) {
-            if ($formType == 'login') {
-                $pageVars['js_files'][] = FLUENT_AUTH_PLUGIN_URL . 'dist/public/login_helper.js';
-                $pageVars['js_files'][] = FLUENT_AUTH_PLUGIN_URL . 'dist/public/fls_login.js';
-                $pageVars['js_vars']['fluentAuthPublic'] = [
-                    'hide'              => false,
-                    'redirect_fallback' => home_url(),
-                    'fls_login_nonce'   => wp_create_nonce('fsecurity_login_nonce'),
-                    'ajax_url'          => admin_url('admin-ajax.php'),
-                    'i18n'              => [
-                        'Username_or_Email' => __('Email Address', 'fluent-community'),
-                        'Password'          => __('Password', 'fluent-community')
-                    ]
-                ];
-                $pageVars['js_vars']['fls_magic_login_vars'] = [
-                    'ajaxurl'      => admin_url('admin-ajax.php'),
-                    'success_icon' => FLUENT_AUTH_PLUGIN_URL . 'dist/images/success.png',
-                    'empty_text'   => __('Please provide your email address to get magic login link', 'fluent-community'),
-                    'wait_text'    => __('Please Wait...', 'fluent-community'),
-                ];
-            }
-        }
-
         $formSettings = AuthenticationService::getFormattedAuthSettings($formType);
 
         if ($formSettings) {
@@ -247,6 +227,7 @@ class AuthModdule
             }
 
             if ($targetForm == 'login') {
+                $frameData['button_label'] = Arr::get($formSettings, 'form.button_label', __('Login', 'fluent-community'));
                 $this->showLoginForm($frameData, $inviation);
             } else if ($targetForm == 'reset_password') {
                 $frameData['title'] = __('Reset your password', 'fluent-community');
@@ -304,7 +285,6 @@ class AuthModdule
                 <?php foreach ($bannerColors as $colorKey => $colorValue): ?> --fcom_ <?php echo $colorKey; ?>: <?php echo $colorValue; ?>;
                 <?php endforeach; ?>
                 }
-
                 <?php echo $css; ?>
             </style>
             <?php
@@ -459,14 +439,6 @@ class AuthModdule
             $data = array_filter($data);
         }
 
-        if (AuthHelper::isFluentAuthAvailable()) {
-            $data = wp_parse_args($data, $request->all());
-            $this->handleSignupViaFlentAuth($data);
-            wp_send_json([
-                'message' => __('Something is not working! Please try again', 'fluent-community')
-            ], 422);
-        }
-
         $rateLimit = AuthHelper::isAuthRateLimit();
 
         if (is_wp_error($rateLimit)) {
@@ -520,10 +492,6 @@ class AuthModdule
 
     private function handleSignupViaFlentAuth($data)
     {
-        add_filter('fluent_auth/signup_form_data', function ($requestData) use ($data) {
-            return $data;
-        });
-
         add_action('fluent_auth/after_creating_user', function ($userId) {
             $this->handleSignupCompleted($userId);
         }, 1, 1);
@@ -667,7 +635,7 @@ class AuthModdule
                     $title = $space->title . ' - ' . Arr::get($portalSettings, 'site_title');
                 }
             }
-            $inviteDescription = sprintf(__('%s has invited you to join this community. Please login to accept your invitation.', 'fluent-community'), $invitationBy);
+            $inviteDescription = \sprintf(__('%s has invited you to join this community. Please login to accept your invitation.', 'fluent-community'), $invitationBy);
             add_action('fluent_community/before_auth_form_header', function ($formType) use ($inviteDescription) {
                 ?>
                 <div class="fcom_highlight_message">
@@ -685,14 +653,22 @@ class AuthModdule
             }
         }
 
+        add_filter('login_form_defaults', function ($defaults) use ($invitation, $frameData) {
+            $defaults['label_log_in'] = Arr::get($frameData, 'button_label');
+            return $defaults;
+        });
+
         if ($isFluentAuth) {
-            add_filter('login_form_top', function () {
+            add_filter('login_form_top', function () use ($invitation) {
                 $reditectUrl = Arr::get($_GET, 'redirect_to');
                 if (!$reditectUrl) {
-                    $reditectUrl = apply_filters('fluent_community/default_redirect_url', $reditectUrl);
+                    $reditectUrl = apply_filters('fluent_community/default_redirect_url', Helper::baseUrl());
                 }
                 ob_start();
                 ?>
+                <?php if ($invitation) { ?>
+                    <input type="hidden" name="invitation_token" value="<?php echo esc_attr($invitation->message_rendered); ?>"/>
+                <?php } ?>
                 <input name="is_fcom_auth" type="hidden" value="yes"/>
                 <input type="hidden" name="fcom_redirect" value="<?php echo esc_url($reditectUrl); ?>"/>
                 <?php
@@ -742,7 +718,9 @@ class AuthModdule
 
         $frameData['redirect'] = $currentUrl;
 
-        $frameData['hiddenFields'] = [];
+        $frameData['hiddenFields'] = [
+            'action'           => 'fcom_user_login_form',
+        ];
         if ($invitation) {
             $frameData['button_label'] = __('Log In & Accept Invitation', 'fluent-community');
             $frameData['hiddenFields']['invitation_token'] = $invitation->message_rendered;

@@ -161,7 +161,9 @@ class CommentsController extends Controller
 
         $requestData = $request->all();
         $comment = Comment::findOrFail($commentId);
-        $user = User::find(get_current_user_id());
+        $user = $this->getUser(true);
+
+        $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
 
         if ($comment->user_id != get_current_user_id() && !$user->can('edit_any_comment', $feed->space)) {
             return $this->sendError([
@@ -177,7 +179,7 @@ class CommentsController extends Controller
 
         [$commentData, $mediaItems] = $this->prepareCommentMedia($commentData, $requestData, $comment);
 
-        $commentData = apply_filters('fluent_community/comment/update_comment_data', $commentData, $feed, $requestData);
+        $commentData = apply_filters('fluent_community/comment/update_comment_data', $commentData, $feed, $requestData, $comment);
 
         $comment->fill($commentData);
 

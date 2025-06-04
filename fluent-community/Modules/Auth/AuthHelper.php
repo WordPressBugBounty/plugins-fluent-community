@@ -48,8 +48,6 @@ class AuthHelper
 
         do_action('register_post', $sanitized_user_login, $user_email, $errors);
 
-        $errors = apply_filters('registration_errors', $errors, $sanitized_user_login, $user_email);
-
         if ($errors->has_errors()) {
             return $errors;
         }
@@ -260,7 +258,7 @@ class AuthHelper
 
     public static function isTwoFactorEnabled()
     {
-        return apply_filters('fluent_community/auth/two_factor_enabled', true);
+        return apply_filters('fluent_auth/verify_signup_email', true);
     }
 
     public static function get2FaRegistrationCodeForm($formData)
@@ -406,5 +404,102 @@ class AuthHelper
         $rateLimit = $rateLimit + 1;
         set_transient($transientKey, $rateLimit, 300); // per 5 minutes
         return true;
+    }
+
+
+    public static function nativeLoginForm($args = array(), $hiddenFields = [])
+    {
+        $defaults = array(
+            'echo'           => true,
+            'redirect'       => (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
+            'form_id'        => 'loginform',
+            'label_username' => __('Email Address', 'fluent-community'),
+            'label_password' => __('Password', 'fluent-community'),
+            'label_remember' => __('Remember Me', 'fluent-community'),
+            'label_log_in'   => __('Log In', 'fluent-community'),
+            'id_username'    => 'user_login',
+            'id_password'    => 'user_pass',
+            'id_remember'    => 'rememberme',
+            'id_submit'      => 'wp-submit',
+            'remember'       => true,
+            'value_username' => '',
+            'username_placeholder' => __('Your account email address', 'fluent-community'),
+            'password_placeholder' => __('Your account password', 'fluent-community'),
+            'value_remember' => false,
+        );
+
+        $args = wp_parse_args($args, apply_filters('login_form_defaults', $defaults));
+
+        $login_form_top = apply_filters('login_form_top', '', $args);
+
+        $login_form_middle = apply_filters('login_form_middle', '', $args);
+
+        $login_form_bottom = apply_filters('login_form_bottom', '', $args);
+
+        $actionUrl = esc_url(site_url('wp-login.php', 'login_post'));
+
+        if (isset($args['action_url'])) {
+            $actionUrl = esc_url($args['action_url']);
+        }
+
+        foreach ($hiddenFields as $key => $value) {
+            $login_form_top .= \sprintf(
+                '<input type="hidden" name="%1$s" value="%2$s" />',
+                esc_attr($key),
+                esc_attr($value)
+            );
+        }
+
+        $form = \sprintf(
+                '<form name="%1$s" id="%1$s" action="%2$s" method="post">',
+                esc_attr($args['form_id']),
+                $actionUrl
+            ) .
+            $login_form_top .
+            \sprintf(
+                '<p class="login-username fcom_form-group">
+				<label for="%1$s">%2$s</label>
+				<input type="text" name="log" id="%1$s" autocomplete="username" class="input" value="%3$s" placeholder="%4$s" size="20" />
+			</p>',
+                esc_attr($args['id_username']),
+                esc_html($args['label_username']),
+                esc_attr($args['value_username']),
+                esc_attr($args['username_placeholder']),
+            ) .
+            \sprintf(
+                '<p class="login-password fcom_form-group">
+				<label for="%1$s">%2$s</label>
+				<input type="password" name="pwd" id="%1$s" autocomplete="current-password" placeholder="%3$s" class="input" value="" size="20" />
+			</p>',
+                esc_attr($args['id_password']),
+                esc_html($args['label_password']),
+                esc_attr($args['password_placeholder'])
+            ) .
+            $login_form_middle .
+            ($args['remember'] ?
+                \sprintf(
+                    '<p class="login-remember fcom_form-group"><label><input name="rememberme" type="checkbox" id="%1$s" value="forever"%2$s /> %3$s</label></p>',
+                    esc_attr($args['id_remember']),
+                    ($args['value_remember'] ? ' checked="checked"' : ''),
+                    esc_html($args['label_remember'])
+                ) : ''
+            ) .
+            \sprintf(
+                '<p class="login-submit">
+				<input type="submit" name="wp-submit" id="%1$s" class="button button-primary" value="%2$s" />
+				<input type="hidden" name="redirect_to" value="%3$s" />
+			</p>',
+                esc_attr($args['id_submit']),
+                esc_attr($args['label_log_in']),
+                esc_url($args['redirect'])
+            ) .
+            $login_form_bottom .
+            '</form>';
+
+        if ($args['echo']) {
+            echo $form; // @phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        } else {
+            return $form;
+        }
     }
 }

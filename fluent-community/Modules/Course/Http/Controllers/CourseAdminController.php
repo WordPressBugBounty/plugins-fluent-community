@@ -147,6 +147,8 @@ class CourseAdminController extends Controller
             $course->save();
         }
 
+        $course->syncCategories($request->get('category_ids', []));
+
         do_action('fluent_community/course/created', $course);
 
         return [
@@ -172,6 +174,8 @@ class CourseAdminController extends Controller
         }
 
         unset($course->categories);
+
+        $course = apply_filters('fluent_community/course_info', $course);
 
         return [
             'course' => $course
@@ -305,7 +309,12 @@ class CourseAdminController extends Controller
             $q->where('space_id', $course->id);
         })->delete();
 
-        Feed::withoutGlobalScopes()->where('space_id', $course->id)->delete();
+        $courseLessons = CourseLesson::where('space_id', $course->id)->get();
+
+        foreach ($courseLessons as $courseLesson) {
+            do_action('fluent_community/lesson/before_deleted', $courseLesson);
+            $courseLesson->delete();
+        }
 
         // Let's delete the student enrollments
         SpaceUserPivot::where('space_id', $course->id)
@@ -365,6 +374,7 @@ class CourseAdminController extends Controller
                 ->where('role', 'student');
         })
             ->searchBy($search)
+            ->whereHas('user')
             ->with([
                 'space_pivot' => function ($q) use ($courseId) {
                     return $q->where('space_id', $courseId);
@@ -636,10 +646,15 @@ class CourseAdminController extends Controller
 
         $topic->delete();
 
-        CourseLesson::where([
+        $lessons = CourseLesson::where([
             'parent_id' => $sectionId,
             'space_id'  => $courseId
-        ])->delete();
+        ])->get();
+
+        foreach ($lessons as $lesson) {
+            do_action('fluent_community/lesson/before_deleted', $lesson);
+            $lesson->delete();
+        }
 
         return [
             'message' => __('Section has been deleted successfully.', 'fluent-community')
@@ -702,6 +717,8 @@ class CourseAdminController extends Controller
             'status'    => 'draft'
         ];
 
+        $lessonData = apply_filters('fluent_community/lesson/create_data', $lessonData, $request);
+
         $lesson = CourseLesson::create($lessonData);
 
         $lesson = CourseLesson::findOrFail($lesson->id);
@@ -714,7 +731,7 @@ class CourseAdminController extends Controller
 
     public function updateLesson(Request $request, $courseId, $lessionId)
     {
-        $course = Course::findOrFail($courseId);
+        Course::findOrFail($courseId);
 
         $lessonData = $request->get('lesson');
 
@@ -736,7 +753,7 @@ class CourseAdminController extends Controller
 
         $previousStatus = $lesson->status;
 
-        $updatedMeta = CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []));
+        $updatedMeta = CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []), $lesson);
         $updatedMeta['document_ids'] = Arr::get($lesson->meta, 'document_ids', []);
 
         if ($mediaId = Arr::get($updatedMeta, 'featured_image_id')) {
@@ -756,6 +773,8 @@ class CourseAdminController extends Controller
             'status'  => Arr::get($lessonData, 'status'),
             'meta'    => wp_parse_args($updatedMeta, $lesson->meta)
         ]);
+
+        $updateData = apply_filters('fluent_community/lesson/update_data', $updateData, $lesson);
 
         $lesson->fill($updateData);
         $dirtyFields = $lesson->getDirty();
@@ -801,6 +820,8 @@ class CourseAdminController extends Controller
             ->where('id', $lessionId)
             ->firstOrFail();
 
+        do_action('fluent_community/lesson/before_deleted', $lesson);
+
         $lesson->delete();
 
         return [
@@ -826,7 +847,7 @@ class CourseAdminController extends Controller
                 $q->where('space_id', $courseId);
             })
             ->limit(100)
-            ->searchBy($request->get('search'))
+            ->searchBy($search)
             ->get()
             ->pluck('ID')
             ->toArray();

@@ -201,10 +201,7 @@ class Comment extends Model
 
     public function getHumanExcerpt($length = 30)
     {
-        $content = $this->title;
-        if (!$content) {
-            $content = $this->message;
-        }
+        $content = $this->message;
 
         return Helper::getHumanExcerpt($content, $length);
     }

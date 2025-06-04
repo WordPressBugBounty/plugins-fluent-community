@@ -547,7 +547,7 @@ class User extends Model
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? $isMod : true,
                 'can_view_posts'       => true,
-                'can_view_members'     => $space->canViewMembers($this),
+                'can_view_members'     => $isAdmin || $space->canViewMembers($this),
                 'registered'           => true,
                 'community_admin'      => $isAdmin,
                 'community_moderator'  => $isMod,

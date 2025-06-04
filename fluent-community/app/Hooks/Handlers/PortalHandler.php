@@ -77,7 +77,7 @@ class PortalHandler
 
         add_action('fluent_community/enqueue_global_assets', function ($useDefaultTheme = true) {
             $isRtl = Helper::isRtl();
-            wp_enqueue_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', $isRtl), [], time(), 'screen');
+            wp_enqueue_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
             if ($useDefaultTheme) {
                 wp_enqueue_style('fluent_community_default_theme', Vite::getDynamicSrcUrl('theme-default.scss', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
             }
@@ -200,7 +200,7 @@ class PortalHandler
                     <button class="fcom_color_mode_core fcom_menu_button">
                         <span class="fcom_color_mode_action fcom_mode_switch el-icon">
                             <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17.9163 11.7317C16.9166 12.2654 15.7748 12.5681 14.5623 12.5681C10.6239 12.5681 7.43128 9.37543 7.43128 5.43705C7.43128 4.22456 7.73388 3.08274 8.2677 2.08301C4.72272 2.91382 2.08301 6.09562 2.08301 9.89393C2.08301 14.3246 5.67476 17.9163 10.1054 17.9163C13.9038 17.9163 17.0855 15.2767 17.9163 11.7317Z" stroke="#525866" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M17.9163 11.7317C16.9166 12.2654 15.7748 12.5681 14.5623 12.5681C10.6239 12.5681 7.43128 9.37543 7.43128 5.43705C7.43128 4.22456 7.73388 3.08274 8.2677 2.08301C4.72272 2.91382 2.08301 6.09562 2.08301 9.89393C2.08301 14.3246 5.67476 17.9163 10.1054 17.9163C13.9038 17.9163 17.0855 15.2767 17.9163 11.7317Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <svg class="show_on_dark" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_2906_20675)">
@@ -546,7 +546,7 @@ class PortalHandler
                     'nextPages'          => \sprintf(__('Next %s pages', 'fluent-community'), ' {pager}'),
                     'page'               => __('Page', 'fluent-community'),
                     'pageClassifier'     => '',
-                    'pagesize'           => '/page',
+                    'pagesize'           => __('/page', 'fluent-community'),
                     'prev'               => __('Go to previous page', 'fluent-community'),
                     'prevPages'          => \sprintf(__('Previous %s pages', 'fluent-community'), '{pager}'),
                     'total'              => \sprintf(__('Total %s', 'fluent-community'), '{total}'),

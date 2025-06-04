@@ -67,7 +67,7 @@ class LockscreenService
 
         foreach ($settings as &$setting) {
             if ($setting['type'] === 'block' && !empty($setting['content'])) {
-                $setting['content'] = do_blocks($setting['content']);
+                $setting['content'] = apply_filters('the_content', $setting['content']);
             }
 
             if ($setting['type'] == 'image' && empty($setting['new_tab'])) {
@@ -143,7 +143,7 @@ class LockscreenService
             'showCustom'     => $showCustom,
             'canSendRequest' => $canSendRequest,
             'lockScreen'     => $showCustom ? self::getLockscreenSettings($space) : null,
-            'redirect_url' => $redirectUrl,
+            'redirect_url'   => $redirectUrl,
         ];
     }
 

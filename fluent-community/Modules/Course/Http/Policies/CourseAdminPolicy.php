@@ -69,19 +69,13 @@ class CourseAdminPolicy extends BasePolicy
 
     protected function canManageCourse(Request $request)
     {
-        $userId = get_current_user_id();
-
-        if (!$userId) {
-            return false;
-        }
-
         if (current_user_can('manage_options')) {
             return true;
         }
 
-        $user = User::find($userId);
+        $user = User::find(get_current_user_id());
 
-        if ($courseId = $request->get('cousre_id')) {
+        if ($courseId = $request->get('course_id')) {
             $course = Course::find($courseId);
             if (!$course) {
                 return false;
@@ -90,6 +84,6 @@ class CourseAdminPolicy extends BasePolicy
             return $course->isCourseAdmin($user);
         }
 
-        return $user->hasCourseCreatorAccess();
+        return $user->hasSpaceManageAccess();
     }
 }

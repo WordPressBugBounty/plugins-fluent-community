@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.6.11
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,21 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.7.0 (Date: Jun 04, 2025) =
+- New: Introducing Quiz Module in courses
+- Added: Course Completed Trigger with FluentCRM
+- Added: DateTime Smartcode on Post Content
+- Added: Course Lessons Collapse/Open for all Sections
+- Added: Missing Translations
+- Added: Topic Selection Option in Space Creation
+- Improvement on Auth Module
+- Improvements on Docuemnts & File Uploading
+- Content Moderation Improvements when updating contents
+- Improved Course and Lesson Delete Cleanup
+- Fixed: S3 Cleanup Issue on File Deletion
+- Fixed: Unlisted Post Not Able to Publish
+- Fixed: Course Creator Permission
 
 = 1.6.11 (Date: May 16, 2025) =
 - Hotfix: Remove Notification Badge from email

@@ -31,7 +31,6 @@ class SpacePolicy extends BasePolicy
             return false;
         }
 
-
         return $this->canManageCommunity($request);
     }
 
@@ -75,6 +74,10 @@ class SpacePolicy extends BasePolicy
 
     public function getSpaceGroups(Request $request)
     {
+        if ($request->get('options_only')) {
+            return true;
+        }
+
         return $this->canManageSpace($request);
     }
 

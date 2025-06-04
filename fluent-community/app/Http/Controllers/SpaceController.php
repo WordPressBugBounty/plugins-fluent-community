@@ -40,7 +40,7 @@ class SpaceController extends Controller
 
         $slug = $data['slug'] ?: $data['title'];
 
-        $slug = preg_replace('/[^a-zA-Z0-9]/', '', $slug);
+        $slug = preg_replace('/[^a-zA-Z0-9-_]/', '', $slug);
 
         $data['slug'] = sanitize_title($slug, '');
         $data['title'] = sanitize_text_field($data['title']);
@@ -121,6 +121,11 @@ class SpaceController extends Controller
         $space->members()->attach(get_current_user_id(), [
             'role' => 'admin'
         ]);
+
+        if (Arr::has($data, 'topic_ids')) {
+            $topicIds = (array)Arr::get($data, 'topic_ids', []);
+            $space->syncTopics($topicIds);
+        }
 
         $currentUser->cacheAccessSpaces();
         do_action('fluent_community/space/created', $space, $data);
@@ -273,7 +278,6 @@ class SpaceController extends Controller
             ]);
         }
 
-
         if (Arr::has($data, 'topic_ids')) {
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
             $space->syncTopics($topicIds);
@@ -346,6 +350,7 @@ class SpaceController extends Controller
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }])
             ->where('status', 'active')
+            ->orderBy('created_at', 'ASC')
             ->paginate();
 
         return [

@@ -48,6 +48,7 @@ class FeedsHelper
         if (!$text) {
             return '';
         }
+
         $text = str_replace('&#x20;', '', $text); // hide markdown empty content
 
         $html = (new \FluentCommunity\App\Services\Parsedown([
@@ -61,7 +62,40 @@ class FeedsHelper
             $html = self::addNoFollowToLinks($html);
         }
 
-        return $html;
+        return self::maybeTransformDynamicCodes($html);
+    }
+
+
+    public static function maybeTransformDynamicCodes($html)
+    {
+        // check if there has {{
+        if (strpos($html, '{{') === false) {
+            return $html;
+        }
+
+        return preg_replace_callback(
+            '/{{utc:(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})}}/',
+            function ($match) {
+                // Extract the datetime string (e.g., 2025-06-01 15:06:59)
+                $datetimeStr = $match[1];
+
+                try {
+                    // Create a DateTime object from the UTC string
+                    $date = new \DateTime($datetimeStr, new \DateTimeZone('UTC'));
+                    // Get the Unix timestamp for the data-timestamp attribute
+                    $timestamp = $date->getTimestamp();
+                    // Format the display string
+                    $displayFormat = $date->format('d F Y, H:i') . ' (UTC)';
+
+                    // Return the formatted HTML
+                    return '<span class="fcom_dynamic_prop" data-type="timestamp" data-timestamp="' . $timestamp . '">' . $displayFormat . '</span>';
+                } catch (\Exception $e) {
+                    // Return original match if parsing fails
+                    return $match[0];
+                }
+            },
+            $html
+        );
     }
 
     public static function addNoFollowToLinks($html)

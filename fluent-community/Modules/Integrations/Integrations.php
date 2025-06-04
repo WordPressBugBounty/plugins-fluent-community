@@ -20,6 +20,7 @@ class Integrations
             // Course Specifics
             if (Helper::isFeatureEnabled('course_module')) {
                 new \FluentCommunity\Modules\Integrations\FluentCRM\CourseEnrollmentTrigger();
+                new \FluentCommunity\Modules\Integrations\FluentCRM\CourseCompletedTrigger();
             }
         }
         

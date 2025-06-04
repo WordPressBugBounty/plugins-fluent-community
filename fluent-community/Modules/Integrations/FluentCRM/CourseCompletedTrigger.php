@@ -9,12 +9,12 @@ use FluentCrm\App\Services\Funnel\FunnelHelper;
 use FluentCrm\App\Services\Funnel\FunnelProcessor;
 use FluentCrm\Framework\Support\Arr;
 
-class CourseEnrollmentTrigger extends BaseTrigger
+class CourseCompletedTrigger extends BaseTrigger
 {
     public function __construct()
     {
-        $this->triggerName = 'fluent_community/course/enrolled';
-        $this->priority = 30;
+        $this->triggerName = 'fluent_community/course/completed';
+        $this->priority = 31;
         $this->actionArgNum = 2;
         parent::__construct();
     }
@@ -23,8 +23,8 @@ class CourseEnrollmentTrigger extends BaseTrigger
     {
         return [
             'category'    => __('Community', 'fluent-community'),
-            'label'       => __('Enrolled in a course', 'fluent-community'),
-            'description' => __('This automation will be initiated when a user enrolls in a course.', 'fluent-community'),
+            'label'       => __('Completed a course', 'fluent-community'),
+            'description' => __('This automation will be initiated when a user completes course.', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
         ];
     }
@@ -32,8 +32,8 @@ class CourseEnrollmentTrigger extends BaseTrigger
     public function getSettingsFields($funnel)
     {
         return [
-            'title'     => __('Enrolled in a course', 'fluent-community'),
-            'sub_title' => __('This automation will be initiated when a user enrolls in a course.', 'fluent-community'),
+            'title'     => __('Completed a course', 'fluent-community'),
+            'sub_title' => __('This automation will be initiated when a user completes a course.', 'fluent-community'),
             'fields'    => [
                 'subscription_status'      => [
                     'type'        => 'option_selectors',
@@ -80,7 +80,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
                 'help'        => __('Select which courses this automation is for.', 'fluent-community'),
                 'placeholder' => __('Select Courses', 'fluent-community'),
                 'options'     => $courses,
-                'inline_help' => __('Leave blank to run for all Courses', 'fluent-community')
+                'inline_help' => __('Leave blank to run for all courses', 'fluent-community')
             ],
             'run_multiple' => [
                 'type'        => 'yes_no_check',

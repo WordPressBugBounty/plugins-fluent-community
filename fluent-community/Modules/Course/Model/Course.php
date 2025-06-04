@@ -41,7 +41,7 @@ class Course extends BaseSpace
             return $query;
         }
 
-        return $this->where('user_id', $userId);
+        return $this->where('created_by', $userId);
     }
 
     public function scopeByPostTopic($query, $topicSlug = null)
@@ -113,7 +113,6 @@ class Course extends BaseSpace
             return false;
         }
 
-
         $permissions = $user->getPermissions();
 
         if (!empty($permissions['course_admin'])) {
@@ -122,7 +121,7 @@ class Course extends BaseSpace
 
         // Check if course creator
         if (!empty($permissions['course_creator'])) {
-            return $this->user_id == $user->ID;
+            return $this->created_by == $user->ID;
         }
 
         return false;

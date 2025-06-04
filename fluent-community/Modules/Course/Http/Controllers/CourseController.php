@@ -183,6 +183,7 @@ class CourseController extends Controller
                     'course_id'      => $lesson->space_id,
                     'section_id'     => $lesson->parent_id,
                     'created_at'     => $lesson->created_at->format('Y-m-d H:i:s'),
+                    'content_type'   => $lesson->content_type,
                     'meta'           => $lesson->getPublicLessonMeta(),
                     'comments_count' => $lesson->comments_count,
                     'is_locked'      => !$hasAcessSectionAcess && !$isCourseCreator,
@@ -280,6 +281,14 @@ class CourseController extends Controller
         if (!in_array($state, ['completed', 'incomplete'])) {
             return $this->sendError([
                 'message' => __('Invalid state.', 'fluent-community')
+            ]);
+        }
+
+        $isAllowed = apply_filters('fluent_community/is_allowed_to_complete_lesson', true, $lesson);
+
+        if (!$isAllowed) {
+            return $this->sendError([
+                'message' => __('You are not allowed to complete this lesson.', 'fluent-community')
             ]);
         }
 
