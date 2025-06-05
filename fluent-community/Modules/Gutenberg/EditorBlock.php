@@ -177,7 +177,7 @@ class EditorBlock
                                     </div>
                                 </div>
                                 <div
-                                    class="feeds_main fcom_wp_content <?php echo esc_attr($className); ?> <?php echo esc_attr($widthClass); ?>">
+                                    class="feeds_main fcom_wp_content fcom_fallback_wp_content <?php echo esc_attr($className); ?> <?php echo esc_attr($widthClass); ?>">
                                     <?php echo do_blocks($content); ?>
                                 </div>
                             </div>

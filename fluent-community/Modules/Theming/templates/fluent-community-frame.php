@@ -33,7 +33,7 @@ $supportedTheme = apply_filters('fluent_community/is_supported_theme', false, $t
                                 <?php do_action('fluent_community/portal_sidebar', 'wp'); ?>
                             </div>
                         </div>
-                        <div class="feeds_main <?php echo $supportedTheme ? 'fcom_supported_wp_content' : 'fcom_wp_content' ?>">
+                        <div class="feeds_main <?php echo $supportedTheme ? 'fcom_supported_wp_content' : 'fcom_wp_content fcom_fallback_wp_content' ?>">
                             <?php do_action('fluent_community/theme_content', $themeName, 'default'); ?>
                         </div>
                     </div>

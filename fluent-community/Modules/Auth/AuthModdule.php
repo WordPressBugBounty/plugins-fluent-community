@@ -74,6 +74,8 @@ class AuthModdule
             return $defaults;
         });
 
+        add_filter('fluent_community/has_color_scheme', '__return_false');
+
         $currentUserId = get_current_user_id();
         // check if there has any invitation token
         $inivtationToken = Arr::get($_GET, 'invitation_token');

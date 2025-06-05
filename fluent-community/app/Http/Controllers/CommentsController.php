@@ -413,6 +413,7 @@ class CommentsController extends Controller
                 $react->delete();
                 if ($type == 'like') {
                     $feed->reactions_count = $feed->reactions_count - 1;
+                    $feed->timestamps = false; // Don't update the updated_at timestamp
                     $feed->save();
                 }
             }
@@ -439,6 +440,7 @@ class CommentsController extends Controller
 
         if ($type == 'like') {
             $feed->reactions_count = $feed->reactions_count + 1;
+            $feed->timestamps = false; // Don't update the updated_at timestamp
             $feed->save();
 
             $react->load('xprofile');
@@ -478,6 +480,7 @@ class CommentsController extends Controller
         $comment->delete();
 
         $feed->comments_count = Comment::where('post_id', $feed->id)->count();
+        $feed->timestamps = false; // Don't update the updated_at timestamp
         $feed->save();
 
         do_action('fluent_community/comment_deleted_' . $feed->type, $commentId, $feed);

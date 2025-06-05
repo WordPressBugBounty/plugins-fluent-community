@@ -2001,6 +2001,7 @@ class Helper
     public static function getTimeFormatter($isDayJs = false)
     {
         $format = get_option('time_format');
+
         if ($isDayJs) {
             return self::convertPhpDateToDayJSFormay($format);
         }

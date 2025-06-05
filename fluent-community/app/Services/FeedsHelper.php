@@ -406,6 +406,10 @@ class FeedsHelper
         $feedData['message_rendered'] = wp_kses_post(self::mdToHtml($markdown));
         $feedData['status'] = 'published';
 
+        if(Arr::get($allData, 'meta.media_preview.provider') == 'inline') {
+            $allData['meta']['media_preview']['provider'] = 'giphy';
+        }
+
         [$feedData, $mediaItems] = self::processFeedMetaData($feedData, $allData);
 
         $data = apply_filters('fluent_community/feed/new_feed_data', $feedData, $allData);
@@ -620,13 +624,19 @@ class FeedsHelper
 
         // Handle Giphy
         if (Arr::get($requestData, 'meta.media_preview.provider') == 'giphy') {
+            $url = Arr::get($requestData, 'meta.media_preview.image');
+            if(!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+                return [$data, $uplaodedDocs];
+            }
+
             $data['meta']['media_preview'] = array_filter([
-                'image'    => sanitize_url($requestData['meta']['media_preview']['image']),
+                'image'    => sanitize_url($url),
                 'type'     => sanitize_text_field(Arr::get($requestData, 'meta.media_preview.type', 'image')),
                 'provider' => 'giphy',
                 'height'   => (int)Arr::get($requestData, 'meta.media_preview.height', 0),
                 'width'    => (int)Arr::get($requestData, 'meta.media_preview.width', 0),
             ]);
+
             return [$data, $uplaodedDocs];
         }
 
@@ -713,7 +723,7 @@ class FeedsHelper
         // check if this is another post or not
         if (strpos($firstUrl, Helper::baseUrl()) === 0) {
             // this is an internal URL
-            if (Helper::getRouteNameByRequestPath($firstUrl) == 'feed_view') {
+            if (Helper::getRouteNameByRequestPath($firstUrl) === 'feed_view') {
                 $uriParts = explode('/', $firstUrl);
                 if (count($uriParts) >= 2) {
                     $postSlug = end($uriParts);
