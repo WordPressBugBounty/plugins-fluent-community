@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\AuthenticationService;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
@@ -529,6 +530,15 @@ class AdminController extends Controller
 
         return [
             'message' => __('Profile link providers have been updated successfully', 'fluent-community'),
+        ];
+    }
+
+    public function getAllSpaceCourses(Request $request)
+    {
+        return [
+            'all_spaces' => BaseSpace::query()->withoutGlobalScopes()
+                ->whereIn('type', ['community', 'course'])
+                ->orderBy('serial', 'ASC')->get()
         ];
     }
 

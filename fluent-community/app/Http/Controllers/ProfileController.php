@@ -32,7 +32,6 @@ class ProfileController extends Controller
             'username'                   => $xprofile->username,
             'avatar'                     => $xprofile->avatar,
             'created_at'                 => $xprofile->created_at->format('Y-m-d H:i:s'),
-            'last_activity'              => $xprofile->last_activity,
             'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml($xprofile->short_description)),
             'cover_photo'                => Arr::get($xprofile->meta, 'cover_photo'),
             'website'                    => Arr::get($xprofile->meta, 'website'),
@@ -43,6 +42,10 @@ class ProfileController extends Controller
             'total_points'               => $xprofile->total_points,
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
+
+        if(Utility::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator()) {
+            $profile['last_activity'] = $xprofile->last_activity;
+        }
 
         $currentUserId = get_current_user_id();
 

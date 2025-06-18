@@ -46,6 +46,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'FluentCommunity\\App\\App' => __DIR__ . '/../..' . '/app/App.php',
+        'FluentCommunity\\App\\Functions\\FluentExtendApi' => __DIR__ . '/../..' . '/app/Functions/FluentExtendApi.php',
         'FluentCommunity\\App\\Functions\\Utility' => __DIR__ . '/../..' . '/app/Functions/Utility.php',
         'FluentCommunity\\App\\Hooks\\CLI\\Commands' => __DIR__ . '/../..' . '/app/Hooks/CLI/Commands.php',
         'FluentCommunity\\App\\Hooks\\CLI\\DymmyCommands' => __DIR__ . '/../..' . '/app/Hooks/CLI/DymmyCommands.php',
@@ -94,6 +95,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Models\\NotificationSubscriber' => __DIR__ . '/../..' . '/app/Models/NotificationSubscriber.php',
         'FluentCommunity\\App\\Models\\NotificationSubscription' => __DIR__ . '/../..' . '/app/Models/NotificationSubscription.php',
         'FluentCommunity\\App\\Models\\Reaction' => __DIR__ . '/../..' . '/app/Models/Reaction.php',
+        'FluentCommunity\\App\\Models\\SidebarLink' => __DIR__ . '/../..' . '/app/Models/SidebarLink.php',
         'FluentCommunity\\App\\Models\\Space' => __DIR__ . '/../..' . '/app/Models/Space.php',
         'FluentCommunity\\App\\Models\\SpaceGroup' => __DIR__ . '/../..' . '/app/Models/SpaceGroup.php',
         'FluentCommunity\\App\\Models\\SpaceUserPivot' => __DIR__ . '/../..' . '/app/Models/SpaceUserPivot.php',

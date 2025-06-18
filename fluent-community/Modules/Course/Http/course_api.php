@@ -8,6 +8,7 @@ $router->prefix('courses')->namespace('\FluentCommunity\Modules\Course\Http\Cont
     $router->get('/', 'CourseController@getCourses');
     $router->get('/{course_id}', 'CourseController@getCourse')->int('course_id');
     $router->get('/{course_slug}/by-slug', 'CourseController@getCourseBySlug')->alphaNumDash('course_slug');
+    $router->get('/{course_slug}/lessons/{lesson_slug}/by-slug', 'CourseController@getLessonBySlug')->alphaNumDash('course_slug')->alphaNumDash('lesson_slug');
     $router->post('/{course_id}/enroll', 'CourseController@enrollCourse')->int('course_id');
     $router->put('/{course_id}/lessons/{lesson_id}/completion', 'CourseController@updateCompletionLesson')->int('course_id')->int('lesson_id');
 });
@@ -25,6 +26,8 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
 
     $router->get('/{course_id}/users/search', 'CourseAdminController@getOtherUsers')->int('course_id');
     $router->post('/{course_id}/links', 'CourseAdminController@updateLinks')->int('course_id');
+
+    $router->get('/{course_id}/meta-settings', 'CourseAdminController@getMetaSettings')->int('course_id');
 
     $router->get('/{course_id}/sections', 'CourseAdminController@getSections')->int('course_id');
     $router->post('/{course_id}/sections', 'CourseAdminController@createSection')->int('course_id');

@@ -7,7 +7,6 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Comment;
-use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
@@ -28,7 +27,10 @@ class CourseAdminController extends Controller
 {
     public function getCourses(Request $request)
     {
+        $user = $this->getUser();
+
         $courses = Course::searchBy($request->getSafe('search'))
+            ->byAdminAccess($user->ID)
             ->orderBy('id', 'DESC')
             ->with(['owner'])
             ->paginate();
@@ -70,15 +72,17 @@ class CourseAdminController extends Controller
             'description' => wp_kses_post($request->get('description')),
             'status'      => $request->get('status', 'draft'),
             'settings'    => [
-                'course_type'        => $request->get('course_type'),
-                'emoji'              => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
-                'shape_svg'          => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
-                'disable_comments'   => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
-                'hide_members_count' => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
+                'course_type'          => $request->get('course_type'),
+                'emoji'                => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
+                'shape_svg'            => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
+                'disable_comments'     => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
+                'hide_members_count'   => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
+                'hide_instructor_view' => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
+                'course_layout'        => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
+                'course_details'       => CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details'))))
             ],
             'serial'      => $serial
         ];
-
 
         $lockScreenType = $request->get('settings.custom_lock_screen');
         if (!in_array($lockScreenType, ['yes', 'no', 'redirect']) || $request->get('privacy') != 'private') {
@@ -262,6 +266,9 @@ class CourseAdminController extends Controller
         $existingSettings['shape_svg'] = CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', ''));
         $existingSettings['disable_comments'] = $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no';
         $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
+        $existingSettings['hide_instructor_view'] = $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no';
+        $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
+        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details'))));
 
         if ($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
             $existingSettings['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
@@ -287,6 +294,13 @@ class CourseAdminController extends Controller
         }
 
         $course->syncCategories($request->get('category_ids', []));
+
+        $metaSettings = $request->get('meta_settings', []);
+        if($metaSettings) {
+            foreach ($metaSettings as $metaProvider => $metaData) {
+                do_action('fluent_community/course/update_meta_settings_'.$metaProvider, $metaData, $course);
+            }
+        }
 
         return [
             'message' => __('Course has been updated successfully.', 'fluent-community'),
@@ -803,8 +817,18 @@ class CourseAdminController extends Controller
 
         $lessonData = array_filter($request->only($acceptedFields));
 
-        $lesson->fill($lessonData);
-        $lesson->save();
+        if (Arr::get($lessonData, 'status') === 'published' && $lesson->status !== 'published') {
+            if (empty($lesson->scheduled_at)) {
+                $lessonData['scheduled_at'] = current_time('mysql');
+            }
+        }
+
+        if (!empty($lessonData)) {
+            $lesson->fill($lessonData);
+            if ($lesson->isDirty()) {
+                $lesson->save();
+            }
+        }
 
         return [
             'message' => __('Lesson has been updated successfully.', 'fluent-community'),
@@ -878,6 +902,22 @@ class CourseAdminController extends Controller
         return [
             'message' => __('Links have been updated for the course', 'fluent-community'),
             'links'   => $links
+        ];
+    }
+
+    public function getMetaSettings(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        $metaSettings = apply_filters('fluent_community/course/meta_fields', [], $course);
+
+        if (!$metaSettings) {
+            return [
+                'meta_settings' => null
+            ];
+        }
+
+        return [
+            'meta_settings' => $metaSettings
         ];
     }
 }

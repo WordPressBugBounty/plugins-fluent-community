@@ -34,7 +34,7 @@ class Mailer
 
     public function setDefaultHeaders($settings = null)
     {
-        if ($settings) {
+        if (!$settings) {
             $settings = Utility::getEmailNotificationSettings();
         }
 

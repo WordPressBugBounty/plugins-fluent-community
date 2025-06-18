@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Hooks\Handlers;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
@@ -17,6 +18,10 @@ class ActivityMonitorHandler
         add_action('fluent_community/track_activity', [$this, 'trackActivity'], 10);
 
         add_action('profile_update', function ($userId) {
+            if (Utility::getPrivacySetting('enable_user_sync') === 'no') {
+                return;
+            }
+
             $user = get_user_by('ID', $userId);
             $xprofile = XProfile::where('user_id', $userId)->first();
             if (!$xprofile) {

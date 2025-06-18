@@ -31,6 +31,11 @@ class Utility
         return \FluentCommunity\App\App::getInstance($instance);
     }
 
+    public static function extender()
+    {
+        return new FluentExtendApi();
+    }
+
     /**
      * Get Global Fluent Community Option
      * @param string $key The option name
@@ -244,33 +249,26 @@ class Utility
             return $settings;
         }
 
-        $settings = self::getFromCache('privacy_settings', function () {
-            $defaults = [
-                'can_customize_username'         => 'no',
-                'can_change_email'               => 'no',
-                'show_last_activity'             => 'yes',
-                'email_auto_login'               => 'yes',
-                'enable_gravatar'                => 'yes',
-                'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
-                'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
-                'leaderboard_members_visibility' => 'everybody', // everybody, logged_in, admin_only
-            ];
+        $defaults = [
+            'can_customize_username'         => 'no',
+            'can_change_email'               => 'no',
+            'show_last_activity'             => 'yes',
+            'email_auto_login'               => 'yes',
+            'enable_gravatar'                => 'yes',
+            'enable_user_sync'               => 'yes',
+            'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
+            'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
+            'leaderboard_members_visibility' => 'everybody', // everybody, logged_in, admin_only
+        ];
 
-            $settings = self::getOption('privacy_settings', $defaults);
+        $settings = self::getOption('privacy_settings', $defaults);
 
-            $settings = wp_parse_args($settings, $defaults);
+        $settings = wp_parse_args($settings, $defaults);
 
-            if (!defined('FLUENT_COMMUNITY_PRO')) {
-                $settings['can_customize_username'] = 'no';
-                $settings['can_change_email'] = 'no';
-                $settings['email_auto_login'] = 'no';
-            }
-
-            return $settings;
-        });
-
-        if (empty($settings['enable_gravatar'])) {
-            $settings['enable_gravatar'] = 'yes';
+        if (!defined('FLUENT_COMMUNITY_PRO')) {
+            $settings['can_customize_username'] = 'no';
+            $settings['can_change_email'] = 'no';
+            $settings['email_auto_login'] = 'no';
         }
 
         return $settings;

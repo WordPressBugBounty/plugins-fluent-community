@@ -185,9 +185,9 @@ class DailyDigest
                             <tr>
                                 <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top;">
                                     <a href="<?php echo esc_url($permalink); ?>">
-                                        <img alt="<?php echo esc_html($notification->xprofile); ?>"
+                                        <img alt="<?php echo esc_html($notification->xprofile ? $notification->xprofile->display_name : ''); ?>"
                                              src="<?php echo esc_url($notification->xprofile->avatar); ?>" width="32"
-                                             height="32" style="border-radius: 50%; display: block;">
+                                             height="32" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
                                     </a>
                                 </td>
                                 <td style="font-family: Arial, sans-serif; font-size: 16px;color: #3c434a; padding-left: 10px; vertical-align: middle;">

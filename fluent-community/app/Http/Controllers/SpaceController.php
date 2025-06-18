@@ -55,12 +55,13 @@ class SpaceController extends Controller
         $spaceGroup = null;
         if (!empty($data['parent_id'])) {
             $spaceGroup = SpaceGroup::findOrFail($data['parent_id']);
-            $serial = BaseSpace::where('parent_id', $spaceGroup->id)->max('serial') + 1;
+            $serial = BaseSpace::query()->withoutGlobalScopes()->where('parent_id', $spaceGroup->id)->max('serial') + 1;
         } else {
-            $serial = BaseSpace::max('serial') + 1;
+            $serial = BaseSpace::query()->withoutGlobalScopes()->max('serial') + 1;
         }
 
         $settings = CustomSanitizer::santizeSpaceSettings(Arr::get($data, 'settings', []), $data['privacy']);
+
         if (is_wp_error($settings)) {
             return $this->sendError([
                 'message' => $settings->get_error_message()
@@ -272,7 +273,7 @@ class SpaceController extends Controller
 
         $space = $space->updateCustomData($data, true);
 
-        if(is_wp_error($space)) {
+        if (is_wp_error($space)) {
             return $this->sendError([
                 'message' => $space->get_error_message()
             ]);
@@ -282,10 +283,15 @@ class SpaceController extends Controller
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
             $space->syncTopics($topicIds);
         }
-
         do_action('fluent_community/space/updated', $space, $data);
-
         $slugUpdated = $slug != $space->slug;
+
+        $metaSettings = $request->get('meta_settings', []);
+        if($metaSettings) {
+            foreach ($metaSettings as $metaProvider => $metaData) {
+                do_action('fluent_community/space/update_meta_settings_'.$metaProvider, $metaData, $space);
+            }
+        }
 
         return [
             'message'      => __('Settings has been updated', 'fluent-community'),
@@ -866,6 +872,22 @@ class SpaceController extends Controller
 
         return [
             'lockscreen' => $lockscreen
+        ];
+    }
+
+    public function getMetaSettings(Request $request, $spaceSlug)
+    {
+        $space = Space::where('slug', $spaceSlug)->firstOrFail();
+        $metaSettings = apply_filters('fluent_community/space/meta_fields', [], $space);
+
+        if (!$metaSettings) {
+            return [
+                'meta_settings' => null
+            ];
+        }
+
+        return [
+            'meta_settings' => $metaSettings
         ];
     }
 }

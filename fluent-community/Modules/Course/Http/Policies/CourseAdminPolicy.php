@@ -3,9 +3,9 @@
 namespace FluentCommunity\Modules\Course\Http\Policies;
 
 use FluentCommunity\App\Http\Policies\BasePolicy;
-use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunity\App\Services\Helper;
 
 class CourseAdminPolicy extends BasePolicy
 {
@@ -16,18 +16,16 @@ class CourseAdminPolicy extends BasePolicy
      */
     public function verifyRequest(Request $request)
     {
-        $userId = get_current_user_id();
+        $user = Helper::getCurrentUser(true);
 
-        if (!$userId) {
+        if (!$user) {
             return false;
         }
-
-        $user = User::find($userId);
 
         return $user->hasCourseCreatorAccess();
     }
 
-    public function createCourse(Request $request)
+    public function findCourse(Request $request)
     {
         return $this->canManageCourse($request);
     }
@@ -73,7 +71,7 @@ class CourseAdminPolicy extends BasePolicy
             return true;
         }
 
-        $user = User::find(get_current_user_id());
+        $user = Helper::getCurrentUser(true);
 
         if ($courseId = $request->get('course_id')) {
             $course = Course::find($courseId);

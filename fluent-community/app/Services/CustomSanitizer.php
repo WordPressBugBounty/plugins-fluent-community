@@ -10,7 +10,7 @@ class CustomSanitizer
 {
     public static function sanitizeMenuLink($item)
     {
-        $validKeys = ['title', 'enabled', 'permalink', 'new_tab', 'link_classes', 'shape_svg', 'emoji', 'icon_image', 'is_custom', 'is_system', 'is_locked', 'is_unavailable', 'slug'];
+        $validKeys = ['title', 'enabled', 'permalink', 'new_tab', 'link_classes', 'shape_svg', 'emoji', 'icon_image', 'is_custom', 'is_system', 'is_locked', 'is_unavailable', 'slug', 'privacy', 'membership_ids'];
         $item = array_filter(Arr::only($item, $validKeys));
 
         $yesNoItems = ['enabled', 'is_custom', 'is_system', 'is_locked', 'is_unavailable'];
@@ -20,7 +20,7 @@ class CustomSanitizer
             }
         }
 
-        $textTypes = ['title', 'new_tab', 'link_classes', 'slug'];
+        $textTypes = ['title', 'new_tab', 'link_classes', 'slug', 'privacy'];
         foreach ($textTypes as $key) {
             if (isset($item[$key])) {
                 $item[$key] = sanitize_text_field($item[$key]);
@@ -49,6 +49,10 @@ class CustomSanitizer
             } else {
                 $item['icon_image'] = sanitize_url($item['icon_image']);
             }
+        }
+
+        if(Arr::get($item, 'privacy') == 'members_only') {
+            $item['membership_ids'] = array_map('sanitize_text_field', (array) Arr::get($item, 'membership_ids', []));
         }
 
         return $item;

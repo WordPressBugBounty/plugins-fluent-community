@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'FluentCommunity\\App\\App' => $baseDir . '/app/App.php',
+    'FluentCommunity\\App\\Functions\\FluentExtendApi' => $baseDir . '/app/Functions/FluentExtendApi.php',
     'FluentCommunity\\App\\Functions\\Utility' => $baseDir . '/app/Functions/Utility.php',
     'FluentCommunity\\App\\Hooks\\CLI\\Commands' => $baseDir . '/app/Hooks/CLI/Commands.php',
     'FluentCommunity\\App\\Hooks\\CLI\\DymmyCommands' => $baseDir . '/app/Hooks/CLI/DymmyCommands.php',
@@ -56,6 +57,7 @@ return array(
     'FluentCommunity\\App\\Models\\NotificationSubscriber' => $baseDir . '/app/Models/NotificationSubscriber.php',
     'FluentCommunity\\App\\Models\\NotificationSubscription' => $baseDir . '/app/Models/NotificationSubscription.php',
     'FluentCommunity\\App\\Models\\Reaction' => $baseDir . '/app/Models/Reaction.php',
+    'FluentCommunity\\App\\Models\\SidebarLink' => $baseDir . '/app/Models/SidebarLink.php',
     'FluentCommunity\\App\\Models\\Space' => $baseDir . '/app/Models/Space.php',
     'FluentCommunity\\App\\Models\\SpaceGroup' => $baseDir . '/app/Models/SpaceGroup.php',
     'FluentCommunity\\App\\Models\\SpaceUserPivot' => $baseDir . '/app/Models/SpaceUserPivot.php',

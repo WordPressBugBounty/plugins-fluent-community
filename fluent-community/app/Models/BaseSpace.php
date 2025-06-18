@@ -49,6 +49,7 @@ class BaseSpace extends Model
             if (empty($model->slug)) {
                 $model->slug = self::generateNewSlug($model);
             }
+
             $model->type = static::$type;
         });
 
@@ -82,9 +83,9 @@ class BaseSpace extends Model
     public function admins()
     {
         return $this->belongsToMany(User::class, 'fcom_space_user', 'space_id', 'user_id')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('role', 'admin')
-                      ->orWhere('role', 'moderator');
+                    ->orWhere('role', 'moderator');
             });
     }
 
@@ -101,6 +102,11 @@ class BaseSpace extends Model
         }
 
         return $query;
+    }
+
+    public function scopeOnlyMain($query)
+    {
+        return $query->withoutGlobalScopes()->whereIn('type', ['community', 'course']);
     }
 
     public function scopeFilterByUserId($query, $userId)
@@ -139,7 +145,7 @@ class BaseSpace extends Model
 
     public function comments()
     {
-        return $this->hasManyThrough(Comment::class, Feed::class, 'space_id','post_id');
+        return $this->hasManyThrough(Comment::class, Feed::class, 'space_id', 'post_id');
     }
 
     public function members()
@@ -237,7 +243,7 @@ class BaseSpace extends Model
 
             $settings = CustomSanitizer::santizeSpaceSettings($data['settings'], $this->privacy);
 
-            if(is_wp_error($settings)) {
+            if (is_wp_error($settings)) {
                 return $settings;
             }
 
@@ -308,6 +314,11 @@ class BaseSpace extends Model
         }
 
         return $this;
+    }
+
+    public function isContentSpace()
+    {
+        return in_array($this->type, ['community', 'course']);
     }
 
     public function getSettingsAttribute($value)
@@ -422,6 +433,13 @@ class BaseSpace extends Model
 
         if ($this->type == 'course') {
             return Helper::baseUrl('course/' . $this->slug . '/lessons');
+        }
+
+        if ($this->type == 'sidebar_link') {
+            $permalink = Arr::get($this->settings, 'permalink');
+            if ($permalink) {
+                return $permalink;
+            }
         }
 
         return Helper::baseUrl('/');

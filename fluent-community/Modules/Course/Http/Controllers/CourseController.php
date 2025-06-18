@@ -6,12 +6,12 @@ use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\LockscreenService;
-use FluentCommunity\App\Services\SmartCodeParser;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
 
 class CourseController extends Controller
@@ -90,7 +90,9 @@ class CourseController extends Controller
             ]);
         }
 
-        return $this->processCourse($course, $isCourseCreator);
+        $intendtedLessonSlug = $request->get('intended_lesson_slug');
+
+        return $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
     }
 
     public function getCourseBySlug(Request $request, $slug)
@@ -99,8 +101,10 @@ class CourseController extends Controller
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
         $course = Course::when(!$isCourseCreator, function ($q) {
-            $q->where('status', 'published');
-        })->where('slug', $slug)->firstOrFail();
+                $q->where('status', 'published');
+            })
+            ->where('slug', $slug)
+            ->firstOrFail();
 
         if (!$course) {
             return $this->sendError([
@@ -108,10 +112,91 @@ class CourseController extends Controller
             ]);
         }
 
-        return $this->processCourse($course, $isCourseCreator);
+        $hideInstructorView = Arr::get($course->settings, 'hide_instructor_view') == 'yes';
+        if (!$hideInstructorView) {
+            $course->load(['creator']);
+            if ($course->creator) {
+                $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
+                $course->creator->total_courses = count($creatorCourseIds);
+                $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                if ($course->creator->short_description) {
+                    $course->creator->short_description_rendered = wp_kses_post(FeedsHelper::mdToHtml($course->creator->short_description));
+                }
+            }
+        }
+
+        $intendtedLessonSlug = $request->get('intended_lesson_slug');
+
+        return $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
     }
 
-    private function processCourse(Course $course, $isCourseCreator)
+    public function getLessonBySlug(Request $request, $courseSlug, $lessonSlug)
+    {
+        $user = $this->getUser();
+        $isCourseCreator = $user && $user->hasCourseCreatorAccess();
+
+        $course = Course::when(!$isCourseCreator, function ($q) {
+            $q->where('status', 'published');
+        })->where('slug', $courseSlug)->firstOrFail();
+
+        if (!$course) {
+            return $this->sendError([
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+            ]);
+        }
+
+        $lesson = CourseLesson::where('space_id', $course->id)
+            ->where('slug', $lessonSlug)
+            ->when(!$isCourseCreator, function ($q) {
+                $q->where('status', 'published');
+            })
+            ->with(['topic'])
+            ->firstOrFail();
+
+        if (!$lesson || !$lesson->topic) {
+            return $this->sendError([
+                'message' => __('Lesson not found. maybe the lesson is not published yet!', 'fluent-community')
+            ]);
+        }
+
+        $enrollment = CourseHelper::getCourseEnrollment($course->id);
+
+        if ($course->privacy == 'secret' && !$enrollment && !$isCourseCreator) {
+            return $this->sendError([
+                'message' => __('You must need to be invited to view this course', 'fluent-community')
+            ]);
+        }
+
+        $section = $lesson->topic;
+        $hasAcessSectionAcess = !!$enrollment;
+        $unlockDate = '';
+        $courseType = $course->getCourseType();
+        $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
+        if ($hasAcessSectionAcess) {
+            $unlockDate = CourseHelper::getSectionAccessDate($section, $courseType, $enrollment);
+            if (!$unlockDate || strtotime($unlockDate) > current_time('timestamp')) {
+                $hasAcessSectionAcess = false;
+            } else {
+                $unlockDate = null;
+            }
+        }
+
+        $canViewLesson = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
+        $canViewLesson = apply_filters('fluent_community/course/can_view_lesson', $canViewLesson, $lesson, $course, $this->getUser());
+
+        $formattedLesson = CourseHelper::formatLessonData($course, $lesson, $user, [
+            'can_view'      => $canViewLesson,
+            'parse_content' => $canViewLesson,
+            'is_locked'     => !$hasAcessSectionAcess && !$isCourseCreator,
+            'unclock_date'  => $unlockDate
+        ]);
+
+        return [
+            'lesson' => $formattedLesson
+        ];
+    }
+
+    private function processCourse(Course $course, $isCourseCreator, $intendtedLessonSlug = '')
     {
         $sections = CourseTopic::where('space_id', $course->id)
             ->orderBy('priority', 'ASC')
@@ -123,7 +208,6 @@ class CourseController extends Controller
             ->get();
 
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
-        $formattedSections = [];
 
         $currentUser = Helper::getCurrentUser();
 
@@ -137,8 +221,16 @@ class CourseController extends Controller
             ]);
         }
 
+        $courseSettings = $course->settings;
+        if (Arr::get($courseSettings, 'course_details')) {
+            $courseSettings['course_details_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($courseSettings['course_details']));
+            $course->settings = $courseSettings;
+        }
+
         $courseType = $course->getCourseType();
         $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
+
+        $formattedSections = [];
 
         foreach ($sections as $section) {
             if ($section->lessons->isEmpty()) {
@@ -162,34 +254,23 @@ class CourseController extends Controller
                 $canViewLesson = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
                 $canViewLesson = apply_filters('fluent_community/course/can_view_lesson', $canViewLesson, $lesson, $course, $this->getUser());
 
-                if ($canViewLesson) {
-                    $content = $lesson->message_rendered;
-                    if (!$content && $lesson->message) {
-                        $content = apply_filters('the_content', $lesson->message);
-                    }
-                    if(!$content) {
-                        $content = '';
-                    }
-                    $content = (new SmartCodeParser())->parse($content, $currentUser);
-                } else {
-                    $content = '';
+                $parseContent = $intendtedLessonSlug === $lesson->slug && $canViewLesson;
+
+                $formattedLesson = CourseHelper::formatLessonData($course, $lesson, $currentUser, [
+                    'can_view'      => $canViewLesson,
+                    'parse_content' => $parseContent,
+                    'is_locked'     => !$hasAcessSectionAcess && !$isCourseCreator,
+                    'unclock_date'  => $unlockDate
+                ]);
+
+                $isLazyLoad = !$parseContent;
+                if(!$canViewLesson) {
+                    $isLazyLoad = false;
                 }
 
-                $formattedLessons[] = [
-                    'id'             => $lesson->id,
-                    'title'          => $lesson->title,
-                    'content'        => $content,
-                    'slug'           => $lesson->slug,
-                    'course_id'      => $lesson->space_id,
-                    'section_id'     => $lesson->parent_id,
-                    'created_at'     => $lesson->created_at->format('Y-m-d H:i:s'),
-                    'content_type'   => $lesson->content_type,
-                    'meta'           => $lesson->getPublicLessonMeta(),
-                    'comments_count' => $lesson->comments_count,
-                    'is_locked'      => !$hasAcessSectionAcess && !$isCourseCreator,
-                    'unclock_date'   => $unlockDate,
-                    'can_view'       => $canViewLesson
-                ];
+                $formattedLesson['lazy_load'] = $isLazyLoad;
+
+                $formattedLessons[] = $formattedLesson;
             }
 
             $formattedSections[] = [
@@ -297,7 +378,7 @@ class CourseController extends Controller
         $isCompleted = $track['progress'] == 100;
 
         if ($isCompleted) {
-            CourseHelper::completeCourse($course, get_current_user_id());
+            CourseHelper::completeCourse($course, $lesson, get_current_user_id());
         }
 
         return [
@@ -306,4 +387,5 @@ class CourseController extends Controller
             'is_completed' => $isCompleted
         ];
     }
+
 }

@@ -228,6 +228,10 @@ class Helper
      */
     public static function isUserInSpace($userId, $spaceId)
     {
+        if (!$userId || !$spaceId) {
+            return false;
+        }
+
         return SpaceUserPivot::where('user_id', $userId)
             ->where('space_id', $spaceId)
             ->where('status', 'active')
@@ -738,8 +742,12 @@ class Helper
             }
 
             foreach ($spaces as $space) {
-                $validSpace = $view ? self::transformSpaceToLink($space) : $space;
-                if ($user) {
+                $validSpace = $view ? self::transformSpaceToLink($space, $user) : $space;
+                if (!$validSpace) {
+                    continue;
+                }
+
+                if ($user && $space->isContentSpace()) {
                     $validSpace['unread_badge'] = self::getUnreadFeedsCounts($space->id);
                 }
 
@@ -825,12 +833,17 @@ class Helper
      * Transform a space to a link array.
      *
      * @param Space $space The space to transform.
-     * @return array The transformed space link array.
+     * @param User|null $user The user to check permissions for.
+     * @return array|null The transformed space link array.
      */
-    private static function transformSpaceToLink($space)
+    private static function transformSpaceToLink($space, $user = null)
     {
-        $logo = $space->logo;
+        $isCustomLink = $space->type == 'sidebar_link';
+        if ($isCustomLink && !self::canViewSideLinkLink($space, $user)) {
+            return null;
+        }
 
+        $logo = $space->logo;
         $title = $space->title;
 
         if ($space->status == 'draft') {
@@ -843,8 +856,36 @@ class Helper
             'shape_svg'    => !$logo ? Arr::get($space->settings, 'shape_svg', '') : '',
             'emoji'        => !$logo ? Arr::get($space->settings, 'emoji', '') : '',
             'permalink'    => $space->getPermalink(),
+            'is_custom'    => $isCustomLink ? 'yes' : 'no',
+            'new_tab'      => ($isCustomLink && Arr::get($space, 'settings.new_tab', 'no') === 'yes') ? 'yes' : 'no',
             'link_classes' => 'space_menu_item route_url fcom_space_id_' . $space->id . ' fcom_space_' . $space->slug
         ];
+    }
+
+    public static function canViewSideLinkLink($space, $user = null)
+    {
+        $privacy = $space->privacy;
+
+        if ($privacy == 'public') {
+            return true;
+        }
+
+        if ($privacy == 'logged_in') {
+            return !!$user;
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        $accessIds = Arr::get($space->settings, 'membership_ids', []);
+
+        if (!$accessIds) {
+            return true;
+        }
+
+        $userSpaces = $user->getSpaceIds();
+        return !!array_intersect($userSpaces, $accessIds);
     }
 
     public static function isAlreadyOnboarded()
@@ -1049,9 +1090,7 @@ class Helper
         $profileDropDownItems = Arr::get($menuGroups, 'profileDropdownItems', []);
 
         if ($profileDropDownItems && is_array($profileDropDownItems)) {
-
             unset($profileDropDownItems['profile']);
-
             foreach ($profileDropDownItems as $index => &$item) {
                 if (empty($item['slug'])) {
                     unset($profileDropDownItems[$index]);
@@ -1089,16 +1128,25 @@ class Helper
         }
 
         if ($context == 'view') {
-            $mainItems = array_filter($mainItems, function ($item) {
-                return Arr::get($item, 'enabled') === 'yes' && Arr::get($item, 'is_unavailable') !== 'yes';
+
+            $currentUser = self::getCurrentUser();
+
+            $mainItems = array_filter($mainItems, function ($item) use ($currentUser) {
+                return Arr::get($item, 'enabled') === 'yes'
+                    && Arr::get($item, 'is_unavailable') !== 'yes'
+                    && self::isLinkAccessible($item, $currentUser);
             });
 
-            $profileDropDownItems = array_filter($profileDropDownItems, function ($item) {
-                return Arr::get($item, 'enabled') === 'yes' && Arr::get($item, 'is_unavailable') !== 'yes';
+            $profileDropDownItems = array_filter($profileDropDownItems, function ($item) use ($currentUser) {
+                return Arr::get($item, 'enabled') === 'yes'
+                    && Arr::get($item, 'is_unavailable') !== 'yes'
+                    && self::isLinkAccessible($item, $currentUser);
             });
 
-            $beforeCommunityMenuItems = array_filter($beforeCommunityMenuItems, function ($item) {
-                return Arr::get($item, 'enabled') === 'yes' && Arr::get($item, 'is_unavailable') !== 'yes';
+            $beforeCommunityMenuItems = array_filter($beforeCommunityMenuItems, function ($item) use($currentUser) {
+                return Arr::get($item, 'enabled') === 'yes'
+                    && Arr::get($item, 'is_unavailable') !== 'yes'
+                    && self::isLinkAccessible($item, $currentUser);
             });
 
             $validGroups = [];
@@ -1107,8 +1155,10 @@ class Helper
                     continue;
                 }
 
-                $group['items'] = array_filter($group['items'], function ($item) {
-                    return Arr::get($item, 'enabled') === 'yes' && Arr::get($item, 'is_unavailable') !== 'yes';
+                $group['items'] = array_filter($group['items'], function ($item) use ($currentUser) {
+                    return Arr::get($item, 'enabled') === 'yes'
+                        && Arr::get($item, 'is_unavailable') !== 'yes'
+                        && self::isLinkAccessible($item, $currentUser);
                 });
 
                 if ($group['items']) {
@@ -1129,6 +1179,35 @@ class Helper
         }
 
         return $menuGroups;
+    }
+
+    private static function isLinkAccessible($link, $currentUser = null)
+    {
+        $privacy = Arr::get($link, 'privacy', '');
+
+        if(!$privacy || $privacy === 'public') {
+            return true;
+        }
+
+        if($privacy == 'logged_in') {
+            return !!$currentUser;
+        }
+
+        $membershipIds = Arr::get($link, 'membership_ids', []);
+        if(!$membershipIds) {
+            return true;
+        }
+
+        if(!$currentUser) {
+            return false;
+        }
+
+        static $userSpacesIds = null;
+        if($userSpacesIds === null) {
+            $userSpacesIds = $currentUser->getSpaceIds();
+        }
+
+        return $userSpacesIds && !!array_intersect($userSpacesIds, $membershipIds);
     }
 
     /**
@@ -1448,7 +1527,7 @@ class Helper
     public static function addToSpace($space, $userId, $role = 'member', $by = 'self')
     {
         if (is_numeric($space)) {
-            $space = BaseSpace::withoutGlobalScopes()->find($space);
+            $space = BaseSpace::onlyMain()->find($space);
         }
 
         if (!$space || !$space instanceof BaseSpace) {
@@ -1524,7 +1603,7 @@ class Helper
         }
 
         if (is_numeric($space)) {
-            $space = BaseSpace::query()->withoutGlobalScopes()->find($space);
+            $space = BaseSpace::query()->onlyMain()->find($space);
         }
 
         if (!$space || !$space instanceof BaseSpace) {
@@ -1560,6 +1639,10 @@ class Helper
      */
     public static function renderLink($link, $linkClass = '', $fallback = '<span class="fcom_no_avatar"></span>', $renderIcon = true)
     {
+        if(!$link || empty($link['permalink'])) {
+            return;
+        }
+
         $isCustom = Arr::get($link, 'is_custom') == 'yes';
 
         $linkAtts = array_filter([
@@ -1568,10 +1651,9 @@ class Helper
             'rel'    => Arr::get($link, 'new_tab') === 'yes' ? 'noopener noreferrer' : '',
         ]);
 
-
         ?>
         <a aria-label="Go to <?php echo esc_attr(Arr::get($link, 'title')); ?> page"
-           href="<?php echo esc_url($link['permalink']); ?>" <?php foreach ($linkAtts as $key => $value) {
+           href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
             echo esc_attr($key) . '="' . esc_attr($value) . '"';
         } ?>>
             <?php $renderIcon && self::printLinkIcon($link, $fallback); ?>
@@ -1883,20 +1965,20 @@ class Helper
             'fri' => 'friday',
             'sat' => 'saturday'
         ];
-        
+
         return isset($dayMap[$day]) ? $dayMap[$day] : $day . 'day';
     }
 
     public static function getPostOrderOptions()
     {
         return [
-            'new_activity'  => __('New Activity', 'fluent-community'),
-            'latest'        => __('Latest', 'fluent-community'),
-            'oldest'        => __('Oldest', 'fluent-community'),
-            'popular'       => __('Popular', 'fluent-community'),
-            'likes'         => __('Likes', 'fluent-community'),
-            'alphabetical'  => __('Alphabetical', 'fluent-community'),
-            'unanswered'    => __('Unanswered', 'fluent-community'),
+            'new_activity' => __('New Activity', 'fluent-community'),
+            'latest'       => __('Latest', 'fluent-community'),
+            'oldest'       => __('Oldest', 'fluent-community'),
+            'popular'      => __('Popular', 'fluent-community'),
+            'likes'        => __('Likes', 'fluent-community'),
+            'alphabetical' => __('Alphabetical', 'fluent-community'),
+            'unanswered'   => __('Unanswered', 'fluent-community'),
         ];
     }
 
@@ -1964,7 +2046,7 @@ class Helper
             $char = $phpFormat[$i];
 
             // Special handling for G\hi pattern
-            if ($char === 'G' && $i + 2 < strlen($phpFormat) && 
+            if ($char === 'G' && $i + 2 < strlen($phpFormat) &&
                 $phpFormat[$i + 1] === '\\' && $phpFormat[$i + 2] === 'h') {
                 $dayjsFormat .= 'H[h]';
                 $i += 2;

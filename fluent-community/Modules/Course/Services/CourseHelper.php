@@ -9,6 +9,7 @@ use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\SmartCodeParser;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
@@ -220,14 +221,20 @@ class CourseHelper
         ]);
     }
 
-    public static function completeCourse($course, $userId)
+    public static function completeCourse($course, $lesson, $userId)
     {
-        $exists = Activity::where('feed_id', $course->id) // we are using feed_id as it's indexed in the DB
-        ->where('user_id', $userId)
+        $activity = Activity::where('feed_id', $course->id)
+            ->where('user_id', $userId)
             ->where('action_name', 'course_completed')
-            ->exists();
+            ->first();
 
-        if ($exists) {
+        if ($activity) {
+            if (strtotime($lesson->scheduled_at) > strtotime($activity->updated_at)) {
+                $activity->updated_at = current_time('mysql');
+                $activity->save();
+                do_action('fluent_community/course/completed', $course, $userId);
+                return true;
+            }
             return false;
         }
 
@@ -345,7 +352,8 @@ class CourseHelper
             'enable_media',
             'media',
             'video_length',
-            'featured_image_id'
+            'featured_image_id',
+            'free_preview_lesson'
         ];
 
         if ($lesson->isQuizType()) {
@@ -355,7 +363,7 @@ class CourseHelper
 
         $meta = Arr::only($meta, $validFields);
 
-        $yesNoFields = ['enable_comments', 'enable_media', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
+        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
 
         foreach ($yesNoFields as $field) {
             $meta[$field] = Arr::get($meta, $field, 'no') == 'yes' ? 'yes' : 'no';
@@ -390,6 +398,7 @@ class CourseHelper
             'title'        => sanitize_text_field(Arr::get($media, 'title', '')),
             'author_name'  => sanitize_text_field(Arr::get($media, 'author_name', '')),
             'html'         => CustomSanitizer::sanitizeRichText(Arr::get($media, 'html', '')),
+            'image'        => sanitize_url(Arr::get($media, 'image', ''))
         ]);
     }
 
@@ -438,5 +447,76 @@ class CourseHelper
         }
 
         return wp_kses_post($body);
+    }
+
+    public static function formatLessonData($course, $lesson, $user = null, $config = [])
+    {
+        $canViewLesson = Arr::get($config, 'can_view', false);
+        $parseContent = Arr::get($config, 'parse_content', true);
+
+        if ($parseContent && $canViewLesson) {
+            $content = $lesson->message_rendered;
+            if (!$content && $lesson->message) {
+                $content = apply_filters('the_content', $lesson->message);
+            }
+            if (!$content) {
+                $content = '';
+            }
+            $content = (new SmartCodeParser())->parse($content, $user);
+        } else {
+            $content = '';
+        }
+
+        $formattedLesson = [
+            'id'             => $lesson->id,
+            'title'          => $lesson->title,
+            'content'        => $content,
+            'slug'           => $lesson->slug,
+            'course_id'      => $lesson->space_id,
+            'section_id'     => $lesson->parent_id,
+            'created_at'     => $lesson->created_at->format('Y-m-d H:i:s'),
+            'content_type'   => $lesson->content_type,
+            'featured_image' => $lesson->featured_image,
+            'meta'           => $lesson->getPublicLessonMeta($canViewLesson),
+            'comments_count' => $lesson->comments_count,
+            'is_locked'      => Arr::get($config, 'is_locked', false),
+            'unclock_date'   => Arr::get($config, 'unclock_date', ''),
+            'can_view'       => $canViewLesson
+        ];
+
+        if (!$canViewLesson) {
+            $formattedLesson['access_message'] = static::getAccessMessage($course, $lesson, $config);
+        }
+
+        return $formattedLesson;
+    }
+
+    public static function getAccessMessage($course, $lesson, $config)
+    {
+        $isLocked = Arr::get($config, 'is_locked', false);
+        $unlockDate = Arr::get($config, 'unclock_date', '');
+        $courseLessonsUrl = Helper::baseUrl('/course/' . $course->slug . '/lessons');
+
+        $headerMessage = __('This lesson is currently locked', 'fluent-community');
+        $bodyMessage = __('Please enroll in this course to access this lesson', 'fluent-community');
+        $backToCourseText = __('Back to Course', 'fluent-community');
+
+        if ($isLocked && $unlockDate) {
+            $headerMessage = __('This lesson is not published for you yet', 'fluent-community');
+            $bodyMessage = sprintf(
+                __('It will be available to you on %s', 'fluent-community'),
+                date_i18n(get_option('date_format'), strtotime($unlockDate))
+            );
+        }
+
+        $accessMessage = sprintf(
+            '<div class="fcom_locker"><h1>%s</h1><p>%s</p><a href="%s" class="el-button el-button--info">%s</a></div>',
+            $headerMessage,
+            $bodyMessage,
+            $courseLessonsUrl,
+            $backToCourseText
+        );
+
+        return apply_filters('fluent_community/course/access_message_html', $accessMessage, $course, $lesson, $config);
     }
 }

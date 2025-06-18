@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.7.1
+Stable tag: 1.7.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,11 +247,25 @@ OR
 
 == Changelog ==
 
+= 1.7.5 (Date: Jun 18, 2025)
+- New: Custom Link with Access Control
+- New: Modern Course Overview Layout
+- Added: Space/Course Meta Settings API
+- Added: Data Sync Privacy Settings
+- Added: Free Lesson Preview
+- Redesigned: Course Overview Page
+- Added: Access Message HTML for Locked Lessons
+- Fixed: Course Completion Trigger
+- Fixed: Mailing Settings Not Applying
+- Fixed: Invitation Issue with FluentAuth
+- Fixed: Last Activity & Social Links Display
+- Fixed: Course Creator Access Permission Issues
+
 = 1.7.1 (Date: Jun 05, 2025) =
 - Fixed Full Screen Mode Issue in Course Lessons
 - Fixed Styling issues in the auth pages
 - Improved Translation Strings
-- Fixed Infinete Scroll Issues
+- Fixed Infinite Scroll Issues
 - Improvement on the WP Page Layouts
 
 = 1.7.0 (Date: Jun 04, 2025) =

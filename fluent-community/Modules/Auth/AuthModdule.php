@@ -178,9 +178,9 @@ class AuthModdule
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
 
         do_action('fluent_community/enqueue_global_assets', true);
-        add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm) {
+        add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm, $inviation) {
             wp_enqueue_style('fluent_auth_styles', Vite::getStaticSrcUrl('user_registration.css'), [], FLUENT_COMMUNITY_PLUGIN_VERSION);
-            if(!$isFluentAuth || $targetForm == 'register') {
+            if(!$isFluentAuth || $targetForm == 'register' || $inviation) {
                 wp_enqueue_script('fluent_auth_scripts', Vite::getStaticSrcUrl('user_registration.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, true);
                 wp_localize_script('fluent_auth_scripts', 'fluentComRegistration', array(
                     'ajax_url'         => admin_url('admin-ajax.php'),

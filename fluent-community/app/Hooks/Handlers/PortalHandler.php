@@ -907,7 +907,7 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $paceSlug = $uriParts[1];
-                $space = BaseSpace::query()->withoutGlobalScopes()->where('slug', $paceSlug)->first();
+                $space = BaseSpace::query()->onlyMain()->where('slug', $paceSlug)->first();
                 if ($space && $space->privacy != 'secret') {
 
                     if ($dynamicRoute == 'course_view') {

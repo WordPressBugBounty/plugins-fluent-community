@@ -12,6 +12,8 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->post('/{spaceSlug}/join', 'SpaceController@join')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/leave', 'SpaceController@leave')->alphaNumDash('spaceSlug');
 
+    $router->get('/{spaceSlug}/meta-settings', 'SpaceController@getMetaSettings')->alphaNumDash('spaceSlug');
+
     $router->get('/{spaceSlug}/members', 'SpaceController@getMembers')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/members', 'SpaceController@addMember')->alphaNumDash('spaceSlug');
 
@@ -108,6 +110,9 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
 
     $router->get('/profile-link-providers', 'AdminController@getProfileLinkProviders');
     $router->post('/profile-link-providers', 'AdminController@updateProfileLinkProviders');
+
+    $router->get('/all_space_courses', 'AdminController@getAllSpaceCourses');
+
 });
 
 $router->prefix('members')->withPolicy('PortalPolicy')->group(function ($router) {

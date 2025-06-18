@@ -37,6 +37,10 @@ return function ($file) {
 
     add_action('plugins_loaded', function () use ($app) {
         do_action('fluent_community/portal_loaded', $app);
+
+        add_action('init', function () use ($app) {
+            do_action('fluent_community/on_wp_init', $app);
+        });
     });
 
     add_action('fluent_community/portal_render_for_user', function () {

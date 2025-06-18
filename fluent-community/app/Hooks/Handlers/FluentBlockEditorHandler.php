@@ -73,10 +73,11 @@ class FluentBlockEditorHandler
 
         if ($firstPost) {
             $simulatedPost = get_post($firstPost->ID);
+            $simulatedPost->post_content = '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         } else {
             $newPostId = wp_insert_post(array(
                 'post_title'   => 'Demo Lesson Title',
-                'post_content' => '<!-- wp:paragraph --><p>Edit me....</p><!-- /wp:paragraph -->',
+                'post_content' => '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->',
                 'post_type'    => 'fcom-dummy',
                 'post_status'  => 'draft',
             ));
@@ -137,7 +138,6 @@ class FluentBlockEditorHandler
                 ),
                 'after'
             );
-
         }, 11);
 
         add_action('wp_enqueue_scripts', function ($hook) use ($post) {
@@ -170,16 +170,16 @@ class FluentBlockEditorHandler
     function gutenberg_editor_scripts_and_styles($hook, $post)
     {
 
+
+
         $initial_edits = array(
             'title'   => $post->post_title,
             'content' => $post->post_content,
             'excerpt' => $post->post_excerpt,
         );
 
-
         $editor_settings = $this->getEditorSettings($post);
-
-
+        
         $init_script = <<<JS
 			( function() {
 				window._wpLoadBlockEditor = new Promise( function( resolve ) {

@@ -224,7 +224,7 @@ class User extends Model
 
     public function updateCustomData($updateData, $removeSrc = false)
     {
-        if (isset($updateData['first_name'])) {
+        if (isset($updateData['first_name']) && Utility::getPrivacySetting('enable_user_sync') === 'yes') {
             $firstName = sanitize_text_field($updateData['first_name']);
             $lastName = sanitize_text_field($updateData['last_name']);
 
@@ -267,6 +267,7 @@ class User extends Model
         if ($name) {
             return $name;
         }
+
         return $user->display_name;
     }
 
@@ -418,9 +419,9 @@ class User extends Model
         $globalRoles = $this->getCommunityRoles();
 
         if (array_intersect($globalRoles, ['admin', 'moderator'])) {
-            $spaces = BaseSpace::withoutGlobalScopes()->get();
+            $spaces = BaseSpace::onlyMain()->get();
         } else {
-            $spaces = BaseSpace::withoutGlobalScopes()->whereHas('members', function ($query) {
+            $spaces = BaseSpace::onlyMain()->whereHas('members', function ($query) {
                 $query->where('user_id', $this->ID)
                     ->where('status', 'active');
             })->orWhere('privacy', 'public')->get();
@@ -676,7 +677,7 @@ class User extends Model
     {
         $exist = XProfile::where('user_id', $this->ID)->first();
 
-        if ($exist && !$force) {
+        if (($exist && !$force) || ($exist && Utility::getPrivacySetting('enable_user_sync') === 'no')) {
             return $exist;
         }
 

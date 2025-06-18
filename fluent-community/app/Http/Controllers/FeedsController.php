@@ -1076,7 +1076,7 @@ class FeedsController extends Controller
             ];
         }
 
-        return $this->send([
+        return $this->sendError([
             'message' => __('No oembed data found', 'fluent-community'),
             'url'     => $url
         ]);

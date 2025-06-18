@@ -45,6 +45,7 @@ class CourseLesson extends Model
         'status',
         'featured_image',
         'is_sticky',
+        'scheduled_at',
         'expired_at',
         'content_type',
         'comments_count',
@@ -162,6 +163,16 @@ class CourseLesson extends Model
         });
     }
 
+    public function getIsEnforcePassAttribute()
+    {
+        return Arr::isTrue($this->meta, 'enforce_passing_score');
+    }
+
+    public function getIsFreePreviewAttribute()
+    {
+        return Arr::isTrue($this->meta, 'free_preview_lesson');
+    }
+
     public function getPassingScoreAttribute()
     {
         if (Arr::isTrue($this->meta, 'enable_passing_score')) {
@@ -272,7 +283,7 @@ class CourseLesson extends Model
         return mb_substr($content, 0, $length) . '...';
     }
 
-    public function getPublicLessonMeta()
+    public function getPublicLessonMeta($canView = true)
     {
         $meta = $this->meta;
 
@@ -284,6 +295,12 @@ class CourseLesson extends Model
                 }
             }
             $meta['document_lists'] = $docLists;
+        }
+
+        if(!$canView) {
+            $meta['document_lists'] = [];
+            $meta['document_ids'] = [];
+            unset($meta['media']);
         }
 
         $meta = apply_filters('fluent_community/lesson/get_public_meta', $meta, $this);

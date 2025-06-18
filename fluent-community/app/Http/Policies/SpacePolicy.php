@@ -96,6 +96,11 @@ class SpacePolicy extends BasePolicy
         return $this->canManageSpace($request);
     }
 
+    public function getMetaSettings(Request $request)
+    {
+        return $this->canManageSpace($request);
+    }
+
     protected function canManageCommunity(Request $request)
     {
         $user = User::find(get_current_user_id());

@@ -233,7 +233,7 @@ class Bootstrap extends IntegrationManagerController
             );
         }
 
-        $spaces = BaseSpace::query()->withoutGlobalScopes()->whereIn('id', $spaceIds)->get();
+        $spaces = BaseSpace::query()->onlyMain()->whereIn('id', $spaceIds)->get();
         if ($spaces->isEmpty()) {
             return $this->addLog(
                 $feed['settings']['name'],

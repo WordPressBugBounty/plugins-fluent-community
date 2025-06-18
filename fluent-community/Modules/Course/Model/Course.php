@@ -10,6 +10,7 @@ use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Models\SpaceGroup;
+use FluentCommunity\App\Models\XProfile;
 
 /**
  *  Course Model - DB Model for Individual Courses
@@ -37,11 +38,11 @@ class Course extends BaseSpace
 
         $userModel = User::find($userId);
 
-        if ($userModel->isCommunityAdmin()) {
+        if ($userModel->hasSpaceManageAccess()) {
             return $query;
         }
 
-        return $this->where('created_by', $userId);
+        return $query->where('created_by', $userId);
     }
 
     public function scopeByPostTopic($query, $topicSlug = null)
@@ -59,6 +60,18 @@ class Course extends BaseSpace
         return $query->whereHas('categories', function ($q) use ($postTpic) {
             $q->where('object_id', $postTpic->id);
         });
+    }
+
+    public function creator()
+    {
+        return $this->hasOneThrough(
+            XProfile::class,
+            User::class,
+            'ID',         // Foreign key on the users table
+            'user_id',    // Foreign key on the xprofiles table
+            'created_by', // Local key on the courses table
+            'ID'          // Local key on the users table
+        )->withoutGlobalScopes();
     }
 
     public function students()
