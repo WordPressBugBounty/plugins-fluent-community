@@ -373,10 +373,6 @@ class BPMigrationController extends Controller
         $currentTime = time();
         $timeElapsed = $currentTime - $this->startTimeStamp;
 
-        if ($timeElapsed > 3) {
-            return true;
-        }
-
         return $timeElapsed >= $timeLimit;
     }
 

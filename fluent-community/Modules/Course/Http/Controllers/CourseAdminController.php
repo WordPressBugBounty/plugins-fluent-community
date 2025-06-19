@@ -72,14 +72,15 @@ class CourseAdminController extends Controller
             'description' => wp_kses_post($request->get('description')),
             'status'      => $request->get('status', 'draft'),
             'settings'    => [
-                'course_type'          => $request->get('course_type'),
-                'emoji'                => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
-                'shape_svg'            => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
-                'disable_comments'     => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
-                'hide_members_count'   => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
-                'hide_instructor_view' => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
-                'course_layout'        => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
-                'course_details'       => CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details'))))
+                'course_type'                    => $request->get('course_type'),
+                'emoji'                          => CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', '')),
+                'shape_svg'                      => CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', '')),
+                'disable_comments'               => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
+                'hide_members_count'             => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
+                'course_layout'                  => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
+                'course_details'                 => CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details')))),
+                'hide_instructor_view'           => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
+                'show_instructor_students_count' => $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no'
             ],
             'serial'      => $serial
         ];
@@ -193,7 +194,8 @@ class CourseAdminController extends Controller
             'description' => 'required',
             'privacy'     => 'required|in:public,private,secret',
             'status'      => 'required|in:draft,published,archived',
-            'course_type' => 'required|in:self_paced,structured,scheduled'
+            'course_type' => 'required|in:self_paced,structured,scheduled',
+            'created_by'  => 'exists:users,ID'
         ]);
 
         $course = Course::findOrFail($courseId);
@@ -222,6 +224,10 @@ class CourseAdminController extends Controller
             }
 
             $courseData['slug'] = $slug;
+        }
+
+        if ($request->get('created_by') && Helper::isSiteAdmin()) {
+            $courseData['created_by'] = (int)$request->get('created_by');
         }
 
         $imageTypes = ['cover_photo', 'logo'];
@@ -267,6 +273,7 @@ class CourseAdminController extends Controller
         $existingSettings['disable_comments'] = $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no';
         $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
         $existingSettings['hide_instructor_view'] = $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_instructor_students_count'] = $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no';
         $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
         $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details'))));
 
@@ -918,6 +925,22 @@ class CourseAdminController extends Controller
 
         return [
             'meta_settings' => $metaSettings
+        ];
+    }
+
+    public function getOtherInstructors(Request $request, $courseId)
+    {
+        $search = $request->getSafe('search');
+
+        Course::findOrFail($courseId);
+
+        $instructors = User::select(['ID', 'display_name', 'user_email'])
+            ->limit(100)
+            ->searchBy($search)
+            ->get();
+
+        return [
+            'instructors' => $instructors
         ];
     }
 }

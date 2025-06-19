@@ -113,12 +113,15 @@ class CourseController extends Controller
         }
 
         $hideInstructorView = Arr::get($course->settings, 'hide_instructor_view') == 'yes';
+        $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') == 'yes';
         if (!$hideInstructorView) {
             $course->load(['creator']);
             if ($course->creator) {
                 $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
                 $course->creator->total_courses = count($creatorCourseIds);
-                $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                if ($showStudentCount) {
+                    $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                }
                 if ($course->creator->short_description) {
                     $course->creator->short_description_rendered = wp_kses_post(FeedsHelper::mdToHtml($course->creator->short_description));
                 }

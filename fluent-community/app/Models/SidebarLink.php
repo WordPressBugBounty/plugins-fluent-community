@@ -8,7 +8,7 @@ namespace FluentCommunity\App\Models;
  *
  *  Database Model
  *
- * @package FluentCrm\App\Models
+ * @package FluentCommunity\App\Models
  *
  * @version 1.7.5
  */

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.7.5
+Stable tag: 1.7.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,14 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.7.6 (Date: June 19, 2025)
+- Added: Option to Update Course Instructor
+- Added: Option to Hide Students from Instructor View
+- Fixed: Lesson Duration Display
+- Fixed: Profile Badge Styling Issue
+- Fixed: Custom Link Icon Not Saving
+- Fixed: Migration Request Time Limit Issue
 
 = 1.7.5 (Date: Jun 18, 2025)
 - New: Custom Link with Access Control

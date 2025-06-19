@@ -25,9 +25,12 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
     $router->delete('/{course_id}/students/{student_id}', 'CourseAdminController@removeStudent')->int('course_id')->int('student_id');
 
     $router->get('/{course_id}/users/search', 'CourseAdminController@getOtherUsers')->int('course_id');
+
     $router->post('/{course_id}/links', 'CourseAdminController@updateLinks')->int('course_id');
 
     $router->get('/{course_id}/meta-settings', 'CourseAdminController@getMetaSettings')->int('course_id');
+
+    $router->get('/{course_id}/instructors/search', 'CourseAdminController@getOtherInstructors')->int('course_id');
 
     $router->get('/{course_id}/sections', 'CourseAdminController@getSections')->int('course_id');
     $router->post('/{course_id}/sections', 'CourseAdminController@createSection')->int('course_id');
