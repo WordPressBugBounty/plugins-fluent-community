@@ -51,8 +51,8 @@ class CustomSanitizer
             }
         }
 
-        if(Arr::get($item, 'privacy') == 'members_only') {
-            $item['membership_ids'] = array_map('sanitize_text_field', (array) Arr::get($item, 'membership_ids', []));
+        if (Arr::get($item, 'privacy') == 'members_only') {
+            $item['membership_ids'] = array_map('sanitize_text_field', (array)Arr::get($item, 'membership_ids', []));
         }
 
         return $item;
@@ -454,7 +454,38 @@ class CustomSanitizer
             '\\.'  => '.'
         ];
 
-        return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
+        $markdown = str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
+
+        $markdown = wp_kses($markdown, array(
+            'p'          => array(),
+            'br'         => array(),
+            'strong'     => array(),
+            'em'         => array(),
+            'h1'         => array(),
+            'h2'         => array(),
+            'h3'         => array(),
+            'h4'         => array(),
+            'h5'         => array(),
+            'h6'         => array(),
+            'ul'         => array(),
+            'b'          => array(),
+            'ol'         => array(),
+            'li'         => array(),
+            'a'          => array(
+                'href'  => true,
+                'title' => true,
+            ),
+            'img'        => array(
+                'src' => true,
+                'alt' => true,
+            ),
+            'code'       => array(),
+            'pre'        => array(),
+            'blockquote' => array(),
+        ));
+
+        // remove all the
+        return $markdown;
     }
 
     public static function santizeSpaceSettings($settings = [], $privacy = 'public')

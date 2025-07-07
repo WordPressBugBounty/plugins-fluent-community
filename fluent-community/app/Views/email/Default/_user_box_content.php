@@ -6,7 +6,7 @@
                 <tr>
                     <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top;">
                         <a href="<?php echo esc_url($permalink); ?>">
-                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" width="22" height="22" style="border-radius: 50%; display: block;">
+                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" width="22" height="22" style="border-radius: 50%; width: 20px; height: 22px; display: block;">
                         </a>
                     </td>
                     <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 10px; vertical-align: middle;">

@@ -707,8 +707,12 @@ class SpaceController extends Controller
 
         foreach ($groups as $group) {
             foreach ($group->spaces as $space) {
-                $space->permalink = $space->getPermalink();
-                $space->topics = Utility::getTopicsBySpaceId($space->id);
+                if ($space->type === 'community') {
+                    $space = $space->formatSpaceData($user);
+                } else {
+                    $space->permalink = $space->getPermalink();
+                    $space->topics = Utility::getTopicsBySpaceId($space->id);
+                }
             }
         }
 
@@ -719,8 +723,12 @@ class SpaceController extends Controller
             ->get();
 
         foreach ($orphanedSpaces as $space) {
-            $space->permalink = $space->getPermalink();
-            $space->topics = Utility::getTopicsBySpaceId($space->id);
+            if ($space->type === 'community') {
+                $space = $space->formatSpaceData($user);
+            } else {
+                $space->permalink = $space->getPermalink();
+                $space->topics = Utility::getTopicsBySpaceId($space->id);
+            }
         }
 
         return [

@@ -874,6 +874,10 @@ class Helper
             return !!$user;
         }
 
+        if($privacy == 'logged_out_only') {
+            return ! $user;
+        }
+
         if (!$user) {
             return false;
         }
@@ -1191,6 +1195,10 @@ class Helper
 
         if($privacy == 'logged_in') {
             return !!$currentUser;
+        }
+
+        if($privacy == 'logged_out_only') {
+            return ! $currentUser;
         }
 
         $membershipIds = Arr::get($link, 'membership_ids', []);

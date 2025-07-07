@@ -43,7 +43,7 @@ class ProfileController extends Controller
             'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
 
-        if(Utility::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator()) {
+        if (Utility::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator()) {
             $profile['last_activity'] = $xprofile->last_activity;
         }
 
@@ -120,7 +120,26 @@ class ProfileController extends Controller
     {
         $xprofile = $this->verfifyAndGetProfile($userName);
 
-        $updateData = $request->get('data');
+        $updateData = $request->get('data', []);
+
+        if (!empty($updateData['status']) && $updateData['status'] === 'deactivated' && $xprofile->status === 'active') {
+            // handle deactivation
+            $canDeactivate = Utility::getPrivacySetting('can_deactive_account') === 'yes' || Helper::isSiteAdmin();
+            if (!$canDeactivate) {
+                return $this->sendError([
+                    'message' => __('You are not allowed to deactivate this account.', 'fluent-community')
+                ]);
+            }
+
+            $xprofile->status = '';
+            $xprofile->save();
+            update_user_meta($userName, '_fcom_deactivated_at', current_time('mysql'));
+            do_action('fluent_community/profile_deactivated', $xprofile);
+
+            return [
+                'message' => __('Your profile has been deactivated successfully.', 'fluent-community')
+            ];
+        }
 
         $mediaTypes = ['cover_photo', 'avatar'];
 

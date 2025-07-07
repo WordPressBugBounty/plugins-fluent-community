@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FluentCommunity - Community & LMS Plugin\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-19 13:55+0000\n"
+"POT-Creation-Date: 2025-07-07 13:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -122,7 +122,7 @@ msgid "%1$s mentioned you in a comment at %2$s"
 msgstr ""
 
 #. %1$s is the user name, %2$s is the feed title
-#: app/Hooks/Handlers/NotificationEventHandler.php:440
+#: app/Hooks/Handlers/NotificationEventHandler.php:444
 #, php-format
 msgid "%1$s mentioned you in a post: %2$s"
 msgstr ""
@@ -177,7 +177,7 @@ msgid "%d Courses"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:494
+#: app/Hooks/Handlers/PortalHandler.php:560
 msgid "%d days"
 msgstr ""
 
@@ -190,7 +190,7 @@ msgid "%d Groups"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:490
+#: app/Hooks/Handlers/PortalHandler.php:556
 msgid "%d hours"
 msgstr ""
 
@@ -207,12 +207,12 @@ msgid "%d lessons"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:486
+#: app/Hooks/Handlers/PortalHandler.php:552
 msgid "%d minutes"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:498
+#: app/Hooks/Handlers/PortalHandler.php:564
 msgid "%d months"
 msgstr ""
 
@@ -273,38 +273,38 @@ msgid "%d votes"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:502
+#: app/Hooks/Handlers/PortalHandler.php:568
 msgid "%d years"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:522
+#: app/Hooks/Handlers/PortalHandler.php:588
 msgid "%dd"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:518
+#: app/Hooks/Handlers/PortalHandler.php:584
 msgid "%dh"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:526
+#: app/Hooks/Handlers/PortalHandler.php:592
 msgid "%dm"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:514
+#: app/Hooks/Handlers/PortalHandler.php:580
 msgid "%dmin"
 msgstr ""
 
 #. Relative Date Formats. Don't alter %d
-#: app/Hooks/Handlers/PortalHandler.php:530
+#: app/Hooks/Handlers/PortalHandler.php:596
 msgid "%dy"
 msgstr ""
 
 #. Relative Date Formats. Please do not alter %s
-#: app/Hooks/Handlers/PortalHandler.php:480
-#: app/Hooks/Handlers/PortalHandler.php:508
+#: app/Hooks/Handlers/PortalHandler.php:546
+#: app/Hooks/Handlers/PortalHandler.php:574
 #: app/Services/Libs/DailyDigest.php:199
 #: app/Views/email/Default/_user_post_content.php:35
 #, php-format
@@ -462,7 +462,7 @@ msgstr ""
 msgid "...read more"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:549
+#: app/Hooks/Handlers/PortalHandler.php:615
 msgid "/page"
 msgstr ""
 
@@ -471,27 +471,27 @@ msgid "1 Like = 1 Point"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:520
+#: app/Hooks/Handlers/PortalHandler.php:586
 msgid "1d"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:516
+#: app/Hooks/Handlers/PortalHandler.php:582
 msgid "1h"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:524
+#: app/Hooks/Handlers/PortalHandler.php:590
 msgid "1m"
 msgstr ""
 
 #. Relative Date Formats.
-#: app/Hooks/Handlers/PortalHandler.php:512
+#: app/Hooks/Handlers/PortalHandler.php:578
 msgid "1min"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:528
+#: app/Hooks/Handlers/PortalHandler.php:594
 msgid "1y"
 msgstr ""
 
@@ -545,22 +545,22 @@ msgid ""
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:492
+#: app/Hooks/Handlers/PortalHandler.php:558
 msgid "a day"
 msgstr ""
 
 #. Relative Date Formats.
-#: app/Hooks/Handlers/PortalHandler.php:482
+#: app/Hooks/Handlers/PortalHandler.php:548
 msgid "a few seconds"
 msgstr ""
 
 #. Relative Date Formats.
-#: app/Hooks/Handlers/PortalHandler.php:484
+#: app/Hooks/Handlers/PortalHandler.php:550
 msgid "a minute"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:496
+#: app/Hooks/Handlers/PortalHandler.php:562
 msgid "a month"
 msgstr ""
 
@@ -580,7 +580,7 @@ msgid ""
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:500
+#: app/Hooks/Handlers/PortalHandler.php:566
 msgid "a year"
 msgstr ""
 
@@ -617,11 +617,11 @@ msgstr ""
 msgid "Access Control"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:736
+#: app/Hooks/Handlers/PortalHandler.php:808
 msgid "Access Denied"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:729
+#: app/Hooks/Handlers/PortalHandler.php:801
 msgid "Access denied"
 msgstr ""
 
@@ -651,6 +651,10 @@ msgstr ""
 
 #: app/Services/TransStrings.php:70
 msgid "Actions"
+msgstr ""
+
+#: app/Hooks/Handlers/PortalHandler.php:798
+msgid "Activate my account"
 msgstr ""
 
 #: Modules/Auth/AuthHelper.php:307
@@ -902,7 +906,7 @@ msgid ""
 "to disable this feature."
 msgstr ""
 
-#: app/Services/Helper.php:1927
+#: app/Services/Helper.php:1935
 msgid "Against Community Rules"
 msgstr ""
 
@@ -911,7 +915,7 @@ msgid "Agencies"
 msgstr ""
 
 #: app/Services/TransStrings.php:113 app/Services/TransStrings.php:1452
-#: app/Hooks/Handlers/PortalHandler.php:555
+#: app/Hooks/Handlers/PortalHandler.php:621
 msgid "All"
 msgstr ""
 
@@ -988,7 +992,7 @@ msgstr ""
 msgid "Almost done, just a few more seconds..."
 msgstr ""
 
-#: app/Services/TransStrings.php:126 app/Services/Helper.php:1980
+#: app/Services/TransStrings.php:126 app/Services/Helper.php:1988
 msgid "Alphabetical"
 msgstr ""
 
@@ -1016,7 +1020,7 @@ msgstr ""
 msgid "Amazon S3 Secret Key"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:727
+#: app/Hooks/Handlers/PortalHandler.php:794
 msgid ""
 "An admin need to approve your join request. Please contact with an admin to "
 "get approval"
@@ -1028,11 +1032,12 @@ msgid "An Automated double-opt-in email will be sent for new subscribers"
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:46
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:54
 msgid "An Automated double-optin email will be sent for new subscribers"
 msgstr ""
 
 #. Relative Date Formats
-#: app/Hooks/Handlers/PortalHandler.php:488
+#: app/Hooks/Handlers/PortalHandler.php:554
 msgid "an hour"
 msgstr ""
 
@@ -1114,11 +1119,11 @@ msgid ""
 "Approximate time when the digest emails will start sending for the members"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:632
+#: app/Hooks/Handlers/PortalHandler.php:698
 msgid "Apr"
 msgstr ""
 
-#: app/Services/TransStrings.php:146 app/Hooks/Handlers/PortalHandler.php:600
+#: app/Services/TransStrings.php:146 app/Hooks/Handlers/PortalHandler.php:666
 msgid "April"
 msgstr ""
 
@@ -1264,11 +1269,11 @@ msgstr ""
 msgid "Attempts"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:636
+#: app/Hooks/Handlers/PortalHandler.php:702
 msgid "Aug"
 msgstr ""
 
-#: app/Services/TransStrings.php:178 app/Hooks/Handlers/PortalHandler.php:604
+#: app/Services/TransStrings.php:178 app/Hooks/Handlers/PortalHandler.php:670
 msgid "August"
 msgstr ""
 
@@ -1433,7 +1438,7 @@ msgstr ""
 msgid "Bookmarked"
 msgstr ""
 
-#: app/Services/Helper.php:1072
+#: app/Services/Helper.php:1076
 msgid "Bookmarks"
 msgstr ""
 
@@ -1525,7 +1530,7 @@ msgid "Call to action"
 msgstr ""
 
 #: app/Services/AdminTransStrings.php:19 app/Services/TransStrings.php:212
-#: app/Hooks/Handlers/PortalHandler.php:579
+#: app/Hooks/Handlers/PortalHandler.php:645
 msgid "Cancel"
 msgstr ""
 
@@ -1652,7 +1657,7 @@ msgstr ""
 msgid "Classic: Image/Video after the content. Modern: Image/Video at first"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:580
+#: app/Hooks/Handlers/PortalHandler.php:646
 msgid "Clear"
 msgstr ""
 
@@ -1803,6 +1808,7 @@ msgstr ""
 
 #: app/Hooks/Handlers/EmailNotificationHandler.php:491
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:24
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:25
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:25
 #: Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php:25
 msgid "Community"
@@ -1840,8 +1846,8 @@ msgstr ""
 msgid "Community title"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:237
-#: app/Http/Controllers/ProfileController.php:270
+#: app/Http/Controllers/ProfileController.php:256
+#: app/Http/Controllers/ProfileController.php:289
 msgid "Community Username already taken by someone else"
 msgstr ""
 
@@ -1895,7 +1901,7 @@ msgstr ""
 msgid "Configure the appearance and behavior of your signup form."
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:556
+#: app/Hooks/Handlers/PortalHandler.php:622
 msgid "Confirm"
 msgstr ""
 
@@ -1943,7 +1949,7 @@ msgstr ""
 msgid "Content Moderation is disabled"
 msgstr ""
 
-#: app/Services/TransStrings.php:273 app/Hooks/Handlers/PortalHandler.php:565
+#: app/Services/TransStrings.php:273 app/Hooks/Handlers/PortalHandler.php:631
 msgid "Continue"
 msgstr ""
 
@@ -2125,7 +2131,7 @@ msgstr ""
 msgid "Course Title"
 msgstr ""
 
-#: app/Services/TransStrings.php:304 app/Services/Helper.php:993
+#: app/Services/TransStrings.php:304 app/Services/Helper.php:997
 msgid "Courses"
 msgstr ""
 
@@ -2230,8 +2236,8 @@ msgstr ""
 msgid "Currently set to: loggedin users can access"
 msgstr ""
 
-#: app/Functions/Utility.php:522 app/Functions/Utility.php:954
-#: app/Functions/Utility.php:959 app/Services/TransStrings.php:322
+#: app/Functions/Utility.php:523 app/Functions/Utility.php:955
+#: app/Functions/Utility.php:960 app/Services/TransStrings.php:322
 msgid "Custom"
 msgstr ""
 
@@ -2369,11 +2375,11 @@ msgstr ""
 msgid "Days"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:640
+#: app/Hooks/Handlers/PortalHandler.php:706
 msgid "Dec"
 msgstr ""
 
-#: app/Services/TransStrings.php:350 app/Hooks/Handlers/PortalHandler.php:608
+#: app/Services/TransStrings.php:350 app/Hooks/Handlers/PortalHandler.php:674
 msgid "December"
 msgstr ""
 
@@ -2381,11 +2387,11 @@ msgstr ""
 msgid "Decline"
 msgstr ""
 
-#: app/Functions/Utility.php:532 app/Services/TransStrings.php:352
+#: app/Functions/Utility.php:533 app/Services/TransStrings.php:352
 msgid "Default"
 msgstr ""
 
-#: app/Functions/Utility.php:739
+#: app/Functions/Utility.php:740
 msgid "Default (Dark)"
 msgstr ""
 
@@ -2429,7 +2435,7 @@ msgstr ""
 msgid "Define the permalink of the logo you want to use."
 msgstr ""
 
-#: app/Services/TransStrings.php:363 app/Hooks/Handlers/PortalHandler.php:566
+#: app/Services/TransStrings.php:363 app/Hooks/Handlers/PortalHandler.php:632
 msgid "Delete"
 msgstr ""
 
@@ -2702,13 +2708,13 @@ msgstr ""
 msgid "Email Address"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:344
+#: app/Http/Controllers/ProfileController.php:363
 msgid ""
 "Email address already taken by someone else. Please use a different email "
 "address."
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:354
+#: app/Http/Controllers/ProfileController.php:373
 msgid ""
 "Email address change is pending. Please check your inbox to verify the new "
 "email address."
@@ -2773,7 +2779,7 @@ msgstr ""
 msgid "Email notification on messaging is disabled"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:651
+#: app/Http/Controllers/ProfileController.php:670
 msgid "Email Notification preferences have been updated"
 msgstr ""
 
@@ -2824,11 +2830,11 @@ msgstr ""
 msgid "Embed Handler"
 msgstr ""
 
-#: app/Functions/Utility.php:696
+#: app/Functions/Utility.php:697
 msgid "Emerald Essence"
 msgstr ""
 
-#: app/Functions/Utility.php:908
+#: app/Functions/Utility.php:909
 msgid "Emerald Essence (Dark)"
 msgstr ""
 
@@ -2962,7 +2968,7 @@ msgid ""
 "different lighting conditions and user preferences."
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:590
+#: app/Hooks/Handlers/PortalHandler.php:656
 msgid "End Date"
 msgstr ""
 
@@ -2974,7 +2980,7 @@ msgstr ""
 msgid "End Date:"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:591
+#: app/Hooks/Handlers/PortalHandler.php:657
 msgid "End Time"
 msgstr ""
 
@@ -3003,7 +3009,7 @@ msgid ""
 "your data."
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:914
+#: app/Hooks/Handlers/PortalHandler.php:986
 #, php-format
 msgid "Enroll %s"
 msgstr ""
@@ -3065,7 +3071,7 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:931
+#: app/Http/Controllers/FeedsController.php:943
 msgid "Error while uploading the media"
 msgstr ""
 
@@ -3173,7 +3179,7 @@ msgstr ""
 msgid "Failed to copy the link"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:562
+#: app/Hooks/Handlers/PortalHandler.php:628
 msgid "Failed to Load"
 msgstr ""
 
@@ -3221,15 +3227,15 @@ msgstr ""
 msgid "Features Settings"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:630
+#: app/Hooks/Handlers/PortalHandler.php:696
 msgid "Feb"
 msgstr ""
 
-#: app/Services/TransStrings.php:514 app/Hooks/Handlers/PortalHandler.php:598
+#: app/Services/TransStrings.php:514 app/Hooks/Handlers/PortalHandler.php:664
 msgid "February"
 msgstr ""
 
-#: app/Services/TransStrings.php:515 app/Services/Helper.php:973
+#: app/Services/TransStrings.php:515 app/Services/Helper.php:977
 #: app/Views/portal/main_sidebar.php:51
 msgid "Feed"
 msgstr ""
@@ -3242,7 +3248,7 @@ msgstr ""
 msgid "Feed Links"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:646
+#: app/Http/Controllers/FeedsController.php:658
 msgid "Feed updated"
 msgstr ""
 
@@ -3255,7 +3261,7 @@ msgid "Fetching License Information Please wait."
 msgstr ""
 
 #. Relative Date Formats.
-#: app/Hooks/Handlers/PortalHandler.php:510
+#: app/Hooks/Handlers/PortalHandler.php:576
 msgid "few sec"
 msgstr ""
 
@@ -3283,7 +3289,7 @@ msgstr ""
 msgid "First Name"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:204
+#: app/Http/Controllers/ProfileController.php:223
 msgid "First name is required"
 msgstr ""
 
@@ -3403,12 +3409,12 @@ msgstr ""
 msgid "Frequently Used"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:616
+#: app/Hooks/Handlers/PortalHandler.php:682
 msgid "Fri"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:590
-#: app/Hooks/Handlers/PortalHandler.php:625
+#: app/Http/Controllers/ProfileController.php:609
+#: app/Hooks/Handlers/PortalHandler.php:691
 msgid "Friday"
 msgstr ""
 
@@ -3503,7 +3509,7 @@ msgstr ""
 msgid "Go Full Screen"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:544
+#: app/Hooks/Handlers/PortalHandler.php:610
 msgid "Go to"
 msgstr ""
 
@@ -3532,11 +3538,11 @@ msgstr ""
 msgid "Go to General Settings."
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:1121
+#: app/Hooks/Handlers/PortalHandler.php:1193
 msgid "Go to home page"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:545
+#: app/Hooks/Handlers/PortalHandler.php:611
 msgid "Go to next page"
 msgstr ""
 
@@ -3544,7 +3550,7 @@ msgstr ""
 msgid "Go to Permalink Settings"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:550
+#: app/Hooks/Handlers/PortalHandler.php:616
 msgid "Go to previous page"
 msgstr ""
 
@@ -3588,7 +3594,7 @@ msgstr ""
 msgid "Group:"
 msgstr ""
 
-#: app/Services/Helper.php:1923
+#: app/Services/Helper.php:1931
 msgid "Harassment"
 msgstr ""
 
@@ -3716,6 +3722,7 @@ msgid "If allowed, members will be able to hide the banner"
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:71
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:78
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:72
 #: Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php:72
 msgid "If Contact Already Exist?"
@@ -3786,6 +3793,13 @@ msgid ""
 "which will be available for everyone."
 msgstr ""
 
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:94
+msgid ""
+"If you enable, then it will restart the automation for a contact if the "
+"contact already in the automation. Otherwise, It will just skip if already "
+"exist"
+msgstr ""
+
 #: app/Views/email/Default/_invitation.php:30
 msgid ""
 "If you think you've received this invitation in error, please ignore this "
@@ -3821,8 +3835,8 @@ msgid "in "
 msgstr ""
 
 #. Relative Date Formats. Please do not alter %s
-#: app/Hooks/Handlers/PortalHandler.php:478
-#: app/Hooks/Handlers/PortalHandler.php:506
+#: app/Hooks/Handlers/PortalHandler.php:544
+#: app/Hooks/Handlers/PortalHandler.php:572
 #: app/Views/email/Default/_user_post_content.php:31
 #, php-format
 msgid "in %s"
@@ -3853,7 +3867,7 @@ msgstr ""
 msgid "Incorrect"
 msgstr ""
 
-#: app/Services/Helper.php:1926
+#: app/Services/Helper.php:1934
 msgid "Incorrect Space"
 msgstr ""
 
@@ -3919,7 +3933,7 @@ msgstr ""
 msgid "Invalid invitation token. Please try again"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:132
+#: app/Http/Controllers/ProfileController.php:151
 msgid "Invalid media image. Please upload a new one."
 msgstr ""
 
@@ -3931,7 +3945,7 @@ msgstr ""
 msgid "Invalid plugin or file mods are disabled."
 msgstr ""
 
-#: app/Services/CustomSanitizer.php:494
+#: app/Services/CustomSanitizer.php:525
 msgid "Invalid redirect URL."
 msgstr ""
 
@@ -3947,8 +3961,8 @@ msgstr ""
 msgid "Invalid URL"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:231
-#: app/Http/Controllers/ProfileController.php:264
+#: app/Http/Controllers/ProfileController.php:250
+#: app/Http/Controllers/ProfileController.php:283
 msgid "Invalid username. Only Latin characters with _ & - are allowed."
 msgstr ""
 
@@ -4033,21 +4047,21 @@ msgstr ""
 msgid "It will be available to you on %s"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:629
+#: app/Hooks/Handlers/PortalHandler.php:695
 msgid "Jan"
 msgstr ""
 
 #. Months short Please keep the serial and format
-#: app/Hooks/Handlers/PortalHandler.php:473
+#: app/Hooks/Handlers/PortalHandler.php:539
 msgid "Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec"
 msgstr ""
 
-#: app/Services/TransStrings.php:618 app/Hooks/Handlers/PortalHandler.php:597
+#: app/Services/TransStrings.php:618 app/Hooks/Handlers/PortalHandler.php:663
 msgid "January"
 msgstr ""
 
 #. Months Please keep the serial and format
-#: app/Hooks/Handlers/PortalHandler.php:469
+#: app/Hooks/Handlers/PortalHandler.php:535
 msgid ""
 "January_February_March_April_May_June_July_August_September_October_November_December"
 msgstr ""
@@ -4056,7 +4070,7 @@ msgstr ""
 msgid "Join"
 msgstr ""
 
-#: Modules/Auth/AuthModdule.php:162 app/Hooks/Handlers/PortalHandler.php:916
+#: Modules/Auth/AuthModdule.php:162 app/Hooks/Handlers/PortalHandler.php:988
 #, php-format
 msgid "Join %s"
 msgstr ""
@@ -4098,24 +4112,28 @@ msgstr ""
 msgid "Joining Date"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:635
+#: app/Hooks/Handlers/PortalHandler.php:701
 msgid "Jul"
 msgstr ""
 
-#: app/Services/TransStrings.php:624 app/Hooks/Handlers/PortalHandler.php:603
+#: app/Services/TransStrings.php:624 app/Hooks/Handlers/PortalHandler.php:669
 msgid "July"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:634
+#: app/Hooks/Handlers/PortalHandler.php:700
 msgid "Jun"
 msgstr ""
 
-#: app/Services/TransStrings.php:625 app/Hooks/Handlers/PortalHandler.php:602
+#: app/Services/TransStrings.php:625 app/Hooks/Handlers/PortalHandler.php:668
 msgid "June"
 msgstr ""
 
 #: app/Services/AdminTransStrings.php:50
 msgid "Just a moment please..."
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:88
+msgid "Keep it blank to run to any Lesson"
 msgstr ""
 
 #: app/Services/TransStrings.php:626
@@ -4166,7 +4184,7 @@ msgstr ""
 msgid "Last Week"
 msgstr ""
 
-#: app/Services/TransStrings.php:637 app/Services/Helper.php:1976
+#: app/Services/TransStrings.php:637 app/Services/Helper.php:1984
 msgid "Latest"
 msgstr ""
 
@@ -4194,7 +4212,7 @@ msgstr ""
 msgid "Layout changed"
 msgstr ""
 
-#: app/Services/TransStrings.php:644 app/Services/Helper.php:1019
+#: app/Services/TransStrings.php:644 app/Services/Helper.php:1023
 msgid "Leaderboard"
 msgstr ""
 
@@ -4270,6 +4288,10 @@ msgstr ""
 #: app/Services/TransStrings.php:658
 #, php-format
 msgid "Lesson %1s of %2s - %3s"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:26
+msgid "Lesson Completed"
 msgstr ""
 
 #: Modules/Course/Http/Controllers/CourseController.php:388
@@ -4361,7 +4383,7 @@ msgstr ""
 msgid "Light Mode"
 msgstr ""
 
-#: app/Services/TransStrings.php:669 app/Services/Helper.php:1979
+#: app/Services/TransStrings.php:669 app/Services/Helper.php:1987
 msgid "Likes"
 msgstr ""
 
@@ -4413,7 +4435,7 @@ msgstr ""
 msgid "Links have been updated for the space"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:668
+#: app/Http/Controllers/FeedsController.php:680
 msgid "Links have been updated."
 msgstr ""
 
@@ -4435,7 +4457,7 @@ msgstr ""
 msgid "Load more"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:571
+#: app/Hooks/Handlers/PortalHandler.php:637
 msgid "Loading"
 msgstr ""
 
@@ -4481,7 +4503,7 @@ msgstr ""
 
 #: app/Services/AuthenticationService.php:46 app/Services/TransStrings.php:687
 #: Modules/Auth/AuthModdule.php:164 Modules/Auth/AuthModdule.php:232
-#: app/Hooks/Handlers/PortalHandler.php:289
+#: app/Hooks/Handlers/PortalHandler.php:354
 #: app/Views/auth/user_invitation.php:55
 msgid "Login"
 msgstr ""
@@ -4490,7 +4512,7 @@ msgstr ""
 msgid "Login / Registration URLs"
 msgstr ""
 
-#: app/Services/TransStrings.php:689 app/Hooks/Handlers/PortalHandler.php:287
+#: app/Services/TransStrings.php:689 app/Hooks/Handlers/PortalHandler.php:352
 msgid "Login / Signup"
 msgstr ""
 
@@ -4535,7 +4557,7 @@ msgstr ""
 msgid "Logo Permalink"
 msgstr ""
 
-#: app/Services/Helper.php:1081
+#: app/Services/Helper.php:1085
 msgid "Logout"
 msgstr ""
 
@@ -4613,11 +4635,11 @@ msgstr ""
 msgid "Mapped FluentCRM Tag"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:631
+#: app/Hooks/Handlers/PortalHandler.php:697
 msgid "Mar"
 msgstr ""
 
-#: app/Services/TransStrings.php:707 app/Hooks/Handlers/PortalHandler.php:599
+#: app/Services/TransStrings.php:707 app/Hooks/Handlers/PortalHandler.php:665
 msgid "March"
 msgstr ""
 
@@ -4649,8 +4671,8 @@ msgstr ""
 msgid "Maximum Number of Topics a user can select when creating a post"
 msgstr ""
 
-#: app/Services/TransStrings.php:714 app/Hooks/Handlers/PortalHandler.php:601
-#: app/Hooks/Handlers/PortalHandler.php:633
+#: app/Services/TransStrings.php:714 app/Hooks/Handlers/PortalHandler.php:667
+#: app/Hooks/Handlers/PortalHandler.php:699
 msgid "May"
 msgstr ""
 
@@ -4666,7 +4688,7 @@ msgstr ""
 msgid "Media Preview image"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:767
+#: app/Http/Controllers/FeedsController.php:779
 msgid "Media preview image has been removed successfully."
 msgstr ""
 
@@ -4682,12 +4704,12 @@ msgstr ""
 msgid "Member Since"
 msgstr ""
 
-#: app/Http/Controllers/MembersController.php:143
+#: app/Http/Controllers/MembersController.php:145
 msgid "Member status have been updated"
 msgstr ""
 
-#: app/Models/Space.php:71 app/Services/TransStrings.php:720
-#: app/Services/Helper.php:1004
+#: app/Models/BaseSpace.php:585 app/Services/TransStrings.php:720
+#: app/Services/Helper.php:1008
 msgid "Members"
 msgstr ""
 
@@ -4752,7 +4774,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:690
+#: app/Http/Controllers/FeedsController.php:702
 msgid "Message is required"
 msgstr ""
 
@@ -4808,12 +4830,12 @@ msgstr ""
 msgid "Modern"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:612
+#: app/Hooks/Handlers/PortalHandler.php:678
 msgid "Mon"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:586
-#: app/Hooks/Handlers/PortalHandler.php:621
+#: app/Http/Controllers/ProfileController.php:605
+#: app/Hooks/Handlers/PortalHandler.php:687
 msgid "Monday"
 msgstr ""
 
@@ -4857,7 +4879,7 @@ msgstr ""
 msgid "My Profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:757 app/Services/Helper.php:1063
+#: app/Services/TransStrings.php:757 app/Services/Helper.php:1067
 msgid "My Spaces"
 msgstr ""
 
@@ -4898,7 +4920,7 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: app/Services/Helper.php:1975
+#: app/Services/Helper.php:1983
 msgid "New Activity"
 msgstr ""
 
@@ -4974,16 +4996,16 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:546
+#: app/Hooks/Handlers/PortalHandler.php:612
 #, php-format
 msgid "Next %s pages"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:595
+#: app/Hooks/Handlers/PortalHandler.php:661
 msgid "Next Month"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:593
+#: app/Hooks/Handlers/PortalHandler.php:659
 msgid "Next Year"
 msgstr ""
 
@@ -5028,11 +5050,11 @@ msgid ""
 "browse our course catalog."
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:557
+#: app/Hooks/Handlers/PortalHandler.php:623
 msgid "No Data"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:572
+#: app/Hooks/Handlers/PortalHandler.php:638
 msgid "No data"
 msgstr ""
 
@@ -5052,7 +5074,7 @@ msgstr ""
 msgid "No duplicate comment please!"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:709
+#: app/Http/Controllers/FeedsController.php:721
 msgid "No duplicate post please!"
 msgstr ""
 
@@ -5092,7 +5114,7 @@ msgstr ""
 msgid "No Mapping"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:573
+#: app/Hooks/Handlers/PortalHandler.php:639
 msgid "No matching data"
 msgstr ""
 
@@ -5112,7 +5134,7 @@ msgstr ""
 msgid "No notifications found"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:1080
+#: app/Http/Controllers/FeedsController.php:1092
 msgid "No oembed data found"
 msgstr ""
 
@@ -5252,15 +5274,15 @@ msgstr ""
 msgid "Notify only for Admin Posts"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:639
+#: app/Hooks/Handlers/PortalHandler.php:705
 msgid "Nov"
 msgstr ""
 
-#: app/Services/TransStrings.php:825 app/Hooks/Handlers/PortalHandler.php:607
+#: app/Services/TransStrings.php:825 app/Hooks/Handlers/PortalHandler.php:673
 msgid "November"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:577
+#: app/Hooks/Handlers/PortalHandler.php:643
 msgid "Now"
 msgstr ""
 
@@ -5272,19 +5294,19 @@ msgstr ""
 msgid "Objects"
 msgstr ""
 
-#: app/Functions/Utility.php:614
+#: app/Functions/Utility.php:615
 msgid "Ocean Blue"
 msgstr ""
 
-#: app/Functions/Utility.php:823
+#: app/Functions/Utility.php:824
 msgid "Ocean Blue (Dark)"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:638
+#: app/Hooks/Handlers/PortalHandler.php:704
 msgid "Oct"
 msgstr ""
 
-#: app/Services/TransStrings.php:828 app/Hooks/Handlers/PortalHandler.php:606
+#: app/Services/TransStrings.php:828 app/Hooks/Handlers/PortalHandler.php:672
 msgid "October"
 msgstr ""
 
@@ -5296,15 +5318,15 @@ msgstr ""
 msgid "Off Text Color"
 msgstr ""
 
-#: app/Services/Helper.php:1925
+#: app/Services/Helper.php:1933
 msgid "Offensive"
 msgstr ""
 
-#: app/Services/TransStrings.php:826 app/Hooks/Handlers/PortalHandler.php:581
+#: app/Services/TransStrings.php:826 app/Hooks/Handlers/PortalHandler.php:647
 msgid "OK"
 msgstr ""
 
-#: app/Services/Helper.php:1977
+#: app/Services/Helper.php:1985
 msgid "Oldest"
 msgstr ""
 
@@ -5430,12 +5452,12 @@ msgstr ""
 msgid "Organizations"
 msgstr ""
 
-#: app/Services/Helper.php:1928
+#: app/Services/Helper.php:1936
 msgid "Other"
 msgstr ""
 
 #: app/Http/Controllers/SettingController.php:521
-#: app/Http/Controllers/ProfileController.php:578
+#: app/Http/Controllers/ProfileController.php:597
 msgid "Other Spaces"
 msgstr ""
 
@@ -5455,11 +5477,11 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:547
+#: app/Hooks/Handlers/PortalHandler.php:613
 msgid "Page"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:542
+#: app/Hooks/Handlers/PortalHandler.php:608
 #, php-format
 msgid "page %s"
 msgstr ""
@@ -5731,17 +5753,17 @@ msgstr ""
 msgid "Please select a valid date and time"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:719
-#: app/Http/Controllers/FeedsController.php:728
+#: app/Http/Controllers/FeedsController.php:731
+#: app/Http/Controllers/FeedsController.php:740
 msgid "Please select a valid space to post in"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:310
-#: app/Http/Controllers/FeedsController.php:338
+#: app/Http/Controllers/FeedsController.php:322
+#: app/Http/Controllers/FeedsController.php:350
 msgid "Please select a valid space to post in."
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:328
+#: app/Http/Controllers/FeedsController.php:340
 msgid "Please select at least one topic to post in this space."
 msgstr ""
 
@@ -5759,6 +5781,12 @@ msgstr ""
 
 #: app/Services/TransStrings.php:901
 msgid "Please share this url to your audience to join this space"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:79
+msgid ""
+"Please specify what will happen if the subscriber already exist in the "
+"database"
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:72
@@ -5787,7 +5815,7 @@ msgstr ""
 msgid "Please upgrade to Pro to use this feature"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:283
+#: app/Http/Controllers/ProfileController.php:302
 msgid "Please use another username. This username is reserved"
 msgstr ""
 
@@ -5823,7 +5851,7 @@ msgstr ""
 msgid "Poll Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:909 app/Services/Helper.php:1978
+#: app/Services/TransStrings.php:909 app/Services/Helper.php:1986
 msgid "Popular"
 msgstr ""
 
@@ -5901,7 +5929,7 @@ msgstr ""
 msgid "Posting in:"
 msgstr ""
 
-#: app/Models/Space.php:62 app/Services/TransStrings.php:925
+#: app/Models/BaseSpace.php:576 app/Services/TransStrings.php:925
 #: app/Http/Controllers/ProfileController.php:79
 msgid "Posts"
 msgstr ""
@@ -5914,7 +5942,7 @@ msgstr ""
 msgid "Posts Order by"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:567
+#: app/Hooks/Handlers/PortalHandler.php:633
 msgid "press delete to remove"
 msgstr ""
 
@@ -5922,7 +5950,7 @@ msgstr ""
 msgid "Pretty Permalink is required"
 msgstr ""
 
-#: app/Services/TransStrings.php:928 app/Hooks/Handlers/PortalHandler.php:568
+#: app/Services/TransStrings.php:928 app/Hooks/Handlers/PortalHandler.php:634
 msgid "Preview"
 msgstr ""
 
@@ -5930,16 +5958,16 @@ msgstr ""
 msgid "Preview Lesson"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:551
+#: app/Hooks/Handlers/PortalHandler.php:617
 #, php-format
 msgid "Previous %s pages"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:594
+#: app/Hooks/Handlers/PortalHandler.php:660
 msgid "Previous Month"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:592
+#: app/Hooks/Handlers/PortalHandler.php:658
 msgid "Previous Year"
 msgstr ""
 
@@ -6013,7 +6041,7 @@ msgstr ""
 msgid "Profile Badges"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:301
+#: app/Http/Controllers/ProfileController.php:320
 msgid "Profile bio should not exceed %d characters."
 msgstr ""
 
@@ -6021,8 +6049,8 @@ msgstr ""
 msgid "Profile Dropdown Items"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:329
-#: app/Http/Controllers/ProfileController.php:367
+#: app/Http/Controllers/ProfileController.php:348
+#: app/Http/Controllers/ProfileController.php:386
 msgid "Profile has been updated"
 msgstr ""
 
@@ -6030,7 +6058,7 @@ msgstr ""
 msgid "Profile link providers have been updated successfully"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:417
+#: app/Http/Controllers/ProfileController.php:436
 msgid "Profile not found"
 msgstr ""
 
@@ -6038,7 +6066,7 @@ msgstr ""
 msgid "Profile Social Media Links"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:181
+#: app/Http/Controllers/ProfileController.php:200
 msgid "Profile updated"
 msgstr ""
 
@@ -6363,7 +6391,7 @@ msgstr ""
 msgid "Resend"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:558
+#: app/Hooks/Handlers/PortalHandler.php:624
 msgid "Reset"
 msgstr ""
 
@@ -6379,6 +6407,12 @@ msgstr ""
 msgid ""
 "Restart automation multiple times for a contact for this event. (Enable only "
 "if you want to restart automation for the same contact.)"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:93
+msgid ""
+"Restart the Automation Multiple times for a contact for this event. (Only "
+"enable if you want to restart automation for the same contact)"
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:88
@@ -6416,12 +6450,12 @@ msgstr ""
 msgid "Role"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:617
+#: app/Hooks/Handlers/PortalHandler.php:683
 msgid "Sat"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:591
-#: app/Hooks/Handlers/PortalHandler.php:626
+#: app/Http/Controllers/ProfileController.php:610
+#: app/Hooks/Handlers/PortalHandler.php:692
 msgid "Saturday"
 msgstr ""
 
@@ -6588,7 +6622,7 @@ msgstr ""
 msgid "Section Title"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:574
+#: app/Hooks/Handlers/PortalHandler.php:640
 msgid "Select"
 msgstr ""
 
@@ -6656,7 +6690,7 @@ msgstr ""
 msgid "Select Date"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:586
+#: app/Hooks/Handlers/PortalHandler.php:652
 msgid "Select date"
 msgstr ""
 
@@ -6666,6 +6700,10 @@ msgstr ""
 
 #: app/Services/TransStrings.php:1051
 msgid "Select Drip date"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:85
+msgid "Select for which Lessons this automation will run"
 msgstr ""
 
 #: app/Services/TransStrings.php:1052
@@ -6749,6 +6787,7 @@ msgid "Select spaces where this topic will be visible."
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:42
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:50
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:43
 #: Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php:43
 msgid "Select Status"
@@ -6769,7 +6808,7 @@ msgstr ""
 msgid "Select Time"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:587
+#: app/Hooks/Handlers/PortalHandler.php:653
 msgid "Select time"
 msgstr ""
 
@@ -6810,7 +6849,7 @@ msgstr ""
 msgid "Selected comment has been deleted"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:585
+#: app/Hooks/Handlers/PortalHandler.php:651
 msgid "Selected date"
 msgstr ""
 
@@ -6878,11 +6917,11 @@ msgstr ""
 msgid "Sending email to all members?"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:637
+#: app/Hooks/Handlers/PortalHandler.php:703
 msgid "Sep"
 msgstr ""
 
-#: app/Services/TransStrings.php:1095 app/Hooks/Handlers/PortalHandler.php:605
+#: app/Services/TransStrings.php:1095 app/Hooks/Handlers/PortalHandler.php:671
 msgid "September"
 msgstr ""
 
@@ -6918,7 +6957,7 @@ msgid ""
 "used to send emails from FluentCommunity."
 msgstr ""
 
-#: app/Services/TransStrings.php:1103 app/Hooks/Handlers/PortalHandler.php:152
+#: app/Services/TransStrings.php:1103 app/Hooks/Handlers/PortalHandler.php:176
 msgid "Settings"
 msgstr ""
 
@@ -7073,11 +7112,11 @@ msgstr ""
 msgid "Sitemap URL : "
 msgstr ""
 
-#: app/Functions/Utility.php:655
+#: app/Functions/Utility.php:656
 msgid "Sky Blue"
 msgstr ""
 
-#: app/Functions/Utility.php:867
+#: app/Functions/Utility.php:868
 msgid "Sky Blue (Dark)"
 msgstr ""
 
@@ -7189,11 +7228,11 @@ msgstr ""
 msgid "Sorry, the selected plugins could not be installed"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:729
-msgid "Sorry, You can not access to this portal"
+#: app/Hooks/Handlers/PortalHandler.php:801
+msgid "Sorry, You can not access to this vcommunity"
 msgstr ""
 
-#: app/Http/Controllers/MembersController.php:128
+#: app/Http/Controllers/MembersController.php:130
 msgid ""
 "Sorry, you can not change status of another admin. Remove the user from "
 "moderators"
@@ -7203,11 +7242,11 @@ msgstr ""
 msgid "Sorry, you can not update this config. Please activate pro"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:455
+#: app/Http/Controllers/FeedsController.php:467
 msgid "Sorry, You can only edit a post if it's in published state."
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:533
+#: app/Http/Controllers/FeedsController.php:545
 msgid "Sorry, you do not have permission to change the space for this post"
 msgstr ""
 
@@ -7260,19 +7299,19 @@ msgstr ""
 msgid "Space Description"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:757
+#: app/Http/Controllers/SpaceController.php:765
 msgid "Space group has been created successfully"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:794
+#: app/Http/Controllers/SpaceController.php:802
 msgid "Space group has been created updated"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:812
+#: app/Http/Controllers/SpaceController.php:820
 msgid "Space group has been deleted successfully"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:828
+#: app/Http/Controllers/SpaceController.php:836
 msgid "Space group indexes have been updated."
 msgstr ""
 
@@ -7288,11 +7327,11 @@ msgstr ""
 msgid "Space has been deleted successfully"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:862
+#: app/Http/Controllers/SpaceController.php:870
 msgid "Space has been moved successfully"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:845
+#: app/Http/Controllers/SpaceController.php:853
 msgid "Space indexes have been updated."
 msgstr ""
 
@@ -7347,17 +7386,17 @@ msgstr ""
 msgid "Space will be created under the selected Menu group."
 msgstr ""
 
-#: app/Services/TransStrings.php:1167 app/Services/Helper.php:983
+#: app/Services/TransStrings.php:1167 app/Services/Helper.php:987
 #: app/Http/Controllers/ProfileController.php:92
 #: Modules/Integrations/FluentCRM/ProfileSection.php:64
 msgid "Spaces"
 msgstr ""
 
-#: app/Services/Helper.php:1924
+#: app/Services/Helper.php:1932
 msgid "Spam"
 msgstr ""
 
-#: app/Services/TransStrings.php:1168 app/Hooks/Handlers/PortalHandler.php:588
+#: app/Services/TransStrings.php:1168 app/Hooks/Handlers/PortalHandler.php:654
 msgid "Start Date"
 msgstr ""
 
@@ -7369,7 +7408,7 @@ msgstr ""
 msgid "Start Migrating Data"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:589
+#: app/Hooks/Handlers/PortalHandler.php:655
 msgid "Start Time"
 msgstr ""
 
@@ -7403,6 +7442,10 @@ msgstr ""
 msgid "Structured"
 msgstr ""
 
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:42
+msgid "Student completes a Lesson in FluentCommunity"
+msgstr ""
+
 #: Modules/Course/Http/Controllers/CourseAdminController.php:464
 msgid "Student has been removed from this course"
 msgstr ""
@@ -7412,7 +7455,7 @@ msgid "Students"
 msgstr ""
 
 #. weekday min Please keep the serial and format
-#: app/Hooks/Handlers/PortalHandler.php:475
+#: app/Hooks/Handlers/PortalHandler.php:541
 msgid "Su_Mo_Tu_We_Th_Fr_Sa"
 msgstr ""
 
@@ -7447,39 +7490,40 @@ msgid ""
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/SpaceJoinTrigger.php:41
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:49
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:42
 #: Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php:42
 msgid "Subscription Status"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:559
+#: app/Hooks/Handlers/PortalHandler.php:625
 msgid "Sum"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:611
+#: app/Hooks/Handlers/PortalHandler.php:677
 msgid "Sun"
 msgstr ""
 
 #. weekday short Please keep the serial and format
-#: app/Hooks/Handlers/PortalHandler.php:471
+#: app/Hooks/Handlers/PortalHandler.php:537
 msgid "Sun_Mon_Tue_Wed_Thu_Fri_Sat"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:592
-#: app/Hooks/Handlers/PortalHandler.php:620
+#: app/Http/Controllers/ProfileController.php:611
+#: app/Hooks/Handlers/PortalHandler.php:686
 msgid "Sunday"
 msgstr ""
 
 #. weekday. Please keep the serial and format
-#: app/Hooks/Handlers/PortalHandler.php:467
+#: app/Hooks/Handlers/PortalHandler.php:533
 msgid "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday"
 msgstr ""
 
-#: app/Functions/Utility.php:573
+#: app/Functions/Utility.php:574
 msgid "Sunset Sands"
 msgstr ""
 
-#: app/Functions/Utility.php:782
+#: app/Functions/Utility.php:783
 msgid "Sunset Sands (Dark)"
 msgstr ""
 
@@ -7510,6 +7554,10 @@ msgstr ""
 #: app/Services/TransStrings.php:1185
 #, php-format
 msgid "Sync this tag with the %s access"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:84
+msgid "Target Lessons"
 msgstr ""
 
 #: Modules/Integrations/FluentCRM/CourseCompletedTrigger.php:79
@@ -7584,7 +7632,7 @@ msgid ""
 "please enter the verification code below on the registration page."
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:524
+#: app/Http/Controllers/FeedsController.php:536
 msgid "The author is not a member of the selected space"
 msgstr ""
 
@@ -7618,11 +7666,11 @@ msgstr ""
 msgid "The email address is required!"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:799
+#: app/Http/Controllers/FeedsController.php:811
 msgid "The file must be an image type."
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:800
+#: app/Http/Controllers/FeedsController.php:812
 #, php-format
 msgid "The file size must be less than %s%s."
 msgstr ""
@@ -7675,7 +7723,7 @@ msgstr ""
 msgid "The title color of the form"
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:777
+#: app/Http/Controllers/SpaceController.php:785
 msgid "The title is already taken. Please use a different title"
 msgstr ""
 
@@ -7798,6 +7846,14 @@ msgid ""
 "This form cannot be used to log in. Please reload the page and try again."
 msgstr ""
 
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:28
+msgid "This funnel runs when a student completes a lesson"
+msgstr ""
+
+#: Modules/Integrations/FluentCRM/LessonCompletedTrigger.php:43
+msgid "This Funnel will start when a student completes a lesson"
+msgstr ""
+
 #: app/Services/TransStrings.php:1214
 msgid ""
 "This image will be used on social sharing preview. Recommended size: 1200 x "
@@ -7896,7 +7952,7 @@ msgid ""
 "creation form"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:615
+#: app/Hooks/Handlers/PortalHandler.php:681
 msgid "Thu"
 msgstr ""
 
@@ -7908,8 +7964,8 @@ msgstr ""
 msgid "Thumbnail / Open Graph Image (Recommended Size: 1200 x 630)"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:589
-#: app/Hooks/Handlers/PortalHandler.php:624
+#: app/Http/Controllers/ProfileController.php:608
+#: app/Hooks/Handlers/PortalHandler.php:690
 msgid "Thursday"
 msgstr ""
 
@@ -7969,7 +8025,7 @@ msgstr ""
 msgid "To join the discussion of this community, please login or signup"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:578
+#: app/Hooks/Handlers/PortalHandler.php:644
 msgid "Today"
 msgstr ""
 
@@ -8051,7 +8107,7 @@ msgstr ""
 msgid "Topics Settings"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:552
+#: app/Hooks/Handlers/PortalHandler.php:618
 #, php-format
 msgid "Total %s"
 msgstr ""
@@ -8072,12 +8128,12 @@ msgstr ""
 msgid "Try searching for keywords in posts"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:613
+#: app/Hooks/Handlers/PortalHandler.php:679
 msgid "Tue"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:587
-#: app/Hooks/Handlers/PortalHandler.php:622
+#: app/Http/Controllers/ProfileController.php:606
+#: app/Hooks/Handlers/PortalHandler.php:688
 msgid "Tuesday"
 msgstr ""
 
@@ -8107,7 +8163,7 @@ msgstr ""
 msgid "Type:"
 msgstr ""
 
-#: app/Services/Helper.php:1981
+#: app/Services/Helper.php:1989
 msgid "Unanswered"
 msgstr ""
 
@@ -8208,7 +8264,7 @@ msgstr ""
 msgid "Update Webhook"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:129
+#: app/Hooks/Handlers/PortalHandler.php:147
 msgid "Upgrade"
 msgstr ""
 
@@ -8316,15 +8372,15 @@ msgstr ""
 msgid "Use Modal UI for quick post view"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:582
+#: app/Hooks/Handlers/PortalHandler.php:648
 msgid "Use the arrow keys and enter to select the day of the month"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:583
+#: app/Hooks/Handlers/PortalHandler.php:649
 msgid "Use the arrow keys and enter to select the month"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:584
+#: app/Hooks/Handlers/PortalHandler.php:650
 msgid "Use the arrow keys and enter to select the year"
 msgstr ""
 
@@ -8392,7 +8448,7 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:245
+#: app/Http/Controllers/ProfileController.php:264
 msgid ""
 "Username already taken by someone else. Please use a different username."
 msgstr ""
@@ -8413,7 +8469,7 @@ msgstr ""
 msgid "Username is required"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:276
+#: app/Http/Controllers/ProfileController.php:295
 msgid "Username should be at least 3 characters long."
 msgstr ""
 
@@ -8598,16 +8654,16 @@ msgstr ""
 msgid "Website URL"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:614
+#: app/Hooks/Handlers/PortalHandler.php:680
 msgid "Wed"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:588
-#: app/Hooks/Handlers/PortalHandler.php:623
+#: app/Http/Controllers/ProfileController.php:607
+#: app/Hooks/Handlers/PortalHandler.php:689
 msgid "Wednesday"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:609
+#: app/Hooks/Handlers/PortalHandler.php:675
 msgid "week"
 msgstr ""
 
@@ -8851,6 +8907,10 @@ msgstr ""
 msgid "You are not allowed to complete this lesson."
 msgstr ""
 
+#: app/Http/Controllers/ProfileController.php:130
+msgid "You are not allowed to deactivate this account."
+msgstr ""
+
 #: app/Http/Controllers/CommentsController.php:470
 msgid "You are not allowed to delete this comment"
 msgstr ""
@@ -8867,7 +8927,7 @@ msgstr ""
 msgid "You are not allowed to join this space"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:196
+#: app/Http/Controllers/ProfileController.php:215
 msgid "You are not allowed to update this profile"
 msgstr ""
 
@@ -8879,7 +8939,7 @@ msgstr ""
 msgid "You are not allowed to view members of this space"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:379
+#: app/Http/Controllers/ProfileController.php:398
 msgid "You are not allowed to view this profile's spaces."
 msgstr ""
 
@@ -8901,7 +8961,7 @@ msgid ""
 "different group first."
 msgstr ""
 
-#: app/Http/Controllers/SpaceController.php:805
+#: app/Http/Controllers/SpaceController.php:813
 msgid "You can not delete this group. It has spaces"
 msgstr ""
 
@@ -8942,7 +9002,7 @@ msgstr ""
 msgid "You currently have %s scheduled posts to be published"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:176
+#: app/Http/Controllers/FeedsController.php:182
 msgid "You do not have permission to edit this feed"
 msgstr ""
 
@@ -8950,7 +9010,7 @@ msgstr ""
 msgid "You do not have permission to install plugins"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:606
+#: app/Http/Controllers/FeedsController.php:618
 msgid "You do not have permission to perform this action"
 msgstr ""
 
@@ -9003,6 +9063,10 @@ msgstr ""
 
 #: app/Services/TransStrings.php:1389
 msgid "You have cancelled the action."
+msgstr ""
+
+#: app/Hooks/Handlers/PortalHandler.php:796
+msgid "You have deactivated your community profile."
 msgstr ""
 
 #: app/Http/Controllers/SpaceController.php:427
@@ -9071,7 +9135,7 @@ msgstr ""
 msgid "You need to upgrade to Pro to upload documents"
 msgstr ""
 
-#: app/Hooks/Handlers/PortalHandler.php:727
+#: app/Hooks/Handlers/PortalHandler.php:794
 msgid "You request is on pending"
 msgstr ""
 
@@ -9109,6 +9173,10 @@ msgstr ""
 
 #: Modules/Auth/AuthHelper.php:226 Modules/Auth/AuthHelper.php:426
 msgid "Your account email address"
+msgstr ""
+
+#: app/Hooks/Handlers/PortalHandler.php:796
+msgid "Your account is deactivated"
 msgstr ""
 
 #: Modules/Auth/AuthHelper.php:233 Modules/Auth/AuthHelper.php:427
@@ -9210,16 +9278,16 @@ msgstr ""
 msgid "Your portal feeds are not public so no sitemap entry will be generated."
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:426
+#: app/Http/Controllers/FeedsController.php:438
 #, php-format
 msgid "Your post has been marked as %s"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:439
+#: app/Http/Controllers/FeedsController.php:451
 msgid "Your post has been published"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:417
+#: app/Http/Controllers/FeedsController.php:429
 #, php-format
 msgid "Your post has been scheduled for %s"
 msgstr ""
@@ -9231,8 +9299,12 @@ msgid ""
 "your profile"
 msgstr ""
 
-#: app/Http/Controllers/FeedsController.php:591
+#: app/Http/Controllers/FeedsController.php:603
 msgid "Your post has been updated"
+msgstr ""
+
+#: app/Http/Controllers/ProfileController.php:140
+msgid "Your profile has been deactivated successfully."
 msgstr ""
 
 #: Modules/Auth/AuthHelper.php:288

@@ -253,6 +253,7 @@ class Utility
             'can_customize_username'         => 'no',
             'can_change_email'               => 'no',
             'show_last_activity'             => 'yes',
+            'can_deactive_account'           => 'no',
             'email_auto_login'               => 'yes',
             'enable_gravatar'                => 'yes',
             'enable_user_sync'               => 'yes',
@@ -1061,7 +1062,7 @@ class Utility
 
         $colors = [];
 
-        if ($pallets) {
+        if ($pallets && is_array($pallets)) {
             $colors = array_map(function ($color) {
                 $colorString = Arr::get($color, 'color');
                 // Trim any whitespace

@@ -410,6 +410,10 @@ class NotificationEventHandler
 
         $route = $feed->getJsRoute();
 
+        $route['query'] = [
+            'comment_id' => $comment->id
+        ];
+
         $notification = [
             'feed_id'         => $feed->id,
             'object_id'       => $comment->parent_id,

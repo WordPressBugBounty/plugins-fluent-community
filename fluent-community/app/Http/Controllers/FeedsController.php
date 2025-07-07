@@ -55,7 +55,10 @@ class FeedsController extends Controller
                         $q->byContentModerationAccessStatus($currentUserModel, $space)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
-                            }]);
+                            }])
+                            ->whereHas('xprofile', function ($q) {
+                                $q->where('status', 'active');
+                            });
                     },
                     'space',
                     'reactions' => function ($q) {
@@ -73,6 +76,9 @@ class FeedsController extends Controller
                     }
                 ]
             )
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->get('order_by_type', ''));
@@ -92,10 +98,10 @@ class FeedsController extends Controller
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
                     ->with([
-                            'xprofile' => function ($q) {
+                            'xprofile'  => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             },
-                            'comments' => function ($q) use ($space) {
+                            'comments'  => function ($q) use ($space) {
                                 $q->byContentModerationAccessStatus($this->getUser(), $space)
                                     ->with(['xprofile' => function ($q) {
                                         $q->select(ProfileHelper::getXProfilePublicFields());
@@ -193,7 +199,10 @@ class FeedsController extends Controller
                     $q->byContentModerationAccessStatus($this->getUser())
                         ->with(['xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
-                        }]);
+                        }])
+                        ->whereHas('xprofile', function ($q) {
+                            $q->where('status', 'active');
+                        });
                 },
                 'reactions' => function ($q) {
                     $q->with([
@@ -209,6 +218,9 @@ class FeedsController extends Controller
                         ->where('taxonomy_name', 'post_topic');
                 }
             ])
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->byUserAccess($this->getUserId())
             ->first();
 
@@ -450,7 +462,7 @@ class FeedsController extends Controller
 
         $edibaleStatuses = ['published', 'unlisted', 'scheduled'];
 
-        if ( !in_array($existingFeed->status, $edibaleStatuses)) {
+        if (!in_array($existingFeed->status, $edibaleStatuses)) {
             return $this->sendError([
                 'message' => __('Sorry, You can only edit a post if it\'s in published state.', 'fluent-community')
             ]);
@@ -797,7 +809,7 @@ class FeedsController extends Controller
             'file' => 'mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
         ], [
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
-            'file.max' => sprintf(__('The file size must be less than %s%s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
+            'file.max'       => sprintf(__('The file size must be less than %s%s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
         ]);
 
         add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
@@ -1030,7 +1042,7 @@ class FeedsController extends Controller
         $start = microtime(true);
 
         do_action('fluent_community/track_activity');
-        $lastLoadedTimeStamp = (int) $request->get('last_fetched_timestamp');
+        $lastLoadedTimeStamp = (int)$request->get('last_fetched_timestamp');
 
         //check if $lastLoadedTimeStamp is valid date
         if (!$lastLoadedTimeStamp || (current_time('timestamp') - $lastLoadedTimeStamp) > HOUR_IN_SECONDS) {
@@ -1087,15 +1099,15 @@ class FeedsController extends Controller
         $message = CustomSanitizer::unslashMarkdown($request->get('text', ''));
 
         $html = wp_kses_post(FeedsHelper::mdToHtml($message));
-        
+
         $data = [
             'html' => $html
         ];
 
         $data['message_rendered'] = $html;
-        
+
         if (in_array('meta', $request->get('with', [])) && $request->get('feed')) {
-            [$data, ] = FeedsHelper::processFeedMetaData($data, $request->get('feed'));
+            [$data,] = FeedsHelper::processFeedMetaData($data, $request->get('feed'));
         }
 
         return $data;

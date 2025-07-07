@@ -26,7 +26,7 @@ class TemplateLoader
         });
 
         add_filter('theme_page_templates', [$this, 'registerTemplate'], 9999);
-        add_filter('template_include', [$this, 'maybeIncludeTemplate']);
+        add_filter('template_include', [$this, 'maybeIncludeTemplate'], 99999);
 
         add_action('fluent_community/theme_content', [$this, 'renderWpContent'], 10, 2);
 

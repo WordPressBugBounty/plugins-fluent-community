@@ -82,7 +82,7 @@ class BPMigrationController extends Controller
             'current_status' => $status,
             'max_ids'        => [
                 'group_member_max' => fluentCommunityApp('db')->table('bp_groups_members')->max('id'),
-                'max_user_id'      => fluentCommunityApp('db')->table('bp_xprofile_data')->max('user_id'),
+                'max_user_id'      => fluentCommunityApp('db')->table('bp_xprofile_data')->count('user_id'),
                 'max_activity_id'  => fluentCommunityApp('db')->table('bp_activity')->max('id')
             ]
         ];
@@ -145,6 +145,13 @@ class BPMigrationController extends Controller
         }
 
         $users = User::whereIn('id', $usersIds)->get();
+
+        if ($users->isEmpty()) {
+            $status['current_stage'] = 'completed';
+            $this->updateCurrentStatus($status, false);
+            return $this->getCurrentStatus();
+        }
+
         $lastUserId = null;
 
         foreach ($users as $user) {
@@ -424,6 +431,7 @@ class BPMigrationController extends Controller
         \FluentCommunity\App\Models\Media::truncate();
         \FluentCommunity\App\Models\Activity::truncate();
         \FluentCommunity\App\Models\XProfile::truncate();
+        \FluentCommunity\App\Models\Space::where('type', 'community')->delete();
 
         // reset buddypress meta data
         fluentCommunityApp('db')->table('bp_groups_groupmeta')->where('meta_key', '_fcom_space_id')->delete();

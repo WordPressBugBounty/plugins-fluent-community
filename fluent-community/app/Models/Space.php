@@ -43,40 +43,4 @@ class Space extends BaseSpace
             'members_page_status'   => 'members_only', // members_only, everybody, logged_in, admin_only
         ];
     }
-
-    public function formatSpaceData($user)
-    {
-        $userId = $user ? $user->ID : null;
-
-        $this->permissions = $this->getUserPermissions($user);
-        $this->description_rendered = wpautop($this->description);
-        $this->membership = $this->getMembership($userId);
-        $this->topics = Utility::getTopicsBySpaceId($this->id);
-
-        if (!Helper::isSiteAdmin($userId, $user)) {
-            $this->lockscreen_config = LockscreenService::getLockscreenConfig($this, $this->membership);
-        }
-
-        $headerLinks = [
-            [
-                'title' => __('Posts', 'fluent-community'),
-                'route' => [
-                    'name' => 'space_feeds',
-                ]
-            ]
-        ];
-
-        if (Arr::get($this->permissions, 'can_view_members')) {
-            $headerLinks[] = [
-                'title' => __('Members', 'fluent-community'),
-                'route' => [
-                    'name' => 'space_members',
-                ]
-            ];
-        }
-
-        $this->header_links = apply_filters('fluent_community/space_header_links', $headerLinks, $this);
-
-        return $this;
-    }
 }

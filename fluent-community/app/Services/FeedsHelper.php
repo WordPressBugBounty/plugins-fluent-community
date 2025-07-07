@@ -395,7 +395,7 @@ class FeedsHelper
             if (!Helper::isUserInSpace($feedData['user_id'], $feedData['space_id'])) {
                 return new \WP_Error('invalid_space', 'User is not in the space', ['status' => 400]);
             }
-            $mentions = FeedsHelper::getMentions($markdown, Arr::get($feedData, 'space_id'));
+            $mentions = FeedsHelper::getMentions($markdown, Arr::get($feedData, 'space_id'), true);
             if ($mentions) {
                 $markdown = $mentions['text'];
             }

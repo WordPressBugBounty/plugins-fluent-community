@@ -201,6 +201,9 @@ class BPMigratorHelper
         // replace \" or \' with " or '
         $content = str_replace(['\"', "\'"], ['"', "'"], $content);
 
+        // Shortcut: decode all HTML entities (including hex and decimal) to their UTF-8 characters, including emoji
+        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         return trim($content);
     }
 

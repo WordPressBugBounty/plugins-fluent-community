@@ -138,7 +138,7 @@ $router->prefix('comments')->withPolicy('PortalPolicy')->group(function ($router
 });
 
 $router->prefix('options')->withPolicy('PortalPolicy')->group(function ($router) {
-    $router->get('/app-vars', 'ProfileController@getAppVars');
+    $router->get('/app-vars', 'OptionController@getAppVars');
     $router->get('/sidebar-menu-html', 'OptionController@getSidebarMenuHtml');
 });
 

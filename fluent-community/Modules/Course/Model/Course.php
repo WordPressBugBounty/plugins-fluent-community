@@ -45,6 +45,27 @@ class Course extends BaseSpace
         return $query->where('created_by', $userId);
     }
 
+    public function scopeSearchBy($query, $search)
+    {
+        if ($search) {
+            $fields = $this->searchable;
+            $query->where(function ($query) use ($fields, $search) {
+                $query->where(function($q) use ($fields, $search) {
+                    $q->where(array_shift($fields), 'LIKE', "%$search%");
+                    foreach ($fields as $field) {
+                        $q->orWhere($field, 'LIKE', "$search%");
+                    }
+                })
+                    ->orWhereHas('categories', function ($q) use ($search) {
+                        $q->where('title', 'LIKE', "%$search%")
+                            ->orWhere('description', 'LIKE', "%$search%");
+                    });
+            });
+        }
+
+        return $query;
+    }
+
     public function scopeByPostTopic($query, $topicSlug = null)
     {
         if (!$topicSlug) {

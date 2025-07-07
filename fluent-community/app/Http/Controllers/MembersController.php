@@ -96,6 +96,8 @@ class MembersController extends Controller
             $statuses = $request->getSafe('status', 'sanitize_text_field', 'active');
             if ($statuses == 'in_active') {
                 $statuses = ['pending', 'blocked'];
+            } if($statuses == 'deactivated') {
+                $statuses = [''];
             } else {
                 $statuses = ['active'];
             }
