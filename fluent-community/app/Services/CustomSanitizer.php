@@ -454,38 +454,7 @@ class CustomSanitizer
             '\\.'  => '.'
         ];
 
-        $markdown = str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
-
-        $markdown = wp_kses($markdown, array(
-            'p'          => array(),
-            'br'         => array(),
-            'strong'     => array(),
-            'em'         => array(),
-            'h1'         => array(),
-            'h2'         => array(),
-            'h3'         => array(),
-            'h4'         => array(),
-            'h5'         => array(),
-            'h6'         => array(),
-            'ul'         => array(),
-            'b'          => array(),
-            'ol'         => array(),
-            'li'         => array(),
-            'a'          => array(
-                'href'  => true,
-                'title' => true,
-            ),
-            'img'        => array(
-                'src' => true,
-                'alt' => true,
-            ),
-            'code'       => array(),
-            'pre'        => array(),
-            'blockquote' => array(),
-        ));
-
-        // remove all the
-        return $markdown;
+        return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
     }
 
     public static function santizeSpaceSettings($settings = [], $privacy = 'public')

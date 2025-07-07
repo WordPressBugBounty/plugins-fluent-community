@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.7.7
+Stable tag: 1.7.71
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,7 +247,7 @@ OR
 
 == Changelog ==
 
-= 1.7.7 (Date: July 07, 2025) =
+= 1.7.71 (Date: July 07, 2025) =
 - Added: Lesson Completed Trigger for FluentCRM
 - Added: Self Deactivation Option for Users
 - Added Public Only Sidebar Link Option
@@ -256,6 +256,7 @@ OR
 - Improved BuddyBoss Migration for large communities
 - Improved Email Notification Designs
 - Improved Mobile Responsiveness
+- Security improvement for inline CSS contents
 
 = 1.7.6 (Date: June 19, 2025)
 - Added: Option to Update Course Instructor

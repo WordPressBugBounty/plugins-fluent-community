@@ -62,6 +62,35 @@ class FeedsHelper
             $html = self::addNoFollowToLinks($html);
         }
 
+        $html = wp_kses($html, array(
+            'p'          => array(),
+            'br'         => array(),
+            'strong'     => array(),
+            'em'         => array(),
+            'hr'         => array(),
+            'h1'         => array(),
+            'h2'         => array(),
+            'h3'         => array(),
+            'h4'         => array(),
+            'h5'         => array(),
+            'h6'         => array(),
+            'ul'         => array(),
+            'b'          => array(),
+            'ol'         => array(),
+            'li'         => array(),
+            'a'          => array(
+                'href'  => true,
+                'title' => true,
+            ),
+            'img'        => array(
+                'src' => true,
+                'alt' => true,
+            ),
+            'code'       => array(),
+            'pre'        => array(),
+            'blockquote' => array(),
+        ));
+
         return self::maybeTransformDynamicCodes($html);
     }
 
@@ -406,7 +435,7 @@ class FeedsHelper
         $feedData['message_rendered'] = wp_kses_post(self::mdToHtml($markdown));
         $feedData['status'] = 'published';
 
-        if(Arr::get($allData, 'meta.media_preview.provider') == 'inline') {
+        if (Arr::get($allData, 'meta.media_preview.provider') == 'inline') {
             $allData['meta']['media_preview']['provider'] = 'giphy';
         }
 
@@ -523,8 +552,8 @@ class FeedsHelper
 
         if ($surveyConfig) {
             $feed->survey = [
-                'type'    => Arr::get($surveyConfig, 'type'),
-                'options' => Arr::get($surveyConfig, 'options', []),
+                'type'     => Arr::get($surveyConfig, 'type'),
+                'options'  => Arr::get($surveyConfig, 'options', []),
                 'end_date' => Arr::get($surveyConfig, 'end_date', '')
             ];
         } else if ($feed->content_type == 'document') {
@@ -610,7 +639,7 @@ class FeedsHelper
                 }
             }
 
-            if($endDate = Arr::get($data['survey'], 'end_date', '')) {
+            if ($endDate = Arr::get($data['survey'], 'end_date', '')) {
                 $surveyConfig['end_date'] = date('Y-m-d H:i:s', strtotime($endDate));
             } else {
                 $surveyConfig['end_date'] = '';
@@ -625,7 +654,7 @@ class FeedsHelper
         // Handle Giphy
         if (Arr::get($requestData, 'meta.media_preview.provider') == 'giphy') {
             $url = Arr::get($requestData, 'meta.media_preview.image');
-            if(!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+            if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
                 return [$data, $uplaodedDocs];
             }
 
