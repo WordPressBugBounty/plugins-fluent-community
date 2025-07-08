@@ -5,7 +5,6 @@ namespace FluentCommunity\Modules\Gutenberg;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Vite;
 use FluentCommunity\Framework\Support\Arr;
-use function Clue\StreamFilter\fun;
 
 class EditorBlock
 {

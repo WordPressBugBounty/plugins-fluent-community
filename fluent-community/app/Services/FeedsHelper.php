@@ -78,9 +78,12 @@ class FeedsHelper
             'b'          => array(),
             'ol'         => array(),
             'li'         => array(),
+            'span'       => array(),
             'a'          => array(
-                'href'  => true,
-                'title' => true,
+                'href'    => true,
+                'title'   => true,
+                'rel'     => true,
+                '_target' => true,
             ),
             'img'        => array(
                 'src' => true,

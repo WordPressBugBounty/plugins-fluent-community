@@ -40,16 +40,19 @@ class ActivityController extends Controller
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }, 'feed', 'space'])
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->orderBy('id', 'DESC');
 
         $spaceId = null;
         $userId = null;
 
         if ($context && !empty($context['space_id'])) {
-            $spaceId = (int) $context['space_id'];
+            $spaceId = (int)$context['space_id'];
             $activities->where('space_id', $context['space_id']);
-        } else if($context && !empty($context['user_id'])) {
-            $userId = (int) $context['user_id'];
+        } else if ($context && !empty($context['user_id'])) {
+            $userId = (int)$context['user_id'];
             $activities->where('user_ID', $context['user_id']);
         }
 
@@ -80,9 +83,9 @@ class ActivityController extends Controller
             ];
         }
 
-        if($spaceId) {
+        if ($spaceId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_space', '', $spaceId, $context);
-        } else if($userId) {
+        } else if ($userId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_user', '', $userId, $context);
         } else {
             $afterContent = apply_filters('fluent_community/activity/after_contents', '', $context);
@@ -98,9 +101,9 @@ class ActivityController extends Controller
             'after_contents' => $afterContent,
         ];
 
-        if(!$spaceId) {
+        if (!$spaceId) {
 
-            if(!$userId) {
+            if (!$userId) {
                 $returnData['pinned_posts'] = $this->getPinnedPosts(null, true);
             }
 
@@ -136,6 +139,9 @@ class ActivityController extends Controller
         })
             ->byUserAccess(get_current_user_id())
             ->where('status', 'published')
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }], 'space')

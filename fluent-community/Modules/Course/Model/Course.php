@@ -50,7 +50,7 @@ class Course extends BaseSpace
         if ($search) {
             $fields = $this->searchable;
             $query->where(function ($query) use ($fields, $search) {
-                $query->where(function($q) use ($fields, $search) {
+                $query->where(function ($q) use ($fields, $search) {
                     $q->where(array_shift($fields), 'LIKE', "%$search%");
                     foreach ($fields as $field) {
                         $q->orWhere($field, 'LIKE', "$search%");
@@ -59,6 +59,13 @@ class Course extends BaseSpace
                     ->orWhereHas('categories', function ($q) use ($search) {
                         $q->where('title', 'LIKE', "%$search%")
                             ->orWhere('description', 'LIKE', "%$search%");
+                    })
+                    ->orWhereHas('posts', function ($q) use ($search) {
+                        $q->where('status', 'published')
+                            ->where(function ($q) use ($search) {
+                                $q->where('title', 'LIKE', "%$search%")
+                                    ->orWhere('message', 'LIKE', "%$search%");
+                            });
                     });
             });
         }
@@ -139,11 +146,11 @@ class Course extends BaseSpace
 
     public function isCourseAdmin($user = null)
     {
-        if(!$user) {
+        if (!$user) {
             $user = Helper::getCurrentUser();
         }
 
-        if(!$user) {
+        if (!$user) {
             return false;
         }
 

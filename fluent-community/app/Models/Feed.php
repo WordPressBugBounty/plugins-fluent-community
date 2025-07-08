@@ -114,11 +114,11 @@ class Feed extends Model
         if ($newModel->title) {
             // Remove the emojis
             $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
-            // get the first 30 char from the title
-            $title = substr($title, 0, 30);
+            // get the first 40 char from the title
+            $title = substr($title, 0, 40);
         } else {
             // get the first 25 char from the message
-            $title = substr($newModel->message, 0, 30);
+            $title = substr($newModel->message, 0, 40);
         }
 
         $title = remove_accents($title);
@@ -131,6 +131,7 @@ class Feed extends Model
 
         // check if the slug is already exists
         $slug = $title;
+
         $count = 1;
         while (self::where('slug', $slug)->exists()) {
             if ($count == 5) {
@@ -138,6 +139,10 @@ class Feed extends Model
             }
             $slug = $title . '-' . $count;
             $count++;
+        }
+
+        if (strlen($slug) <= 4) {
+            $slug = $slug . '-' . time();
         }
 
         return $slug;

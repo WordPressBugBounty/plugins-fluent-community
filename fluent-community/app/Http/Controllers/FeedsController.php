@@ -76,9 +76,6 @@ class FeedsController extends Controller
                     }
                 ]
             )
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->get('order_by_type', ''));
@@ -131,13 +128,22 @@ class FeedsController extends Controller
 
         if ($userId) {
             $feedsQuery = $feedsQuery->where('user_id', $userId);
+
+            if (!Helper::isModerator()) {
+                $feedsQuery = $feedsQuery->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                });
+            }
+
             if ($userId != $currentUserId) {
                 $feedsQuery = $feedsQuery->byUserAccess($currentUserId);
             }
 
             $queryArgs['user_id'] = $bySpace;
         } else {
-            $feedsQuery->byUserAccess($currentUserId);
+            $feedsQuery->byUserAccess($currentUserId)->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            });
         }
 
         $queryArgs = array_filter($queryArgs);

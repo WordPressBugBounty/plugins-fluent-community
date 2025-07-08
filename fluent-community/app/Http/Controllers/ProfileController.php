@@ -23,6 +23,13 @@ class ProfileController extends Controller
     {
         $xprofile = XProfile::where('username', $userName)->firstOrFail();
 
+        if ($xprofile->status != 'active' && !Helper::isModerator()) {
+            return $this->sendError([
+                'message' => __('This profile is not active', 'fluent-community'),
+                'status'  => 403
+            ]);
+        }
+
         $user = get_user_by('ID', $xprofile->user_id);
 
         $profile = [

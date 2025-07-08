@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.7.71
+Stable tag: 1.7.72
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,13 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.7.72 (Date: July 08, 2025) =
+- SEO: Course Schema Added for Public and Private Courses
+- Imroved Course Index Searches (includes Course title and description)
+- Translation Strings Updated
+- Improved Responsiveness
+- Better handling Deactivated/Blocked Profiles
 
 = 1.7.71 (Date: July 07, 2025) =
 - Added: Lesson Completed Trigger for FluentCRM

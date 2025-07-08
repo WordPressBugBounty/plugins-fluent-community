@@ -35,6 +35,9 @@ class CommentsController extends Controller
                     $q->select(ProfileHelper::getXProfilePublicFields());
                 }
             ])
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->get();
 
         $userId = $this->getUserId();

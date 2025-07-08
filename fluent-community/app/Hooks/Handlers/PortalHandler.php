@@ -996,6 +996,10 @@ class PortalHandler
                     } else if ($space->cover_photo) {
                         $data['featured_image'] = $space->cover_photo;
                     }
+
+                    if ($dynamicRoute == 'course_view') {
+                        $data['json_ld'] = apply_filters('fluent_community/course_view_json_ld', [], $space, $data);
+                    }
                 }
             }
             return $data;

@@ -14,14 +14,20 @@ class CustomizerHander
             if (Arr::get($vars, 'route_group') == 'admin' && Helper::isSiteAdmin()) {
                 add_action('fluent_community/before_header_right_menu_items', function () {
                     ?>
-                    <li>
-                        <a style="border: 1px solid; padding: 3px 15px; margin-right: 8px; color: var(--fcom-menu-text, #545861);background: var(--fcom-active-bg, #f0f3f5);"
-                           href="<?php echo esc_url(Helper::baseUrl('/?customizer_panel=1')); ?>"><?php _e('Customize Colors', 'fluent-community'); ?></a>
+                    <li class="customizer_menu_item">
+                        <a
+                           href="<?php echo esc_url(Helper::baseUrl('/?customizer_panel=1')); ?>">
+                           <?php _e('Customize Colors', 'fluent-community'); ?>
+                        </a>
+                    </li>
+                    <li class="top_menu_item customizer_menu_button">
+                        <button class="fcom_menu_button">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_3687_33463)"><path d="M18.3337 9.99984C18.3337 5.39746 14.6027 1.6665 10.0003 1.6665C5.39795 1.6665 1.66699 5.39746 1.66699 9.99984C1.66699 14.6022 5.39795 18.3332 10.0003 18.3332C10.7018 18.3332 11.667 18.4301 11.667 17.4998C11.667 16.9924 11.403 16.6008 11.1408 16.2119C10.7572 15.6428 10.3773 15.0793 10.8337 14.1665C11.3892 13.0554 12.3152 13.0554 13.7349 13.0554C14.4448 13.0554 15.2781 13.0554 16.2504 12.9165C18.0012 12.6664 18.3337 11.5902 18.3337 9.99984Z" stroke="currentColor" stroke-width="1.5"></path><path d="M5.83398 12.502L5.84121 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><ellipse cx="7.91699" cy="7.08301" rx="1.25" ry="1.25" stroke="currentColor" stroke-width="1.5"></ellipse><ellipse cx="13.75" cy="7.9165" rx="1.25" ry="1.25" stroke="currentColor" stroke-width="1.5"></ellipse></g><defs><clipPath id="clip0_3687_33463"><rect width="20" height="20" fill="currentColor"></rect></clipPath></defs></svg>
+                        </button>
                     </li>
                     <?php
                 });
             } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) {
-
                 $vars['css_files'] = array_merge($vars['css_files'], [
                     'customizer'     => [
                         'url' => Vite::getStaticSrcUrl('customizer.css')
