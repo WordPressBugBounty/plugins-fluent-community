@@ -96,7 +96,7 @@ class MembersController extends Controller
             $statuses = $request->getSafe('status', 'sanitize_text_field', 'active');
             if ($statuses == 'in_active') {
                 $statuses = ['pending', 'blocked'];
-            } if($statuses == 'deactivated') {
+            } else if($statuses == 'deactivated') {
                 $statuses = [''];
             } else {
                 $statuses = ['active'];
@@ -110,10 +110,10 @@ class MembersController extends Controller
 
         $members = $members->paginate();
 
-        return [
+        return apply_filters('fluent_community/members_api_response', [
             'members' => $members,
             'execution_time' => microtime(true) - $start
-        ];
+        ], $members, $request->all());
     }
 
     public function patchMember(Request $request, $userId)

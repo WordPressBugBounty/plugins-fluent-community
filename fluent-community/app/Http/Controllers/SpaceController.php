@@ -359,10 +359,10 @@ class SpaceController extends Controller
             ->orderBy('created_at', 'ASC')
             ->paginate();
 
-        return [
+        return apply_filters('fluent_community/space_members_api_response', [
             'members'       => $spaceMembers,
             'pending_count' => $pendingCount
-        ];
+        ], $spaceMembers, $request->all());
     }
 
     public function join(Request $request, $slug)
@@ -512,7 +512,8 @@ class SpaceController extends Controller
 
         $userId = $request->get('user_id');
         $targetUser = User::findOrFail($userId);
-        $xprofile = $targetUser->syncXProfile();
+        $targetUser->syncXProfile();
+        $xprofile = $targetUser->xprofile;
 
         if ($xprofile && $xprofile->status != 'active') {
             return $this->sendError([
@@ -535,7 +536,7 @@ class SpaceController extends Controller
                     do_action('fluent_community/space/member/role_updated', $space, $pivot);
 
                     return [
-                        'message' => 'Member role updated'
+                        'message' => __('Member role updated', 'fluent-community')
                     ];
                 }
 
@@ -553,7 +554,7 @@ class SpaceController extends Controller
             }
 
             return [
-                'message' => 'Member approved'
+                'message' => __('Member approved', 'fluent-community')
             ];
         }
 

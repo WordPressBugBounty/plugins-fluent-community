@@ -25,7 +25,7 @@ class EditorBlock
             $asset_file['version']
         );
 
-        wp_register_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+        wp_register_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', Helper::isRtl()), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
 
         wp_register_script(
             'custom-layout-block-editor',

@@ -3,11 +3,15 @@
 namespace FluentCommunity\Modules\Migrations\Helpers;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
+use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Reaction;
+use FluentCommunity\App\Models\Space;
+use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
-use FluentCommunity\App\Services\FeedsHelper;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
 class BPMigratorHelper
@@ -15,6 +19,7 @@ class BPMigratorHelper
     public static function getBbDataStats()
     {
         return [
+            'groups'                => fluentCommunityApp('db')->table('bp_groups')->count(),
             'total_posts'           => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_update')->count(),
             'total_comments'        => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_comment')->count(),
             'total_reactions'       => class_exists('\BB_Reaction') ? fluentCommunityApp('db')->table('bb_user_reactions')->whereIn('item_type', ['activity_comment', 'activity'])->count() : 0,
@@ -24,47 +29,7 @@ class BPMigratorHelper
 
     public static function migratePost($post, $spaceId = null)
     {
-        $content = self::cleanUpContent($post->content);
-
-        if (!$content) {
-            return null;
-        }
-
-        $feedData = [
-            'user_id'          => $post->user_id,
-            'title'            => '',
-            'message'          => self::toMarkdown($content),
-            'message_rendered' => $content,
-            'type'             => 'text',
-            'content_type'     => 'text',
-            'privacy'          => 'public',
-            'status'           => 'published',
-            'space_id'         => $spaceId
-        ];
-
-        [$feedData, $media] = FeedsHelper::processFeedMetaData($feedData, []);
-
-        $mediaMeta = self::getActivityMediaPreview($post->id);
-
-        if ($mediaMeta) {
-            $feedData['meta'] = $mediaMeta;
-        }
-
-        $feed = new Feed();
-        $feed->fill($feedData);
-        $feed->created_at = $post->date_recorded;
-        $feed->updated_at = $post->date_recorded;
-        $feed->save();
-
-        self::syncPostReactions($post->id, $feed->id);
-
-        // let's migrate the comments
-        $commentIdMaps = self::syncComments($post->id, $feed);
-        self::syncCommentsReactions($commentIdMaps, $feed->id);
-
-        $feed = $feed->recountStats();
-
-        return $feed;
+        return (new PostMigrator($post))->migrate();
     }
 
     public static function syncComments($activityId, Feed $feed)
@@ -93,7 +58,7 @@ class BPMigratorHelper
         return $commentMaps;
     }
 
-    private static function insertBBComment($comment, $feed, $parentId = null)
+    public static function insertBBComment($comment, $feed, $parentId = null)
     {
         $comemntData = [
             'user_id'          => $comment['user_id'],
@@ -192,7 +157,7 @@ class BPMigratorHelper
         return $commentTree;
     }
 
-    private static function cleanUpContent($content)
+    public static function cleanUpContent($content)
     {
         $pattern = '/<a class=\'bp-suggestions-mention\'[^>]*>(@[\w-]+)<\/a>/is';
         $replacement = '$1';
@@ -207,7 +172,7 @@ class BPMigratorHelper
         return trim($content);
     }
 
-    private static function toMarkdown($html)
+    public static function toMarkdown($html)
     {
         // Replace header tags
         $html = preg_replace('/<h1>(.*?)<\/h1>/', '# $1', $html);
@@ -250,7 +215,7 @@ class BPMigratorHelper
         return trim($html);
     }
 
-    private static function getActivityMediaPreview($activityId)
+    public static function getActivityMediaPreview($activityId)
     {
         return self::getMediaItems($activityId);
     }
@@ -440,15 +405,34 @@ class BPMigratorHelper
 
             $hasChange = false;
             if ($coverPhoto) {
-                $meta = $xprofile->meta;
-                $meta['cover_photo'] = $coverPhoto;
-                $xprofile->meta = $meta;
-                $hasChange = true;
+                $path = self::getFilePathFromUrl($coverPhoto);
+                if ($path) {
+                    $media = self::createMediaFromPath($path, [
+                        'object_source' => 'user_cover_photo',
+                        'user_id'       => $user->ID
+                    ]);
+                    if ($media) {
+                        $meta = $xprofile->meta;
+                        $meta['cover_photo'] = $coverPhoto;
+                        $xprofile->meta = $meta;
+                        $hasChange = true;
+                    }
+                }
             }
 
             if ($avatar && !strpos($avatar, 'gravatar.com')) {
-                $xprofile->avatar = $avatar;
-                $hasChange = true;
+                $path = self::getFilePathFromUrl($avatar);
+                if ($path) {
+                    $media = self::createMediaFromPath($path, [
+                        'object_source' => 'user_photo',
+                        'user_id'       => $user->ID
+                    ]);
+                    if ($media) {
+                        $avatar = $media->media_url;
+                        $xprofile->avatar = $avatar;
+                        $hasChange = true;
+                    }
+                }
             }
 
             if ($hasChange) {
@@ -493,5 +477,319 @@ class BPMigratorHelper
         }
 
         return true;
+    }
+
+    public static function migrateGroupData($group, $force = true)
+    {
+        $exitMeta = fluentCommunityApp('db')->table('bp_groups_groupmeta')
+            ->where('group_id', $group->id)
+            ->where('meta_key', '_fcom_space_id')
+            ->first();
+
+        $existingSpace = null;
+        if ($exitMeta) {
+            $existingSpace = Space::find($exitMeta->meta_value);
+            if ($existingSpace && !$force) {
+                return $existingSpace;
+            }
+        }
+
+        // Create a new space group
+        $spaceGroup = null;
+        if (!empty($group->space_menu_id)) {
+            $spaceGroup = SpaceGroup::find($group->space_menu_id);
+        }
+
+        $serial = BaseSpace::when($spaceGroup, function ($q) use ($spaceGroup) {
+                $q->where('parent_id', $spaceGroup->id);
+            })->max('serial') + 1;
+
+        $privacy = $group->status;
+
+        if ($privacy == 'hidden') {
+            $privacy = 'secret';
+        } else if (!in_array($privacy, ['public', 'private'])) {
+            $privacy = 'private';
+        }
+
+        $postBy = fluentCommunityApp('db')->table('bp_groups_groupmeta')
+            ->where('group_id', $group->id)
+            ->where('meta_key', 'activity_feed_status')
+            ->first();
+
+        $restrictedPostOnly = 'no';
+        if ($postBy && $postBy->meta_value != 'members') {
+            $restrictedPostOnly = 'yes';
+        }
+
+        $settings = [
+            'restricted_post_only' => $restrictedPostOnly
+        ];
+
+        $documentStatus = fluentCommunityApp('db')->table('bp_groups_groupmeta')
+            ->where('group_id', $group->id)
+            ->where('meta_key', 'document_status')
+            ->first();
+
+        if ($documentStatus) {
+            $settings = wp_parse_args($settings, [
+                'document_library' => 'yes',
+                'document_access'  => 'members_only',
+                'document_upload'  => $documentStatus === 'mods' ? 'admin_only' : 'members_only'
+            ]);
+        }
+
+        $groupData = [
+            'title'       => sanitize_text_field($group->name),
+            'slug'        => Utility::slugify($group->slug),
+            'privacy'     => $privacy,
+            'description' => wp_kses_post(wp_unslash($group->description)),
+            'settings'    => $settings,
+            'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
+            'serial'      => $serial ?: 1
+        ];
+
+        if ($existingSpace) {
+            $existingSpace->fill($groupData);
+            $existingSpace->save();
+        } else {
+            $exist = BaseSpace::where('slug', $groupData['slug'])
+                ->exists();
+
+            if ($exist) {
+                $groupData['slug'] = $groupData['slug'] . '-' . time();
+            }
+
+            $existingSpace = Space::create($groupData);
+
+            fluentCommunityApp('db')->table('bp_groups_groupmeta')
+                ->insert([
+                    'group_id'   => $group->id,
+                    'meta_key'   => '_fcom_space_id',
+                    'meta_value' => $existingSpace->id
+                ]);
+        }
+
+        $groupLogo = bp_core_fetch_avatar(
+            array(
+                'item_id'    => $group->id,
+                'avatar_dir' => 'group-avatars',
+                'object'     => 'group',
+                'type'       => 'full',
+                'html'       => false,
+            )
+        );
+        if ($groupLogo) {
+            $filePath = self::getFilePathFromUrl($groupLogo);
+            if ($filePath) {
+                $media = self::createMediaFromPath($filePath, [
+                    'object_source' => 'space_logo',
+                    'sub_object_id' => $existingSpace->id
+                ]);
+                if ($media) {
+                    $existingSpace->logo = $media->media_url;
+                }
+            }
+        }
+
+        $group_cover_image = bp_attachments_get_attachment(
+            'url',
+            array(
+                'object_dir' => 'groups',
+                'item_id'    => $group->id,
+            )
+        );
+        if ($group_cover_image) {
+            if ($groupLogo) {
+                $filePath = self::getFilePathFromUrl($group_cover_image);
+                if ($filePath) {
+                    $media = self::createMediaFromPath($filePath, [
+                        'object_source' => 'space_cover_photo',
+                        'sub_object_id' => $existingSpace->id
+                    ]);
+                    if ($media) {
+                        $existingSpace->cover_photo = $media->media_url;
+                    }
+                }
+            }
+        }
+
+        $existingSpace->save();
+
+        return $existingSpace;
+    }
+
+    public static function deleteCurrentData()
+    {
+        // delete the folder in uploads folder fluent-community with php please
+        $uploadDir = wp_upload_dir();
+        $fcomDir = $uploadDir['basedir'] . '/fluent-community';
+        if (is_dir($fcomDir)) {
+            // delete the directory and all its content
+            self::deleteDirectory($fcomDir);
+        }
+
+        // reset fluent community data
+        \FluentCommunity\App\Models\Feed::truncate();
+        \FluentCommunity\App\Models\Comment::truncate();
+        \FluentCommunity\App\Models\Reaction::truncate();
+        \FluentCommunity\App\Models\Media::truncate();
+        \FluentCommunity\App\Models\Activity::truncate();
+        \FluentCommunity\App\Models\XProfile::truncate();
+        \FluentCommunity\App\Models\Space::truncate();
+
+        // reset buddypress meta data
+        fluentCommunityApp('db')->table('bp_groups_groupmeta')->where('meta_key', '_fcom_space_id')->delete();
+        fluentCommunityApp('db')->table('bp_activity_meta')->where('meta_key', '_fcom_feed_id')->delete();
+
+        delete_option('_bp_fcom_group_maps');
+        delete_option('_bp_fcom_last_post_id');
+        delete_option('_bp_fcom_last_user_id');
+        delete_option('_bp_fcom_last_migrated_member_id');
+    }
+
+    public static function getFcomSpaceIdByGroupId($bbGroupId)
+    {
+        if (!$bbGroupId) {
+            return null;
+        }
+
+        static $groupMaps;
+
+        if (!$groupMaps) {
+            $groupMaps = get_option('_bp_fcom_group_maps', []);
+        }
+
+        return isset($groupMaps[$bbGroupId]) ? $groupMaps[$bbGroupId] : null;
+
+    }
+
+    private static function deleteDirectory($dir)
+    {
+        // Include WordPress filesystem API
+        if (!function_exists('WP_Filesystem')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        // Initialize the WP_Filesystem
+        global $wp_filesystem;
+        if (!WP_Filesystem()) {
+            return false; // Filesystem initialization failed
+        }
+
+        // Sanitize the directory path
+        $dir = trailingslashit($dir);
+
+        // Check if directory exists
+        if (!$wp_filesystem->is_dir($dir)) {
+            return false; // Directory doesn't exist
+        }
+
+        // Delete directory and its contents recursively
+        $result = $wp_filesystem->rmdir($dir, true);
+
+        return $result;
+    }
+
+    private static function getFilePathFromUrl($url)
+    {
+        // Parse the URL to get its components
+        $parsed_url = parse_url($url);
+        // Get the path from the URL
+        $url_path = isset($parsed_url['path']) ? $parsed_url['path'] : '';
+
+        // Remove the site URL part to get the relative path
+
+        // handle http / https both
+        $site_url = site_url(''); // e.g., https://example.com
+        if (strpos($url, $site_url) === false) {
+            $site_url = str_replace('https://', 'http://', $site_url);
+        }
+        if (strpos($url, $site_url) === false) {
+            $site_url = str_replace('http://', 'https://', $site_url);
+        }
+
+        $relative_path = str_replace($site_url, '', $url);
+
+        // Combine with ABSPATH to get the full file path
+        $file_path = ABSPATH . ltrim($relative_path, '/');
+
+        // Check if the file exists
+        if (file_exists($file_path)) {
+            return $file_path;
+        }
+
+        return false; // Return false if the file doesn't exist
+    }
+
+    public static function createMediaFromPath($path, $mediaArgs = [])
+    {
+        $defaults = [
+            'media_key'     => md5(wp_generate_uuid4()),
+            'is_active'     => 1,
+            'driver'        => 'local',
+            'media_path'    => '',
+            'media_url'     => '',
+            'settings'      => [],
+            'object_source' => ''
+        ];
+
+        $mediaArgs = wp_parse_args($mediaArgs, $defaults);
+
+
+        if (empty($mediaArgs['object_source'])) {
+            return null;
+        }
+
+        $fileName = basename($path);
+
+        $mediaArgs['settings']['original_name'] = $fileName;
+
+        // copy the file to uploads/fluent-community
+        $uploadDir = wp_upload_dir();
+        $fcomDir = $uploadDir['basedir'] . '/fluent-community';
+        if (!is_dir($fcomDir)) {
+            wp_mkdir_p($fcomDir);
+        }
+
+        $newFilePath = $fcomDir . '/fluentcom-' . md5(wp_generate_uuid4()) . '-fluentcom-' . $fileName;
+
+
+        if (!copy($path, $newFilePath)) {
+            return null;
+        }
+
+        $fileUrl = str_replace($fcomDir, wp_upload_dir()['baseurl'] . '/fluent-community', $newFilePath);
+
+        $mediaArgs['media_path'] = $newFilePath;
+        $mediaArgs['media_url'] = $fileUrl;
+
+        $mediaArgs['media_type '] = mime_content_type($newFilePath);
+
+        $imageSizes = wp_getimagesize($newFilePath);
+
+
+        if ($imageSizes && count($imageSizes) >= 2) {
+            $mediaArgs['settings']['width'] = $imageSizes[0];
+            $mediaArgs['settings']['height'] = $imageSizes[1];
+        }
+
+        return Media::create($mediaArgs);
+    }
+
+    public static function maybeEnableFollowersModule()
+    {
+        if (!defined('FLUENT_COMMUNITY_PRO')) {
+            return;
+        }
+
+        $isEnabled = Helper::isFeatureEnabled('followers_module');
+        if ($isEnabled) {
+            return;
+        }
+
+        if (fluentCommunityApp('db')->table('bp_friends')->exists()) {
+            \FluentCommunityPro\App\Modules\Followers\FollowerHelper::updateSettings(['is_enabled' => 'yes']);
+        }
     }
 }

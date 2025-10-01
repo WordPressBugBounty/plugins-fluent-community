@@ -51,6 +51,7 @@ class CourseLesson extends Model
         'comments_count',
         'reactions_count',
         'meta',
+        'priority',
         'parent_id'
     ];
 

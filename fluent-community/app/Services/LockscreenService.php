@@ -63,7 +63,7 @@ class LockscreenService
             'new_tab'           => 'no'
         ];
 
-        $settings = $space->getCustomMeta('lockscreen_settings', $defaultSettings);
+        $settings = (array) $space->getCustomMeta('lockscreen_settings', $defaultSettings);
 
         foreach ($settings as &$setting) {
             if ($setting['type'] === 'block' && !empty($setting['content'])) {

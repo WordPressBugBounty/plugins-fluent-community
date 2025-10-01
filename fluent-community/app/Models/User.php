@@ -7,6 +7,7 @@ use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunityPro\App\Models\Follow;
 use FluentCrm\App\Models\Subscriber;
 
 /**
@@ -140,6 +141,19 @@ class User extends Model
     public function xprofile()
     {
         return $this->belongsTo(XProfile::class, 'ID', 'user_id');
+    }
+
+    // Relationship: Users this user follows
+    public function follows()
+    {
+        return $this->hasMany(Follow::class, 'follower_id', 'ID');
+
+    }
+
+    // Relationship: Users following this user
+    public function followers()
+    {
+        return $this->hasMany(Follow::class, 'followed_id', 'ID');
     }
 
     public function usermeta()
@@ -696,6 +710,11 @@ class User extends Model
         if ($exist) {
             unset($data['avatar']);
             unset($data['username']);
+
+            if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
+                $data['created_at'] = $this->user_registered;
+            }
+
             $data['meta'] = wp_parse_args($exist->meta, $data['meta']);
             $exist->fill($data);
             $exist->save();
@@ -710,6 +729,9 @@ class User extends Model
         }
 
         $data['username'] = $initialUserName;
+        if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
+            $data['created_at'] = $this->user_registered;
+        }
 
         $xprofile = XProfile::create($data);
         $this->load('xprofile');

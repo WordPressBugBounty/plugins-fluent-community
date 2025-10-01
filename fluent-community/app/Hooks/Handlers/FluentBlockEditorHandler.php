@@ -348,7 +348,7 @@ do_action('fluent_community/block_editor_footer');
          * @param array $approvedSlugs An array of approved slugs for FluentCRM assets.
          */
         $approvedSlugs = apply_filters('fluent_com_editor/asset_listed_slugs', [
-            '\/gutenberg\/',
+            '\/gutenberg\/'
         ]);
         $approvedSlugs[] = 'fluent-community';
         $approvedSlugs = array_unique($approvedSlugs);
@@ -874,7 +874,7 @@ do_action('fluent_community/block_editor_footer');
             'disableCustomColors' => false,
             'canUpdateBlockBindings' => false,
             'bodyPlaceholder' => __('Start writing or type / to choose a block for your lesson content', 'fluent-community'),
-            'allowedBlockTypes' => [
+            'allowedBlockTypes' => apply_filters('fluent_community/allowed_block_types', [
                 'core/audio',
                 'core/block',
                 'core/buttons',
@@ -909,7 +909,7 @@ do_action('fluent_community/block_editor_footer');
                 'core/text-columns',
                 'core/verse',
                 'core/freeform'
-            ],
+            ]),
             'gradients' => [],
             'imageDefaultSize' => 'large',
             'imageEditing' => true,

@@ -130,7 +130,7 @@ class AuthenticationService
 
                 $formattedField = array_merge($textValues, $mediaUrls);
 
-                $formattedField['description'] = wp_kses_post(Arr::get($setting, 'description'));
+                $formattedField['description'] = wp_kses_post(wp_unslash(Arr::get($setting, 'description')));
 
                 $formattedField['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($formattedField['description']));
 
@@ -144,8 +144,8 @@ class AuthenticationService
             $termsField = Arr::get($settingFields, 'signup.form.fields.terms');
             $termsField['disabled'] = Arr::isTrue($termsField, 'disabled');
             $termsField['required'] = Arr::isTrue($termsField, 'required');
-            $termsField['label'] = wp_kses_post($termsField['label']);
-            $termsField['inline_label'] = wp_kses_post(FeedsHelper::mdToHtml($termsField['label']));
+            $termsField['label'] = wp_kses_post(wp_unslash($termsField['label']));
+            $termsField['inline_label'] = wp_kses_post(FeedsHelper::mdToHtml(wp_unslash($termsField['label'])));
             $formattedFields['signup']['form']['fields']['terms'] = $termsField;
         }
 

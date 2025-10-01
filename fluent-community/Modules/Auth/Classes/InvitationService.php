@@ -240,10 +240,16 @@ class InvitationService
             }
         }
 
-        $emailBody = self::getInviationEmailHtml($invitation);
-
         $invitation->reactions_count += 1;
         $invitation->save();
+
+        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+
+        $emailComposer->addBlock('html_content', self::getInviationEmailHtml($invitation));
+        $emailComposer->setDefaultLogo();
+        $emailComposer->setDefaultFooter();
+
+        $emailBody = $emailComposer->getHtml();
 
         $mailer = new Mailer($invitation->message, $subject, $emailBody);
 

@@ -36,9 +36,9 @@ class ReactionController extends Controller
             ->limit(100)
             ->get(); // Todo: Add lazy loading in the future
 
-        return [
+        return apply_filters('fluent_community/reactions_api_response', [
             'reactions' => $reactions
-        ];
+        ], $reactions, $request->all());
     }
 
     public function getByCommentId(Request $request)
@@ -54,7 +54,7 @@ class ReactionController extends Controller
         $comment = Comment::findOrFail($commentId);
 
         // Just validate the permission
-        $feed = Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($comment->post_id);
+        Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($comment->post_id);
 
         $reactions = $comment
             ->reactions()
@@ -69,9 +69,9 @@ class ReactionController extends Controller
             ->limit(100)
             ->get(); // Todo: Add lazy loading in the future
 
-        return [
+        return apply_filters('fluent_community/reactions_api_response', [
             'reactions' => $reactions
-        ];
+        ], $reactions, $request->all());
     }
 
     public function addOrRemovePostReact(Request $request, $feed_id)

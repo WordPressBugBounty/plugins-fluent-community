@@ -24,9 +24,4 @@
     <a href="<?php echo esc_url($access_url); ?>" style="background-color: #000000; color: #ffffff; padding: 10px 20px; text-align: center; border-radius: 5px; display: inline-block; text-decoration: none;">
         <?php esc_html_e('Accept invitation', 'fluent-community'); ?>
     </a>
-
-    <hr/>
-    <p style="font-size: 12px; color: #666; text-align: left; padding-top: 20px;">
-        <?php esc_html_e('If you think you\'ve received this invitation in error, please ignore this email.', 'fluent-community'); ?>
-    </p>
 </div>

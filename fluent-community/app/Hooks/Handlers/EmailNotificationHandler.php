@@ -23,7 +23,6 @@ class EmailNotificationHandler
 
     public function register()
     {
-
         add_action('fluent_community/space_feed/created', [$this, 'handleSpaceFeedCreated'], 20, 1);
         add_action('fluent_community/email_notify_new_posts', [$this, 'notifyOnPostCreatedAsync'], 10, 1);
 
@@ -56,15 +55,20 @@ class EmailNotificationHandler
             $types[] = 'np_by_admin_mail';
         }
 
-        $hasSubscribers = User::whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
-            $query->where(function ($q) use ($types, $space) {
-                $q->whereIn('notification_type', $types)
+
+        $hasSubscribers = User::query()->where(function ($query) use ($types, $space, $feed) {
+            $query->whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
+                $query->whereIn('notification_type', $types)
                     ->where('object_id', $space->id)
                     ->where('is_read', 1);
             });
+
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $types]);
+
+            return $query;
         })->exists();
 
-        if ($hasSubscribers) {
+        if ($hasSubscribers || Arr::get($feed->meta, 'mentioned_user_ids', [])) {
             // We are scheduling this after 2 minutes of the post publish for performance
             as_schedule_single_action(time() + 120, 'fluent_community/email_notify_new_posts', [
                 $feed->id
@@ -100,11 +104,22 @@ class EmailNotificationHandler
         }
 
         $lastSendUserId = (int)$feed->getCustomMeta('_last_email_user_id', 0);
+        $usersQuery = User::query()->where(function ($query) use ($types, $space, $feed) {
+            $query->whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
+                $query->whereIn('notification_type', $types)
+                    ->where('object_id', $space->id)
+                    ->where('is_read', 1);
+            });
 
-        $users = User::whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
-            $query->whereIn('notification_type', $types)
-                ->where('object_id', $space->id)
-                ->where('is_read', 1);
+            $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
+
+            if ($mentionedUserIds) {
+                $query->orWhereIn('ID', $mentionedUserIds);
+            }
+
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $types]);
+
+            return $query;
         })
             ->whereHas('space_pivot', function ($query) use ($space) {
                 $query->where('space_id', $space->id)
@@ -117,8 +132,9 @@ class EmailNotificationHandler
                 return $query->where('status', 'active');
             })
             ->orderBy('ID', 'ASC')
-            ->limit(60)
-            ->get();
+            ->limit(60);
+
+        $users = $usersQuery->get();
 
         if ($users->isEmpty()) {
             return; // It's done
@@ -131,7 +147,7 @@ class EmailNotificationHandler
             $feed->getHumanExcerpt(30)
         );
 
-        $emailBody = $this->getFeedHtml($feed, true);
+        $emailBody = $feed->getFeedHtml(true);
 
         /*
          * must need to replace these two strings
@@ -280,7 +296,7 @@ class EmailNotificationHandler
             return; // it's done
         }
 
-        $emailBody = $this->getCommentHtml($comment, true);
+        $emailBody = $comment->getCommentHtml(true);
         $emailSubject = $comment->getEmailSubject($feed);
 
         $feedPermalik = $feed->getPermalink() . '?comment_id=' . $comment->id;
@@ -302,7 +318,7 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-          //  $notificationBagde = $this->getNotificationBadges($user->ID);
+            //  $notificationBagde = $this->getNotificationBadges($user->ID);
 //            if ($notificationBagde) {
 //             //   $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
 //            }
@@ -343,7 +359,7 @@ class EmailNotificationHandler
             return true;
         }
 
-        if (Arr::get($feed->meta, 'send_announcement_email') !== 'yes' || !Utility::hasEmailAnnouncementEnabled()) {
+        if (!$feed->isEnabledForEveryoneTag()) {
             return true;
         }
 
@@ -378,6 +394,7 @@ class EmailNotificationHandler
         }
 
         $author = $feed->user;
+
         $emailSubject = \sprintf(
         /* translators: for admin post to send email all space members: %1$s is the feed title, %2$s is the author name and %3$s space name */
             __('%1$s - %2$s [%3$s]', 'fluent-community'),
@@ -385,7 +402,8 @@ class EmailNotificationHandler
             $author->display_name,
             $feed->space->title
         );
-        $emailBody = $this->getFeedHtml($feed, true);
+
+        $emailBody = $feed->getFeedHtml(true);
         $feedPermalink = $feed->getPermalink();
 
         $startTime = microtime(true);
@@ -433,77 +451,6 @@ class EmailNotificationHandler
         return $this->emailNotifyUsersForEveryoneTag($feedId, $lastSendUserId);
     }
 
-    public function getCommentHtml($comment, $withPlaceholder = false)
-    {
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
-        if ($withPlaceholder) {
-            $postPermalink = '##feed_permalink##';
-        } else {
-            $postPermalink = $comment->post->getPermalink() . '?comment_id=' . $comment->id;
-        }
-
-        if ($comment->post->title) {
-            $postTitle = $comment->post->title;
-        } else {
-            $postTitle = $comment->post->getHumanExcerpt(120);
-        }
-
-        $renderedMessage = $comment->message_rendered;
-
-        // Remove all the URLs with the text but make it underlined
-        $renderedMessage = preg_replace('/<a href="([^"]+)">([^<]+)<\/a>/', '<span style="text-decoration: underline !important;">$2</span>', $renderedMessage);
-
-        $renderedMessage .= $this->getMediaHtml($comment->meta, $postPermalink);
-
-        $emailComposer->addBlock('boxed_content', $renderedMessage, [
-            'user'         => $comment->user,
-            'permalink'    => $postPermalink,
-            'post_content' => $postTitle
-        ]);
-
-        $emailComposer->addBlock('button', __('View the comment', 'fluent-community'), [
-            'link' => $postPermalink
-        ]);
-
-        $emailComposer->setDefaultLogo();
-        $emailComposer->setDefaultFooter($withPlaceholder);
-
-        return $emailComposer->getHtml();
-    }
-
-    public function getFeedHtml($feed, $withPlaceholder = false)
-    {
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
-
-        if ($withPlaceholder) {
-            $postPermalink = '##feed_permalink##';
-        } else {
-            $postPermalink = $feed->getPermalink();
-        }
-
-        $feedHtml = $feed->message_rendered;
-        $feedHtml .= $this->getMediaHtml($feed->meta, $postPermalink);
-
-        $emailComposer->addBlock('post_boxed_content', $feedHtml, [
-            'user'       => $feed->user,
-            'title'      => $feed->title,
-            'permalink'  => $postPermalink,
-            'space_name' => $feed->space ? $feed->space->title : __('Community', 'fluent-community'),
-            'is_single'  => true
-        ]);
-
-        $emailComposer->addBlock('button', __('Join the conversation', 'fluent-community'), [
-            'link' => $postPermalink
-        ]);
-
-        $emailComposer->setDefaultLogo();
-
-        $emailComposer->setDefaultFooter();
-
-
-        return $emailComposer->getHtml();
-    }
-
     public function maybeSendDailyDigest()
     {
         if (!$this->maxRunTime) {
@@ -544,12 +491,12 @@ class EmailNotificationHandler
                 $query->where('notification_type', 'digest_mail')
                     ->where('is_read', 1);
             })
-            ->whereHas('xprofile', function ($query) {
-                $query->where('status', 'active');
-            })
-            ->when($lastSentUserId, function ($q) use ($lastSentUserId) {
-                $q->where('ID', '>', $lastSentUserId);
-            })
+                ->whereHas('xprofile', function ($query) {
+                    $query->where('status', 'active');
+                })
+                ->when($lastSentUserId, function ($q) use ($lastSentUserId) {
+                    $q->where('ID', '>', $lastSentUserId);
+                })
                 ->limit(100)
                 ->orderBy('ID', 'ASC')
                 ->get();
@@ -605,8 +552,6 @@ class EmailNotificationHandler
             return;
         }
 
-        $settting = Helper::generalSettings();
-
         $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
 
         $emailComposer->addBlock('paragraph', __('Hi Space Leader,', 'fluent-community'));
@@ -660,44 +605,26 @@ class EmailNotificationHandler
             $mailer = new Mailer('', $emailSubject, $emailBody);
 
             $users = User::whereIn('ID', $chunk)->get();
+            $first = null;
             foreach ($users as $user) {
                 if (!$user || !$user->user_email) {
+                    continue;
+                }
+                if (!$first) {
+                    $mailer->to($user->user_email, $user->display_name);
+                    $first = $user;
                     continue;
                 }
                 $mailer->addBCC($user->display_name . ' <' . $user->user_email . '>');
             }
 
-            $mailer->send();
-            sleep(1); // sleeping for 1 second
+            if ($first) {
+                $mailer->send();
+                sleep(1); // sleeping for 1 second
+            }
         }
 
         return true;
-    }
-
-    private function getMediaHtml($meta, $postPermalink)
-    {
-        $mediaImage = Arr::get($meta, 'media_preview.image');
-        $mediaCount = 0;
-        if (!$mediaImage) {
-            $mediaItems = Arr::get($meta, 'media_items', []);
-            if ($mediaItems) {
-                $mediaImage = Arr::get($mediaItems[0], 'url');
-                $mediaCount = count($mediaItems);
-            }
-        }
-
-        $feedHtml = '';
-
-        if ($mediaImage) {
-            $feedHtml .= '<div class="fcom_media" style="margin-top: 20px;">';
-            $feedHtml .= '<a href="' . $postPermalink . '"><img src="' . $mediaImage . '" style="max-width: 100%; height: auto; display: block; margin: 0 auto 0px;" /></a>';
-            if ($mediaCount > 1) {
-                $feedHtml .= '<p style="text-align: center; font-size: 14px; color: #666; margin-top: 10px;">' . sprintf(_n('+%d more image', '+%d more images', $mediaCount - 1, 'fluent-community'), $mediaCount - 1) . '</p>';
-            }
-            $feedHtml .= '</div>';
-        }
-
-        return $feedHtml;
     }
 
     private function getNotificationBadges($userId)

@@ -454,21 +454,21 @@ class PortalHandler
         $isAbsoluteUrl = defined('FLUENT_COMMUNITY_PORTAL_SLUG') && FLUENT_COMMUNITY_PORTAL_SLUG == '';
 
         $portalVars = apply_filters('fluent_community/portal_vars', [
-            'portal_notices'            => apply_filters('fluent_community/portal_notices', []),
-            'i18n'                      => TransStrings::getStrings(),
-            'auth'                      => $authData,
-            'ajaxurl'                   => admin_url('admin-ajax.php'),
-            'ajax_nonce'                => wp_create_nonce('fluent_community_ajax_nonce'),
-            'slug'                      => 'fluent-community',
-            'rest'                      => $this->getRestInfo(),
-            'user_id'                   => $userModel ? $userModel->ID : null,
-            'assets_url'                => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/',
-            'permissions'               => $userModel ? $userModel->getPermissions() : ['read' => true],
-            'logo'                      => Arr::get($settings, 'logo'),
-            'site_title'                => Arr::get($settings, 'site_title'),
-            'access_level'              => Arr::get($settings, 'access.acess_level'),
-            'user_membership_slugs'     => $spaceSlugs,
-            'block_editor_assets'       => [
+            'portal_notices'             => apply_filters('fluent_community/portal_notices', []),
+            'i18n'                       => TransStrings::getStrings(),
+            'auth'                       => $authData,
+            'ajaxurl'                    => admin_url('admin-ajax.php'),
+            'ajax_nonce'                 => wp_create_nonce('fluent_community_ajax_nonce'),
+            'slug'                       => 'fluent-community',
+            'rest'                       => $this->getRestInfo(),
+            'user_id'                    => $userModel ? $userModel->ID : null,
+            'assets_url'                 => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/',
+            'permissions'                => $userModel ? $userModel->getPermissions() : ['read' => true],
+            'logo'                       => Arr::get($settings, 'logo'),
+            'site_title'                 => Arr::get($settings, 'site_title'),
+            'access_level'               => Arr::get($settings, 'access.acess_level'),
+            'user_membership_slugs'      => $spaceSlugs,
+            'block_editor_assets'        => [
                 'scripts' => [
                     'react'                 => Vite::getStaticSrcUrl('libs/isolated-editor/react.production.min.js'),
                     'react-dom'             => Vite::getStaticSrcUrl(
@@ -482,18 +482,20 @@ class PortalHandler
                     includes_url('css/dist/block-editor/content.min.css?ver=' . $wp_version),
                 ]
             ],
-            'features'                  => [
+            'features'                   => [
                 'disable_global_posts'   => Arr::get($settings, 'disable_global_posts', '') == 'yes',
                 'has_survey_poll'        => true,
                 'is_onboarding_enabled'  => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
                 'can_switch_layout'      => true,
                 'mention_mail'           => Utility::hasEmailAnnouncementEnabled(),
-                'max_media_per_post'     => apply_filters('fluent_community/max_media_per_post', 4),
+                'max_media_per_post'     => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
                 'has_post_title'         => Utility::postTitlePref(),
                 'has_course'             => Helper::isFeatureEnabled('course_module'),
+                'followers_module'       => Helper::isFeatureEnabled('followers_module'),
                 'skicky_sidebar'         => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'post_layout'            => Utility::getCustomizationSetting('rich_post_layout'),
                 'member_list_layout'     => Utility::getCustomizationSetting('member_list_layout'),
+                'default_feed_layout'    => Utility::getCustomizationSetting('default_feed_layout'),
                 'disable_feed_sort_by'   => Utility::getCustomizationSetting('disable_feed_sort_by'),
                 'default_feed_sort_by'   => Utility::getCustomizationSetting('default_feed_sort_by'),
                 'video_embeder'          => apply_filters('fluent_community/has_video_embeder', true),
@@ -502,33 +504,34 @@ class PortalHandler
                 'has_analytics'          => Utility::hasAnalyticsEnabled(),
                 'can_deactivate_account' => Utility::getPrivacySetting('can_deactive_account') === 'yes',
             ],
-            'route_classes'             => array_filter([
+            'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
                 'fcom_sticky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu')
             ]),
-            'urls'                      => [
+            'urls'                       => [
                 'site_url'      => home_url(),
                 'portal_base'   => Helper::baseUrl('/'),
                 'global_search' => Helper::baseUrl(),
             ],
-            'last_feed_id'              => FeedsHelper::getLastFeedId(),
-            'unread_notification_count' => $userModel ? $userModel->getUnreadNotificationCount() : 0,
-            'unread_feed_ids'           => $userModel ? $userModel->getUnreadNotificationFeedIds() : [],
-            'date_offset'               => time() - current_time('timestamp'),
-            'date_formatter'            => Helper::getDateFormatter(true),
-            'time_formatter'            => Helper::getTimeFormatter(true),
-            'date_time_formatter'       => Helper::getDateFormatter(true) . ' ' . Helper::getTimeFormatter(true),
-            'portal_slug'               => Helper::getPortalSlug(true),
-            'socialLinkProviders'       => ProfileHelper::socialLinkProviders(true),
-            'space_groups'              => $spaceGroups,
-            'mobileMenuItems'           => Helper::getMobileMenuItems(),
-            'feed_links'                => Helper::getEnabledFeedLinks(),
-            'post_order_by_options'     => Helper::getPostOrderOptions(),
-            'routing_system'            => Helper::getPortalRouteType(),
-            'portal_url'                => Helper::baseUrl('/'),
-            'upgrade_url'               => 'https://fluentcommunity.co/discount-deal/?utm_source=wp&utm_medium=upgrade&utm_campaign=upgrade',
-            'dateTime18n'               => apply_filters('fluent_community/date_time_i18n', [
+            'last_feed_id'               => FeedsHelper::getLastFeedId(),
+            'unread_notification_count'  => $userModel ? $userModel->getUnreadNotificationCount() : 0,
+            'unread_feed_ids'            => $userModel ? $userModel->getUnreadNotificationFeedIds() : [],
+            'date_offset'                => time() - current_time('timestamp'),
+            'date_formatter'             => Helper::getDateFormatter(true),
+            'time_formatter'             => Helper::getTimeFormatter(true),
+            'date_time_formatter'        => Helper::getDateFormatter(true) . ' ' . Helper::getTimeFormatter(true),
+            'portal_slug'                => Helper::getPortalSlug(true),
+            'socialLinkProviders'        => ProfileHelper::socialLinkProviders(true),
+            'space_groups'               => $spaceGroups,
+            'mobileMenuItems'            => Helper::getMobileMenuItems(),
+            'feed_links'                 => Helper::getEnabledFeedLinks(),
+            'post_order_by_options'      => Helper::getPostOrderOptions('feed'),
+            'user_post_order_by_options' => Helper::getPostOrderOptions('user'),
+            'routing_system'             => Helper::getPortalRouteType(),
+            'portal_url'                 => Helper::baseUrl('/'),
+            'upgrade_url'                => 'https://fluentcommunity.co/discount-deal/?utm_source=wp&utm_medium=upgrade&utm_campaign=upgrade',
+            'dateTime18n'                => apply_filters('fluent_community/date_time_i18n', [
                 /* translators: weekday. Please keep the serial and format */
                 'weekdays'           => __('Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday', 'fluent-community'),
                 /* translators: Months Please keep the serial and format*/
@@ -596,14 +599,14 @@ class PortalHandler
                     'yy'     => __('%dy', 'fluent-community')
                 ]
             ]),
-            'topicsConfig'              => Helper::getTopicsConfig(),
-            'moderationConfig'          => Helper::getModerationConfig(),
-            'is_absolute_url'           => $isAbsoluteUrl,
-            'portal_paths'              => $isAbsoluteUrl ? Helper::portalRoutePaths() : [],
-            'suggestedColors'           => Utility::getSuggestedColors(),
-            'view_leaderboard_members'  => Utility::canViewLeaderboardMembers(),
-            'report_reasons'            => Helper::getReportReasons(),
-            'el_i18n'                   => [
+            'topicsConfig'               => Helper::getTopicsConfig(),
+            'moderationConfig'           => Helper::getModerationConfig(),
+            'is_absolute_url'            => $isAbsoluteUrl,
+            'portal_paths'               => $isAbsoluteUrl ? Helper::portalRoutePaths() : [],
+            'suggestedColors'            => Utility::getSuggestedColors(),
+            'view_leaderboard_members'   => Utility::canViewLeaderboardMembers(),
+            'report_reasons'             => Helper::getReportReasons(),
+            'el_i18n'                    => [
                 'pagination' => [
                     'currentPage'        => \sprintf(__('page %s', 'fluent-community'), '{pager}'),
                     'deprecationWarning' => 'Deprecated usages detected',
@@ -707,8 +710,9 @@ class PortalHandler
                     ],
                 ]
             ],
-            'wp_lesson_editor_frame'    => site_url('?fluent_community_block_editor=1'),
-            'lazy_styles'               => [
+            'course_sections_collapsed'  => apply_filters('fluent_community/course_section_collapse_default', 'no'),
+            'wp_lesson_editor_frame'     => site_url('?fluent_community_block_editor=1'),
+            'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
                 'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
             ]

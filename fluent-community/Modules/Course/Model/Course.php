@@ -109,9 +109,21 @@ class Course extends BaseSpace
             ->withPivot(['role', 'created_at', 'status']);
     }
 
+    public function course_topics()
+    {
+        return $this->hasMany(CourseTopic::class, 'space_id');
+    }
+
     public function enrollment()
     {
         return $this->belongsTo(SpaceUserPivot::class, 'id', 'space_id');
+    }
+
+    public function student_enrollments()
+    {
+        return $this->hasMany(SpaceUserPivot::class, 'space_id', 'id')
+            ->where('role', 'student')
+            ->where('status', 'active');
     }
 
     public function getCompletedStrundesCount()

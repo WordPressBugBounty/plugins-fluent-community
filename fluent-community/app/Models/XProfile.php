@@ -10,6 +10,7 @@ use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunityPro\App\Models\Follow;
 use FluentCrm\App\Models\Subscriber;
 
 /**
@@ -103,6 +104,18 @@ class XProfile extends Model
     public function posts()
     {
         return $this->hasMany(Feed::class, 'user_id', 'user_id');
+    }
+
+    // Relationship: Users this user follows
+    public function follows()
+    {
+        return $this->hasMany(Follow::class, 'follower_id', 'user_id');
+    }
+
+    // Relationship: Users following this user
+    public function followers()
+    {
+        return $this->hasMany(Follow::class, 'followed_id', 'user_id');
     }
 
     public function scheduledPosts()

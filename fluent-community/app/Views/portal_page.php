@@ -19,12 +19,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
     <?php if (!$isHeadless) : wp_head(); else: ?>
         <meta name="description" content="<?php echo esc_attr($description); ?>">
         <link rel="icon" type="image/x-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
+        <link rel="apple-touch-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
         <meta property="og:type" content="website">
         <meta property="og:url" content="<?php echo esc_url($url); ?>">
         <meta property="og:site_name" content="<?php bloginfo('name'); ?>">
         <meta property="og:description" content="<?php echo esc_attr($description); ?>">
         <?php if ($featured_image): ?>
-            <meta property="og:image" content="<?php echo esc_url($featured_image); ?>"/>
+            <meta property="og:image" content="<?php echo esc_url($featured_image); ?>">
+            <meta name="twitter:image" content="<?php echo esc_url($featured_image); ?>">
             <meta name="twitter:card" content="summary_large_image">
         <?php endif; ?>
         <?php do_action('fluent_community/portal_head_meta', $landing_route); ?>

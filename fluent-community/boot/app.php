@@ -19,7 +19,6 @@ return function ($file) {
             if (!\as_next_scheduled_action('fluent_community_daily_jobs')) {
                 \as_schedule_recurring_action(time(), 86400, 'fluent_community_daily_jobs', [], 'fluent-community', true);
             }
-
         }
 
     });

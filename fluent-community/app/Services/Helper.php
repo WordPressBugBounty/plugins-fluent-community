@@ -295,6 +295,17 @@ class Helper
         return Media::where('media_key', $key)->first();
     }
 
+    public static function removeMediaByUrl($url = '', $subObjectId = null)
+    {
+        if (!$url || !$subObjectId) {
+            return;
+        }
+
+        do_action('fluent_community/remove_medias_by_url', [$url], [
+            'sub_object_id' => $subObjectId,
+        ]);
+    }
+
     /**
      * Get media items from multiple URLs.
      *
@@ -729,7 +740,7 @@ class Helper
 
         $isComModerator = $user && $user->hasCommunityModeratorAccess();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
-        $isNotMemberOfAnySpace = $user && $user->isNotMemberOfAnySpace();
+        $isNotMemberOfAnySpace = !$user || $user->isNotMemberOfAnySpace();
         $formattedGroups = [];
 
         foreach ($communityGroups as $communityGroup) {
@@ -874,8 +885,8 @@ class Helper
             return !!$user;
         }
 
-        if($privacy == 'logged_out_only') {
-            return ! $user;
+        if ($privacy == 'logged_out_only') {
+            return !$user;
         }
 
         if (!$user) {
@@ -1147,7 +1158,7 @@ class Helper
                     && self::isLinkAccessible($item, $currentUser);
             });
 
-            $beforeCommunityMenuItems = array_filter($beforeCommunityMenuItems, function ($item) use($currentUser) {
+            $beforeCommunityMenuItems = array_filter($beforeCommunityMenuItems, function ($item) use ($currentUser) {
                 return Arr::get($item, 'enabled') === 'yes'
                     && Arr::get($item, 'is_unavailable') !== 'yes'
                     && self::isLinkAccessible($item, $currentUser);
@@ -1189,29 +1200,29 @@ class Helper
     {
         $privacy = Arr::get($link, 'privacy', '');
 
-        if(!$privacy || $privacy === 'public') {
+        if (!$privacy || $privacy === 'public') {
             return true;
         }
 
-        if($privacy == 'logged_in') {
+        if ($privacy == 'logged_in') {
             return !!$currentUser;
         }
 
-        if($privacy == 'logged_out_only') {
-            return ! $currentUser;
+        if ($privacy == 'logged_out_only') {
+            return !$currentUser;
         }
 
         $membershipIds = Arr::get($link, 'membership_ids', []);
-        if(!$membershipIds) {
+        if (!$membershipIds) {
             return true;
         }
 
-        if(!$currentUser) {
+        if (!$currentUser) {
             return false;
         }
 
         static $userSpacesIds = null;
-        if($userSpacesIds === null) {
+        if ($userSpacesIds === null) {
             $userSpacesIds = $currentUser->getSpaceIds();
         }
 
@@ -1647,7 +1658,7 @@ class Helper
      */
     public static function renderLink($link, $linkClass = '', $fallback = '<span class="fcom_no_avatar"></span>', $renderIcon = true)
     {
-        if(!$link || empty($link['permalink'])) {
+        if (!$link || empty($link['permalink'])) {
             return;
         }
 
@@ -1977,9 +1988,9 @@ class Helper
         return isset($dayMap[$day]) ? $dayMap[$day] : $day . 'day';
     }
 
-    public static function getPostOrderOptions()
+    public static function getPostOrderOptions($context = 'feed')
     {
-        return [
+        $options = [
             'new_activity' => __('New Activity', 'fluent-community'),
             'latest'       => __('Latest', 'fluent-community'),
             'oldest'       => __('Oldest', 'fluent-community'),
@@ -1988,7 +1999,10 @@ class Helper
             'alphabetical' => __('Alphabetical', 'fluent-community'),
             'unanswered'   => __('Unanswered', 'fluent-community'),
         ];
+
+        return apply_filters('fluent_community/post_order_options', $options, $context);
     }
+
 
     public static function convertPhpDateToDayJSFormay($phpFormat)
     {

@@ -146,7 +146,7 @@
         </td>
         <td class="container" style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top; max-width: 600px; padding: 0; padding-top: 24px; width: 600px; margin: 0 auto;" width="600" valign="top">
             <div class="content" style="box-sizing: border-box; display: block; margin: 0 auto; max-width: 600px; padding-bottom: 20px; padding: 0 0 20px;">
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background: #ffffff; border: 1px solid #eaebed; border-radius: 16px; width: 100%;" width="100%">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="fcom_email main" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background: #ffffff; border: 1px solid #eaebed; border-radius: 16px; width: 100%;" width="100%">
                     <tr>
                         <td>
                             <?php if(!empty($headingContent)): ?>
@@ -172,7 +172,7 @@
                 <?php if($footerLines): ?>
                 <div class="footer" style="clear: both; padding-top: 24px; padding-bottom: 24px; text-align: center; width: 100%;">
                     <!--before_footer_section-->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
+                    <table class="fcom_email" role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
                         <?php foreach ($footerLines as $line):  ?>
                         <tr>
                             <td class="content-block" style="font-family: Helvetica, sans-serif; vertical-align: top; color: #9a9ea6; font-size: 14px;  text-align: center;" valign="top" align="center">

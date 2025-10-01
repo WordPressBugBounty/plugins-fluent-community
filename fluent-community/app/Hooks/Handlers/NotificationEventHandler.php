@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\App\Hooks\Handlers;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Notification;
@@ -24,7 +23,6 @@ class NotificationEventHandler
          * Mentions handler
          */
         add_action('fluent_community/feed/created', [$this, 'maybeHandleMentionedUserIds'], 10, 1);
-
     }
 
     public function handleNewCommentEvent($comment, $feed)
@@ -468,7 +466,7 @@ class NotificationEventHandler
             return;
         }
 
-        if (Arr::get($feed->meta, 'send_announcement_email') !== 'yes') {
+        if (!$feed->isEnabledForEveryoneTag()) {
             return;
         }
 
@@ -480,16 +478,13 @@ class NotificationEventHandler
             return;
         }
 
-        if (Utility::hasEmailAnnouncementEnabled()) {
-            do_action('fluent_community/feed/scheduling_everyone_tag', $feed);
-            // Let's schedule an email hook to send email to everyone for this post
-            // We are scheduling this after 5 minutes of the post publish for performance
-            as_schedule_single_action(time() + 300, 'fluent_community/email_notify_users_everyone_tag', [
-                $feed->id,
-                0
-            ], 'fluent-community');
-        }
-
+        do_action('fluent_community/feed/scheduling_everyone_tag', $feed);
+        // Let's schedule an email hook to send email to everyone for this post
+        // We are scheduling this after 5 minutes of the post publish for performance
+        as_schedule_single_action(time() + 300, 'fluent_community/email_notify_users_everyone_tag', [
+            $feed->id,
+            0
+        ], 'fluent-community');
     }
 
     private function willCreateFeedCreatedNotification($feed)

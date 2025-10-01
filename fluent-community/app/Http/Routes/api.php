@@ -55,7 +55,7 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
         'comment_id'
     );
 
-    $router->post('/{feed_id}/comments/{comment_id}/reactions', 'CommentsController@toggoleReaction')->int(
+    $router->post('/{feed_id}/comments/{comment_id}/reactions', 'CommentsController@toggleReaction')->int(
         'feed_id'
     )->int('comment_id');
 

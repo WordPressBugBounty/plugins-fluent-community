@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.7.72
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,41 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.8.0 (Date: Oct 01, 2025)
+- Introduced: User Follow/Block Module
+- Introduced: Course Email Notification
+- Added: Thumbnail Image for Quiz Lesson
+- Added: Image Upload Option with Poll Post
+- Added: Default Feed Layout Styling Option
+- Added: Default Logo and Footer in Invitation Email
+- Added: Media File Migration Support in BPMigration
+- Added: Max Media Per Post Customization Settings
+- Added: Default Course Section Collapse Hook
+- Improved: Feed Queries for Better Performance
+- Improved: Handled Multiple Ajax Request
+- Improved: Excluded Site Admins from Post Limit Check
+- Improved: UI-UX and Responsiveness
+- Fixed: Issue with Comment Permission
+- Fixed: Digest Email Notification Avatar Issue
+- Fixed: Course Slug Issue with Other Language
+- Fixed: iOS Home-screen Shortcut Icon
+- Fixed: Styling Issues with Email Notification
+- Fixed: Deactivated Members Filter Not Working
+- Fixed: Space Group Displaying for Logged-out Users
+- Fixed: Topic-based Courses Filtering from Sidebar Menu
+- Fixed: Add Topics for Orphaned (Not Assigned to Any Groups) Spaces
+- Fixed: Document Search Functionality by File's Title
+- Fixed: Incoming Webhook Password Field Not Saving
+- Fixed: Section and Course Order Mismatch Issue
+- Fixed: Images Not Removing from Edit Post Modal
+- Fixed: Space Join Request Email Notification not Sending to Multiple Moderators
+- Fixed: Issue when Mentioning Multiple Users with Similar Usernames
+- Fixed: Send Notification to All Not Working in Document Feed
+- Fixed: Space Menu Links not Saving Visibility
+- Fixed: Lesson View Sidebar Not Scrolling
+- Fixed: Child Feed Overlapping with Header
+- Fixed: UI Issue with RTL Mode
 
 = 1.7.72 (Date: July 08, 2025) =
 - SEO: Course Schema Added for Public and Private Courses

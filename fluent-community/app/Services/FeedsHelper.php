@@ -14,6 +14,18 @@ use FluentCommunity\Framework\Validator\Validator;
 
 class FeedsHelper
 {
+    static protected $currentRelatedUserIds = [];
+
+    public static function setCurrentRelatedUserId($userId)
+    {
+        self::$currentRelatedUserIds[] = $userId;
+    }
+
+    public static function getCurrentRelatedUserIds()
+    {
+        return array_values(array_unique(self::$currentRelatedUserIds));
+    }
+
     public static function getSpaceSlugsByUserId($userId)
     {
         if (!$userId) {
@@ -96,7 +108,6 @@ class FeedsHelper
 
         return self::maybeTransformDynamicCodes($html);
     }
-
 
     public static function maybeTransformDynamicCodes($html)
     {
@@ -551,15 +562,7 @@ class FeedsHelper
             $feed->send_announcement_email = 'yes';
         }
 
-        $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
-
-        if ($surveyConfig) {
-            $feed->survey = [
-                'type'     => Arr::get($surveyConfig, 'type'),
-                'options'  => Arr::get($surveyConfig, 'options', []),
-                'end_date' => Arr::get($surveyConfig, 'end_date', '')
-            ];
-        } else if ($feed->content_type == 'document') {
+        if ($feed->content_type == 'document') {
             $documents = Media::where('object_source', 'space_document')
                 ->where('feed_id', $feed->id)
                 ->where('is_active', 1)
@@ -569,40 +572,52 @@ class FeedsHelper
                 $mediaIds[] = $document->getPrivateFileMeta();
             }
             $feed->document_ids = $mediaIds;
-        } else {
-            $mediaImages = Arr::get($feed->meta, 'media_items', []);
-            $meta = $feed->meta;
-            unset($feed->meta);
+            $feed->load('space');
+            return $feed;
+        }
 
-            if ($mediaImages) {
-                $feed->media_images = $mediaImages;
-            } else if ($mediaPreview = Arr::get($meta, 'media_preview')) {
-                $type = Arr::get($mediaPreview, 'type');
-                if ($type == 'oembed' || $type == 'iframe_html') {
-                    $feed->media = $mediaPreview;
+        $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
+
+        if ($surveyConfig) {
+            $feed->survey = [
+                'type'     => Arr::get($surveyConfig, 'type'),
+                'options'  => Arr::get($surveyConfig, 'options', []),
+                'end_date' => Arr::get($surveyConfig, 'end_date', '')
+            ];
+        }
+
+        $mediaImages = Arr::get($feed->meta, 'media_items', []);
+        $meta = $feed->meta;
+        unset($feed->meta);
+
+        if ($mediaImages) {
+            $feed->media_images = $mediaImages;
+        } else if ($mediaPreview = Arr::get($meta, 'media_preview')) {
+            $type = Arr::get($mediaPreview, 'type');
+            if ($type == 'oembed' || $type == 'iframe_html') {
+                $feed->media = $mediaPreview;
+            }
+
+            $feedMedias = Media::where('object_source', 'feed')
+                ->where('feed_id', $feed->id)
+                ->where('is_active', 1)
+                ->get();
+
+            if (!$feedMedias->isEmpty()) {
+                $mediaItems = [];
+                foreach ($feedMedias as $media) {
+                    $mediaItems[] = [
+                        'url'      => $media->public_url,
+                        'type'     => 'image',
+                        'media_id' => $media->id,
+                        'width'    => Arr::get($media->settings, 'width'),
+                        'height'   => Arr::get($media->settings, 'height'),
+                        'provider' => Arr::get($media->settings, 'provider', 'uploader')
+                    ];
                 }
-
-                $feedMedias = Media::where('object_source', 'feed')
-                    ->where('feed_id', $feed->id)
-                    ->where('is_active', 1)
-                    ->get();
-
-                if (!$feedMedias->isEmpty()) {
-                    $mediaItems = [];
-                    foreach ($feedMedias as $media) {
-                        $mediaItems[] = [
-                            'url'      => $media->public_url,
-                            'type'     => 'image',
-                            'media_id' => $media->id,
-                            'width'    => Arr::get($media->settings, 'width'),
-                            'height'   => Arr::get($media->settings, 'height'),
-                            'provider' => Arr::get($media->settings, 'provider', 'uploader')
-                        ];
-                    }
-                    $feed->media_images = $mediaItems;
-                } else if ($type != 'meta_data') {
-                    $feed->meta = $meta;
-                }
+                $feed->media_images = $mediaItems;
+            } else if ($type != 'meta_data') {
+                $feed->meta = $meta;
             }
         }
 
@@ -635,7 +650,6 @@ class FeedsHelper
                             $newOptions[$index]['vote_counts'] = Arr::get($oldKeyedOptions[$slug], 'vote_counts', 0);
                         }
                     }
-
                     $surveyConfig['options'] = $newOptions;
                 } else {
                     $surveyConfig = $data['survey'];
@@ -651,7 +665,6 @@ class FeedsHelper
             $data['meta']['survey_config'] = $surveyConfig;
             $data['content_type'] = 'survey';
             unset($data['survey']);
-            return [$data, $uplaodedDocs];
         }
 
         // Handle Giphy
@@ -781,17 +794,23 @@ class FeedsHelper
         return [$data, $uplaodedDocs];
     }
 
-    public static function transformFeed(Feed $feed)
+    protected static function tranformFeedData(Feed $feed, $config = [])
     {
-        $userId = get_current_user_id();
+        $userId = Arr::get($config, 'user_id', 0);
 
         if ($userId) {
-            $feed->has_user_react = $feed->hasUserReact($userId, 'like');
-            $feed->bookmarked = $feed->hasUserReact($userId, 'bookmark');
+            $interactions = Arr::get($config, 'interactions', []);
 
-            $likedIds = self::getLikedIdsByUserFeedId($feed->id, get_current_user_id());
-            $feed->comments->each(function ($comment) use ($likedIds) {
-                if ($likedIds && in_array($comment->id, $likedIds)) {
+            if ($interactions) {
+                $feed->has_user_react = Arr::get($interactions, 'like', false);
+                $feed->bookmark = Arr::get($interactions, 'bookmark', false);
+            }
+
+            $commentLikeIds = Arr::get($config, 'comment_like_ids', []);
+
+            $feed->comments->each(function ($comment) use ($commentLikeIds) {
+                self::setCurrentRelatedUserId($comment->user_id);
+                if ($commentLikeIds && in_array($comment->id, $commentLikeIds)) {
                     $comment->liked = 1;
                 }
             });
@@ -822,12 +841,118 @@ class FeedsHelper
             $feed->meta = $feedMeta;
         }
 
-        return $feed;
+        self::setCurrentRelatedUserId($feed->user_id);
+
+        return apply_filters('fluent_community/rendering_feed_model', $feed, $config);
+    }
+
+    public static function transformFeed(Feed $feed)
+    {
+        $userId = get_current_user_id();
+
+        $config = apply_filters('fluent_community/feed_general_config', [
+            'user_id'          => $userId,
+            'interactions'     => [],
+            'comment_like_ids' => [],
+            'is_collection'    => false
+        ], $feed, $userId);
+
+        if ($userId) {
+            $config['interactions'] = [
+                'like'             => $feed->hasUserReact($userId, 'like'),
+                'bookmark'         => $feed->hasUserReact($userId, 'bookmark'),
+            ];
+            $config['comment_like_ids'] = self::getLikedIdsByUserFeedId($feed->id, $userId);
+        }
+
+        return self::tranformFeedData($feed, $config);
+    }
+
+    public static function transformFeedsCollection($feeds)
+    {
+        if ($feeds->isEmpty()) {
+            return $feeds;
+        }
+
+        $userId = get_current_user_id();
+        $commentLikeIds = [];
+        $formattedInteractions = [];
+        $feedIds = $feeds->pluck('id')->toArray();
+
+        if ($userId) {
+            $interactions = Reaction::query()
+                ->select(['user_id', 'type', 'object_id'])
+                ->whereIn('object_id', $feedIds)
+                ->where('object_type', 'feed')
+                ->where('user_id', $userId)
+                ->whereIn('type', ['like', 'bookmark'])
+                ->get();
+
+            $formattedInteractions = [];
+            foreach ($interactions as $interaction) {
+                $objectId = (int)$interaction->object_id;
+
+                if (!isset($formattedInteractions[$objectId])) {
+                    $formattedInteractions[$objectId] = [];
+                }
+                $formattedInteractions[$objectId][$interaction->type] = true;
+            }
+
+            $commentLikeIds = Reaction::select('object_id')
+                ->where('object_type', 'comment')
+                ->whereIn('parent_id', $feedIds)
+                ->where('user_id', $userId)
+                ->get()
+                ->pluck('object_id')
+                ->toArray();
+        }
+
+        $generalConfig = apply_filters('fluent_community/feed_general_config', [
+            'user_id'          => $userId,
+            'interactions'     => [],
+            'comment_like_ids' => $commentLikeIds,
+            'is_collection'    => true
+        ], $feeds, $feedIds);
+
+        $feeds->each(function ($feed) use ($userId, $generalConfig, $formattedInteractions) {
+            $config = $generalConfig;
+            if ($userId) {
+                $config['interactions'] = Arr::get($formattedInteractions, $feed->id, []);
+            }
+            return self::tranformFeedData($feed, $config);
+        });
+
+        return $feeds;
+    }
+
+    public static function getMediaHtml($meta, $postPermalink)
+    {
+        $mediaImage = Arr::get($meta, 'media_preview.image');
+        $mediaCount = 0;
+        if (!$mediaImage) {
+            $mediaItems = Arr::get($meta, 'media_items', []);
+            if ($mediaItems) {
+                $mediaImage = Arr::get($mediaItems[0], 'url');
+                $mediaCount = count($mediaItems);
+            }
+        }
+
+        $feedHtml = '';
+
+        if ($mediaImage) {
+            $feedHtml .= '<div class="fcom_media" style="margin-top: 20px;">';
+            $feedHtml .= '<a href="' . $postPermalink . '"><img src="' . $mediaImage . '" style="max-width: 100%; height: auto; display: block; margin: 0 auto 0px;" /></a>';
+            if ($mediaCount > 1) {
+                $feedHtml .= '<p style="text-align: center; font-size: 14px; color: #666; margin-top: 10px;">' . sprintf(_n('+%d more image', '+%d more images', $mediaCount - 1, 'fluent-community'), $mediaCount - 1) . '</p>';
+            }
+            $feedHtml .= '</div>';
+        }
+
+        return $feedHtml;
     }
 
     public static function hasEveryoneTag($message)
     {
-
         // Updated regular expression to match @everyone with more flexibility
         $pattern = '/(?<=^|\W)@everyone(?=\W|\z)/iu';
 

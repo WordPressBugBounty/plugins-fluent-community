@@ -3,7 +3,9 @@
 namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunityPro\App\Models\Follow;
 
 class Feed extends Model
 {
@@ -188,6 +190,12 @@ class Feed extends Model
                 foreach ($fields as $field) {
                     $query->orWhere($field, 'LIKE', "%$search%");
                 }
+                
+                $query->orWhere(function ($q) use ($search) {
+                    $q->where('content_type', 'document')
+                        ->where('meta', 'LIKE', '%document_lists%title%' . $search . '%');
+                });
+
                 if ($in && in_array('post_comments', $in)) {
                     $query->orWhereHas('comments', function ($q) use ($search) {
                         return $q->where('message', 'LIKE', "%$search%");
@@ -326,6 +334,8 @@ class Feed extends Model
             return $query->orderByRaw('(reactions_count + (comments_count * 2)) DESC');
         }
 
+        $query = apply_filters('fluent_community/custom_order_by', $query, $type);
+
         return $query;
     }
 
@@ -338,6 +348,25 @@ class Feed extends Model
         $query->where('status', $status);
 
         return $query;
+    }
+
+    public function scopeByFollowing($query, $userId = null)
+    {
+        if (!Helper::isFeatureEnabled('followers_module')) {
+            return $query;
+        }
+
+        if (!$userId) {
+            $userId = get_current_user_id();
+        }
+
+        if (!$userId) {
+            return $query;
+        }
+
+        return $query->whereHas('follows', function ($query) use ($userId) {
+            $query->where('follower_id', $userId);
+        });
     }
 
     public function scopeFilterByUserId($query, $userId)
@@ -376,6 +405,12 @@ class Feed extends Model
     {
         return $this->hasMany(Reaction::class, 'object_id', 'id')
             ->where('object_type', 'feed');
+    }
+
+    // New Relationship: Follow records where this post's user_id is the followed_id
+    public function follows()
+    {
+        return $this->hasMany(Follow::class, 'followed_id', 'user_id');
     }
 
     public function surveyVotes()
@@ -600,4 +635,42 @@ class Feed extends Model
         return $this;
     }
 
+    public function isEnabledForEveryoneTag()
+    {
+        return ($this->meta['send_announcement_email'] ?? null) === 'yes' && Utility::hasEmailAnnouncementEnabled();
+    }
+
+    public function getFeedHtml($withPlaceholder = false, $buttonText = null)
+    {
+        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+
+        if ($withPlaceholder) {
+            $postPermalink = '##feed_permalink##';
+        } else {
+            $postPermalink = $this->getPermalink();
+        }
+
+        $feedHtml = $this->message_rendered;
+        $feedHtml .= FeedsHelper::getMediaHtml($this->meta, $postPermalink);
+
+        $buttonText = $buttonText ?: __('Join the conversation', 'fluent-community');
+
+        $emailComposer->addBlock('post_boxed_content', $feedHtml, [
+            'user'       => $this->user,
+            'title'      => $this->title,
+            'permalink'  => $postPermalink,
+            'space_name' => $this->space ? $this->space->title : __('Community', 'fluent-community'),
+            'is_single'  => true
+        ]);
+
+        $emailComposer->addBlock('button', $buttonText, [
+            'link' => $postPermalink
+        ]);
+
+        $emailComposer->setDefaultLogo();
+
+        $emailComposer->setDefaultFooter();
+
+        return $emailComposer->getHtml();
+    }
 }

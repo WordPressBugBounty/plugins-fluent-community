@@ -40,6 +40,8 @@ class CommentsController extends Controller
             })
             ->get();
 
+        $comments = apply_filters('fluent_community/comments_query_response', $comments, $request->all());
+
         $userId = $this->getUserId();
 
         if ($userId) {
@@ -405,7 +407,14 @@ class CommentsController extends Controller
             ]);
         }
 
-        $react = Reaction::where('user_id', get_current_user_id())
+        $userId = get_current_user_id();
+        if ($userId === $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
+            return $this->sendError([
+                'message' => __('You cannot react to your own post', 'fluent-community')
+            ]);
+        }
+
+        $react = Reaction::where('user_id', $userId)
             ->where('object_id', $feed->id)
             ->where('type', $type)
             ->objectType('feed')
@@ -451,7 +460,7 @@ class CommentsController extends Controller
         }
 
         return [
-            'message'   => 'Reaction has been added',
+            'message'   => __('Reaction has been added', 'fluent-community'),
             'new_count' => $feed->reactions_count
         ];
     }
@@ -494,7 +503,7 @@ class CommentsController extends Controller
         ];
     }
 
-    public function toggoleReaction(Request $request, $feedId, $commentId)
+    public function toggleReaction(Request $request, $feedId, $commentId)
     {
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
@@ -509,6 +518,13 @@ class CommentsController extends Controller
 
         if ($feed->space_id) {
             $user->verifySpacePermission('registered', $feed->space);
+        }
+
+        $userId = get_current_user_id();
+        if ($userId === $comment->user_id && apply_filters('fluent_community/disable_self_comment_react', false, $feed)) {
+            return $this->sendError([
+                'message' => __('You cannot react to your own comment', 'fluent-community')
+            ]);
         }
 
         $reactionState = !!$request->get('state', false);
@@ -540,7 +556,7 @@ class CommentsController extends Controller
         }
 
         return [
-            'message'         => 'Reaction has been toggled',
+            'message'         => __('Reaction has been toggled', 'fluent-community'),
             'reactions_count' => $comment->reactions_count,
             'liked'           => $reactionState
         ];

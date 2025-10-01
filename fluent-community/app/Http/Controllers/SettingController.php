@@ -38,6 +38,7 @@ class SettingController extends Controller
             'emoji_module'        => 'sanitize_text_field',
             'user_badge'          => 'sanitize_text_field',
             'has_crm_sync'        => 'sanitize_text_field',
+            'followers_module'    => 'sanitize_text_field',
         ]);
 
         $prevConfig = Utility::getFeaturesConfig();

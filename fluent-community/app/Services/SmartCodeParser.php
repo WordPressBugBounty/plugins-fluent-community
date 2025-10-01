@@ -2,10 +2,28 @@
 
 namespace FluentCommunity\App\Services;
 
+use FluentCommunity\Modules\Course\Model\CourseTopic;
+use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunity\App\Services\ProfileHelper;
+use FluentCommunity\App\Services\Helper;
+use FluentCommunity\Framework\Support\Arr;
+
 class SmartCodeParser
 {
-    public function parse($templateString, $data)
+    protected static $isHtml = true;
+
+    protected static $store = [
+        'user'      => null,
+        'feed'      => null,
+        'course'    => null,
+        'community' => null
+    ];
+
+    public function parse($templateString, $user, $feed = null, $isHtml = true)
     {
+        static::$isHtml = $isHtml;
+        static::setData($user, $feed);
+
         $result = [];
         $isSingle = false;
 
@@ -14,7 +32,7 @@ class SmartCodeParser
         }
 
         foreach ((array)$templateString as $key => $string) {
-            $result[$key] = $this->parseShortcode($string, $data);
+            $result[$key] = $this->parseShortcode($string);
         }
 
         if ($isSingle) {
@@ -24,23 +42,30 @@ class SmartCodeParser
         return $result;
     }
 
+    protected static function setData($user, $feed = null)
+    {
+        static::$store['user'] = $user;
+        static::$store['feed'] = $feed;
+        static::$store['course'] = ($feed && $feed->course) ? $feed->course : null;
+        static::$store['community'] = Helper::generalSettings();
+    }
 
-    public function parseShortcode($string, $data)
+    public function parseShortcode($string)
     {
         // check if the string contains any smartcode
         if (strpos($string, '{{') === false && strpos($string, '##') === false) {
             return $string;
         }
 
-        return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) use ($data) {
-            return $this->replace($matches, $data);
+        return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) {
+            return $this->replace($matches);
         }, $string);
     }
 
-    protected function replace($matches, $user)
+    protected function replace($matches)
     {
         if (empty($matches[2])) {
-            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $user);
+            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $this->store['user']);
         }
 
         $matches[2] = trim($matches[2]);
@@ -48,7 +73,7 @@ class SmartCodeParser
         $matched = explode('.', $matches[2]);
 
         if (count($matched) <= 1) {
-            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $user);
+            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $this->store['user']);
         }
 
         $dataKey = trim(array_shift($matched));
@@ -56,7 +81,7 @@ class SmartCodeParser
         $valueKey = trim(implode('.', $matched));
 
         if (!$valueKey) {
-            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $user);
+            return apply_filters('fluent_community/smartcode_fallback', $matches[0], $this->store['user']);
         }
 
         $valueKeys = explode('|', $valueKey);
@@ -77,17 +102,22 @@ class SmartCodeParser
         $value = '';
         switch ($dataKey) {
             case 'site':
-                $value = $this->getWpValue($valueKey, $defaultValue, $user);
+                $value = $this->getWpValue($valueKey, $defaultValue);
                 break;
             case 'user':
-                if (!$user) {
-                    $value = $defaultValue;
-                } else {
-                    $value = $this->getUserValue($valueKey, $defaultValue, $user);
-                }
+                $value = static::$store['user'] ? $this->getUserValue($valueKey, $defaultValue) : $defaultValue;
+                break;
+            case 'community':
+                $value = $this->getCommunityValue($valueKey, $defaultValue);
+                break;
+            case 'section':
+                $value = $this->getSectionValue($valueKey, $defaultValue);
+                break;
+            case 'course':
+                $value = $this->getCourseValue($valueKey, $defaultValue);
                 break;
             default:
-                $value = apply_filters('fluent_community/smartcode_group_callback_' . $dataKey, $matches[0], $valueKey, $defaultValue, $user);
+                $value = apply_filters('fluent_community/smartcode_group_callback_' . $dataKey, $matches[0], $valueKey, $defaultValue, static::$store['user']);
         }
 
         if ($transformer && is_string($transformer) && $value) {
@@ -126,7 +156,7 @@ class SmartCodeParser
 
     }
 
-    protected function getWpValue($valueKey, $defaultValue, $wpUser = [])
+    protected function getWpValue($valueKey, $defaultValue)
     {
         if ($valueKey == 'login_url') {
             return network_site_url('wp-login.php', 'login');
@@ -144,8 +174,9 @@ class SmartCodeParser
     }
 
 
-    protected function getUserValue($valueKey, $defaultValue, $userModel = null)
+    protected function getUserValue($valueKey, $defaultValue)
     {
+        $userModel = static::$store['user'];
         if (!$userModel || !$userModel instanceof \FluentCommunity\App\Models\User) {
             return $defaultValue;
         }
@@ -210,6 +241,84 @@ class SmartCodeParser
             }
 
             return $defaultValue;
+        }
+
+        return $defaultValue;
+    }
+
+    protected function getCommunityValue($valueKey, $defaultValue)
+    {
+        $communitySettings = static::$store['community'];
+
+        if ($valueKey == 'name') {
+            return Arr::get($communitySettings, 'site_title');
+        }
+
+        if ($valueKey == 'name_with_url') {
+            $siteTitle = Arr::get($communitySettings, 'site_title');
+            return static::$isHtml ? '<a target="_blank" href="' . Helper::baseUrl('/') . '">' . $siteTitle . '</a>' : $siteTitle;
+        }
+
+        if (isset($communitySettings[$valueKey])) {
+            return $communitySettings[$valueKey];
+        }
+
+        return $defaultValue;
+    }
+
+    protected function getSectionValue($valueKey, $defaultValue)
+    {
+        $sectionModel = static::$store['feed'];
+        if (!$sectionModel || !$sectionModel instanceof CourseTopic) {
+            return $defaultValue;
+        }
+
+        if ($valueKey === 'url') {
+            $user = static::$store['user'] ?? null;
+            $course = static::$store['course'] ?? null;
+
+            if (!$course instanceof Course) {
+                return $defaultValue;
+            }
+
+            $courseUrl = $course->getPermalink();
+
+            $userId = $user->ID ?? null;
+            $signedUrl = $userId ? ProfileHelper::signUserUrlWithAuthHash($courseUrl, $userId) : $courseUrl;
+
+            if (static::$isHtml) {
+                return sprintf('<a href="%s">%s</a>', esc_url($signedUrl), esc_html($courseUrl));
+            }
+
+            return $signedUrl;
+        }
+
+        $fillables = array_merge(
+            (new CourseTopic())->getFillable(),
+            ['id', 'created_at', 'updated_at']
+        );
+
+        if (in_array($valueKey, $fillables)) {
+            return $sectionModel->{$valueKey};
+        }
+
+        return $defaultValue;
+    }
+
+    protected function getCourseValue($valueKey, $defaultValue)
+    {
+        $courseModel = static::$store['course'];
+        if (!$courseModel || !$courseModel instanceof Course) {
+            return $defaultValue;
+        }
+
+        $fillables = array_merge(
+            (new Course())->getFillable(),
+            ['id', 'created_at', 'updated_at']
+        );
+
+        if (in_array($valueKey, $fillables)) {
+            return $courseModel->{$valueKey};
         }
 
         return $defaultValue;

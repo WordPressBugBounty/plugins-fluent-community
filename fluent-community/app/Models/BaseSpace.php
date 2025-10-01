@@ -527,7 +527,7 @@ class BaseSpace extends Model
             // get the first 30 char from the title
             $title = substr($title, 0, 30);
         } else {
-            $title = self::$type . '-' . time();
+            $title = static::$type . '-' . time();
         }
 
         $title = remove_accents($title);
@@ -536,13 +536,9 @@ class BaseSpace extends Model
 
         $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
 
-        $slugNum = time();
+        $slugNum = self::withoutGlobalScopes()->where('type', static::$type)->count();
 
-        if (self::$type == 'community') {
-            $slugNum = self::withoutGlobalScopes()->where('type', self::$type)->count();
-        }
-
-        $title = sanitize_title($title, self::$type . '-' . $slugNum);
+        $title = sanitize_title($title, static::$type . '-' . $slugNum);
 
         // check if the slug is already exists
         $slug = $title;

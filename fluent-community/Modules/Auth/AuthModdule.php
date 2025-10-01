@@ -282,6 +282,7 @@ class AuthModdule
         add_action('fluent_community/headless/head_early', function ($scope) use ($formSettings) {
             $bannerColors = array_filter(Arr::only($formSettings['banner'], ['title_color', 'text_color', 'background_color']));
             $css = Utility::getColorCssVariables(); ?>
+            <link rel="canonical" href="<?php echo esc_url(Helper::getAuthUrl()); ?>" />
             <style>
                 .fcom_layout_side {
                 <?php foreach ($bannerColors as $colorKey => $colorValue): ?> --fcom_ <?php echo $colorKey; ?>: <?php echo $colorValue; ?>;

@@ -12,18 +12,18 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
-        <td style="text-align: left; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.4; color: #333;">
+        <td style="font-family: Arial, sans-serif; font-size: 16px; line-height: 1.4; color: #333;">
             <table style="margin-bottom: 20px;" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
-                    <td align="left">
+                    <td>
                         <table style="margin-bottom: 10px;" cellspacing="0" cellpadding="0" border="0">
                             <tr>
                                 <td valign="top" style="border-radius: 50%; padding: 0px; vertical-align: top;">
                                     <a href="<?php echo esc_url($permalink); ?>">
-                                        <img alt="" src="<?php echo esc_url($user_avatar); ?>" width="32" height="32" style="border-radius: 50%; width: 22px; height: 22px; display: block;">
+                                        <img alt="" src="<?php echo esc_url($user_avatar); ?>" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
                                     </a>
                                 </td>
-                                <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 5px; vertical-align: middle;">
+                                <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding: 0 5px; vertical-align: middle;">
                                     <a style="text-decoration: none; color: #333;" href="<?php echo esc_url($permalink); ?>">
                                         <span style="font-weight: bold;"><?php echo esc_html($user_name); ?></span>
                                     </a>

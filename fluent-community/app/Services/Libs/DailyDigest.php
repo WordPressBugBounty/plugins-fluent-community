@@ -178,19 +178,19 @@ class DailyDigest
                 $isLast = $totalCount == ($index + 1);
                 ?>
                 <tr>
-                    <td valign="top" align="left">
+                    <td valign="top">
                         <table class="fcom_each_item"
                                style="padding: 10px;<?php echo $isLast ? '' : 'border-bottom: 1px solid #dedede;'; ?>"
                                cellspacing="0" cellpadding="0" border="0">
                             <tr>
-                                <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top;">
+                                <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; width: 32px">
                                     <a href="<?php echo esc_url($permalink); ?>">
                                         <img alt="<?php echo esc_html($notification->xprofile ? $notification->xprofile->display_name : ''); ?>"
                                              src="<?php echo esc_url($notification->xprofile->avatar); ?>" width="32"
-                                             height="32" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
+                                             height="32" style="border-radius: 50%; min-width: 32px; min-height: 32px; display: block;">
                                     </a>
                                 </td>
-                                <td style="font-family: Arial, sans-serif; font-size: 16px;color: #3c434a; padding-left: 10px; vertical-align: middle;">
+                                <td style="font-family: Arial, sans-serif; font-size: 16px;color: #3c434a; padding-left: 5px; vertical-align: middle;">
                                     <a style="color: #3c434a; text-decoration: none;" target="_blank"
                                        href="<?php echo esc_url($permalink); ?>">
                                         <?php echo wp_kses_post($notification->content); ?>

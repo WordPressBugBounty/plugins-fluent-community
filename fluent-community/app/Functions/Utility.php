@@ -114,7 +114,8 @@ class Utility
             'invitation'          => 'yes',
             'user_badge'          => 'yes',
             'has_crm_sync'        => 'no',
-            'content_moderation'  => 'no'
+            'content_moderation'  => 'no',
+            'followers_module'   => 'no'
         ];
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
@@ -130,6 +131,7 @@ class Utility
             $features['emoji_module'] = 'no';
             $features['cloud_storage'] = 'no';
             $features['user_badge'] = 'no';
+            $features['followers_module'] = 'no';
         }
 
         return $features;
@@ -206,7 +208,9 @@ class Utility
             'affiliate_id'         => '',
             'rich_post_layout'     => 'classic',
             'member_list_layout'   => 'classic', // grid, classic
+            'default_feed_layout'  => 'timeline', // list, timeline
             'post_title_pref'      => 'optional',
+            'max_media_per_post'   => 4,
             'disable_feed_sort_by' => 'no',
             'default_feed_sort_by' => ''
         ];
@@ -489,7 +493,7 @@ class Utility
         $topics = array_filter($topics, function ($topic) use ($spaceId) {
             return in_array($spaceId, $topic['space_ids']);
         });
-        return $topics;
+        return array_values($topics);
     }
 
     public static function getMaxRunTime()

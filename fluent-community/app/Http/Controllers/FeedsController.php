@@ -40,10 +40,11 @@ class FeedsController extends Controller
 
         $queryArgs = [
             'selected_topic' => $selectedTopic,
-            'per_page'       => $request->get('per_page', 10),
-            'page'           => $request->get('page', 1),
+            'per_page'       => (int)$request->get('per_page', 10),
+            'page'           => (int)$request->get('page', 1),
             'search'         => $search,
         ];
+
 
         $feedsQuery = Feed::byContentModerationAccessStatus($currentUserModel, $space)
             ->select(Feed::$publicColumns)
@@ -60,7 +61,9 @@ class FeedsController extends Controller
                                 $q->where('status', 'active');
                             });
                     },
-                    'space',
+                    'space'     => function ($q) {
+                        $q->select(['id', 'title', 'slug', 'type']);
+                    },
                     'reactions' => function ($q) {
                         $q->with([
                             'xprofile' => function ($query) {
@@ -104,7 +107,9 @@ class FeedsController extends Controller
                                         $q->select(ProfileHelper::getXProfilePublicFields());
                                     }]);
                             },
-                            'space',
+                            'space'     => function ($q) {
+                                $q->select(['id', 'title', 'slug', 'type']);
+                            },
                             'reactions' => function ($q) {
                                 $q->with([
                                     'xprofile' => function ($query) {
@@ -139,7 +144,7 @@ class FeedsController extends Controller
                 $feedsQuery = $feedsQuery->byUserAccess($currentUserId);
             }
 
-            $queryArgs['user_id'] = $bySpace;
+            $queryArgs['user_id'] = $userId;
         } else {
             $feedsQuery->byUserAccess($currentUserId)->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
@@ -151,19 +156,31 @@ class FeedsController extends Controller
 
         do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all(), $queryArgs]);
 
-        $feeds = $feedsQuery->paginate();
+        $feedsQuery->limit($queryArgs['per_page'])->offset(($queryArgs['page'] - 1) * $queryArgs['per_page']);
+        $feeds = $feedsQuery->get();
 
         // add $stickyFeed to the first page
         if ($stickyFeed) {
             $stickyFeed = FeedsHelper::transformFeed($stickyFeed);
         }
 
-        $feeds->getCollection()->each(function ($feed) {
-            FeedsHelper::transformFeed($feed);
-        });
+        $feeds = FeedsHelper::transformFeedsCollection($feeds);
+
+        $currentCount = $feeds->count();
+        $to = ($queryArgs['page'] - 1) * $queryArgs['per_page'] + $currentCount;
+
+        $hasMore = $currentCount == $queryArgs['per_page'];
 
         $data = [
-            'feeds'  => $feeds,
+            'feeds'  => [
+                'data'         => $feeds,
+                'current_page' => $queryArgs['page'],
+                'per_page'     => $queryArgs['per_page'],
+                'from'         => $currentCount ? ($queryArgs['page'] - 1) * $queryArgs['per_page'] + 1 : 0,
+                'to'           => $to,
+                'has_more'     => $hasMore,
+                'total'        => $currentCount == $queryArgs['per_page'] ? $to + $currentCount : $to
+            ],
             'sticky' => $stickyFeed
         ];
 
@@ -173,6 +190,8 @@ class FeedsController extends Controller
         }
 
         $data['execution_time'] = microtime(true) - $start;
+
+        $data = apply_filters('fluent_community/feeds_api_response', $data, $request->all());
 
         return $data;
     }
@@ -200,7 +219,9 @@ class FeedsController extends Controller
                 'xprofile'  => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
                 },
-                'space',
+                'space'     => function ($q) {
+                    $q->select(['id', 'title', 'slug', 'type']);
+                },
                 'comments'  => function ($q) {
                     $q->byContentModerationAccessStatus($this->getUser())
                         ->with(['xprofile' => function ($q) {
@@ -213,7 +234,7 @@ class FeedsController extends Controller
                 'reactions' => function ($q) {
                     $q->with([
                         'xprofile' => function ($query) {
-                            $query->select(['user_id', 'avatar']);
+                            $query->select(['user_id', 'avatar', 'display_name']);
                         }
                     ])
                         ->where('type', 'like')
@@ -244,10 +265,11 @@ class FeedsController extends Controller
 
         $feed = FeedsHelper::transformFeed($feed);
 
-        return [
+        return apply_filters('fluent_community/feed_api_response', [
             'feed'           => $feed,
             'execution_time' => microtime(true) - $start
-        ];
+        ], $request->all());
+
     }
 
     public function getFeedById(Request $request, $feedId)
@@ -279,7 +301,6 @@ class FeedsController extends Controller
             ->byUserAccess($userId)
             ->searchBy($request->get('search'));
 
-
         if ($type = $request->get('type')) {
             $feedsQuery = $feedsQuery->where('type', $type);
         }
@@ -287,9 +308,7 @@ class FeedsController extends Controller
         $feeds = $feedsQuery->orderBy('id', 'DESC')
             ->paginate();
 
-        $feeds->getCollection()->each(function ($feed) {
-            FeedsHelper::transformFeed($feed);
-        });
+        $feeds = FeedsHelper::transformFeedsCollection($feeds);
 
         $data = [
             'feeds' => $feeds
@@ -364,7 +383,7 @@ class FeedsController extends Controller
             return $isDulicate;
         }
 
-        $mentions = FeedsHelper::getMentions($data['message'], Arr::get($data, 'space_id'));
+        $mentions = FeedsHelper::getMentions($data['message'], Arr::get($data, 'space_id'), true);
         if ($mentions) {
             $data['message'] = $message;
             $message = $mentions['text'];
@@ -450,6 +469,8 @@ class FeedsController extends Controller
 
         if ($feed->space_id) {
             do_action('fluent_community/space_feed/created', $feed);
+        } else {
+            do_action('fluent_community/profile_feed/created', $feed);
         }
 
         return [
@@ -579,6 +600,10 @@ class FeedsController extends Controller
             $editHistory = array_slice($editHistory, -5);
             $existingFeed->updateCustomMeta('_edit_history', $editHistory);
         }
+
+        Media::where('object_source', 'feed')
+            ->where('feed_id', $existingFeed->id)
+            ->update(['is_active' => 0]);
 
         if ($mediaItems) {
             $this->saveMediaItems($existingFeed, $mediaItems);

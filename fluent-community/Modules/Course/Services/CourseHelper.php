@@ -519,4 +519,24 @@ class CourseHelper
 
         return apply_filters('fluent_community/course/access_message_html', $accessMessage, $course, $lesson, $config);
     }
+
+    public static function getParsedEmailSubject($text, $section, $user)
+    {
+        $parsedSubject = (new SmartCodeParser())->parse($text, $user, $section, false);
+
+        return $parsedSubject;
+    }
+
+    public static function getParsedEmailBody($text, $section, $user)
+    {
+        $parsedBody = (new SmartCodeParser())->parse($text, $user, $section);
+
+        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+
+        $emailComposer->addBlock('html_content', $parsedBody);
+        $emailComposer->setDefaultLogo();
+        $emailComposer->setDefaultFooter();
+
+        return $emailComposer->getHtml();
+    }
 }

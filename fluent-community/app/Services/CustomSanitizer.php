@@ -161,7 +161,7 @@ class CustomSanitizer
             $emoji = \mb_substr($emoji, 0, 4, 'UTF-8');
         }
 
-        $isEmoji = preg_match('/[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{1F1E0}-\x{1F1FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{2B50}\x{2B55}\x{2934}\x{2935}\x{3297}\x{3299}\x{20E3}]/u', $emoji);
+        $isEmoji = preg_match('/[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{1F1E0}-\x{1F1FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{2B50}\x{2B55}\x{2934}\x{2935}\x{3297}\x{3299}\x{20E3}\x{23E9}-\x{23FA}\x{25B6}\x{25C0}\x{FE0F}]/u', $emoji);
 
         if ($isEmoji) {
             return $emoji;
@@ -267,7 +267,7 @@ class CustomSanitizer
 
     public static function santizeLinkItem($item)
     {
-        $validKeys = ['title', 'enabled', 'new_tab', 'emoji', 'icon_image', 'shape_svg', 'title', 'permalink', 'slug'];
+        $validKeys = ['title', 'enabled', 'new_tab', 'emoji', 'icon_image', 'shape_svg', 'title', 'permalink', 'slug', 'privacy', 'membership_ids'];
         $item = array_filter(Arr::only($item, $validKeys));
 
         $yesNoItems = ['enabled', 'new_tab', 'is_locked', 'is_unavailable'];
@@ -310,6 +310,10 @@ class CustomSanitizer
 
         if (!empty($item['icon_svg'])) {
             $item['icon_svg'] = self::sanitizeSvg($item['icon_svg']);
+        }
+        
+        if (Arr::get($item, 'privacy') == 'members_only') {
+            $item['membership_ids'] = array_map('sanitize_text_field', (array)Arr::get($item, 'membership_ids', []));
         }
 
         return array_filter($item);

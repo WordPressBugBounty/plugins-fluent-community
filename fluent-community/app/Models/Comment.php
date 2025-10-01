@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 
 class Comment extends Model
@@ -231,5 +232,45 @@ class Comment extends Model
         }
 
         return $emailSubject;
+    }
+
+    public function getCommentHtml($withPlaceholder = false, $buttonText = null)
+    {
+        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+        if ($withPlaceholder) {
+            $postPermalink = '##feed_permalink##';
+        } else {
+            $postPermalink = $this->post->getPermalink() . '?comment_id=' . $this->id;
+        }
+
+        if ($this->post->title) {
+            $postTitle = $this->post->title;
+        } else {
+            $postTitle = $this->post->getHumanExcerpt(120);
+        }
+
+        $renderedMessage = $this->message_rendered;
+
+        // Remove all the URLs with the text but make it underlined
+        $renderedMessage = preg_replace('/<a href="([^"]+)">([^<]+)<\/a>/', '<span style="text-decoration: underline !important;">$2</span>', $renderedMessage);
+
+        $renderedMessage .= FeedsHelper::getMediaHtml($this->meta, $postPermalink);
+
+        $buttonText = $buttonText ?: __('View the comment', 'fluent-community');
+
+        $emailComposer->addBlock('boxed_content', $renderedMessage, [
+            'user'         => $this->user,
+            'permalink'    => $postPermalink,
+            'post_content' => $postTitle
+        ]);
+
+        $emailComposer->addBlock('button', $buttonText, [
+            'link' => $postPermalink
+        ]);
+
+        $emailComposer->setDefaultLogo();
+        $emailComposer->setDefaultFooter($withPlaceholder);
+
+        return $emailComposer->getHtml();
     }
 }

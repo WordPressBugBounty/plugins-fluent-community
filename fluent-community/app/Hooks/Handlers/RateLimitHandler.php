@@ -17,6 +17,10 @@ class RateLimitHandler
 
     public function maybeLimitPost(User $user)
     {
+        if (Helper::isSiteAdmin($user->ID, $user)) {
+            return;
+        }
+
         // Check how many posts user has created in last 5 minutes
         $postsCount = Feed::query()->withoutGlobalScopes()->where('user_id', $user->ID)
             ->where('created_at', '>', gmdate('Y-m-d H:i:s', current_time('timestamp') - 300))

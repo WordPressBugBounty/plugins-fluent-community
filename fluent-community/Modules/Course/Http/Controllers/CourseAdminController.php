@@ -108,9 +108,11 @@ class CourseAdminController extends Controller
 
         $slug = $request->get('slug');
 
-        if (!$slug) {
-            $slug = sanitize_title($courseData['title']);
-        }
+        $slug = $slug ?: $courseData['title'];
+
+        $slug = preg_replace('/[^a-zA-Z0-9-_]/', '', $slug);
+
+        $slug = sanitize_title($slug, '');
 
         if ($slug) {
             $slug = Utility::slugify($slug);
@@ -285,19 +287,19 @@ class CourseAdminController extends Controller
 
         $courseData['settings'] = $existingSettings;
 
-
         $previousStatus = $course->status;
+
+        $prevCourse = $course;
 
         $course->fill($courseData);
         $dirtyFields = $course->getDirty();
 
         if ($dirtyFields) {
             $course->save();
-            do_action('fluent_community/course/updated', $course, $dirtyFields);
+            do_action('fluent_community/course/updated', $course, $dirtyFields, $prevCourse);
             if ($previousStatus != 'published' && $course->status == 'published') {
                 do_action('fluent_community/course/published', $course);
             }
-
         }
 
         $course->syncCategories($request->get('category_ids', []));
@@ -330,11 +332,19 @@ class CourseAdminController extends Controller
             $q->where('space_id', $course->id);
         })->delete();
 
-        $courseLessons = CourseLesson::where('space_id', $course->id)->get();
+        $courseTopics = CourseTopic::with('lessons')
+            ->where('space_id', $course->id)
+            ->get();
 
-        foreach ($courseLessons as $courseLesson) {
-            do_action('fluent_community/lesson/before_deleted', $courseLesson);
-            $courseLesson->delete();
+        foreach ($courseTopics as $courseTopic) {
+            do_action('fluent_community/section/before_deleted', $courseTopic);
+
+            foreach ($courseTopic->lessons as $courseLesson) {
+                do_action('fluent_community/lesson/before_deleted', $courseLesson);
+                $courseLesson->delete();
+            }
+
+            $courseTopic->delete();
         }
 
         // Let's delete the student enrollments
@@ -470,7 +480,8 @@ class CourseAdminController extends Controller
         $course = Course::findOrFail($courseId);
 
         $sectionsQuery = CourseTopic::where('space_id', $courseId)
-            ->orderBy('priority', 'ASC');
+            ->orderBy('priority', 'ASC')
+            ->orderBy('id', 'ASC');
 
         if (in_array('only_published', $request->get('conditions', []))) {
             $sectionsQuery->where('status', 'published')
@@ -585,6 +596,10 @@ class CourseAdminController extends Controller
 
         Course::findOrFail($courseId);
 
+        $latestPriority = CourseTopic::where('type', 'course_section')->where('space_id', $courseId)->max('priority');
+
+        $sectionData['priority'] = $latestPriority ? $latestPriority + 1 : 0;
+
         $section = CourseTopic::create($sectionData);
 
         $section->load('lessons');
@@ -602,7 +617,7 @@ class CourseAdminController extends Controller
             'status' => 'required|in:draft,published,archived'
         ]);
 
-        $course = Course::findOrFail($courseId);
+        Course::findOrFail($courseId);
 
         $topic = CourseTopic::where('space_id', $courseId)
             ->where('id', $tipicId)
@@ -614,7 +629,7 @@ class CourseAdminController extends Controller
             'status' => $request->get('status')
         ];
 
-        $course->update($topicData);
+        $topic->update($topicData);
 
         return [
             'message' => __('Topic has been updated successfully.', 'fluent-community'),
@@ -638,7 +653,6 @@ class CourseAdminController extends Controller
             $acceptedFields[] = 'reactions_count';
         }
 
-
         $topicData = $request->only($acceptedFields);
 
         if (!empty($topicData['scheduled_at'])) {
@@ -648,9 +662,25 @@ class CourseAdminController extends Controller
             $topic->reactions_count = $topicData['reactions_count'];
         }
 
-        $topicData = array_filter($topicData);
+        $topicData = apply_filters('fluent_community/section/update_data', $topicData, $course, $topic, $request->all());
+
+        if (is_wp_error($topicData)) {
+            return $this->sendError($topicData->get_error_messages());
+        }
+
         $topic->fill($topicData);
+
+        $scheduledAtDirty = $topic->isDirty('scheduled_at');
+        $reactionsCountDirty = $topic->isDirty('reactions_count');
+
         $topic->save();
+
+        if ($scheduledAtDirty) {
+            do_action('fluent_community/section/scheduled_at_updated', $course, $topic);
+        }
+        if ($reactionsCountDirty) {
+            do_action('fluent_community/section/reactions_count_updated', $course, $topic);
+        }
 
         return [
             'message' => __('Topic has been updated successfully.', 'fluent-community'),
@@ -664,6 +694,8 @@ class CourseAdminController extends Controller
             'id'       => $sectionId,
             'space_id' => $courseId
         ])->firstOrFail();
+
+        do_action('fluent_community/section/before_deleted', $topic);
 
         $topic->delete();
 
@@ -738,6 +770,13 @@ class CourseAdminController extends Controller
             'status'    => 'draft'
         ];
 
+        $latestPriority = CourseLesson::where('type', 'course_lesson')
+            ->where('parent_id', $sectionId)
+            ->where('space_id', $courseId)
+            ->max('priority');
+            
+        $lessonData['priority'] = $latestPriority ? $latestPriority + 1 : 0;
+
         $lessonData = apply_filters('fluent_community/lesson/create_data', $lessonData, $request);
 
         $lesson = CourseLesson::create($lessonData);
@@ -778,14 +817,25 @@ class CourseAdminController extends Controller
         $updatedMeta['document_ids'] = Arr::get($lesson->meta, 'document_ids', []);
 
         if ($mediaId = Arr::get($updatedMeta, 'featured_image_id')) {
-            $mediaUrl = wp_get_attachment_image_url($mediaId);
-            if ($mediaUrl) {
-                $lesson->featured_image = $mediaUrl;
+            if (!$lesson->isQuizType()) {
+                $media = wp_get_attachment_image_url($mediaId);
+                $lesson->featured_image = $media ?: null;
             } else {
-                $lesson->featured_image = NULL;
+                $media = Helper::getMediaFromUrl(sanitize_url($mediaId));
+                if ($media && !$media->is_active) {
+                    Helper::removeMediaByUrl($lesson->featured_image, $lesson->id);
+                    $lesson->featured_image = $media->public_url;
+                    $media->update([
+                        'is_active'     => true,
+                        'user_id'       => get_current_user_id(),
+                        'sub_object_id' => $lesson->id,
+                        'object_source' => 'quiz_thumbnail_' . $lesson->id
+                    ]);
+                }
             }
         } else {
-            $lesson->featured_image = NULL;
+            Helper::removeMediaByUrl($lesson->featured_image, $lesson->id);
+            $lesson->featured_image = null;
         }
 
         $updateData = array_filter([
@@ -805,6 +855,8 @@ class CourseAdminController extends Controller
             $isNewlyPublished = $lesson->status === 'published' && $previousStatus !== 'published';
             do_action('fluent_community/lesson/updated', $lesson, $dirtyFields, $isNewlyPublished);
         }
+
+        do_action('fluent_community/lesson/additional_media_updated', $request->all(), $lesson, $updateData);
 
         return [
             'message' => __('Lesson has been updated successfully.', 'fluent-community'),
@@ -943,4 +995,5 @@ class CourseAdminController extends Controller
             'instructors' => $instructors
         ];
     }
+
 }

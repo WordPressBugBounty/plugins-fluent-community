@@ -8,6 +8,7 @@ use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Models\Meta;
 
 class CourseTopic extends Model
 {
@@ -75,7 +76,7 @@ class CourseTopic extends Model
 
     public function lessons()
     {
-        return $this->hasMany(CourseLesson::class, 'parent_id')->orderBy('priority', 'ASC');
+        return $this->hasMany(CourseLesson::class, 'parent_id')->orderBy('priority', 'ASC')->orderBy('id', 'ASC');
     }
 
     protected static function generateNewSlug($newModel)
@@ -170,6 +171,42 @@ class CourseTopic extends Model
             ->where('user_id', $userId)
             ->where('type', $type)
             ->first();
+    }
+
+    public function updateCustomMeta($key, $value)
+    {
+        $exist = Meta::where('object_id', $this->id)
+            ->where('object_type', 'course_topic')
+            ->where('meta_key', $key)
+            ->first();
+
+        if ($exist) {
+            $exist->value = $value;
+            $exist->save();
+        } else {
+            Meta::create([
+                'object_id'   => $this->id,
+                'object_type' => 'course_topic',
+                'meta_key'    => $key,
+                'value'       => $value
+            ]);
+        }
+
+        return true;
+    }
+
+    public function getCustomMeta($key, $default = null)
+    {
+        $exist = Meta::where('object_id', $this->id)
+            ->where('object_type', 'course_topic')
+            ->where('meta_key', $key)
+            ->first();
+
+        if ($exist) {
+            return $exist->value;
+        }
+
+        return $default;
     }
 
     public function getHumanExcerpt($length = 40)

@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
-<table align="left" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
-       style="text-align: left;margin-bottom:10px; margin-top:10px">
+<table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation"
+       style="margin-bottom:10px; margin-top:10px">
     <tbody>
     <tr>
         <td>

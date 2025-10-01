@@ -68,6 +68,7 @@ class BPMigrationController extends Controller
                         $group->space_menu_id = $configMap[$group->id];
                     }
                 }
+
                 $createdMaps = $this->migrateGroups($groups);
                 $prevStatus['migrated_groups'] = $createdMaps;
             }
@@ -75,6 +76,8 @@ class BPMigrationController extends Controller
         } else {
             $prevStatus['current_stage'] = 'posts';
         }
+
+        BPMigratorHelper::maybeEnableFollowersModule();
 
         $status = $this->updateCurrentStatus($prevStatus);
 
@@ -158,6 +161,8 @@ class BPMigrationController extends Controller
             $lastUserId = $user->ID;
             BPMigratorHelper::syncUser($user);
         }
+
+        do_action('fluent_community/after_sync_bp_users', $users);
 
         $status['last_migrated_user_id'] = $lastUserId;
         $this->updateCurrentStatus($status, false);
@@ -274,101 +279,11 @@ class BPMigrationController extends Controller
     {
         $createdMaps = [];
         foreach ($groups as $group) {
-            $exitMeta = fluentCommunityApp('db')->table('bp_groups_groupmeta')
-                ->where('group_id', $group->id)
-                ->where('meta_key', '_fcom_space_id')
-                ->first();
-
-            if ($exitMeta) {
-                $space = Space::find($exitMeta->meta_value);
-                if ($space) {
-                    $createdMaps[$group->id] = $exitMeta->meta_value;
-                    continue;
-                }
+            $createdSpace = BPMigratorHelper::migrateGroupData($group);
+            if ($createdSpace) {
+                $createdMaps[$group->id] = $createdSpace->id;
             }
 
-            // Create a new space group
-            $spaceGroup = null;
-            if (!empty($group->space_menu_id)) {
-                $spaceGroup = SpaceGroup::find($group->space_menu_id);
-            }
-
-            $serial = BaseSpace::when($spaceGroup, function ($q) use ($spaceGroup) {
-                    $q->where('parent_id', $spaceGroup->id);
-                })->max('serial') + 1;
-
-            $privacy = $group->status;
-
-            if ($privacy == 'hidden') {
-                $privacy = 'secret';
-            } else if (!in_array($privacy, ['public', 'private'])) {
-                $privacy = 'private';
-            }
-
-            $postBy = fluentCommunityApp('db')->table('bp_groups_groupmeta')
-                ->where('group_id', $group->id)
-                ->where('meta_key', 'activity_feed_status')
-                ->first();
-
-            $restrictedPostOnly = 'no';
-            if ($postBy && $postBy->meta_value != 'members') {
-                $restrictedPostOnly = 'yes';
-            }
-
-            $groupData = [
-                'title'       => sanitize_text_field($group->name),
-                'slug'        => Utility::slugify($group->slug),
-                'privacy'     => $privacy,
-                'description' => sanitize_textarea_field(wp_unslash($group->description)),
-                'settings'    => [
-                    'restricted_post_only' => $restrictedPostOnly
-                ],
-                'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
-                'serial'      => $serial ?: 1
-            ];
-
-            $groupLogo = bp_core_fetch_avatar(
-                array(
-                    'item_id'    => $group->id,
-                    'avatar_dir' => 'group-avatars',
-                    'object'     => 'group',
-                    'type'       => 'full',
-                    'html'       => false,
-                )
-            );
-
-            if ($groupLogo) {
-                $groupData['logo'] = $groupLogo;
-            }
-
-            $group_cover_image = bp_attachments_get_attachment(
-                'url',
-                array(
-                    'object_dir' => 'groups',
-                    'item_id'    => $group->id,
-                )
-            );
-
-            if ($group_cover_image) {
-                $groupData['cover_photo'] = $group_cover_image;
-            }
-
-            $exist = BaseSpace::where('slug', $groupData['slug'])
-                ->exists();
-
-            if ($exist) {
-                $groupData['slug'] = $groupData['slug'] . '-' . time();
-            }
-
-            $createdSpace = Space::create($groupData);
-            $createdMaps[$group->id] = $createdSpace->id;
-
-            fluentCommunityApp('db')->table('bp_groups_groupmeta')
-                ->insert([
-                    'group_id'   => $group->id,
-                    'meta_key'   => '_fcom_space_id',
-                    'meta_value' => $createdSpace->id
-                ]);
         }
 
         return $createdMaps;
@@ -424,17 +339,8 @@ class BPMigrationController extends Controller
 
     private function deleteCurrentData()
     {
-        // reset fluent community data
-        \FluentCommunity\App\Models\Feed::truncate();
-        \FluentCommunity\App\Models\Comment::truncate();
-        \FluentCommunity\App\Models\Reaction::truncate();
-        \FluentCommunity\App\Models\Media::truncate();
-        \FluentCommunity\App\Models\Activity::truncate();
-        \FluentCommunity\App\Models\XProfile::truncate();
-        \FluentCommunity\App\Models\Space::where('type', 'community')->delete();
 
-        // reset buddypress meta data
-        fluentCommunityApp('db')->table('bp_groups_groupmeta')->where('meta_key', '_fcom_space_id')->delete();
-        fluentCommunityApp('db')->table('bp_activity_meta')->where('meta_key', '_fcom_feed_id')->delete();
+        BPMigratorHelper::deleteCurrentData();
+
     }
 }

@@ -7,7 +7,7 @@ use FluentCommunity\App\Functions\Utility;
 class Vite
 {
     protected static $moduleScripts = [];
-    protected static $resourceURL = 'http://localhost:4444/src/';
+    protected static $resourceURL = 'https://localhost:4444/src/';
     protected static $assetsURL = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/';
 
     private static function isDev()

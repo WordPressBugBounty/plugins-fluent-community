@@ -3,7 +3,6 @@
 namespace FluentCommunity\Modules\Course;
 
 
-use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Modules\Course\Model\Course;
 

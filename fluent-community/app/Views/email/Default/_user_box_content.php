@@ -1,15 +1,15 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
 <table width="100%" style="margin-bottom: 30px;" cellspacing="0" cellpadding="0" border="0">
     <tr>
-        <td align="left">
+        <td>
             <table cellspacing="0" cellpadding="0" border="0">
                 <tr>
                     <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top;">
                         <a href="<?php echo esc_url($permalink); ?>">
-                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" width="22" height="22" style="border-radius: 50%; width: 20px; height: 22px; display: block;">
+                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
                         </a>
                     </td>
-                    <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 10px; vertical-align: middle;">
+                    <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 5px; vertical-align: middle;">
                         <span style="font-weight: bold;"><?php echo esc_html($user_name); ?></span>
                         <span><?php esc_html_e('commented on:', 'fluent-community'); ?></span>
                         <a target="_blank" href="<?php echo esc_url($permalink); ?>">
@@ -21,7 +21,7 @@
         </td>
     </tr>
     <tr>
-        <td style="text-align: left; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.4; color: #333;">
+        <td style="font-family: Arial, sans-serif; font-size: 16px; line-height: 1.4; color: #333;">
             <table style="background-color: #f7f7f7; margin: 10px 0" bgcolor="#f7f7f7" cellspacing="0" cellpadding="0" border="0"
                    width="100%">
                 <tr>
