@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -246,6 +246,11 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 1.8.2 (Date: Oct 2, 2025) =
+- New: Added Remove from course or spaces from FluentCRM Profile
+- Improved Follow/Unfollow Users
+- Hotfix: Course Enrollment Actions Hooks Fixed
 
 = 1.8.1 (Date: Oct 10, 2025) =
 - Hotfix: Video Player Issue Fixed

@@ -15,6 +15,7 @@ use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Models\SpaceGroup;
+use FluentCommunity\Modules\Course\Model\Course;
 
 /**
  * Helper class for various utility functions.
@@ -1629,6 +1630,7 @@ class Helper
             return false;
         }
 
+
         if (!self::isUserInSpace($userId, $space->id)) {
             return false;
         }
@@ -1640,8 +1642,16 @@ class Helper
         $user->cacheAccessSpaces();
 
         if ($space->type == 'course') {
+            if (!$space instanceof Course) {
+                $space = Course::find($space->id); //  we are renewing the model to have access to course relations
+            }
+            
             do_action('fluent_community/course/student_left', $space, $userId, $by);
         } else {
+            if (!$space instanceof Space) {
+                $space = Space::find($space->id);
+            }
+            // we are renewing the model to have access to space relations
             do_action('fluent_community/space/user_left', $space, $userId, $by);
         }
 

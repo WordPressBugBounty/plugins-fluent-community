@@ -137,17 +137,49 @@ class ProfileSection
                 'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug
             ];
         }
+
+        $removeSpaceCourses = \FluentCommunity\App\Models\BaseSpace::withoutGlobalScopes()
+            ->select('title', 'id', 'type', 'slug')
+            ->whereIn('type', ['course', 'community'])
+            ->whereHas('space_pivot', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
+            ->orderBy('title', 'ASC')
+            ->get();
+
+        $removeOptions = [];
+        foreach ($removeSpaceCourses as $spaceCourse) {
+            $type = $spaceCourse->type;
+            if ($type == 'course') {
+                $type = 'Course';
+            } else if ($type == 'community') {
+                $type = 'Space';
+            }
+
+            $removeOptions[] = [
+                'id'    => $spaceCourse->id,
+                'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug
+            ];
+        }
+
         $sections['crud'] = [
-            'btn_label'    => __('Add to Space or Course', 'fluent-community'),
-            'form_heading' => __('Add to Space or Course', 'fluent-community'),
+            'btn_label'    => __('Manage Space/Course', 'fluent-community'),
+            'form_heading' => __('Manage Space/Course Accesses', 'fluent-community'),
             'fields'       => [
-                'base_space_ids' => [
+                'base_space_ids'   => [
+                    'type'        => 'input-option',
+                    'multiple'    => true,
+                    'placeholder' => $options ? __('Select Space or Course', 'fluent-community') : __('No Space or Course available', 'fluent-community'),
+                    'label'       => __('Add to Space or Course', 'fluent-community'),
+                    'options'     => $options
+                ],
+                'remove_space_ids' => [
                     'type'        => 'input-option',
                     'multiple'    => true,
                     'placeholder' => __('Select Space or Course', 'fluent-community'),
-                    'label'       => __('Select Space or Course', 'fluent-community'),
-                    'options'     => $options
-                ],
+                    'label'       => __('Remove from Space or Course', 'fluent-community'),
+                    'options'     => $removeOptions
+                ]
             ]
         ];
 
@@ -159,15 +191,24 @@ class ProfileSection
     public function saveProfileSection($response, $data, Subscriber $subscriber)
     {
         $spaceIds = Arr::get($data, 'base_space_ids', []);
+        $removeSpaceIds = Arr::get($data, 'remove_space_ids', []);
 
-        if (!$spaceIds) {
+
+        if (!$spaceIds && !$removeSpaceIds) {
             throw new \Exception(__('No Space or Course selected', 'fluent-community'));
         }
-        
+
         $userId = $subscriber->getWpUserId();
 
         if (!$userId) {
             throw new \Exception(__('No user found for this contact', 'fluent-community'));
+        }
+
+        foreach ($removeSpaceIds as $removeSpaceId) {
+            $space = BaseSpace::withoutGlobalScopes()->find($removeSpaceId);
+            if ($space) {
+                Helper::removeFromSpace($space, $userId);
+            }
         }
 
         foreach ($spaceIds as $spaceId) {

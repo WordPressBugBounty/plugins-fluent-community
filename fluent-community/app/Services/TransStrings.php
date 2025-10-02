@@ -174,7 +174,6 @@ class TransStrings
             'Are you sure you want to remove this webhook?' => __('Are you sure you want to remove this webhook?', 'fluent-community'),
             'Are you sure you want to send email to everyone? An automated email will be sent to all the members of the space after 5 minutes of this post' => __('Are you sure you want to send email to everyone? An automated email will be sent to all the members of the space after 5 minutes of this post', 'fluent-community'),
             'Are you sure you want to send email to everyone? An automated email will be sent to all the members of the space. The email will be sent at the scheduled time.' => __('Are you sure you want to send email to everyone? An automated email will be sent to all the members of the space. The email will be sent at the scheduled time.', 'fluent-community'),
-            'Are you sure you want to unfollow this user?' => __('Are you sure you want to unfollow this user?', 'fluent-community'),
             'Are you sure you want to unpublish this?' => __('Are you sure you want to unpublish this?', 'fluent-community'),
             'Are you sure?' => __('Are you sure?', 'fluent-community'),
             'As you gain points, you level up. Your level is shown at the bottom right of your avatar.' => __('As you gain points, you level up. Your level is shown at the bottom right of your avatar.', 'fluent-community'),
