@@ -12,9 +12,8 @@
  */
 
 use FluentCommunity\App\Services\Helper;
-use FluentCommunity\Framework\Support\Arr;
 
-$showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('feed_link_on_sidebar');
+$fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('feed_link_on_sidebar');
 
 ?>
 
@@ -22,17 +21,13 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
     <?php if (apply_filters('fluent_community/will_render_default_sidebar_items', true)) : ?>
         <nav aria-label="Main Sidebar Home menu">
             <ul class="fcom_sm_only fcom_general_menu fcom_home_link">
-                <?php foreach ($primaryItems as $itemKey => $item): ?>
-                    <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
-                        <?php Helper::renderLink($item, 'fcom_menu_link'); ?>
-                    </li>
-                <?php endforeach; ?>
+                <?php Helper::renderMenuItems($primaryItems, 'fcom_menu_link', '<span class="fcom_no_avatar"></span>', true); ?>
             </ul>
         </nav>
-        <?php if($showFeedLink || $topInlineLinks): ?>
+        <?php if($fluentCommunityShowFeedLink || $topInlineLinks): ?>
         <nav aria-label="Main Sidebar Mobile Menu">
             <ul class="fcom_general_menu">
-                <?php if ($showFeedLink): ?>
+                <?php if ($fluentCommunityShowFeedLink): ?>
                     <li class="fcom_menu_item_all_feeds fcom_desktop_only">
                         <a class="fcom_menu_link fcom_dashboard route_url"
                            href="<?php echo esc_url(Helper::baseUrl('/')); ?>">
@@ -52,37 +47,33 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                         </a>
                     </li>
                 <?php endif; ?>
-                <?php foreach ($topInlineLinks as $itemKey => $topInline): ?>
-                    <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
-                        <?php Helper::renderLink($topInline, 'fcom_menu_link fcom_custom_link'); ?>
-                    </li>
-                <?php endforeach; ?>
+                <?php Helper::renderMenuItems($topInlineLinks, 'fcom_menu_link fcom_custom_link', '<span class="fcom_no_avatar"></span>', true); ?>
             </ul>
         </nav>
         <?php endif; ?>
 
         <div class="fcom_sidebar_contents">
-            <?php foreach ($spaceGroups as $spaceGroup): ?>
-                <?php if($spaceGroup['children']): ?>
+            <?php foreach ($spaceGroups as $fluentCommunitySpaceGroup): ?>
+                <?php if($fluentCommunitySpaceGroup['children']): ?>
                 <div class="fcom_communities_menu">
                     <div class="fcom_space_group_header fcom_group_title">
-                        <h4 data-group_id="<?php echo (int)$spaceGroup['id']; ?>" class="space_section_title">
-                            <span><?php echo esc_html($spaceGroup['title']); ?></span>
+                        <h4 data-group_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" class="space_section_title">
+                            <span><?php echo esc_html($fluentCommunitySpaceGroup['title']); ?></span>
                             <i class="el-icon fcom_space_down">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z"></path></svg>
                             </i>
                         </h4>
                         <?php if ($is_admin): ?>
                             <div class="fcom_space_create">
-                                <a class="fcom_space_create_link" data-parent_id="<?php echo (int)$spaceGroup['id']; ?>" href="<?php echo esc_url(Helper::baseUrl('discover/spaces/?create_space=yes&parent_id=' . $spaceGroup['id'])); ?>">+</a>
+                                <a class="fcom_space_create_link" data-parent_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" href="<?php echo esc_url(Helper::baseUrl('discover/spaces/?create_space=yes&parent_id=' . $fluentCommunitySpaceGroup['id'])); ?>">+</a>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <nav aria-label="Group Menu for <?php echo esc_html($spaceGroup['title']); ?>">
+                    <nav aria-label="Group Menu for <?php echo esc_html($fluentCommunitySpaceGroup['title']); ?>">
                         <ul>
-                            <?php foreach ($spaceGroup['children'] as $link): ?>
+                            <?php foreach ($fluentCommunitySpaceGroup['children'] as $fluentCommunityLink): ?>
                                 <li class="space_menu_item">
-                                    <?php Helper::renderLink($link, 'fcom_menu_link'); ?>
+                                    <?php Helper::renderLink($fluentCommunityLink, 'fcom_menu_link'); ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -92,12 +83,12 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
             <?php endforeach; ?>
 
             <?php if ($bottomLinkGroups): ?>
-                <?php foreach ($bottomLinkGroups as $bottomLinkGroup): ?>
+                <?php foreach ($bottomLinkGroups as $fluentCommunityBottomLink): ?>
                     <div class="fcom_communities_menu">
                         <div class="fcom_space_group_header fcom_group_title">
-                            <h4 role="region" aria-label="Link Groups" data-group_id="<?php echo esc_attr($bottomLinkGroup['slug']); ?>"
+                            <h4 role="region" aria-label="Link Groups" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>"
                                 class="space_section_title">
-                                <span><?php echo esc_html($bottomLinkGroup['title']); ?></span>
+                                <span><?php echo esc_html($fluentCommunityBottomLink['title']); ?></span>
                                 <i class="el-icon fcom_space_down">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z"></path></svg>
                                 </i>
@@ -110,11 +101,11 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <nav aria-label="Group Menu for <?php echo esc_html($bottomLinkGroup['title']); ?>">
+                        <nav aria-label="Group Menu for <?php echo esc_html($fluentCommunityBottomLink['title']); ?>">
                         <ul>
-                            <?php foreach ($bottomLinkGroup['items'] as $buttomLink): ?>
+                            <?php foreach ($fluentCommunityBottomLink['items'] as $fluentCommunityButtomLink): ?>
                                 <li class="space_menu_item">
-                                    <?php Helper::renderLink($buttomLink, 'fcom_menu_link space_menu_item route_url fcom_custom_link', '🔗'); ?>
+                                    <?php Helper::renderLink($fluentCommunityButtomLink, 'fcom_menu_link space_menu_item route_url fcom_custom_link', '🔗'); ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -128,19 +119,7 @@ $showFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('
                 <div style="margin-top: 20px;">
                     <h4 class="space_section_title"><?php esc_html_e('# Manage', 'fluent-community'); ?></h4>
                     <ul style="margin-top: 20px;">
-                        <?php foreach ($settingsItems as $itemKey => $item): ?>
-                            <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
-                                <a class="fcom_menu_link <?php echo esc_attr(Arr::get($item, 'link_classes')); ?>"
-                                   href="<?php echo esc_url($item['permalink']); ?>">
-                                    <?php if (!empty($item['icon_svg'])): ?>
-                                        <i class="el-icon">
-                                            <?php echo \FluentCommunity\App\Services\CustomSanitizer::sanitizeSvg(Arr::get($item, 'el-icon', '')); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                                        </i>
-                                    <?php endif; ?>
-                                    <span class="community_name"><?php echo wp_kses_post($item['title']); ?></span>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
+                        <?php Helper::renderSettingsMenuItems($settingsItems); ?>
                     </ul>
                 </div>
             <?php endif; ?>

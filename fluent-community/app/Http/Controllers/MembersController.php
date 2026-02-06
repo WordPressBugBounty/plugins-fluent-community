@@ -66,12 +66,13 @@ class MembersController extends Controller
                 ->limit(10)
                 ->get();
 
-            return [
+            $data = [
                 'members' => [
                     'data' => $members
                 ],
                 'execution_time' => microtime(true) - $start
             ];
+            return apply_filters('fluent_community/mention_members_api_response', $data, $request->all());
         }
 
         if(!$canAccess) {

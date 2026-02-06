@@ -23,7 +23,7 @@ class PortalPolicy extends BasePolicy
         }
 
         if ($method != 'GET' && !$userId) {
-            throw new \Exception(__('You must be logged in to perform this action', 'fluent-community'));
+            throw new \Exception(esc_html__('You must be logged in to perform this action', 'fluent-community'));
         }
 
         return !!Helper::canAccessPortal($userId);
@@ -32,5 +32,10 @@ class PortalPolicy extends BasePolicy
     public function getBookmarks(Request $request)
     {
         return is_user_logged_in() && $this->verifyRequest($request);
+    }
+
+    public function updateLinks(Request $request)
+    {
+        return !!Helper::isSiteAdmin();
     }
 }

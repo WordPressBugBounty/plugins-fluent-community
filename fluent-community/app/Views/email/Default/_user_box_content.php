@@ -4,9 +4,9 @@
         <td>
             <table cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                    <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top;">
+                    <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; height: 32px; width: 32px;">
                         <a href="<?php echo esc_url($permalink); ?>">
-                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
+                            <img alt="" src="<?php echo esc_url($user_avatar); ?>" height="32" width="32" style="border-radius: 50%; height: 32px; width: 32px; display: block;">
                         </a>
                     </td>
                     <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 5px; vertical-align: middle;">

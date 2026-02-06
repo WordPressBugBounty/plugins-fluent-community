@@ -17,10 +17,18 @@ class OptionController extends Controller
         $appVars = (new PortalHandler())->appVars();
         unset($appVars['rest']);
 
-        return [
+        $data = [
             'appVars'           => $appVars,
             'menu_links_groups' => Utility::getPortalSidebarData('sidebar')
         ];
+        
+        return apply_filters('fluent_community/app_vars_api_response', $data, $this->request->all());
+    }
+
+    public function getMenuItems()
+    {
+        $data = Utility::getPortalSidebarData('sidebar');
+        return apply_filters('fluent_community/menu_items_api_response', $data, $this->request->all());
     }
 
     public function getSidebarMenuHtml(Request $request)
@@ -59,9 +67,10 @@ class OptionController extends Controller
             $userSpaces = (object)[];
         }
 
-        return [
+        $data = [
             'sidebar_html' => $html,
             'auth_spaces'  => $userSpaces
         ];
+        return apply_filters('fluent_community/sidebar_menu_html_api_response', $data, $request->all());
     }
 }

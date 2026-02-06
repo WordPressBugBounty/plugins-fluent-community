@@ -144,7 +144,7 @@ class PortalHandler
                                             fill="white"/>
                                     </svg>
                                 </span>
-                                <span><?php _e('Upgrade', 'fluent-community'); ?></span>
+                                <span><?php esc_html_e('Upgrade', 'fluent-community'); ?></span>
                             </a>
                         <?php else: ?>
                             <a title="Go to /wp-admin" class="fcom_inline_icon_link_item fcom_wp_admin_link"
@@ -181,7 +181,7 @@ class PortalHandler
                     ?>
                     <a target="_blank" rel="noopener" style="font-size: 80%; cursor: pointer;"
                        class="fcom_inline_icon_link_item" href="<?php echo esc_url(Utility::getProductUrl(true)) ?>">
-                        <?php echo esc_html('Powered by FluentCommunity', 'fluent-community'); ?>
+                        <?php echo esc_html__('Powered by FluentCommunity', 'fluent-community'); ?>
                     </a>
                     <?php
                 }
@@ -298,8 +298,7 @@ class PortalHandler
                                 </svg>
                             </i>
                             <?php if ($notificationCount): ?>
-                                <sup
-                                    class="el-badge__content fcomc_unread_badge el-badge__content--danger is-fixed"><?php echo $notificationCount > 20 ? '20+' : $notificationCount; ?></sup>
+                                <sup class="el-badge__content fcomc_unread_badge el-badge__content--danger is-fixed"><?php echo $notificationCount > 20 ? '20+' : esc_html($notificationCount); ?></sup>
                             <?php endif; ?>
                         </a>
                     <?php endif; ?>
@@ -590,9 +589,9 @@ class PortalHandler
                     /* translators: Relative Date Formats. Don't alter %d*/
                     'dd'     => __('%dd', 'fluent-community'),
                     /* translators: Relative Date Formats*/
-                    'M'      => __('1m', 'fluent-community'),
+                    'M'      => __('1mo', 'fluent-community'),
                     /* translators: Relative Date Formats. Don't alter %d*/
-                    'MM'     => __('%dm', 'fluent-community'),
+                    'MM'     => __('%dmo', 'fluent-community'),
                     /* translators: Relative Date Formats*/
                     'y'      => __('1y', 'fluent-community'),
                     /* translators: Relative Date Formats. Don't alter %d*/
@@ -608,16 +607,20 @@ class PortalHandler
             'report_reasons'             => Helper::getReportReasons(),
             'el_i18n'                    => [
                 'pagination' => [
+                    /* translators: %s is replaced by the page number */
                     'currentPage'        => \sprintf(__('page %s', 'fluent-community'), '{pager}'),
                     'deprecationWarning' => 'Deprecated usages detected',
                     'goto'               => __('Go to', 'fluent-community'),
                     'next'               => __('Go to next page', 'fluent-community'),
+                    /* translators: %s is replaced by the number of pages */
                     'nextPages'          => \sprintf(__('Next %s pages', 'fluent-community'), ' {pager}'),
                     'page'               => __('Page', 'fluent-community'),
                     'pageClassifier'     => '',
                     'pagesize'           => __('/page', 'fluent-community'),
                     'prev'               => __('Go to previous page', 'fluent-community'),
+                    /* translators: %s is replaced by the number of pages */
                     'prevPages'          => \sprintf(__('Previous %s pages', 'fluent-community'), '{pager}'),
+                    /* translators: %s is replaced by the total number of items */
                     'total'              => \sprintf(__('Total %s', 'fluent-community'), '{total}'),
                 ],
                 'table'      => [
@@ -662,7 +665,7 @@ class PortalHandler
                     'nextYear'         => __('Next Year', 'fluent-community'),
                     'prevMonth'        => __('Previous Month', 'fluent-community'),
                     'nextMonth'        => __('Next Month', 'fluent-community'),
-                    'year'             => __('', 'fluent-community'),
+                    'year'             => __('year', 'fluent-community'),
                     'month1'           => __('January', 'fluent-community'),
                     'month2'           => __('February', 'fluent-community'),
                     'month3'           => __('March', 'fluent-community'),
@@ -711,6 +714,8 @@ class PortalHandler
                 ]
             ],
             'course_sections_collapsed'  => apply_filters('fluent_community/course_section_collapse_default', 'no'),
+            'course_lesson_fullscreen'   => apply_filters('fluent_community/course_lesson_fullscreen_default', 'no'),
+            'default_profile_tab'        => apply_filters('fluent_community/default_profile_tab_route', ''),
             'wp_lesson_editor_frame'     => site_url('?fluent_community_block_editor=1'),
             'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
@@ -756,7 +761,7 @@ class PortalHandler
 
     protected function renderFullApp()
     {
-        do_action('litespeed_control_set_nocache', 'fluentcommunity api request');
+        do_action('litespeed_control_set_nocache', 'fluentcommunity api request'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         // set no cache headers
         nocache_headers();
 
@@ -770,23 +775,21 @@ class PortalHandler
 
         $userId = get_current_user_id();
 
-        if (!$userId) {
-            if (!Helper::isPublicAccessible()) {
-                $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $settings = Helper::generalSettings();
-                $authUrl = Arr::get($settings, 'auth_url', '');
-                if ($authUrl) {
-                    $authUrl = add_query_arg([
-                        'redirect_to' => $url
-                    ], $authUrl);
-                } else {
-                    $authUrl = $this->getAuthUrl();
-                }
-
-                do_action('fluent_community/portal/not_logged_in', $authUrl);
-                wp_redirect($authUrl);
-                exit();
+        if (!$userId && !Helper::isPublicAccessible()) {
+            $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $settings = Helper::generalSettings();
+            $authUrl = Arr::get($settings, 'auth_url', '');
+            if ($authUrl) {
+                $authUrl = add_query_arg([
+                    'redirect_to' => $url
+                ], $authUrl);
+            } else {
+                $authUrl = $this->getAuthUrl();
             }
+
+            do_action('fluent_community/portal/not_logged_in', $authUrl);
+            wp_safe_redirect($authUrl);
+            exit();
         }
 
         do_action('fluent_community/portal/viewed');
@@ -802,7 +805,7 @@ class PortalHandler
                     'btn_text' => __('Activate my account', 'fluent-community')
                 ]);
             } else {
-                $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, You can not access to this vcommunity', 'fluent-community'));
+                $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, You can not access to this community', 'fluent-community'));
             }
         }
 
@@ -987,8 +990,10 @@ class PortalHandler
                 if ($space && $space->privacy != 'secret') {
 
                     if ($dynamicRoute == 'course_view') {
+                        /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
                     } else {
+                        /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Join %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
                     }
 

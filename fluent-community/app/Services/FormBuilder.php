@@ -44,26 +44,26 @@ class FormBuilder
 
         echo "<div id='fcom_group_" . esc_attr($name) . "' class='fcom_form-group'>";
         if ($label):
-            echo "<div class='fcom_form_label'><label for='" . esc_attr($atts['id']) . "'>$label</label></div>";
+            echo "<div class='fcom_form_label'><label for='" . esc_attr($atts['id']) . "'>" . esc_html($label) . "</label></div>";
         endif;
 
         echo "<div class='fcom_form_input'>";
 
         if (isset($atts['type'])) {
-            echo "<input " . $this->printAtts($atts) . ">";
+            echo "<input".$this->printAtts($atts).">"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         } elseif ($type === 'select') {
-            echo "<select id='$name' name='$name' " . ($required ? 'required' : '') . ">";
+            echo "<select id='" . esc_attr($name) . "' name='" . esc_attr($name) . "' " . ($required ? 'required' : '') . ">"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             foreach ($options as $option) {
-                echo "<option value='$option'>$option</option>";
+                echo "<option value='" . esc_attr($option) . "'>" . esc_html($option) . "</option>";
             }
             echo "</select>";
         } else if ($type === 'inline_checkbox') {
             echo "<div class='fcom_inline_checkbox'>";
-            echo "<input type='checkbox' " . $this->printAtts($atts) . ">";
+            echo "<input type='checkbox' " . $this->printAtts($atts) . ">"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo "<label for='" . esc_attr($atts['id']) . "'>" . wp_kses_post($field['inline_label']) . "</label>";
             echo "</div>";
         } else if ($type === 'textarea') {
-            echo "<textarea " . $this->printAtts($atts) . "></textarea>";
+            echo "<textarea " . $this->printAtts($atts) . "></textarea>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
         echo "</div></div>";
     }

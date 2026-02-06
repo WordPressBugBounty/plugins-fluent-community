@@ -77,8 +77,8 @@ class XProfile extends Model
     {
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('display_name', 'LIKE', "$search%")
-                    ->orWhere('username', 'LIKE', "$search%");
+                $q->where('display_name', 'LIKE', "%$search%")
+                    ->orWhere('username', 'LIKE', "%$search%");
             });
         }
 
@@ -337,4 +337,13 @@ class XProfile extends Model
         return Helper::baseUrl('u/' . $this->username);
     }
 
+    public function getJsRoute()
+    {
+        return [
+            'name'   => 'user_profile',
+            'params' => [
+                'username' => $this->username
+            ]
+        ];
+    }
 }

@@ -77,8 +77,8 @@ class InvitationHandler
 
         $spaceName = $space ? $space->title : __('the community', 'fluent-community');
 
-        $frameData['description'] = \sprintf(
-            __('Welcome back %1$s. %2$s has invited you to join in %3$s. Please click the button below to continue.', 'fluent-community'),
+        /* translators: %1$s is replaced by the name of the user, %2$s is replaced by the name of the inviter, %3$s is replaced by the name of the space */
+        $frameData['description'] = \sprintf(__('Welcome back %1$s. %2$s has invited you to join in %3$s. Please click the button below to continue.', 'fluent-community'),
             $user->display_name,
             $invitation->xprofile ? $invitation->xprofile->display_name : __('Someone', 'fluent-community'),
             '<b>' . $spaceName . '</b>'
@@ -91,7 +91,7 @@ class InvitationHandler
 
     public function acceptInvitationAjax()
     {
-        $token = sanitize_text_field($_POST['invitation_token']);
+        $token = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $user = Helper::getCurrentUser();
 
         $redirectUrl = $this->handleInvitationLogin(null, $user, $token);

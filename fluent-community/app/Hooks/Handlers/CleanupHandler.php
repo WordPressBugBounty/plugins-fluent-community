@@ -17,7 +17,7 @@ class CleanupHandler
         add_action('fluent_community/remove_old_notifications', [$this, 'maybeDeleteOldNotifications']);
 
         add_action('fluent_community/comment/media_deleted', [$this, 'queueMediaDelete'], 10, 1);
-        add_action('fluent_community/feed/media_deleted', [$this, 'queueMediaDelete'], 10, 1);
+        add_action('fluent_community/feed/media_deleted', [$this, 'handleMediaDelete'], 10, 1);
         add_action('fluent_community/maybe_delete_draft_medias', [$this, 'deleteOldDraftMedias'], 10);
         add_action('fluent_community/remove_medias_by_url', function ($mediaUrls, $wheres = []) {
             if (!$mediaUrls) {
@@ -41,6 +41,20 @@ class CleanupHandler
         add_action('deleted_user', [$this, 'handleUserDeleted'], 10, 2);
     }
 
+    public function handleMediaDelete($media)
+    {
+        if(!$media) {
+            return;
+        }
+
+        if ($media && $media->object_source == 'lesson_document') {
+            $this->handleLessonMediaDelete($media->feed_id, $media);
+            return;
+        }
+
+        $this->queueMediaDelete($media);
+    }
+
     public function handleFeedDeleted($feed)
     {
         $feed->comments()->delete();
@@ -62,12 +76,51 @@ class CleanupHandler
         Utility::getApp('db')->table('fcom_term_feed')->where('post_id', $feed->id)->delete();
     }
 
+    public function handleLessonMediaDelete($lessonId, $media, $mediaKeys = [], $isCollection = false)
+    {
+        $mediaKeys = $isCollection ? $mediaKeys : [$media->media_key];
+
+        $duplicateMediaKeys = Media::whereIn('media_key', $mediaKeys)
+            ->where('feed_id', '!=', $lessonId)
+            ->groupBy('media_key')
+            ->pluck('media_key')
+            ->all();
+
+        $deletedIds = [];
+        if (!empty($duplicateMediaKeys)) {
+            $deletedIds = Media::where('feed_id', $lessonId)
+                ->whereIn('media_key', $duplicateMediaKeys)
+                ->pluck('id')
+                ->all();
+
+            Media::where('feed_id', $lessonId)
+                ->whereIn('media_key', $duplicateMediaKeys)
+                ->delete();
+        }
+
+        if (!$isCollection) {
+            if (empty($deletedIds)) {
+                $this->queueMediaDelete($media);
+            }
+            return;
+        }
+
+        $lessonMedia = $media ? $media->filter(function ($medium) use ($deletedIds) {
+            return !in_array($medium->id, $deletedIds);
+        }) : null;
+
+        $this->queueMediaDelete($lessonMedia);
+    }
+
     public function handleLessonDeleted($lesson)
     {
         $lesson->comments()->delete();
         $lesson->reactions()->delete();
         $lesson->lessonCompleted()->delete();
-        $this->queueMediaDelete($lesson->media);
+
+        $mediaKeys = $lesson->media ? $lesson->media->pluck('media_key')->all() : [];
+
+        $this->handleLessonMediaDelete($lesson->id, $lesson->media, $mediaKeys, true);
     }
 
     public function queueMediaDelete($media)

@@ -69,6 +69,8 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->get('links', 'FeedsController@getLinks');
     $router->post('links', 'FeedsController@updateLinks');
 
+    $router->get('welcome-banner', 'FeedsController@getWelcomeBanner');
+
     $router->get('/{feed_id}/reactions', 'ReactionController@getByFeedId')->int('feed_id');
 
     $router->post('/{feed_id}/apps/survey-vote', 'ReactionController@castSurveyVote')->int('feed_id');
@@ -140,6 +142,7 @@ $router->prefix('comments')->withPolicy('PortalPolicy')->group(function ($router
 $router->prefix('options')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->get('/app-vars', 'OptionController@getAppVars');
     $router->get('/sidebar-menu-html', 'OptionController@getSidebarMenuHtml');
+    $router->get('/menu-items', 'OptionController@getMenuItems');
 });
 
 $router->prefix('settings')->withPolicy('AdminPolicy')->group(function ($router) {

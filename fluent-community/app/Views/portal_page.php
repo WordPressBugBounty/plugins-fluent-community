@@ -50,7 +50,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
     <?php do_action('fluent_community/portal_head'); ?>
 
     <style id="fcom_css_vars">
-        <?php echo \FluentCommunity\App\Functions\Utility::getColorCssVariables(); ?>
+        <?php echo esc_html(\FluentCommunity\App\Functions\Utility::getColorCssVariables()); ?>
         .dark body .el-dialog {
             --el-dialog-bg-color: #2B2E33;
         }

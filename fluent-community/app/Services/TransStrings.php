@@ -9,57 +9,105 @@ class TransStrings
     {
         return [
             ' (coming soon)' => __(' (coming soon)', 'fluent-community'),
-            '%1sClick here%2s to add affiliate ID' => __('%1sClick here%2s to add affiliate ID', 'fluent-community'),
+            /* translators: %1$s and %2$s are html markup for bold, for the clickable text "Click here to add affiliate ID" */
+            '%1$sClick here%2$s to add affiliate ID' => __('%1$sClick here%2$s to add affiliate ID', 'fluent-community'),
+            /* translators: %d is the number of courses created by the instructor */
             '%d Course' => __('%d Course', 'fluent-community'),
+            /* translators: %d is the number of courses created by the instructor */
             '%d Courses' => __('%d Courses', 'fluent-community'),
+            /* translators: %d is the number of groups */
             '%d Group' => __('%d Group', 'fluent-community'),
+            /* translators: %d is the number of groups */
             '%d Groups' => __('%d Groups', 'fluent-community'),
+            /* translators: %d is the number of lessons */
             '%d Lesson' => __('%d Lesson', 'fluent-community'),
+            /* translators: %d is the number of lessons */
             '%d Lessons' => __('%d Lessons', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%d Section' => __('%d Section', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%d Sections' => __('%d Sections', 'fluent-community'),
+            /* translators: %d is the number of spaces */
             '%d Space' => __('%d Space', 'fluent-community'),
+            /* translators: %d is the number of spaces */
             '%d Spaces' => __('%d Spaces', 'fluent-community'),
+            /* translators: %d is the number of students enrolled in the courses created by the instructor */
             '%d Student' => __('%d Student', 'fluent-community'),
+            /* translators: %d is the number of students enrolled in the courses created by the instructor */
             '%d Students' => __('%d Students', 'fluent-community'),
+            /* translators: %d is the number of comments */
             '%d comment' => __('%d comment', 'fluent-community'),
+            /* translators: %d is the number of comments */
             '%d comments' => __('%d comments', 'fluent-community'),
+            /* translators: %d is the number of lessons in the section */
             '%d lessons' => __('%d lessons', 'fluent-community'),
+            /* translators: %d is the number of leaderboard points */
+            '%d point' => __('%d point', 'fluent-community'),
+            /* translators: %d is the number of leaderboard points */
             '%d points' => __('%d points', 'fluent-community'),
+            /* translators: %d is the number of points needed to reach the next level */
             '%d points to level up!' => __('%d points to level up!', 'fluent-community'),
+            /* translators: %d is the number of replies */
             '%d replies' => __('%d replies', 'fluent-community'),
+            /* translators: %d is the number of replies */
             '%d reply' => __('%d reply', 'fluent-community'),
+            /* translators: %d is the number of students */
             '%d student' => __('%d student', 'fluent-community'),
+            /* translators: %d is the number of students */
             '%d students' => __('%d students', 'fluent-community'),
+            /* translators: %d is the number of votes */
             '%d vote' => __('%d vote', 'fluent-community'),
+            /* translators: %d is the number of votes */
             '%d votes' => __('%d votes', 'fluent-community'),
+            /* translators: %s is the number of course progress */
             '%s Completed' => __('%s Completed', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%s Lesson' => __('%s Lesson', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%s Lessons' => __('%s Lessons', 'fluent-community'),
+            /* translators: %s is the number of members */
             '%s Member' => __('%s Member', 'fluent-community'),
+            /* translators: %s is the number of members */
             '%s Members' => __('%s Members', 'fluent-community'),
+            /* translators: %s is the name of the provider for migration */
             '%s Migration' => __('%s Migration', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%s Topic' => __('%s Topic', 'fluent-community'),
+            /* translators: %d is the number of sections */
             '%s Topics' => __('%s Topics', 'fluent-community'),
+            /* translators: %s is the number of votes */
             '%s Vote' => __('%s Vote', 'fluent-community'),
+            /* translators: %s is the number of votes */
             '%s Votes' => __('%s Votes', 'fluent-community'),
+            /* translators: %s is the name of the user */
             '%s did not add any comment to any posts yet' => __('%s did not add any comment to any posts yet', 'fluent-community'),
+            /* translators: %s is the number of spaces */
             '%s items' => __('%s items', 'fluent-community'),
+            /* translators: %s is the number of lessons in the section */
             '%s lesson' => __('%s lesson', 'fluent-community'),
+            /* translators: %s is the number of lessons in the section */
             '%s lessons' => __('%s lessons', 'fluent-community'),
+            /* translators: %s is the number of likes */
             '%s like' => __('%s like', 'fluent-community'),
+            /* translators: %s is the number of likes */
             '%s likes' => __('%s likes', 'fluent-community'),
+            /* translators: %s = bell icon for new posts */
             '%s new post available' => __('%s new post available', 'fluent-community'),
+            /* translators: %s is the number of new posts available */
             '%s new posts available' => __('%s new posts available', 'fluent-community'),
+            /* translators: %s is the number of people requested to join the community */
             '%s people requested to join the community.' => __('%s people requested to join the community.', 'fluent-community'),
+            /* translators: %s is the number of results found */
             '%s result found' => __('%s result found', 'fluent-community'),
+            /* translators: %s is the number of results found */
             '%s results found' => __('%s results found', 'fluent-community'),
+            /* translators: %s is the number of students */
             '%s student' => __('%s student', 'fluent-community'),
+            /* translators: %s is the number of students */
             '%s students' => __('%s students', 'fluent-community'),
             '+ Add Section' => __('+ Add Section', 'fluent-community'),
             '-- Select --' => __('-- Select --', 'fluent-community'),
             '1 Like = 1 Point' => __('1 Like = 1 Point', 'fluent-community'),
-            '80' => __('80', 'fluent-community'),
             'A new post is available' => __('A new post is available', 'fluent-community'),
             'About' => __('About', 'fluent-community'),
             'About these files' => __('About these files', 'fluent-community'),
@@ -86,6 +134,7 @@ class TransStrings
             'Add New' => __('Add New', 'fluent-community'),
             'Add New Link' => __('Add New Link', 'fluent-community'),
             'Add New Webhook' => __('Add New Webhook', 'fluent-community'),
+            'Add Paywall' => __('Add Paywall', 'fluent-community'),
             'Add Question' => __('Add Question', 'fluent-community'),
             'Add Student' => __('Add Student', 'fluent-community'),
             'Add Topic' => __('Add Topic', 'fluent-community'),
@@ -93,6 +142,7 @@ class TransStrings
             'Add Webhook' => __('Add Webhook', 'fluent-community'),
             'Add a badge next to user profile name to highlight valued users' => __('Add a badge next to user profile name to highlight valued users', 'fluent-community'),
             'Add any additional information or notes about this course here' => __('Add any additional information or notes about this course here', 'fluent-community'),
+            /* translators: %s is the role of the member */
             'Add as %s' => __('Add as %s', 'fluent-community'),
             'Add button' => __('Add button', 'fluent-community'),
             'Add new option' => __('Add new option', 'fluent-community'),
@@ -112,6 +162,7 @@ class TransStrings
             'Advanced Features' => __('Advanced Features', 'fluent-community'),
             'Advanced Features & Addons' => __('Advanced Features & Addons', 'fluent-community'),
             'Affiliate ID' => __('Affiliate ID', 'fluent-community'),
+            /* translators: %s is the affiliate ID shown as part of the label */
             'Affiliate ID: %s' => __('Affiliate ID: %s', 'fluent-community'),
             'All' => __('All', 'fluent-community'),
             'All Courses' => __('All Courses', 'fluent-community'),
@@ -128,6 +179,7 @@ class TransStrings
             'Allow users to deactivate their account directly from their profile settings' => __('Allow users to deactivate their account directly from their profile settings', 'fluent-community'),
             'Allow users to request to join this Space' => __('Allow users to request to join this Space', 'fluent-community'),
             'Alphabetical' => __('Alphabetical', 'fluent-community'),
+            'Also remove the this space from the product integration?' => __('Also remove the this space from the product integration?', 'fluent-community'),
             'Amazon S3' => __('Amazon S3', 'fluent-community'),
             'Amazon S3 Access Key' => __('Amazon S3 Access Key', 'fluent-community'),
             'Amazon S3 Bucket Name' => __('Amazon S3 Bucket Name', 'fluent-community'),
@@ -151,6 +203,7 @@ class TransStrings
             'Are you sure you want to approve this user?' => __('Are you sure you want to approve this user?', 'fluent-community'),
             'Are you sure you want to change the slug?' => __('Are you sure you want to change the slug?', 'fluent-community'),
             'Are you sure you want to change username?' => __('Are you sure you want to change username?', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Are you sure you want to delete this %s?' => __('Are you sure you want to delete this %s?', 'fluent-community'),
             'Are you sure you want to delete this comment and associated data?' => __('Are you sure you want to delete this comment and associated data?', 'fluent-community'),
             'Are you sure you want to delete this course?' => __('Are you sure you want to delete this course?', 'fluent-community'),
@@ -158,10 +211,12 @@ class TransStrings
             'Are you sure you want to delete this feed?' => __('Are you sure you want to delete this feed?', 'fluent-community'),
             'Are you sure you want to delete this invitation?' => __('Are you sure you want to delete this invitation?', 'fluent-community'),
             'Are you sure you want to delete this lesson? All the associated data will be deleted too.' => __('Are you sure you want to delete this lesson? All the associated data will be deleted too.', 'fluent-community'),
+            'Are you sure you want to delete this paywall? This action cannot be undone.' => __('Are you sure you want to delete this paywall? This action cannot be undone.', 'fluent-community'),
             'Are you sure you want to delete this question?' => __('Are you sure you want to delete this question?', 'fluent-community'),
             'Are you sure you want to delete this report?' => __('Are you sure you want to delete this report?', 'fluent-community'),
             'Are you sure you want to delete this section? All the associated lessons and enrollment data will be deleted too.' => __('Are you sure you want to delete this section? All the associated lessons and enrollment data will be deleted too.', 'fluent-community'),
             'Are you sure you want to delete this space?' => __('Are you sure you want to delete this space?', 'fluent-community'),
+            'Are you sure you want to duplicate this course?' => __('Are you sure you want to duplicate this course?', 'fluent-community'),
             'Are you sure you want to ignore this?' => __('Are you sure you want to ignore this?', 'fluent-community'),
             'Are you sure you want to leave this community?' => __('Are you sure you want to leave this community?', 'fluent-community'),
             'Are you sure you want to remove this group?' => __('Are you sure you want to remove this group?', 'fluent-community'),
@@ -177,13 +232,13 @@ class TransStrings
             'Are you sure you want to unpublish this?' => __('Are you sure you want to unpublish this?', 'fluent-community'),
             'Are you sure?' => __('Are you sure?', 'fluent-community'),
             'As you gain points, you level up. Your level is shown at the bottom right of your avatar.' => __('As you gain points, you level up. Your level is shown at the bottom right of your avatar.', 'fluent-community'),
-            'Attach video' => __('Attach video', 'fluent-community'),
+            'Attach Video' => __('Attach Video', 'fluent-community'),
             'Attempts' => __('Attempts', 'fluent-community'),
             'August' => __('August', 'fluent-community'),
             'Automate your Course or Space accesses with FluentCRM Tags' => __('Automate your Course or Space accesses with FluentCRM Tags', 'fluent-community'),
             'Automatically login the user to the portal (secure with signed URL) from email notification links' => __('Automatically login the user to the portal (secure with signed URL) from email notification links', 'fluent-community'),
             'Available on Pro' => __('Available on Pro', 'fluent-community'),
-            'Average completion rate' => __('Average completion rate', 'fluent-community'),
+            'Average Completion Rate' => __('Average Completion Rate', 'fluent-community'),
             'Back to Lessons' => __('Back to Lessons', 'fluent-community'),
             'Back to home' => __('Back to home', 'fluent-community'),
             'Background Color' => __('Background Color', 'fluent-community'),
@@ -225,11 +280,15 @@ class TransStrings
             'Change' => __('Change', 'fluent-community'),
             'Change Cover' => __('Change Cover', 'fluent-community'),
             'Change Membership' => __('Change Membership', 'fluent-community'),
+            'Checkout URL copied to clipboard' => __('Checkout URL copied to clipboard', 'fluent-community'),
             'Choose a Space Type' => __('Choose a Space Type', 'fluent-community'),
             'Choose a date and time in the future when you want your post to be published' => __('Choose a date and time in the future when you want your post to be published', 'fluent-community'),
+            'Choose a topic' => __('Choose a topic', 'fluent-community'),
             'Choose the privacy settings for spaces page of a member profile.' => __('Choose the privacy settings for spaces page of a member profile.', 'fluent-community'),
+            /* translators: %s is the number of topics */
+            'Choose up to %s topics' => __('Choose up to %s topics', 'fluent-community'),
+            /* translators: %s is the number of topics */
             'Choose up to %s topics (optional)' => __('Choose up to %s topics (optional)', 'fluent-community'),
-            'Choose up to 20 topics' => __('Choose up to 20 topics', 'fluent-community'),
             'Choose where to store your media files. Options include Local File System, Amazon S3, or Cloudflare R2 for storing and serving your media assets' => __('Choose where to store your media files. Options include Local File System, Amazon S3, or Cloudflare R2 for storing and serving your media assets', 'fluent-community'),
             'Choose whether the all-members page should be public, private, or admin/moderator only.' => __('Choose whether the all-members page should be public, private, or admin/moderator only.', 'fluent-community'),
             'Choose whether the leaderboard top members should be public, private, or admin/moderator only.' => __('Choose whether the leaderboard top members should be public, private, or admin/moderator only.', 'fluent-community'),
@@ -252,6 +311,7 @@ class TransStrings
             'Comment updated successfully' => __('Comment updated successfully', 'fluent-community'),
             'Commented in' => __('Commented in', 'fluent-community'),
             'Comments' => __('Comments', 'fluent-community'),
+            /* translators: %s is the number of comments */
             'Comments (%s)' => __('Comments (%s)', 'fluent-community'),
             'Comments are disabled for this course' => __('Comments are disabled for this course', 'fluent-community'),
             'Comments are disabled for this post.' => __('Comments are disabled for this post.', 'fluent-community'),
@@ -266,12 +326,14 @@ class TransStrings
             'Complete Lesson' => __('Complete Lesson', 'fluent-community'),
             'Complete your profile' => __('Complete your profile', 'fluent-community'),
             'Completed' => __('Completed', 'fluent-community'),
-            'Completed %1s of %2s' => __('Completed %1s of %2s', 'fluent-community'),
+            /* translators: %1$s is the number of completed lessons, %2$s is the total number of lessons */
+            'Completed %1$s of %2$s' => __('Completed %1$s of %2$s', 'fluent-community'),
             'Config could not be loaded' => __('Config could not be loaded', 'fluent-community'),
             'Configure' => __('Configure', 'fluent-community'),
             'Configure Media Storage' => __('Configure Media Storage', 'fluent-community'),
             'Configure the appearance and behavior of your login form.' => __('Configure the appearance and behavior of your login form.', 'fluent-community'),
             'Configure the appearance and behavior of your signup form.' => __('Configure the appearance and behavior of your signup form.', 'fluent-community'),
+            'Confirm' => __('Confirm', 'fluent-community'),
             'Confirm Account Deactivation' => __('Confirm Account Deactivation', 'fluent-community'),
             'Confirm Delete' => __('Confirm Delete', 'fluent-community'),
             'Congratulation! Migration has been completed!' => __('Congratulation! Migration has been completed!', 'fluent-community'),
@@ -283,8 +345,12 @@ class TransStrings
             'Continue to Deactivate Account' => __('Continue to Deactivate Account', 'fluent-community'),
             'Control user accesses to different spaces/courses of your portal based on the contact tags.' => __('Control user accesses to different spaces/courses of your portal based on the contact tags.', 'fluent-community'),
             'Copy' => __('Copy', 'fluent-community'),
+            'Copy Checkout URL' => __('Copy Checkout URL', 'fluent-community'),
             'Copy Invitation URl' => __('Copy Invitation URl', 'fluent-community'),
             'Copy Link' => __('Copy Link', 'fluent-community'),
+            'Copy Section' => __('Copy Section', 'fluent-community'),
+            'Copy Section to a different Course' => __('Copy Section to a different Course', 'fluent-community'),
+            'Copy To' => __('Copy To', 'fluent-community'),
             'Copy the keys in the right column and paste it into the app you want to use for sending the POST request.' => __('Copy the keys in the right column and paste it into the app you want to use for sending the POST request.', 'fluent-community'),
             'Correct' => __('Correct', 'fluent-community'),
             'Correct Answers' => __('Correct Answers', 'fluent-community'),
@@ -373,10 +439,12 @@ class TransStrings
             'Default Signup URL' => __('Default Signup URL', 'fluent-community'),
             'Define the permalink of the logo you want to use.' => __('Define the permalink of the logo you want to use.', 'fluent-community'),
             'Delete' => __('Delete', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Delete %s' => __('Delete %s', 'fluent-community'),
             'Delete Course' => __('Delete Course', 'fluent-community'),
             'Delete Group' => __('Delete Group', 'fluent-community'),
             'Delete Lesson' => __('Delete Lesson', 'fluent-community'),
+            'Delete Paywall' => __('Delete Paywall', 'fluent-community'),
             'Delete Question' => __('Delete Question', 'fluent-community'),
             'Delete Report' => __('Delete Report', 'fluent-community'),
             'Delete Space' => __('Delete Space', 'fluent-community'),
@@ -405,10 +473,12 @@ class TransStrings
             'Document Library Access (View & Download)' => __('Document Library Access (View & Download)', 'fluent-community'),
             'Documents & Files' => __('Documents & Files', 'fluent-community'),
             'Documents and Files' => __('Documents and Files', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Documents and Files in %s' => __('Documents and Files in %s', 'fluent-community'),
             'Don\'t have an affiliate account?' => __('Don\'t have an affiliate account?', 'fluent-community'),
             'Draft' => __('Draft', 'fluent-community'),
             'Drop file here or click to upload' => __('Drop file here or click to upload', 'fluent-community'),
+            'Duplicate Course' => __('Duplicate Course', 'fluent-community'),
             'E-mail' => __('E-mail', 'fluent-community'),
             'Earliest' => __('Earliest', 'fluent-community'),
             'Edit' => __('Edit', 'fluent-community'),
@@ -424,14 +494,18 @@ class TransStrings
             'Edit Lessons' => __('Edit Lessons', 'fluent-community'),
             'Edit Link' => __('Edit Link', 'fluent-community'),
             'Edit Post' => __('Edit Post', 'fluent-community'),
+            'Edit Product' => __('Edit Product', 'fluent-community'),
             'Edit Profile' => __('Edit Profile', 'fluent-community'),
             'Edit Question' => __('Edit Question', 'fluent-community'),
             'Edit Quiz' => __('Edit Quiz', 'fluent-community'),
+            'Edit Slug' => __('Edit Slug', 'fluent-community'),
             'Edit Title' => __('Edit Title', 'fluent-community'),
+            'Edit lessons from lesson editor ' => __('Edit lessons from lesson editor ', 'fluent-community'),
             'Edit media' => __('Edit media', 'fluent-community'),
             'Edit space' => __('Edit space', 'fluent-community'),
             'Edit the field from block editor ' => __('Edit the field from block editor ', 'fluent-community'),
             'Editing manager role for' => __('Editing manager role for', 'fluent-community'),
+            /* translators: %s is the name of the user */
             'Editing manager role for %s' => __('Editing manager role for %s', 'fluent-community'),
             'Email' => __('Email', 'fluent-community'),
             'Email Announcement on Post' => __('Email Announcement on Post', 'fluent-community'),
@@ -488,10 +562,11 @@ class TransStrings
             'Enables switching between dark and light interface themes, accommodating different lighting conditions and user preferences.' => __('Enables switching between dark and light interface themes, accommodating different lighting conditions and user preferences.', 'fluent-community'),
             'End Date:' => __('End Date:', 'fluent-community'),
             'End date' => __('End date', 'fluent-community'),
+            /* translators: %s is the date the poll ended */
             'Ended at: %s' => __('Ended at: %s', 'fluent-community'),
             'Enforce pass to continue' => __('Enforce pass to continue', 'fluent-community'),
             'Enjoy the blazing-fast community portal. Please go to the portal and review your data.' => __('Enjoy the blazing-fast community portal. Please go to the portal and review your data.', 'fluent-community'),
-            'Enroll this course' => __('Enroll this course', 'fluent-community'),
+            'Enroll in this course' => __('Enroll in this course', 'fluent-community'),
             'Enrollment Type' => __('Enrollment Type', 'fluent-community'),
             'Enter Lesson title' => __('Enter Lesson title', 'fluent-community'),
             'Enter Quiz title' => __('Enter Quiz title', 'fluent-community'),
@@ -512,6 +587,7 @@ class TransStrings
             'Everyone' => __('Everyone', 'fluent-community'),
             'Exclude Users' => __('Exclude Users', 'fluent-community'),
             'Exclude selected users from the leaderboard' => __('Exclude selected users from the leaderboard', 'fluent-community'),
+            'Exit Full Screen' => __('Exit Full Screen', 'fluent-community'),
             'Expand/Close all sections' => __('Expand/Close all sections', 'fluent-community'),
             'Expire Date' => __('Expire Date', 'fluent-community'),
             'Expire Date (Leave empty for no expiration)' => __('Expire Date (Leave empty for no expiration)', 'fluent-community'),
@@ -520,6 +596,7 @@ class TransStrings
             'Failed to copy' => __('Failed to copy', 'fluent-community'),
             'Failed to copy the link' => __('Failed to copy the link', 'fluent-community'),
             'Failed to load the list' => __('Failed to load the list', 'fluent-community'),
+            'Failed to subscribe to push notifications. Please try again.' => __('Failed to subscribe to push notifications. Please try again.', 'fluent-community'),
             'Featured Image' => __('Featured Image', 'fluent-community'),
             'Featured Image (Recommended size: 1600x500) - Optional' => __('Featured Image (Recommended size: 1600x500) - Optional', 'fluent-community'),
             'Featured Image Preview' => __('Featured Image Preview', 'fluent-community'),
@@ -567,6 +644,7 @@ class TransStrings
             'Get Leaderboard & Gamification Module' => __('Get Leaderboard & Gamification Module', 'fluent-community'),
             'Get Media Module' => __('Get Media Module', 'fluent-community'),
             'Get User Badge Module' => __('Get User Badge Module', 'fluent-community'),
+            'Get notified about replies to your posts and important community updates via web push notifications.' => __('Get notified about replies to your posts and important community updates via web push notifications.', 'fluent-community'),
             'Giphy API Key' => __('Giphy API Key', 'fluent-community'),
             'Giphy Module' => __('Giphy Module', 'fluent-community'),
             'Giphy Module Settings' => __('Giphy Module Settings', 'fluent-community'),
@@ -577,6 +655,7 @@ class TransStrings
             'Go Back' => __('Go Back', 'fluent-community'),
             'Go Full Screen' => __('Go Full Screen', 'fluent-community'),
             'Go To All Feeds' => __('Go To All Feeds', 'fluent-community'),
+            /* translators: %s is the name of the menu item */
             'Go to %s' => __('Go to %s', 'fluent-community'),
             'Go to Community Portal' => __('Go to Community Portal', 'fluent-community'),
             'Go to General Settings.' => __('Go to General Settings.', 'fluent-community'),
@@ -614,7 +693,7 @@ class TransStrings
             'If you add this image, it will be shown on the space homepage' => __('If you add this image, it will be shown on the space homepage', 'fluent-community'),
             'If you enable this then, posts will be shown as modal when interacting' => __('If you enable this then, posts will be shown as modal when interacting', 'fluent-community'),
             'If you enable this, then users can post globally without selecting a space, which will be available for everyone.' => __('If you enable this, then users can post globally without selecting a space, which will be available for everyone.', 'fluent-community'),
-            'If you no longer keep your community account, find out how you can deactivate your account.' => __('If you no longer keep your community account, find out how you can deactivate your account.', 'fluent-community'),
+            'If you no longer wish to keep your community account, click button below to deactivate your account.' => __('If you no longer wish to keep your community account, click button below to deactivate your account.', 'fluent-community'),
             'If you want to store files in a folder within the bucket.' => __('If you want to store files in a folder within the bucket.', 'fluent-community'),
             'Ignore Reports' => __('Ignore Reports', 'fluent-community'),
             'Ignored' => __('Ignored', 'fluent-community'),
@@ -643,8 +722,11 @@ class TransStrings
             'Invitee email' => __('Invitee email', 'fluent-community'),
             'January' => __('January', 'fluent-community'),
             'Join' => __('Join', 'fluent-community'),
-            'Joined %1s' => __('Joined %1s', 'fluent-community'),
+            'Join Now' => __('Join Now', 'fluent-community'),
+            'Join Space' => __('Join Space', 'fluent-community'),
+            /* translators: %s is the date the user joined */
             'Joined %s' => __('Joined %s', 'fluent-community'),
+            /* translators: %s is the date the user joined */
             'Joined: %s' => __('Joined: %s', 'fluent-community'),
             'Joining Date' => __('Joining Date', 'fluent-community'),
             'July' => __('July', 'fluent-community'),
@@ -656,9 +738,10 @@ class TransStrings
             'Last Activity' => __('Last Activity', 'fluent-community'),
             'Last Month' => __('Last Month', 'fluent-community'),
             'Last Name' => __('Last Name', 'fluent-community'),
+            'Last Seen' => __('Last Seen', 'fluent-community'),
             'Last Three Month' => __('Last Three Month', 'fluent-community'),
             'Last Week' => __('Last Week', 'fluent-community'),
-            'Last seen %s' => __('Last seen %s', 'fluent-community'),
+            /* translators: %s is the date the user was last seen */
             'Last seen: %s' => __('Last seen: %s', 'fluent-community'),
             'Latest' => __('Latest', 'fluent-community'),
             'Latest Courses' => __('Latest Courses', 'fluent-community'),
@@ -680,8 +763,10 @@ class TransStrings
             'Leave empty for no expiration' => __('Leave empty for no expiration', 'fluent-community'),
             'Leave empty for unlimited uses' => __('Leave empty for unlimited uses', 'fluent-community'),
             'Lesson' => __('Lesson', 'fluent-community'),
-            'Lesson %1s of %2s' => __('Lesson %1s of %2s', 'fluent-community'),
-            'Lesson %1s of %2s - %3s' => __('Lesson %1s of %2s - %3s', 'fluent-community'),
+            /* translators: %1$s is the lesson number, %2$s is the total number of lessons */
+            'Lesson %1$s of %2$s' => __('Lesson %1$s of %2$s', 'fluent-community'),
+            /* translators: %1$s is the lesson number, %2$s is the total number of lessons, %3$s is the section title */
+            'Lesson %1$s of %2$s - %3$s' => __('Lesson %1$s of %2$s - %3$s', 'fluent-community'),
             'Lesson Content' => __('Lesson Content', 'fluent-community'),
             'Lesson Duration' => __('Lesson Duration', 'fluent-community'),
             'Lesson Title' => __('Lesson Title', 'fluent-community'),
@@ -689,6 +774,7 @@ class TransStrings
             'Lesson name' => __('Lesson name', 'fluent-community'),
             'Lessons' => __('Lessons', 'fluent-community'),
             'Let your community users to follow each other and filter posts by their followings.' => __('Let your community users to follow each other and filter posts by their followings.', 'fluent-community'),
+            /* translators: %d is the level number */
             'Level %d' => __('Level %d', 'fluent-community'),
             'Level Tagline' => __('Level Tagline', 'fluent-community'),
             'Level Title' => __('Level Title', 'fluent-community'),
@@ -729,6 +815,7 @@ class TransStrings
             'Manage Courses' => __('Manage Courses', 'fluent-community'),
             'Manage Links' => __('Manage Links', 'fluent-community'),
             'Manage Migrations' => __('Manage Migrations', 'fluent-community'),
+            'Manage Paywalls' => __('Manage Paywalls', 'fluent-community'),
             'Manage all topics' => __('Manage all topics', 'fluent-community'),
             'Manage all topics.' => __('Manage all topics.', 'fluent-community'),
             'Mapped FluentCRM Tag' => __('Mapped FluentCRM Tag', 'fluent-community'),
@@ -766,7 +853,6 @@ class TransStrings
             'Migrate Data from other plugins.' => __('Migrate Data from other plugins.', 'fluent-community'),
             'Migrated' => __('Migrated', 'fluent-community'),
             'Migration Completed' => __('Migration Completed', 'fluent-community'),
-            'Migrations Management' => __('Migrations Management', 'fluent-community'),
             'Minimum Points' => __('Minimum Points', 'fluent-community'),
             'Moderation' => __('Moderation', 'fluent-community'),
             'Moderation Settings' => __('Moderation Settings', 'fluent-community'),
@@ -789,6 +875,7 @@ class TransStrings
             'Name of the Link' => __('Name of the Link', 'fluent-community'),
             'Name that will be used for replyTo attribute' => __('Name that will be used for replyTo attribute', 'fluent-community'),
             'Name that will be used to send emails' => __('Name that will be used to send emails', 'fluent-community'),
+            'Never Miss a Reply' => __('Never Miss a Reply', 'fluent-community'),
             'New' => __('New', 'fluent-community'),
             'New Article' => __('New Article', 'fluent-community'),
             'New Course' => __('New Course', 'fluent-community'),
@@ -800,6 +887,7 @@ class TransStrings
             'New Topic' => __('New Topic', 'fluent-community'),
             'Next' => __('Next', 'fluent-community'),
             'No' => __('No', 'fluent-community'),
+            /* translators: %s is the status of the members */
             'No %s members found in this community.' => __('No %s members found in this community.', 'fluent-community'),
             'No Activity' => __('No Activity', 'fluent-community'),
             'No Data Found' => __('No Data Found', 'fluent-community'),
@@ -830,6 +918,7 @@ class TransStrings
             'No name' => __('No name', 'fluent-community'),
             'No notifications found' => __('No notifications found', 'fluent-community'),
             'No one is following this account yet. Posting and interacting with others helps boost followers!' => __('No one is following this account yet. Posting and interacting with others helps boost followers!', 'fluent-community'),
+            'No paywall has been added yet' => __('No paywall has been added yet', 'fluent-community'),
             'No posts found for the selected topic' => __('No posts found for the selected topic', 'fluent-community'),
             'No posts found!' => __('No posts found!', 'fluent-community'),
             'No published courses found' => __('No published courses found', 'fluent-community'),
@@ -850,6 +939,7 @@ class TransStrings
             'Notification' => __('Notification', 'fluent-community'),
             'Notification Settings' => __('Notification Settings', 'fluent-community'),
             'Notifications' => __('Notifications', 'fluent-community'),
+            'Notifications Blocked' => __('Notifications Blocked', 'fluent-community'),
             'Notify for all posts' => __('Notify for all posts', 'fluent-community'),
             'Notify only for Admin Posts' => __('Notify only for Admin Posts', 'fluent-community'),
             'November' => __('November', 'fluent-community'),
@@ -890,6 +980,7 @@ class TransStrings
             'Paste a URL to embed' => __('Paste a URL to embed', 'fluent-community'),
             'Paste an iframe code' => __('Paste an iframe code', 'fluent-community'),
             'Paste your SVG here' => __('Paste your SVG here', 'fluent-community'),
+            'Paywalls' => __('Paywalls', 'fluent-community'),
             'Pending' => __('Pending', 'fluent-community'),
             'Pending Members' => __('Pending Members', 'fluent-community'),
             'People & Body' => __('People & Body', 'fluent-community'),
@@ -902,13 +993,17 @@ class TransStrings
             'Pinned to sidebar' => __('Pinned to sidebar', 'fluent-community'),
             'Placeholder Photo' => __('Placeholder Photo', 'fluent-community'),
             'Placeholder image' => __('Placeholder image', 'fluent-community'),
+            /* translators: %s is the text to confirm the action */
             'Please Type %s to confirm. Please note, all the lessons, topics, students progress will be deleted.' => __('Please Type %s to confirm. Please note, all the lessons, topics, students progress will be deleted.', 'fluent-community'),
+            /* translators: %s is the text to confirm the action */
             'Please Type %s to confirm. Please note, all the posts, comments, activities of this Space will be delete.' => __('Please Type %s to confirm. Please note, all the posts, comments, activities of this Space will be delete.', 'fluent-community'),
             'Please add at least 2 options' => __('Please add at least 2 options', 'fluent-community'),
+            'Please add paywall pricing options' => __('Please add paywall pricing options', 'fluent-community'),
             'Please await the grading.' => __('Please await the grading.', 'fluent-community'),
             'Please check back later. We are in a process to publish some courses for you!' => __('Please check back later. We are in a process to publish some courses for you!', 'fluent-community'),
             'Please check back later. We are in a process to publish some spaces for you!' => __('Please check back later. We are in a process to publish some spaces for you!', 'fluent-community'),
             'Please choose a username matching with your first/last name or full name' => __('Please choose a username matching with your first/last name or full name', 'fluent-community'),
+            'Please click Allow to enable notifications.' => __('Please click Allow to enable notifications.', 'fluent-community'),
             'Please enroll the course to join the conversation.' => __('Please enroll the course to join the conversation.', 'fluent-community'),
             'Please enter a label for each option' => __('Please enter a label for each option', 'fluent-community'),
             'Please enter a question' => __('Please enter a question', 'fluent-community'),
@@ -919,7 +1014,7 @@ class TransStrings
             'Please login to view your bookmarks' => __('Please login to view your bookmarks', 'fluent-community'),
             'Please login/signup to enroll this course' => __('Please login/signup to enroll this course', 'fluent-community'),
             'Please login/signup to join this community' => __('Please login/signup to join this community', 'fluent-community'),
-            'Please note: Existing contact with the tags will not get access automatically. To Give access to existing contacts with tags, please go to FluentContact and use bulk actions.' => __('Please note: Existing contact with the tags will not get access automatically. To Give access to existing contacts with tags, please go to FluentContact and use bulk actions.', 'fluent-community'),
+            'Please note: Existing contact with the tags will not get access automatically. To Give access to existing contacts with tags, please go to FluentCRM and use bulk actions.' => __('Please note: Existing contact with the tags will not get access automatically. To Give access to existing contacts with tags, please go to FluentCRM and use bulk actions.', 'fluent-community'),
             'Please provide your custom Authentication Url' => __('Please provide your custom Authentication Url', 'fluent-community'),
             'Please save the changes to update the view' => __('Please save the changes to update the view', 'fluent-community'),
             'Please select a reason for reporting this content' => __('Please select a reason for reporting this content', 'fluent-community'),
@@ -951,6 +1046,7 @@ class TransStrings
             'Post Title & Content' => __('Post Title & Content', 'fluent-community'),
             'Post Title Requirements' => __('Post Title Requirements', 'fluent-community'),
             'Post starters' => __('Post starters', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Posted in %s' => __('Posted in %s', 'fluent-community'),
             'Posting in:' => __('Posting in:', 'fluent-community'),
             'Posts' => __('Posts', 'fluent-community'),
@@ -958,6 +1054,8 @@ class TransStrings
             'Posts Order by' => __('Posts Order by', 'fluent-community'),
             'Preview' => __('Preview', 'fluent-community'),
             'Preview Lesson' => __('Preview Lesson', 'fluent-community'),
+            'Price' => __('Price', 'fluent-community'),
+            'Price of the product' => __('Price of the product', 'fluent-community'),
             'Primary' => __('Primary', 'fluent-community'),
             'Primary Menu Items' => __('Primary Menu Items', 'fluent-community'),
             'Primary Storage Region' => __('Primary Storage Region', 'fluent-community'),
@@ -966,6 +1064,7 @@ class TransStrings
             'Private' => __('Private', 'fluent-community'),
             'Pro Feature' => __('Pro Feature', 'fluent-community'),
             'Pro Required' => __('Pro Required', 'fluent-community'),
+            'Processing...' => __('Processing...', 'fluent-community'),
             'Profanity Filter' => __('Profanity Filter', 'fluent-community'),
             'Profile Badges' => __('Profile Badges', 'fluent-community'),
             'Profile Dropdown Items' => __('Profile Dropdown Items', 'fluent-community'),
@@ -1031,6 +1130,7 @@ class TransStrings
             'Reporter' => __('Reporter', 'fluent-community'),
             'Reports' => __('Reports', 'fluent-community'),
             'Request Access' => __('Request Access', 'fluent-community'),
+            /* translators: %s is the date the member requested */
             'Requested %s' => __('Requested %s', 'fluent-community'),
             'Require Pro' => __('Require Pro', 'fluent-community'),
             'Require approval for first post' => __('Require approval for first post', 'fluent-community'),
@@ -1041,6 +1141,7 @@ class TransStrings
             'Responses' => __('Responses', 'fluent-community'),
             'Result' => __('Result', 'fluent-community'),
             'Retake Quiz' => __('Retake Quiz', 'fluent-community'),
+            'Retry' => __('Retry', 'fluent-community'),
             'Review' => __('Review', 'fluent-community'),
             'Review Report' => __('Review Report', 'fluent-community'),
             'Review report' => __('Review report', 'fluent-community'),
@@ -1059,18 +1160,21 @@ class TransStrings
             'Schedule has been updated' => __('Schedule has been updated', 'fluent-community'),
             'Scheduled' => __('Scheduled', 'fluent-community'),
             'Scheduled Posts' => __('Scheduled Posts', 'fluent-community'),
-            'Scheduled for %s at %s' => __('Scheduled for %s at %s', 'fluent-community'),
+            /* translators: %1$s is the scheduled date, %2$s is the scheduled time */
+            'Scheduled for %1$s at %2$s' => __('Scheduled for %1$s at %2$s', 'fluent-community'),
             'Score' => __('Score', 'fluent-community'),
             'Search' => __('Search', 'fluent-community'),
             'Search Courses...' => __('Search Courses...', 'fluent-community'),
             'Search Gifs' => __('Search Gifs', 'fluent-community'),
             'Search Members...' => __('Search Members...', 'fluent-community'),
+            'Search Product' => __('Search Product', 'fluent-community'),
             'Search Results' => __('Search Results', 'fluent-community'),
             'Search Space...' => __('Search Space...', 'fluent-community'),
             'Search by Name or Quiz' => __('Search by Name or Quiz', 'fluent-community'),
             'Search for an existing user or Invite by Email' => __('Search for an existing user or Invite by Email', 'fluent-community'),
             'Search for anything' => __('Search for anything', 'fluent-community'),
             'Search here...' => __('Search here...', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Search in %s' => __('Search in %s', 'fluent-community'),
             'Search in:' => __('Search in:', 'fluent-community'),
             'Search...' => __('Search...', 'fluent-community'),
@@ -1078,14 +1182,17 @@ class TransStrings
             'Secret' => __('Secret', 'fluent-community'),
             'Section Title' => __('Section Title', 'fluent-community'),
             'Select Access Roles' => __('Select Access Roles', 'fluent-community'),
+            'Select Course' => __('Select Course', 'fluent-community'),
             'Select Courses' => __('Select Courses', 'fluent-community'),
             'Select Courses that you want to remove from the user' => __('Select Courses that you want to remove from the user', 'fluent-community'),
             'Select Date' => __('Select Date', 'fluent-community'),
             'Select Digest Email Day' => __('Select Digest Email Day', 'fluent-community'),
             'Select Drip date' => __('Select Drip date', 'fluent-community'),
+            'Select Email Address' => __('Select Email Address', 'fluent-community'),
             'Select Group' => __('Select Group', 'fluent-community'),
             'Select Memberships' => __('Select Memberships', 'fluent-community'),
             'Select Menu Group' => __('Select Menu Group', 'fluent-community'),
+            'Select Paywall' => __('Select Paywall', 'fluent-community'),
             'Select Privacy' => __('Select Privacy', 'fluent-community'),
             'Select Role' => __('Select Role', 'fluent-community'),
             'Select S3 Location' => __('Select S3 Location', 'fluent-community'),
@@ -1148,6 +1255,9 @@ class TransStrings
             'Show Default Feed link on left sidebar' => __('Show Default Feed link on left sidebar', 'fluent-community'),
             'Show Label on Badge' => __('Show Label on Badge', 'fluent-community'),
             'Show More' => __('Show More', 'fluent-community'),
+            'Show Paywall Description' => __('Show Paywall Description', 'fluent-community'),
+            'Show Paywalls in Default Lock Screen' => __('Show Paywalls in Default Lock Screen', 'fluent-community'),
+            'Show Paywalls in the default lock screen' => __('Show Paywalls in the default lock screen', 'fluent-community'),
             'Show Right Sidebar on Space' => __('Show Right Sidebar on Space', 'fluent-community'),
             'Show Spaces even if the user is not a member of any space' => __('Show Spaces even if the user is not a member of any space', 'fluent-community'),
             'Show Topics on Post Card' => __('Show Topics on Post Card', 'fluent-community'),
@@ -1167,6 +1277,7 @@ class TransStrings
             'Sitemap is configured and will be generated automatically.' => __('Sitemap is configured and will be generated automatically.', 'fluent-community'),
             'Slug' => __('Slug', 'fluent-community'),
             'Slug (optional)' => __('Slug (optional)', 'fluent-community'),
+            'Slug of the lesson' => __('Slug of the lesson', 'fluent-community'),
             'Slug of the topic' => __('Slug of the topic', 'fluent-community'),
             'Slug of your topic' => __('Slug of your topic', 'fluent-community'),
             'Smileys & Emotion' => __('Smileys & Emotion', 'fluent-community'),
@@ -1174,6 +1285,7 @@ class TransStrings
             'Social Media Links Settings' => __('Social Media Links Settings', 'fluent-community'),
             'Sorry you do not have permission to access this.' => __('Sorry you do not have permission to access this.', 'fluent-community'),
             'Sorry! this community could not be loaded' => __('Sorry! this community could not be loaded', 'fluent-community'),
+            'Sorry, FluentCart could not be installed' => __('Sorry, FluentCart could not be installed', 'fluent-community'),
             'Sorry, no lesson found' => __('Sorry, no lesson found', 'fluent-community'),
             'Sorry, the course can not be loaded' => __('Sorry, the course can not be loaded', 'fluent-community'),
             'Sorry, the course could not be loaded.' => __('Sorry, the course could not be loaded.', 'fluent-community'),
@@ -1219,6 +1331,7 @@ class TransStrings
             'Switch to Timeline View' => __('Switch to Timeline View', 'fluent-community'),
             'Symbols' => __('Symbols', 'fluent-community'),
             'Sync Community Profile with WordPress User Data' => __('Sync Community Profile with WordPress User Data', 'fluent-community'),
+            /* translators: %s is the type of the space/course */
             'Sync this tag with the %s access' => __('Sync this tag with the %s access', 'fluent-community'),
             'Terms' => __('Terms', 'fluent-community'),
             'Text' => __('Text', 'fluent-community'),
@@ -1239,9 +1352,12 @@ class TransStrings
             'The verification string does not match' => __('The verification string does not match', 'fluent-community'),
             'These files will be available to your students to view and download' => __('These files will be available to your students to view and download', 'fluent-community'),
             'These settings will be applied across all spaces you\'re a member of.' => __('These settings will be applied across all spaces you\'re a member of.', 'fluent-community'),
-            'This %1s has been flagged automatically by the site rule.' => __('This %1s has been flagged automatically by the site rule.', 'fluent-community'),
-            'This %1s has been flagged with %2s report' => __('This %1s has been flagged with %2s report', 'fluent-community'),
-            'This %1s has been flagged with %2s reports' => __('This %1s has been flagged with %2s reports', 'fluent-community'),
+            /* translators: %1$s is the type of the content, %2$s is the number of report */
+            'This %1$s has been flagged with %2$s report' => __('This %1$s has been flagged with %2$s report', 'fluent-community'),
+            /* translators: %1$s is the type of the content, %2$s is the number of reports */
+            'This %1$s has been flagged with %2$s reports' => __('This %1$s has been flagged with %2$s reports', 'fluent-community'),
+            /* translators: %s is the type of the content */
+            'This %s has been flagged automatically by the site rule.' => __('This %s has been flagged automatically by the site rule.', 'fluent-community'),
             'This content has been unpublished by community moderation. Only the author and moderators can view it.' => __('This content has been unpublished by community moderation. Only the author and moderators can view it.', 'fluent-community'),
             'This course is in Draft status and only visible to Admin / Moderators' => __('This course is in Draft status and only visible to Admin / Moderators', 'fluent-community'),
             'This email footer will be used for all emails sent from FluentCommunity. It\'s highly recommended to use your business name and address in the footer for compliance.' => __('This email footer will be used for all emails sent from FluentCommunity. It\'s highly recommended to use your business name and address in the footer for compliance.', 'fluent-community'),
@@ -1253,6 +1369,7 @@ class TransStrings
             'This is a private space' => __('This is a private space', 'fluent-community'),
             'This is the default settings that will be applied to all the community members. Individual members can over-write the settings for their own preference' => __('This is the default settings that will be applied to all the community members. Individual members can over-write the settings for their own preference', 'fluent-community'),
             'This is your default email sending frequency. Individual users can customize the frequency or disable the notification.' => __('This is your default email sending frequency. Individual users can customize the frequency or disable the notification.', 'fluent-community'),
+            /* translators: %s is the date the lesson will unlock */
             'This lesson will be unlocked on %s' => __('This lesson will be unlocked on %s', 'fluent-community'),
             'This link will be used to redirect the  non-members. This maybe your sales page of this space' => __('This link will be used to redirect the  non-members. This maybe your sales page of this space', 'fluent-community'),
             'This link will be used to redirect the  unrolled or public users. This maybe your sales page of this course' => __('This link will be used to redirect the  unrolled or public users. This maybe your sales page of this course', 'fluent-community'),
@@ -1277,9 +1394,11 @@ class TransStrings
             'Title (optional)' => __('Title (optional)', 'fluent-community'),
             'Title Color' => __('Title Color', 'fluent-community'),
             'Title must be at least 2 characters long' => __('Title must be at least 2 characters long', 'fluent-community'),
+            'Title of the product' => __('Title of the product', 'fluent-community'),
             'Title of the topic' => __('Title of the topic', 'fluent-community'),
             'Title of your topic' => __('Title of your topic', 'fluent-community'),
             'To join the discussion of this community, please login or signup' => __('To join the discussion of this community, please login or signup', 'fluent-community'),
+            'To monetize your ' => __('To monetize your ', 'fluent-community'),
             'Toggle Bookmark' => __('Toggle Bookmark', 'fluent-community'),
             'Toggle Sticky' => __('Toggle Sticky', 'fluent-community'),
             'Tools' => __('Tools', 'fluent-community'),
@@ -1300,9 +1419,11 @@ class TransStrings
             'Trending Posts' => __('Trending Posts', 'fluent-community'),
             'Try again!' => __('Try again!', 'fluent-community'),
             'Try searching for keywords in posts' => __('Try searching for keywords in posts', 'fluent-community'),
+            'Turn On Push Notifications' => __('Turn On Push Notifications', 'fluent-community'),
             'Turn off Email Notification of This User' => __('Turn off Email Notification of This User', 'fluent-community'),
             'Turn on Email Notification of This User' => __('Turn on Email Notification of This User', 'fluent-community'),
             'Type' => __('Type', 'fluent-community'),
+            /* translators: %s is the text to confirm the action */
             'Type %s to confirm' => __('Type %s to confirm', 'fluent-community'),
             'Type your message here!' => __('Type your message here!', 'fluent-community'),
             'Type:' => __('Type:', 'fluent-community'),
@@ -1340,11 +1461,13 @@ class TransStrings
             'Upload Photo' => __('Upload Photo', 'fluent-community'),
             'Upload a banner image at the top of the question. Recommended image dimension: 1080x420' => __('Upload a banner image at the top of the question. Recommended image dimension: 1080x420', 'fluent-community'),
             'Upload new' => __('Upload new', 'fluent-community'),
+            /* translators: %s is the number of files */
             'Uploaded %s files' => __('Uploaded %s files', 'fluent-community'),
             'Uploading...' => __('Uploading...', 'fluent-community'),
             'Url of the item' => __('Url of the item', 'fluent-community'),
             'Usage' => __('Usage', 'fluent-community'),
-            'Use %1s tag to insert dynamic notification settings URL. Other Smartcode: %2s for Site Name with permalink' => __('Use %1s tag to insert dynamic notification settings URL. Other Smartcode: %2s for Site Name with permalink', 'fluent-community'),
+            /* translators: %1$s is the tag to insert dynamic notification settings URL, %2$s is the Smartcode for Site Name with permalink */
+            'Use %1$s tag to insert dynamic notification settings URL. Other Smartcode: %2$s for Site Name with permalink' => __('Use %1$s tag to insert dynamic notification settings URL. Other Smartcode: %2$s for Site Name with permalink', 'fluent-community'),
             'Use Custom Login Page' => __('Use Custom Login Page', 'fluent-community'),
             'Use Default' => __('Use Default', 'fluent-community'),
             'Use Gravatar Photo Service for default user photo' => __('Use Gravatar Photo Service for default user photo', 'fluent-community'),
@@ -1368,6 +1491,7 @@ class TransStrings
             'View Course' => __('View Course', 'fluent-community'),
             'View Post actions' => __('View Post actions', 'fluent-community'),
             'View Posts' => __('View Posts', 'fluent-community'),
+            'View Product' => __('View Product', 'fluent-community'),
             'View Profile' => __('View Profile', 'fluent-community'),
             'View Settings' => __('View Settings', 'fluent-community'),
             'View Space' => __('View Space', 'fluent-community'),
@@ -1386,8 +1510,10 @@ class TransStrings
             'Website' => __('Website', 'fluent-community'),
             'Website URL' => __('Website URL', 'fluent-community'),
             'Weekly' => __('Weekly', 'fluent-community'),
+            /* translators: %s is the day of the week */
             'Weekly digest on %s' => __('Weekly digest on %s', 'fluent-community'),
             'Welcome Banner' => __('Welcome Banner', 'fluent-community'),
+            /* translators: %s is the user's first name */
             'What\'s happening, %s' => __('What\'s happening, %s', 'fluent-community'),
             'When creating a new post, check if the post title is required or not' => __('When creating a new post, check if the post title is required or not', 'fluent-community'),
             'When enabled, members can change their email address of the account (WordPress User account).' => __('When enabled, members can change their email address of the account (WordPress User account).', 'fluent-community'),
@@ -1408,6 +1534,7 @@ class TransStrings
             'Who can view space members' => __('Who can view space members', 'fluent-community'),
             'Will be used on card preview and social sharing preview.' => __('Will be used on card preview and social sharing preview.', 'fluent-community'),
             'Will be used on course card preview and social sharing preview.' => __('Will be used on course card preview and social sharing preview.', 'fluent-community'),
+            /* translators: %s is the date the poll will end */
             'Will end at: %s' => __('Will end at: %s', 'fluent-community'),
             'Write a comment' => __('Write a comment', 'fluent-community'),
             'Write a reply' => __('Write a reply', 'fluent-community'),
@@ -1417,10 +1544,12 @@ class TransStrings
             'Year' => __('Year', 'fluent-community'),
             'Yes' => __('Yes', 'fluent-community'),
             'Yes, Delete' => __('Yes, Delete', 'fluent-community'),
+            /* translators: %s is the name of the space */
             'Yes, Delete the %s' => __('Yes, Delete the %s', 'fluent-community'),
             'Yes, Delete the Space' => __('Yes, Delete the Space', 'fluent-community'),
             'Yes, Delete the course' => __('Yes, Delete the course', 'fluent-community'),
             'Yes, Delete this group' => __('Yes, Delete this group', 'fluent-community'),
+            'Yes, Duplicate the course' => __('Yes, Duplicate the course', 'fluent-community'),
             'Yes, Ignore' => __('Yes, Ignore', 'fluent-community'),
             'Yes, Remove' => __('Yes, Remove', 'fluent-community'),
             'Yes, Unpublished' => __('Yes, Unpublished', 'fluent-community'),
@@ -1428,22 +1557,30 @@ class TransStrings
             'You are not allowed to upload media here.' => __('You are not allowed to upload media here.', 'fluent-community'),
             'You aren\'t following anyone yet. Start following other members to connect and keep up with their activity!' => __('You aren\'t following anyone yet. Start following other members to connect and keep up with their activity!', 'fluent-community'),
             'You can not delete a group with spaces. Please move the spaces to a different group first.' => __('You can not delete a group with spaces. Please move the spaces to a different group first.', 'fluent-community'),
+            /* translators: %s is the number of images allowed */
             'You can upload a maximum of %s images per post.' => __('You can upload a maximum of %s images per post.', 'fluent-community'),
             'You can use this Webhook URL to send POST request to trigger the actions' => __('You can use this Webhook URL to send POST request to trigger the actions', 'fluent-community'),
-            'You can write your custom CSS here for the portal. Please do not include %1s tag' => __('You can write your custom CSS here for the portal. Please do not include %1s tag', 'fluent-community'),
+            /* translators: %s is the tag to insert custom CSS */
+            'You can write your custom CSS here for the portal. Please do not include %s tag' => __('You can write your custom CSS here for the portal. Please do not include %s tag', 'fluent-community'),
             'You can write your custom JavaScript (with script tag), analytics code, and more here for the portal' => __('You can write your custom JavaScript (with script tag), analytics code, and more here for the portal', 'fluent-community'),
+            /* translators: %s is the number of scheduled posts */
             'You currently have %s scheduled posts to be published' => __('You currently have %s scheduled posts to be published', 'fluent-community'),
             'You do not have permission to view all members' => __('You do not have permission to view all members', 'fluent-community'),
             'You do not have permission to view this page' => __('You do not have permission to view this page', 'fluent-community'),
             'You do not have permission to view this post' => __('You do not have permission to view this post', 'fluent-community'),
+            'You have blocked or denied notifications for this site. Please reset permission and then click \"Retry Button\" to receive push notifications.' => __('You have blocked or denied notifications for this site. Please reset permission and then click \"Retry Button\" to receive push notifications.', 'fluent-community'),
             'You have cancelled the action.' => __('You have cancelled the action.', 'fluent-community'),
             'You have no scheduled posts to be published' => __('You have no scheduled posts to be published', 'fluent-community'),
+            'You have successfully subscribed to push notifications.' => __('You have successfully subscribed to push notifications.', 'fluent-community'),
+            /* translators: %s is the text to confirm the action */
             'You must type %s to confirm' => __('You must type %s to confirm', 'fluent-community'),
             'You need to enroll in this course to access this lesson' => __('You need to enroll in this course to access this lesson', 'fluent-community'),
             'You need to upgrade to Pro to upload documents' => __('You need to upgrade to Pro to upload documents', 'fluent-community'),
             'You should enable this. Currently disabled.' => __('You should enable this. Currently disabled.', 'fluent-community'),
             'You will get a digest email with curated activities in the community' => __('You will get a digest email with curated activities in the community', 'fluent-community'),
-            'You will get email notifications on new messages from your last notification. Frequency: %1s' => __('You will get email notifications on new messages from your last notification. Frequency: %1s', 'fluent-community'),
+            /* translators: %s is the frequency of the email notifications */
+            'You will get email notifications on new messages from your last notification. Frequency: %s' => __('You will get email notifications on new messages from your last notification. Frequency: %s', 'fluent-community'),
+            'You will get push notifications on replies and imprortant updates.' => __('You will get push notifications on replies and imprortant updates.', 'fluent-community'),
             'You will not get any email on new messages from any members' => __('You will not get any email on new messages from any members', 'fluent-community'),
             'You will receive an email when someone leaves a comment on your post.' => __('You will receive an email when someone leaves a comment on your post.', 'fluent-community'),
             'You will receive an email when someone mentions you in a comment or post.' => __('You will receive an email when someone mentions you in a comment or post.', 'fluent-community'),
@@ -1462,6 +1599,7 @@ class TransStrings
             'Your files will be stored in the default Uploads folder' => __('Your files will be stored in the default Uploads folder', 'fluent-community'),
             'Your option text' => __('Your option text', 'fluent-community'),
             'Your portal feeds are not public so no sitemap entry will be generated.' => __('Your portal feeds are not public so no sitemap entry will be generated.', 'fluent-community'),
+            /* translators: %s is the scheduled date and time */
             'Your post has been scheduled for %s. Please find the scheduled post from your profile' => __('Your post has been scheduled for %s. Please find the scheduled post from your profile', 'fluent-community'),
             'Your request to join this course is pending' => __('Your request to join this course is pending', 'fluent-community'),
             'Your saved posts' => __('Your saved posts', 'fluent-community'),
@@ -1498,28 +1636,37 @@ class TransStrings
             '__USER_ONBOARD_SHORTCODE_DESC' => __('Select a user registration page. The page must include the [fluent_community_registration] shortcode.', 'fluent-community'),
             'accepted' => __('Accepted', 'fluent-community'),
             'active' => __('Active', 'fluent-community'),
+            /* translators: %s is the number of days after enrollment */
             'after %s days of enrollment' => __('after %s days of enrollment', 'fluent-community'),
             'all' => __('All', 'fluent-community'),
             'avatar' => __('avatar', 'fluent-community'),
             'bad, words, here' => __('bad, words, here', 'fluent-community'),
+            /* translators: %s is the name of the user */
             'by %s' => __('by %s', 'fluent-community'),
             'cancel' => __('cancel', 'fluent-community'),
             'change' => __('change', 'fluent-community'),
+            'click here' => __('click here', 'fluent-community'),
             'commented ' => __('commented ', 'fluent-community'),
             'comments disabled' => __('comments disabled', 'fluent-community'),
             'course' => __('course', 'fluent-community'),
             'course_creator' => __('Course Creator', 'fluent-community'),
+            'courses' => __('courses', 'fluent-community'),
             'created a poll' => __('created a poll', 'fluent-community'),
+            'day' => __('day', 'fluent-community'),
             'disabled' => __('disabled', 'fluent-community'),
             'enabled' => __('enabled', 'fluent-community'),
+            /* translators: %s is the date the poll ended */
             'ended %s' => __('ended %s', 'fluent-community'),
+            /* translators: %s is the date the poll will end */
             'ending %s' => __('ending %s', 'fluent-community'),
             'expired' => __('Expired', 'fluent-community'),
             'failed' => __('failed', 'fluent-community'),
             'in ' => __('in ', 'fluent-community'),
+            /* translators: %s is the execution time */
             'in %ss' => __('in %ss', 'fluent-community'),
             'link' => __('link', 'fluent-community'),
             'min' => __('min', 'fluent-community'),
+            'month' => __('month', 'fluent-community'),
             'n/a' => __('n/a', 'fluent-community'),
             'or' => __('or', 'fluent-community'),
             'passed' => __('passed', 'fluent-community'),
@@ -1531,9 +1678,14 @@ class TransStrings
             'save' => __('save', 'fluent-community'),
             'sec' => __('sec', 'fluent-community'),
             'space' => __('space', 'fluent-community'),
+            'spaces' => __('spaces', 'fluent-community'),
             'the quiz.' => __('the quiz.', 'fluent-community'),
+            'to install and activate FluentCart.' => __('to install and activate FluentCart.', 'fluent-community'),
             'unavailable' => __('unavailable', 'fluent-community'),
+            'week' => __('week', 'fluent-community'),
+            /* translators: %s is the date the section will unlock */
             'will unlock at %s' => __('will unlock at %s', 'fluent-community'),
+            'year' => __('year', 'fluent-community'),
             'you can edit your role here' => __('you can edit your role here', 'fluent-community')
 ];
     }

@@ -2,9 +2,6 @@
 
 namespace FluentCommunity\Modules\Migrations;
 
-use FluentCommunity\App\Models\User;
-use FluentCommunity\Modules\Migrations\Helpers\BPMigratorHelper;
-
 class MigrationModule
 {
     public function register($app)
@@ -21,6 +18,10 @@ class MigrationModule
         });
 
         add_filter('fluent_community/portal_settings_menu_items', function ($menuItems) {
+            if (!\FluentCommunity\App\Services\Helper::isSiteAdmin()) {
+                return $menuItems;
+            }
+
             $menuItems['manage_migrations'] = [
                 'label'    => __('Manage Migrations', 'fluent-community'),
                 'route'    => 'manage_migrations',

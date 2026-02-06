@@ -193,27 +193,43 @@ class NotificationEventHandler
 
             $totalUsers = $feed->comments->pluck('user_id')->unique()->count();
 
-            if ($totalUsers > 1) {
-                $commenter .= ' and ' . ($totalUsers - 1) . ' other people';
-            }
-
             if ($feed->space_id) {
-                $notificationContent = \sprintf(
-                /* translators: %1$s is the user name, %2$s is the people count, %3$s is the feed title  and %4$s space title*/
-                    __('%1$s and %2$s other people commented on your post %3$s in %4$s', 'fluent-community'),
-                    '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
-                    '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
-                    '<span class="fcom_nft">' . $feedTitle . '</span>',
-                    '<b class="fcom_nst">' . $feed->space->title . '</b>'
-                );
+                if ($totalUsers > 1) {
+                    $notificationContent = \sprintf(
+                    /* translators: %1$s is the user name, %2$s is the people count, %3$s is the feed title  and %4$s space title*/
+                        __('%1$s and %2$s other people commented on your post %3$s in %4$s', 'fluent-community'),
+                        '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
+                        '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
+                        '<span class="fcom_nft">' . $feedTitle . '</span>',
+                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                    );
+                } else {
+                    $notificationContent = \sprintf(
+                    /* translators: %1$s is the user name, %2$s is the feed title  and %3$s space title*/
+                        __('%1$s commented on your post: %2$s in %3$s', 'fluent-community'),
+                        '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
+                        '<span class="fcom_nft">' . $feedTitle . '</span>',
+                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                    );
+                }
             } else {
-                $notificationContent = \sprintf(
-                /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
-                    __('%1$s and %2$s other people commented on your post %3$s', 'fluent-community'),
-                    '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
-                    '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
-                    '<span class="fcom_nft">' . $feedTitle . '</span>'
-                );
+
+                if ($totalUsers > 1) {
+                    $notificationContent = \sprintf(
+                    /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
+                        __('%1$s and %2$s other people commented on your post %3$s', 'fluent-community'),
+                        '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
+                        '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
+                        '<span class="fcom_nft">' . $feedTitle . '</span>'
+                    );
+                } else {
+                    $notificationContent = \sprintf(
+                    /* translators: %1$s is the user name & %2$s is the feed title */
+                        __('%1$s commented on your post: %2$s', 'fluent-community'),
+                        '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
+                        '<span class="fcom_nft">' . $feedTitle . '</span>'
+                    );
+                }
             }
         } else {
             if ($feed->space_id) {
@@ -249,6 +265,16 @@ class NotificationEventHandler
                     'is_read'    => 0,
                     'updated_at' => current_time('mysql')
                 ]);
+
+            do_action('fluent_community/notification/comment/notifed_to_author', [
+                'user_ids'     => [$feed->user_id],
+                'notification' => $exist,
+                'key'          => 'notifed_to_author',
+                'comment'      => $comment,
+                'feed'         => $feed,
+                'created'      => false
+            ]);
+
             return;
         }
 
@@ -265,6 +291,15 @@ class NotificationEventHandler
         $notification = Notification::create($notification);
 
         $notification->subscribe([$feed->user_id]);
+
+        do_action('fluent_community/notification/comment/notifed_to_author', [
+            'user_ids'     => [$feed->user_id],
+            'notification' => $notification,
+            'comment'      => $comment,
+            'key'          => 'notifed_to_author',
+            'feed'         => $feed,
+            'created'      => true
+        ]);
     }
 
     protected function commentNotificationToFeedCommenters($comment, $feed)
@@ -318,7 +353,7 @@ class NotificationEventHandler
                 'src_object_type' => 'comment',
                 'action'          => 'mention_added',
                 'content'         => \sprintf(
-                // translators: %1$s is the commenter name & %2$s is the feed title
+                /* translators: %1$s is the commenter name & %2$s is the feed title */
                     __('%1$s mentioned you in a comment at %2$s', 'fluent-community'),
                     '<b class="fcom_nudn">' . $comment->user->display_name . '</b>',
                     '<b class="fcom_nft">' . $feedTitle . '</b>'
@@ -327,6 +362,14 @@ class NotificationEventHandler
             ]);
 
             $mentionNotification->subscribe($mentionedUserIds);
+
+            do_action('fluent_community/notification/comment/notifed_to_mentions', [
+                'user_ids'     => $mentionedUserIds,
+                'notification' => $mentionNotification,
+                'key'          => 'notifed_to_mentions',
+                'comment'      => $comment,
+                'feed'         => $feed
+            ]);
         }
 
         if ($mentionedUserIds) {
@@ -348,12 +391,23 @@ class NotificationEventHandler
         ];
         $notification = Notification::create($notification);
         $notification->subscribe($userIds);
+
+        do_action('fluent_community/notification/comment/notifed_to_other_users', [
+            'user_ids'     => $userIds,
+            'key'          => 'notifed_to_other_users',
+            'notification' => $notification,
+            'comment'      => $comment,
+            'feed'         => $feed
+        ]);
     }
 
     protected function notifyForChildCommentReply($comment, $feed)
     {
         // This is a parent comment, so we need to notify the parent comment author & all child comment authors
-        $childCommentUserIds = Comment::where('parent_id', $comment->parent_id)
+        $childCommentUserIds = Comment::where(function ($q) use ($comment) {
+            $q->where('parent_id', $comment->parent_id)
+                ->orWhere('id', $comment->parent_id);
+        })
             ->whereNotIn('user_id', [$comment->user_id, $feed->user_id])
             ->select(['user_id'])
             ->distinct('user_id')
@@ -396,6 +450,14 @@ class NotificationEventHandler
                     'updated_at' => current_time('mysql')
                 ]);
 
+            do_action('fluent_community/notification/comment/notifed_to_thread_commetenter', [
+                'user_ids'     => $childCommentUserIds,
+                'notification' => $existingNotification,
+                'key'          => 'notifed_to_thread_commetenter',
+                'comment'      => $comment,
+                'feed'         => $feed
+            ]);
+
             return $existingNotification;
         }
 
@@ -424,6 +486,15 @@ class NotificationEventHandler
 
         $notification = Notification::create($notification);
         $notification->subscribe($childCommentUserIds);
+
+        do_action('fluent_community/notification/comment/notifed_to_thread_commetenter', [
+            'user_ids'     => $childCommentUserIds,
+            'notification' => $notification,
+            'key'          => 'notifed_to_thread_commetenter',
+            'comment'      => $comment,
+            'feed'         => $feed
+        ]);
+
         return $notification;
     }
 
@@ -433,6 +504,8 @@ class NotificationEventHandler
         if (!$mentionedUserIds) {
             return;
         }
+
+        do_action('fluent_community/feed_mentioned_user_ids', $feed, $mentionedUserIds);
 
         $feedTitle = $feed->getHumanExcerpt(60);
         $user = $feed->user;

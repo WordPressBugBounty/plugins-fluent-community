@@ -15,7 +15,7 @@ class AuthHelper
 
         $sanitized_user_login = sanitize_user($user_login);
 
-        $user_email = apply_filters('user_registration_email', $user_email);
+        $user_email = apply_filters('user_registration_email', $user_email); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         // Check the username.
         if ('' === $sanitized_user_login) {
@@ -27,7 +27,7 @@ class AuthHelper
             $errors->add('username_exists', __('<strong>Error</strong>: This username is already registered. Please choose another one.', 'fluent-community'));
         } else {
             /** This filter is documented in wp-includes/user.php */
-            $illegal_user_logins = (array)apply_filters('illegal_user_logins', array());
+            $illegal_user_logins = (array)apply_filters('illegal_user_logins', array()); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             if (in_array(strtolower($sanitized_user_login), array_map('strtolower', $illegal_user_logins), true)) {
                 $errors->add('invalid_username', __('<strong>Error</strong>: Sorry, that username is not allowed.', 'fluent-community'));
             }
@@ -46,7 +46,7 @@ class AuthHelper
             );
         }
 
-        do_action('register_post', $sanitized_user_login, $user_email, $errors);
+        do_action('register_post', $sanitized_user_login, $user_email, $errors); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         if ($errors->has_errors()) {
             return $errors;
@@ -103,13 +103,13 @@ class AuthHelper
         }
 
         if (!empty($_COOKIE['wp_lang'])) {
-            $wp_lang = sanitize_text_field($_COOKIE['wp_lang']);
+            $wp_lang = sanitize_text_field(wp_unslash($_COOKIE['wp_lang']));
             if (in_array($wp_lang, get_available_languages(), true)) {
                 update_user_meta($user_id, 'locale', $wp_lang); // Set user locale if defined on registration.
             }
         }
 
-        do_action('register_new_user', $user_id);
+        do_action('register_new_user', $user_id); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         return $user_id;
     }
@@ -123,7 +123,7 @@ class AuthHelper
         $user = get_user_by('ID', $user->ID);
 
         if ($user) {
-            do_action('wp_login', $user->user_login, $user);
+            do_action('wp_login', $user->user_login, $user); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
 
         return $user;
@@ -144,6 +144,7 @@ class AuthHelper
 
         $termsText = __('I agree to the terms and conditions', 'fluent-community');
         if ($policyUrl) {
+            /* translators: %1$s is replaced by the text "terms and conditions", %2$s is replaced by the text "to the terms and conditions" */
             $termsText = sprintf(__('I agree to the %1$s terms and conditions %2$s', 'fluent-community'), '<a rel="noopener" href="' . esc_url($policyUrl) . '" target="_blank">', '</a>');
         }
 
@@ -267,7 +268,7 @@ class AuthHelper
         try {
             $verifcationCode = str_pad(random_int(100123, 900987), 6, 0, STR_PAD_LEFT);
         } catch (\Exception $e) {
-            $verifcationCode = str_pad(mt_rand(100123, 900987), 6, 0, STR_PAD_LEFT);
+            $verifcationCode = str_pad(wp_rand(100123, 900987), 6, 0, STR_PAD_LEFT);
         }
 
         // Hash the code
@@ -285,12 +286,15 @@ class AuthHelper
         $signature = hash_hmac('sha256', $token, SECURE_AUTH_KEY);
         $signedToken = $token . '.' . $signature;
 
+        /* translators: %s is replaced by the title of the site */
         $mailSubject = apply_filters("fluent_community/auth/signup_verification_mail_subject", sprintf(__('Your registration verification code for %s', 'fluent-community'), Arr::get($generalSettings, 'site_title')));
 
         $pStart = '<p style="font-family: Arial, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">';
 
+        /* translators: %s is replaced by the name of the user */
         $message = $pStart . sprintf(__('Hello %s,', 'fluent-community'), Arr::get($formData, 'first_name')) . '</p>' .
             $pStart . __('Thank you for registering with us! To complete the setup of your account, please enter the verification code below on the registration page.', 'fluent-community') . '</p>' .
+            /* translators: %s is replaced by the verification code */
             $pStart . '<b>' . sprintf(__('Verification Code: %s', 'fluent-community'), $verifcationCode) . '</b></p>' .
             '<br />' .
             $pStart . __('This code is valid for 10 minutes and is meant to ensure the security of your account. If you did not initiate this request, please ignore this email.', 'fluent-community') . '</p>';
@@ -307,6 +311,7 @@ class AuthHelper
             'pre_header'  => __('Activate your account', 'fluent-community'),
             'footerLines' => [
                 __('If you did not initiate this request, please ignore this email.', 'fluent-community'),
+                /* translators: %1$s is replaced by the title of the site, %2$s is replaced by the home URL */
                 sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), home_url())
             ]
         ]);
@@ -324,14 +329,15 @@ class AuthHelper
         ?>
         <div class="fls_signup_verification">
             <input type="hidden" name="__two_fa_signed_token" value="<?php echo esc_attr($signedToken); ?>"/>
+            <?php /* translators: %s is replaced by the email address */ ?>
             <p><?php echo esc_html(\sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
             <div class="fcom_form-group fcom_field_verification">
                 <div class="fcom_form_label">
-                    <label for="fcom_field_verification"><?php _e('Verification Code', 'fluent-community'); ?></label>
+                    <label for="fcom_field_verification"><?php esc_html_e('Verification Code', 'fluent-community'); ?></label>
                 </div>
                 <div class="fs_input_wrap">
                     <input type="text" id="fcom_field_verification"
-                           placeholder="<?php _e('2FA Code', 'fluent-community'); ?>" name="_email_verification_code"
+                           placeholder="<?php esc_html_e('2FA Code', 'fluent-community'); ?>" name="_email_verification_code"
                            required/>
                 </div>
             </div>
@@ -349,7 +355,7 @@ class AuthHelper
                                                   repeatCount="indefinite"/>
                             </path>
                         </svg>
-                        <span> <?php _e('Complete Signup', 'fluent-community'); ?></span>
+                        <span> <?php esc_html_e('Complete Signup', 'fluent-community'); ?></span>
                     </button>
                 </div>
             </div>
@@ -411,7 +417,9 @@ class AuthHelper
     {
         $defaults = array(
             'echo'           => true,
-            'redirect'       => (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
+            'redirect'       => (is_ssl() ? 'https://' : 'http://')
+                . (isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '')
+                . (isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : ''),
             'form_id'        => 'loginform',
             'label_username' => __('Email Address', 'fluent-community'),
             'label_password' => __('Password', 'fluent-community'),
@@ -428,13 +436,13 @@ class AuthHelper
             'value_remember' => false,
         );
 
-        $args = wp_parse_args($args, apply_filters('login_form_defaults', $defaults));
+        $args = wp_parse_args($args, apply_filters('login_form_defaults', $defaults)); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
-        $login_form_top = apply_filters('login_form_top', '', $args);
+        $login_form_top = apply_filters('login_form_top', '', $args); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
-        $login_form_middle = apply_filters('login_form_middle', '', $args);
+        $login_form_middle = apply_filters('login_form_middle', '', $args); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
-        $login_form_bottom = apply_filters('login_form_bottom', '', $args);
+        $login_form_bottom = apply_filters('login_form_bottom', '', $args); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         $actionUrl = esc_url(site_url('wp-login.php', 'login_post'));
 

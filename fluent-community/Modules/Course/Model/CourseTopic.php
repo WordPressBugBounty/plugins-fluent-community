@@ -187,7 +187,7 @@ class CourseTopic extends Model
             Meta::create([
                 'object_id'   => $this->id,
                 'object_type' => 'course_topic',
-                'meta_key'    => $key,
+                'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'value'       => $value
             ]);
         }
@@ -219,7 +219,7 @@ class CourseTopic extends Model
                 return '';
             }
             // remove all tags
-            $content = strip_tags($content);
+            $content = wp_strip_all_tags($content);
             // remove new lines and tabs
             $content = str_replace(["\r", "\n", "\t"], ' ', $content);
             // remove multiple spaces

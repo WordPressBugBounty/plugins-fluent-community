@@ -183,8 +183,9 @@ class ReactionController extends Controller
             ->limit(100)
             ->get(); // Todo: Add lazy loading in the future
 
-        return [
-            'voters' => $voters
-        ];
+            $data = [
+                'voters' => $voters
+            ];
+            return apply_filters('fluent_community/survey_voters_api_response', $data, $this->request->all());
     }
 }

@@ -66,6 +66,7 @@ class FeedsHelper
         $html = (new \FluentCommunity\App\Services\Parsedown([
         ]))
             ->setBreaksEnabled(true)
+            ->setUrlsLinked(false)
             //  ->setSafeMode(true)
             ->text($text);
 
@@ -95,7 +96,7 @@ class FeedsHelper
                 'href'    => true,
                 'title'   => true,
                 'rel'     => true,
-                '_target' => true,
+                'target'  => true,
             ),
             'img'        => array(
                 'src' => true,
@@ -104,6 +105,7 @@ class FeedsHelper
             'code'       => array(),
             'pre'        => array(),
             'blockquote' => array(),
+            'del'        => array(),
         ));
 
         return self::maybeTransformDynamicCodes($html);
@@ -147,7 +149,7 @@ class FeedsHelper
             return '';
         }
 
-        $current_domain = parse_url(home_url(), PHP_URL_HOST);
+        $current_domain = wp_parse_url(home_url(), PHP_URL_HOST);
 
         // Regular expression to match <a> tags
         $pattern = '/<a\s[^>]*href=("|\')(https?:\/\/(?!' . preg_quote($current_domain, '/') . ').*?)("|\')\s?([^>]*)>/i';
@@ -366,6 +368,10 @@ class FeedsHelper
             ]);
         }
 
+        if (!empty($newSyncIndexes)) {
+            do_action('fluent_community/feed/cast_survey_vote', $newSyncIndexes, $feed, $userId);
+        }
+
         foreach ($surveyConfig['options'] as $index => $option) {
             $slug = $option['slug'];
 
@@ -379,6 +385,8 @@ class FeedsHelper
 
             $surveyConfig['options'][$index] = $option;
         }
+
+        $surveyConfig = apply_filters('fluent_community/feed/updated_survey_config', $surveyConfig, $feed, $userId);
 
         $meta = $feed->meta;
         $meta['survey_config'] = $surveyConfig;
@@ -455,6 +463,10 @@ class FeedsHelper
 
         [$feedData, $mediaItems] = self::processFeedMetaData($feedData, $allData);
 
+        if ($mentions) {
+            $feedData['meta']['mentioned_user_ids'] = Arr::get($mentions, 'user_ids', []);
+        }
+
         $data = apply_filters('fluent_community/feed/new_feed_data', $feedData, $allData);
         $feed = new Feed();
         $feed->fill($data);
@@ -509,7 +521,7 @@ class FeedsHelper
 
             $endDate = Arr::get($survey, 'end_date', '');
             if ($endDate) {
-                $endDate = date('Y-m-d H:i:s', strtotime($endDate));
+                $endDate = gmdate('Y-m-d H:i:s', strtotime($endDate));
             } else {
                 $endDate = '';
             }
@@ -657,7 +669,7 @@ class FeedsHelper
             }
 
             if ($endDate = Arr::get($data['survey'], 'end_date', '')) {
-                $surveyConfig['end_date'] = date('Y-m-d H:i:s', strtotime($endDate));
+                $surveyConfig['end_date'] = gmdate('Y-m-d H:i:s', strtotime($endDate));
             } else {
                 $surveyConfig['end_date'] = '';
             }
@@ -762,6 +774,12 @@ class FeedsHelper
             return [$data, $uploadedMediaItems];
         }
 
+        if ($existingFeed && Arr::get($existingFeed->meta, 'auto_flagged') == 'yes') {
+            $data['meta']['auto_flagged'] = 'yes';
+            $data['meta']['prevent_published'] = 'yes';
+            $data['meta']['reports_count'] = Arr::get($existingFeed->meta, 'reports_count', 0);
+        }
+
         // Let's handle the fallback here
         $firstUrl = FeedsHelper::findFirstUrl(Arr::get($data, 'message_rendered'));
 
@@ -803,7 +821,7 @@ class FeedsHelper
 
             if ($interactions) {
                 $feed->has_user_react = Arr::get($interactions, 'like', false);
-                $feed->bookmark = Arr::get($interactions, 'bookmark', false);
+                $feed->bookmarked = Arr::get($interactions, 'bookmark', false);
             }
 
             $commentLikeIds = Arr::get($config, 'comment_like_ids', []);
@@ -943,6 +961,7 @@ class FeedsHelper
             $feedHtml .= '<div class="fcom_media" style="margin-top: 20px;">';
             $feedHtml .= '<a href="' . $postPermalink . '"><img src="' . $mediaImage . '" style="max-width: 100%; height: auto; display: block; margin: 0 auto 0px;" /></a>';
             if ($mediaCount > 1) {
+                /* translators: %d is the number of additional images not shown in the preview. */
                 $feedHtml .= '<p style="text-align: center; font-size: 14px; color: #666; margin-top: 10px;">' . sprintf(_n('+%d more image', '+%d more images', $mediaCount - 1, 'fluent-community'), $mediaCount - 1) . '</p>';
             }
             $feedHtml .= '</div>';

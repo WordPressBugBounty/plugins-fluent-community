@@ -31,7 +31,8 @@ class EditorBlock
             'custom-layout-block-editor',
             plugins_url('build/index.js', __FILE__),
             $asset_file['dependencies'],
-            $asset_file['version']
+            $asset_file['version'],
+            true
         );
 
         wp_localize_script(
@@ -119,7 +120,7 @@ class EditorBlock
         }
 
         $contenx = 'wp';
-        if (isset($_REQUEST['context']) && $_REQUEST['context'] == 'edit' && Helper::isSiteAdmin()) {
+        if (isset($_REQUEST['context']) && $_REQUEST['context'] == 'edit' && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $contenx = 'block_editor';
         }
 
@@ -177,7 +178,7 @@ class EditorBlock
                                 </div>
                                 <div
                                     class="feeds_main fcom_wp_content fcom_fallback_wp_content <?php echo esc_attr($className); ?> <?php echo esc_attr($widthClass); ?>">
-                                    <?php echo do_blocks($content); ?>
+                                    <?php echo do_blocks($content); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                 </div>
                             </div>
                         </div>
@@ -207,9 +208,9 @@ class EditorBlock
                         <div class="feed_layout">
                             <div class="spaces">
                                 <div id="fluent_community_sidebar_menu" class="space_contents">
-                                    <!--                                    start-->
+                                    <!-- start-->
                                     <?php do_action('fluent_community/portal_sidebar', 'headless'); ?>
-                                    <!--                                    end-->
+                                    <!-- end-->
                                 </div>
                             </div>
                             <div class="fcom_wp_page">

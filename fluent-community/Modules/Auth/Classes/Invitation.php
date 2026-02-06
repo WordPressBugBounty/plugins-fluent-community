@@ -166,7 +166,7 @@ class Invitation extends Model
         $expireDate = Arr::get($meta, 'expire_date', '');
         $limit = Arr::get($meta, 'limit', 0);
 
-        if ($expireDate && strtotime($expireDate) < strtotime(date('Y-m-d', current_time('timestamp')))) {
+        if ($expireDate && strtotime($expireDate) < strtotime(gmdate('Y-m-d', current_time('timestamp')))) {
             $this->status = 'expired';
             $this->save();
             return false;

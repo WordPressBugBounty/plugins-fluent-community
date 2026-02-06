@@ -162,27 +162,31 @@
                             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
                                 <tr>
                                     <td class="wrapper user_contents" style="font-family: Helvetica, sans-serif; font-size: 16px; line-height: 1.4; vertical-align: top; box-sizing: border-box; padding: 24px;" valign="top">
+<!--email_content_before-->
                                         <?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($bodyContent, true); ?>
+<!--email_content_after-->
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
                 </table>
+                <!--before-footer-lines-->
                 <?php if($footerLines): ?>
                 <div class="footer" style="clear: both; padding-top: 24px; padding-bottom: 24px; text-align: center; width: 100%;">
                     <!--before_footer_section-->
                     <table class="fcom_email" role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
-                        <?php foreach ($footerLines as $line):  ?>
+                        <?php foreach ($footerLines as $fluentCommunityLine):  ?>
                         <tr>
                             <td class="content-block" style="font-family: Helvetica, sans-serif; vertical-align: top; color: #9a9ea6; font-size: 14px;  text-align: center;" valign="top" align="center">
-                                <span class="apple-link" style="color: #9a9ea6; font-size: 14px; text-align: center;"><?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($line, true); ?></span>
+                                <span class="apple-link" style="color: #9a9ea6; font-size: 14px; text-align: center;"><?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($fluentCommunityLine, true); ?></span>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
                 </div>
                 <?php endif; ?>
+                <!--after-footer-lines-->
             </div>
         </td>
         <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top;" valign="top">&nbsp;</td>

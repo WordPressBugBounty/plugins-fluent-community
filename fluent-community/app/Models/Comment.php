@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 
@@ -55,6 +56,11 @@ class Comment extends Model
                 ->update([
                     'is_active' => 0
                 ]);
+
+            Activity::where('feed_id', $comment->post_id)
+                ->where('action_name', 'comment_added')
+                ->where('related_id', $comment->id)
+                ->delete();
 
             $notifications = Notification::where('object_id', $comment->id)
                 ->where('src_object_type', 'comment')

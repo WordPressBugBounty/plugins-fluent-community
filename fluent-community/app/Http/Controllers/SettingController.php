@@ -15,10 +15,11 @@ class SettingController extends Controller
 {
     public function getFeatures()
     {
-        return [
+        $data = [
             'features' => Utility::getFeaturesConfig(),
             'addOns'   => $this->getAddons()
         ];
+        return apply_filters('fluent_community/features_api_response', $data, $this->request->all());
     }
 
     public function setFeatures(Request $request)
@@ -86,9 +87,10 @@ class SettingController extends Controller
             }
         }
 
-        return [
+        $data = [
             'menuSettings' => $formattedGroups
         ];
+        return apply_filters('fluent_community/menu_settings_api_response', $data, $request->all());
     }
 
     public function saveMenuSettings(Request $request)
@@ -174,6 +176,16 @@ class SettingController extends Controller
                 'settings_url'   => Helper::baseUrl('chat'),
                 'action_text'    => $this->isPluginInstalled('fluent-messaging/fluent-messaging.php') ? __('Active FluentCommunity Chat', 'fluent-community') : __('Install FluentCommunity Chat', 'fluent-community'),
                 'description'    => __('FluentCommunity Chat is a real-time chat plugin for WordPress. It allows you to create a chat room for your community members.', 'fluent-community')
+            ],
+            'fluent-cart'      => [
+                'is_repo'        => true,
+                'title'          => __('FluentCart', 'fluent-community'),
+                'logo'           => Helper::assetUrl('images/brands/fluent-cart.svg'),
+                'is_installed'   => defined('FLUENTCART_VERSION'),
+                'learn_more_url' => 'https://wordpress.org/plugins/fluent-cart/',
+                'settings_url'   => admin_url('admin.php?page=fluent-cart#/'),
+                'action_text'    => $this->isPluginInstalled('fluent-cart/fluent-cart.php') ? __('Active FluentCart', 'fluent-community') : __('Install Fluent Cart', 'fluent-community'),
+                'description'    => __('The easiest way to sell digital and physical products in WordPress. Create, manage, and sell products with ease.', 'fluent-community')
             ],
             'fluent-crm'       => [
                 'is_repo'        => true,
@@ -271,7 +283,7 @@ class SettingController extends Controller
                     return $this->sendError(__('Fluent Messaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community'));
                 }
 
-                do_action('fleunt_community/install_messaging_plugin');
+                do_action('fluent_community/install_messaging_plugin');
             }
         }
 
@@ -403,9 +415,11 @@ class SettingController extends Controller
 
     public function getCustomizationSettings(Request $request)
     {
-        return [
+        $data = [
             'settings' => Utility::getCustomizationSettings()
         ];
+
+        return apply_filters('fluent_community/customization_settings_api_response', $data, $request->all());
     }
 
     public function updateCustomizationSettings(Request $request)
@@ -438,9 +452,11 @@ class SettingController extends Controller
 
     public function getPrivacySettings(Request $request)
     {
-        return [
+        $data = [
             'settings' => Utility::getPrivacySettings()
         ];
+
+        return apply_filters('fluent_community/privacy_settings_api_response', $data, $request->all());
     }
 
     public function updatePrivacySettings(Request $request)
@@ -458,10 +474,12 @@ class SettingController extends Controller
         $config = Utility::getColorConfig('edit');
         $schemas = Utility::getColorSchemas();
 
-        return [
+        $data = [
             'config'  => $config,
             'schemas' => $schemas
         ];
+
+        return apply_filters('fluent_community/color_config_api_response', $data, $request->all());
     }
 
     public function getCrmTaggingConfig(Request $request)
@@ -567,11 +585,12 @@ class SettingController extends Controller
         }
 
 
-        return [
+        $data = [
             'settings'      => $settings,
             'spaceGroups'   => $formattedSpaceGroups,
             'crm_tags'      => $fluentCrmTags,
             'has_fluentcrm' => defined('FLUENTCRM')
         ];
+        return apply_filters('fluent_community/crm_tagging_config_api_response', $data, $request->all());
     }
 }

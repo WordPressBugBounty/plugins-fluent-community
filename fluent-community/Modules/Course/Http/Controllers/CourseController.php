@@ -69,10 +69,12 @@ class CourseController extends Controller
             }
         }
 
-        return [
+        $data = [
             'courses'           => $courses,
             'course_categories' => $request->get('with_categories') ? CourseHelper::getCourseCategories() : []
         ];
+
+        return apply_filters('fluent_community/courses_api_response', $data, $request->all());
     }
 
     public function getCourse(Request $request, $courseId)
@@ -130,7 +132,9 @@ class CourseController extends Controller
 
         $intendtedLessonSlug = $request->get('intended_lesson_slug');
 
-        return $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
+        $data = $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
+
+        return apply_filters('fluent_community/course_api_response', $data, $request->all());
     }
 
     public function getLessonBySlug(Request $request, $courseSlug, $lessonSlug)
@@ -194,9 +198,11 @@ class CourseController extends Controller
             'unclock_date'  => $unlockDate
         ]);
 
-        return [
+        $data = [
             'lesson' => $formattedLesson
         ];
+        
+        return apply_filters('fluent_community/course_lesson_api_response', $data, $request->all());
     }
 
     private function processCourse(Course $course, $isCourseCreator, $intendtedLessonSlug = '')
@@ -215,7 +221,7 @@ class CourseController extends Controller
         $currentUser = Helper::getCurrentUser();
 
         if ($course->privacy == 'private' && !$enrollment) {
-            $course->lockscreen_config = LockscreenService::getLockscreenConfig($course);
+            $course->lockscreen_config = LockscreenService::getLockscreenConfig($course, null, true);
         }
 
         if ($course->privacy == 'secret' && !$enrollment && !$isCourseCreator) {

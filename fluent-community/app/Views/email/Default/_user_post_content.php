@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
                     <td>
                         <table style="margin-bottom: 10px;" cellspacing="0" cellpadding="0" border="0">
                             <tr>
-                                <td valign="top" style="border-radius: 50%; padding: 0px; vertical-align: top;">
+                                <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; height: 32px; width: 32px;">
                                     <a href="<?php echo esc_url($permalink); ?>">
-                                        <img alt="" src="<?php echo esc_url($user_avatar); ?>" style="border-radius: 50%; width: 32px; height: 32px; display: block;">
+                                        <img alt="" src="<?php echo esc_url($user_avatar); ?>" height="32" width="32" style="border-radius: 50%; height: 32px; width: 32px; display: block;">
                                     </a>
                                 </td>
                                 <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding: 0 5px; vertical-align: middle;">
@@ -28,11 +28,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
                                         <span style="font-weight: bold;"><?php echo esc_html($user_name); ?></span>
                                     </a>
                                     <?php if($space_name): ?>
+                                        <?php /* translators: %s is replaced by the title of the space */ ?>
                                         <span style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0;"><?php echo esc_html(sprintf(__('in %s', 'fluent-community'), $space_name)); ?></span>
                                     <?php endif; ?>
 
                                     <?php if(!empty($timestamp)): ?>
-                                    <p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 0px;"><?php echo esc_html(sprintf(__('%s ago', 'fluent-community'), $timestamp)); ?></p>
+                                        <?php /* translators: %s is replaced by the time ago */ ?>
+                                        <p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 0px;"><?php echo esc_html(sprintf(__('%s ago', 'fluent-community'), $timestamp)); ?></p>
                                     <?php endif; ?>
                                 </td>
                             </tr>

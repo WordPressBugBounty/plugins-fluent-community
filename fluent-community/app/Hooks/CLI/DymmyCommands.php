@@ -186,7 +186,7 @@ class DymmyCommands
             $progress->tick();
 
             // get a random user
-            $randomUserId = mt_rand(1, $totalUsersCount);
+            $randomUserId = wp_rand(1, $totalUsersCount);
 
             $message = $this->getRandomStatus();
 
@@ -234,8 +234,8 @@ class DymmyCommands
             $progress->tick();
 
             // get a random user
-            $randomUserId = mt_rand(1, $totalUsersCount);
-            $postId = mt_rand(1, $totalPostCount);
+            $randomUserId = wp_rand(1, $totalUsersCount);
+            $postId = wp_rand(1, $totalPostCount);
 
             $feed = Feed::find($postId);
             if (!$feed) {
@@ -286,8 +286,8 @@ class DymmyCommands
         $createdCount = 0;
         for ($i = 0; $i < $count; $i++) {
             $progress->tick();
-            $userId = mt_rand(1, $totalUsersCount);
-            $postId = mt_rand(1, $totalPostCount);
+            $userId = wp_rand(1, $totalUsersCount);
+            $postId = wp_rand(1, $totalPostCount);
             $post = Feed::find($postId);
             if (!$post) {
                 continue;
@@ -337,8 +337,8 @@ class DymmyCommands
 
             $progress->tick();
 
-            $userId = mt_rand(1, $totalUsersCount);
-            $commentId = mt_rand(1, $totalComments);
+            $userId = wp_rand(1, $totalUsersCount);
+            $commentId = wp_rand(1, $totalComments);
             $comment = Comment::find($commentId);
             if (!$comment) {
                 continue;
@@ -350,8 +350,8 @@ class DymmyCommands
                 'object_id'   => $comment->id,
                 'object_type' => 'comment',
                 'type'        => 'like',
-                'created_at'  => date('Y-m-d H:i:s', mt_rand(strtotime('-1 years'), current_time('timestamp'))),
-                'updated_at'  => date('Y-m-d H:i:s', mt_rand(strtotime('-1 years'), current_time('timestamp'))),
+                'created_at'  => gmdate('Y-m-d H:i:s', wp_rand(strtotime('-1 years'), current_time('timestamp'))),
+                'updated_at'  => gmdate('Y-m-d H:i:s', wp_rand(strtotime('-1 years'), current_time('timestamp'))),
             ];
 
             if ($comment->reactions()->where('user_id', $userId)->count() == 0) {
@@ -382,7 +382,7 @@ class DymmyCommands
                 $words[] = PHP_EOL;
             }
 
-            $words[] = Str::random(mt_rand(4, 6));
+            $words[] = Str::random(wp_rand(4, 6));
         }
         return implode(' ', $words);
     }

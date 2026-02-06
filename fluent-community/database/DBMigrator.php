@@ -24,7 +24,7 @@ class DBMigrator
     {
         if($network_wide) {
             global $wpdb;
-            $blogs = $wpdb->get_results("SELECT blog_id FROM $wpdb->blogs");
+            $blogs = $wpdb->get_results("SELECT blog_id FROM $wpdb->blogs"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             foreach ($blogs as $blog) {
                 switch_to_blog($blog->blog_id);
                 self::migrate();

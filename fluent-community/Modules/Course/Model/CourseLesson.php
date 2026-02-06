@@ -266,7 +266,7 @@ class CourseLesson extends Model
                 return '';
             }
             // remove all tags
-            $content = strip_tags($content);
+            $content = wp_strip_all_tags($content);
             // remove new lines and tabs
             $content = str_replace(["\r", "\n", "\t"], ' ', $content);
             // remove multiple spaces

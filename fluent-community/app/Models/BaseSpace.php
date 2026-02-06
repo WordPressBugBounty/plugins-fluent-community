@@ -290,7 +290,7 @@ class BaseSpace extends Model
                 ->exists();
 
             if ($exist) {
-                throw new \Exception(__('Slug already exist. Please use a different slug', 'fluent-community'), 400);
+                throw new \Exception(esc_html__('Slug already exist. Please use a different slug', 'fluent-community'), 400);
             }
 
             $this->slug = $newSlug;
@@ -450,6 +450,11 @@ class BaseSpace extends Model
         return LockscreenService::getLockscreenSettings($this);
     }
 
+    public function hasPaywallIntegration()
+    {
+        return !empty(Arr::get($this->settings, 'cart_product_ids', []));
+    }
+
     public function getCustomMeta($key, $default = null)
     {
         return Helper::getSpaceMeta($this->id, $key, $default);
@@ -501,7 +506,7 @@ class BaseSpace extends Model
             // We have to create one
             $new = Meta::create([
                 'object_id'   => $topicId,
-                'meta_key'    => $this->id,
+                'meta_key'    => $this->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'object_type' => 'term_space_relation'
             ]);
 
@@ -563,10 +568,6 @@ class BaseSpace extends Model
         $this->membership = $this->getMembership($userId);
         $this->topics = Utility::getTopicsBySpaceId($this->id);
 
-        if (!Helper::isSiteAdmin($userId, $user)) {
-            $this->lockscreen_config = LockscreenService::getLockscreenConfig($this, $this->membership);
-        }
-
         $headerLinks = [
             [
                 'title' => __('Posts', 'fluent-community'),
@@ -586,6 +587,22 @@ class BaseSpace extends Model
         }
 
         $this->header_links = apply_filters('fluent_community/space_header_links', $headerLinks, $this);
+
+        if ($this->isAdmin($userId, true)) {
+            return $this;
+        }
+
+        $this->lockscreen_config = LockscreenService::getLockscreenConfig($this, $this->membership, true);
+
+        $spaceSettings = $this->settings;
+
+        $spaceLinks = Arr::get($spaceSettings, 'links', []);
+
+        $spaceSettings['links'] = array_values(array_filter($spaceLinks, function ($item) use ($user) {
+            return Helper::isLinkAccessible($item, $user);
+        }));
+
+        $this->settings = $spaceSettings;
 
         return $this;
     }

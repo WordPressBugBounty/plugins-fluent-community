@@ -466,6 +466,7 @@ class CustomSanitizer
         $yesNotFields = [
             'restricted_post_only',
             'can_request_join',
+            'show_paywalls',
             'show_sidebar',
             'hide_members_count',
             'document_library',
@@ -505,5 +506,14 @@ class CustomSanitizer
         $settings['default_post_sort_by'] = in_array($defaultOrder, $validOrderOptions) ? $defaultOrder : '';
 
         return $settings;
+    }
+
+    public static function santizeEditorBody($body)
+    {
+        if (current_user_can('unfiltered_html')) {
+            return $body;
+        }
+
+        return wp_kses_post($body);
     }
 }

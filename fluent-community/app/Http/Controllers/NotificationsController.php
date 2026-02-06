@@ -31,9 +31,10 @@ class NotificationsController extends Controller
             ->orderBy('updated_at', 'DESC')
             ->paginate();
 
-        return [
+        $data = [
             'notifications' => $notifcations
         ];
+        return apply_filters('fluent_community/notifications_api_response', $data, $request->all());
     }
 
     public function getUnreadNotifications(Request $request)
@@ -49,10 +50,11 @@ class NotificationsController extends Controller
             ->limit(50)
             ->get();
 
-        return [
+        $data = [
             'notifications' => $unreadNotifications,
             'unread_count'  => Notification::byStatus('unread', get_current_user_id())->count()
         ];
+        return apply_filters('fluent_community/unread_notifications_api_response', $data, $request->all());
     }
 
     public function markAllRead(Request $request)

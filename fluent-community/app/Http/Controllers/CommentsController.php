@@ -40,7 +40,7 @@ class CommentsController extends Controller
             })
             ->get();
 
-        $comments = apply_filters('fluent_community/comments_query_response', $comments, $request->all());
+        $comments = apply_filters('fluent_community/comments_query_response', $comments, $request->all());    
 
         $userId = $this->getUserId();
 
@@ -56,9 +56,11 @@ class CommentsController extends Controller
             }
         }
 
-        return [
+        $data = [
             'comments' => $comments
         ];
+
+        return apply_filters('fluent_community/comments_api_response', $data, $request->all());
     }
 
     public function store(Request $request, $feedId)
@@ -91,7 +93,7 @@ class CommentsController extends Controller
             ]);
         }
 
-        $mentions = FeedsHelper::getMentions($text, $feed->space_id);
+        $mentions = FeedsHelper::getMentions($text, $feed->space_id, true);
         $commentHtml = $this->generateCommentHtml($text, $mentions);
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
 
@@ -143,14 +145,16 @@ class CommentsController extends Controller
 
         if ($comment->status != 'published') {
             do_action('fluent_community/comment/new_comment_' . $comment->status, $comment, $feed);
+            /* translators: %$s is replaced by the status of the comment */
+            $message = sprintf(__('Your comment has been marked as %s', 'fluent-community'), $comment->status);
             return [
                 'comment' => $comment,
-                'message' => sprintf(__('Your comment has been marked as %s', 'fluent-community'), $comment->status),
+                'message' => $message
             ];
         }
 
         do_action('fluent_community/comment_added_' . $feed->type, $comment, $feed);
-        do_action('fluent_community/comment_added', $comment, $feed);
+        do_action('fluent_community/comment_added', $comment, $feed, Arr::get($mentions, 'users', []));
 
         return [
             'comment' => $comment,
@@ -616,8 +620,10 @@ class CommentsController extends Controller
             }
         }
 
-        return [
+        $data = [
             'comment' => $comment
         ];
+
+        return apply_filters('fluent_community/comment_api_response', $data, $request->all());
     }
 }

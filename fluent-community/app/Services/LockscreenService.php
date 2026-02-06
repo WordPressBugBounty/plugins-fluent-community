@@ -7,7 +7,7 @@ use FluentCommunity\Framework\Support\Arr;
 
 class LockscreenService
 {
-    public static function getLockscreenSettings(BaseSpace $space)
+    public static function getLockscreenSettings(BaseSpace $space, $viewOnly = false)
     {
         $defaultSettings = [
             [
@@ -32,7 +32,7 @@ class LockscreenService
                 'type'    => 'block',
                 'label'   => 'Description',
                 'name'    => 'description',
-                'content' => 'Description Test'
+                'content' => '<!-- wp:paragraph --><p>Description</p><!-- /wp:paragraph -->',
             ]
         ];
 
@@ -66,8 +66,10 @@ class LockscreenService
         $settings = (array) $space->getCustomMeta('lockscreen_settings', $defaultSettings);
 
         foreach ($settings as &$setting) {
-            if ($setting['type'] === 'block' && !empty($setting['content'])) {
-                $setting['content'] = apply_filters('the_content', $setting['content']);
+            if ($viewOnly && $setting['type'] === 'block' && !empty($setting['content'])) {
+                $user = Helper::getCurrentUser();
+                $content = apply_filters('the_content', $setting['content']); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                $setting['content'] = (new SmartCodeParser())->parse($content, $user);
             }
 
             if ($setting['type'] == 'image' && empty($setting['new_tab'])) {
@@ -75,14 +77,14 @@ class LockscreenService
             }
         }
 
-        return $settings;
+        return apply_filters('fluent_community/lockscreen_fields', $settings, $space);
     }
 
     public static function formatLockscreenFields($settingFields, $space)
     {
         $currentSettings = self::getLockscreenSettings($space);
 
-        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color', 'new_tab'];
+        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color', 'new_tab', 'background_color'];
         $urlFields = ['button_link'];
 
         $formattedFields = [];
@@ -96,7 +98,7 @@ class LockscreenService
             $formattedField['hidden'] = Arr::isTrue($value, 'hidden');
 
             if ($value['type'] == 'block') {
-                $formattedField['content'] = CustomSanitizer::sanitizeHtml(Arr::get($value, 'content'));
+                $formattedField['content'] = CustomSanitizer::santizeEditorBody(Arr::get($value, 'content'));
             }
 
             if (isset($value['background_image'])) {
@@ -107,13 +109,13 @@ class LockscreenService
                 $formattedField['background_image'] = $bgImageUrl;
             }
 
-            $formattedFields[] = $formattedField;
+            $formattedFields[] = apply_filters('fluent_community/lockscreen_formatted_field', $formattedField, $value, $space);
         }
 
         return $formattedFields;
     }
 
-    public static function getLockscreenConfig(BaseSpace $space, $membership = null)
+    public static function getLockscreenConfig(BaseSpace $space, $membership = null, $viewOnly = false)
     {
         if ($space->privacy != 'private') {
             return null;
@@ -131,6 +133,7 @@ class LockscreenService
         }
 
         $showCustom = Arr::get($space->settings, 'custom_lock_screen', 'no') === 'yes';
+        $showPaywalls = Arr::get($space->settings, 'show_paywalls', 'no') === 'yes' && defined('FLUENTCART_VERSION');
         $canSendRequest = Arr::get($space->settings, 'can_request_join', 'no') === 'yes';
 
         $isRedirect = Arr::get($space->settings, 'custom_lock_screen', 'no') == 'redirect' && Arr::get($space->settings, 'onboard_redirect_url', false);
@@ -141,9 +144,10 @@ class LockscreenService
 
         return [
             'showCustom'     => $showCustom,
+            'showPaywalls'   => $showPaywalls,
             'canSendRequest' => $canSendRequest,
-            'lockScreen'     => $showCustom ? self::getLockscreenSettings($space) : null,
-            'redirect_url'   => $redirectUrl,
+            'lockScreen'     => $showCustom ? self::getLockscreenSettings($space, $viewOnly) : null,
+            'redirect_url'   => $redirectUrl
         ];
     }
 

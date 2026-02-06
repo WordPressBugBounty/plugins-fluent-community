@@ -107,6 +107,8 @@ class Feed extends Model
                 ->update([
                     'is_active' => 0
                 ]);
+            Reaction::where('object_id', $feed->id)
+                ->delete();
         });
 
     }
@@ -542,7 +544,7 @@ class Feed extends Model
             Meta::create([
                 'object_id'   => $this->id,
                 'object_type' => 'feed',
-                'meta_key'    => $key,
+                'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'value'       => $value
             ]);
         }

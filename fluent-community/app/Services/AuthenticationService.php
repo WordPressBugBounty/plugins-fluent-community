@@ -29,6 +29,7 @@ class AuthenticationService
                     'type'             => 'banner',
                     'position'         => 'left',
                     'logo'             => $siteLogo,
+                    /* translators: %s is replaced by the title of the site */
                     'title'            => sprintf(__('Welcome to %s', 'fluent-community'), $siteTitle),
                     'description'      => __('Join our community and start your journey to success', 'fluent-community'),
                     'title_color'      => '#19283a',
@@ -39,6 +40,7 @@ class AuthenticationService
                 'form'   => [
                     'type'               => 'form',
                     'position'           => 'right',
+                    /* translators: %s is replaced by the title of the site */
                     'title'              => sprintf(__('Login to %s', 'fluent-community'), $siteTitle),
                     'description'        => __('Enter your email and password to login', 'fluent-community'),
                     'title_color'        => '#19283a',
@@ -56,6 +58,7 @@ class AuthenticationService
                     'type'             => 'banner',
                     'position'         => 'left',
                     'logo'             => $siteLogo,
+                    /* translators: %s is replaced by the title of the site */
                     'title'            => sprintf(__('Welcome to %s', 'fluent-community'), $siteTitle),
                     'description'      => __('Join our community and start your journey to success', 'fluent-community'),
                     'title_color'      => '#19283a',
@@ -66,6 +69,7 @@ class AuthenticationService
                 'form'   => [
                     'type'               => 'form',
                     'position'           => 'right',
+                    /* translators: %s is replaced by the title of the site */
                     'title'              => sprintf(__('Sign Up to %s', 'fluent-community'), $siteTitle),
                     'description'        => __('Create an account to get started', 'fluent-community'),
                     'button_label'       => __('Sign up', 'fluent-community'),

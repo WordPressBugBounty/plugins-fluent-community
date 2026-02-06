@@ -5,7 +5,6 @@ namespace FluentCommunity\App\Hooks\CLI;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Modules\Migrations\Helpers\BPMigratorHelper;
 use FluentCommunity\Modules\Migrations\Helpers\PostMigrator;
-use FluentCommunityPro\App\Modules\LeaderBoard\Services\LeaderBoardHelper;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -144,7 +143,7 @@ class Commands
 
             $progress->tick();
 
-            $currentPoint = LeaderBoardHelper::recalculateUserPoints($xProfile->user_id);
+            $currentPoint = BPMigratorHelper::recalculateUserPoints($xProfile->user_id);
             if ($currentPoint > $xProfile->total_points) {
                 $oldPoints = $xProfile->total_points;
                 $xProfile->total_points = $currentPoint;

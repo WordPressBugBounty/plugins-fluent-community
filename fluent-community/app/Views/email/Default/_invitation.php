@@ -9,10 +9,11 @@
  */
 ?>
 <div style="background-color: #ffffff; padding: 20px; border-radius: 8px;">
+    <?php /* translators: %s is replaced by the name of the user who is invited */ ?>
     <p><?php echo esc_html(sprintf(__('Hey %s,', 'fluent-community'), $invitee_name)); ?></p>
     <p><?php
-        echo wp_kses_post(sprintf(
-            __('%1$s has invited you to join in %2$s.', 'fluent-community'),
+        /* translators: %1$s is replaced by the name of the user who invited the user, %2$s is replaced by the title of the site */
+        echo wp_kses_post(sprintf(__('%1$s has invited you to join in %2$s.', 'fluent-community'),
             '<strong>'.$by_name.'</strong>',
             '<strong>'.$site_title.'</strong>'
         ));

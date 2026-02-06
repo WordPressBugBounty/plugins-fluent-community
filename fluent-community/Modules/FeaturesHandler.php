@@ -27,24 +27,21 @@ class FeaturesHandler
             $cssFiles = Arr::get($data, 'css_files', []);
             foreach ($cssFiles as $file) {
                 ?>
-<link rel="stylesheet" href="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
+                <link rel="stylesheet" href="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
                 <?php
             }
             $jsFiles = Arr::get($data, 'header_js_files', []);
             foreach ($jsFiles as $file) {
                 $jsVars = Arr::get($file, 'vars', []);
                 foreach ($jsVars as $varKey => $values) {
-            ?>
-            <script>
-                var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
-            </script>
+                    ?>
+                    <script>
+                        var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
+                    </script>
+                    <?php } ?>
+                    <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
                     <?php
-                }
-                ?>
-<script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
-                <?php
             }
-
         });
 
         add_action('fluent_community/before_js_loaded', function () use ($data) {
@@ -62,7 +59,7 @@ class FeaturesHandler
             $jsFiles = Arr::get($data, 'js_files', []);
             foreach ($jsFiles as $file) {
                 ?>
-<script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
+                <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
                 <?php
             }
         });
@@ -77,7 +74,7 @@ class FeaturesHandler
     public function maybeOembedRequest()
     {
         // this is temp hack
-        if (!isset($_GET['url'])) {
+        if (!isset($_GET['url'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             return;
         }
 
@@ -95,7 +92,7 @@ class FeaturesHandler
         }
 
         global $wp_embed, $wp_scripts;
-        $url = sanitize_url($_GET['url']);
+        $url = sanitize_url(wp_unslash($_GET['url'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         $request = \FluentCommunity\App\App::make('request');
 
@@ -148,7 +145,7 @@ class FeaturesHandler
         }
 
         /** This filter is documented in wp-includes/class-wp-oembed.php */
-        $data->html = apply_filters('oembed_result', _wp_oembed_get_object()->data2html((object)$data, $url), $url, $args);
+        $data->html = apply_filters('oembed_result', _wp_oembed_get_object()->data2html((object)$data, $url), $url, $args); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         wp_send_json($data, 200);
     }

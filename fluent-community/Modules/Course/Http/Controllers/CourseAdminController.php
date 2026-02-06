@@ -44,9 +44,11 @@ class CourseAdminController extends Controller
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
         }
 
-        return [
+        $data = [
             'courses' => $courses
         ];
+
+        return apply_filters('fluent_community/admin_courses_api_response', $data, $request->all());
     }
 
     public function createCourse(Request $request)
@@ -78,7 +80,7 @@ class CourseAdminController extends Controller
                 'disable_comments'               => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
                 'hide_members_count'             => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
                 'course_layout'                  => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
-                'course_details'                 => CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details')))),
+                'course_details'                 => CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details'))),
                 'hide_instructor_view'           => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
                 'show_instructor_students_count' => $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no'
             ],
@@ -154,7 +156,12 @@ class CourseAdminController extends Controller
             $course->save();
         }
 
-        $course->syncCategories($request->get('category_ids', []));
+        if ($request->get('category_ids', [])) {
+            $topicsConfig = Helper::getTopicsConfig();
+            $categoryIds = (array) $request->get('category_ids', []);
+            $categoryIds = array_slice($categoryIds, 0, $topicsConfig['max_topics_per_space']);
+            $course->syncCategories($categoryIds);
+        }
 
         do_action('fluent_community/course/created', $course);
 
@@ -182,7 +189,7 @@ class CourseAdminController extends Controller
 
         unset($course->categories);
 
-        $course = apply_filters('fluent_community/course_info', $course);
+        $course = apply_filters('fluent_community/course_info', $course, $request->all());
 
         return [
             'course' => $course
@@ -276,8 +283,9 @@ class CourseAdminController extends Controller
         $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
         $existingSettings['hide_instructor_view'] = $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no';
         $existingSettings['show_instructor_students_count'] = $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_paywalls'] = $request->get('settings.show_paywalls') === 'yes' ? 'yes' : 'no';
         $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
-        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim($request->get('settings.course_details'))));
+        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details')));
 
         if ($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
             $existingSettings['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
@@ -289,7 +297,7 @@ class CourseAdminController extends Controller
 
         $previousStatus = $course->status;
 
-        $prevCourse = $course;
+        $prevCourse = clone $course;
 
         $course->fill($courseData);
         $dirtyFields = $course->getDirty();
@@ -302,7 +310,12 @@ class CourseAdminController extends Controller
             }
         }
 
-        $course->syncCategories($request->get('category_ids', []));
+        if ($request->get('category_ids', [])) {
+            $topicsConfig = Helper::getTopicsConfig();
+            $categoryIds = (array) $request->get('category_ids', []);
+            $categoryIds = array_slice($categoryIds, 0, $topicsConfig['max_topics_per_space']);
+            $course->syncCategories($categoryIds);
+        }
 
         $metaSettings = $request->get('meta_settings', []);
         if($metaSettings) {
@@ -314,6 +327,55 @@ class CourseAdminController extends Controller
         return [
             'message' => __('Course has been updated successfully.', 'fluent-community'),
             'course'  => $course
+        ];
+    }
+
+    public function duplicateCourse(Request $request, $courseId)
+    {
+        $original = Course::findOrFail($courseId);
+
+        $courseData = $original->toArray();
+        $courseData['title'] = $original->title . ' (Copy)';
+        $courseData['slug'] = Utility::slugify($original->slug . '-' . time());
+        $courseData['status'] = 'draft';
+        $courseData['created_by'] = get_current_user_id();
+
+        do_action('fluent_community/course/before_create', $courseData);
+
+        $newCourse = $original->replicate();
+        $newCourse->title = $courseData['title'];
+        $newCourse->slug = $courseData['slug'];
+        $newCourse->status = $courseData['status'];
+        $newCourse->created_by = $courseData['created_by'];
+        $newCourse->save();
+
+        if ($original->categories) {
+            $newCourse->syncCategories($original->categories->pluck('id')->toArray());
+        }
+
+        $topics = CourseTopic::with('lessons')
+            ->where('space_id', $original->id)
+            ->get();
+
+        foreach ($topics as $topic) {
+            $newTopic = $topic->replicate();
+            $newTopic->space_id = $newCourse->id;
+            $newTopic->save();
+
+            foreach ($topic->lessons as $lesson) {
+                $newLesson = $lesson->replicate();
+                $newLesson->space_id = $newCourse->id;
+                $newLesson->parent_id = $newTopic->id;
+                $newLesson->save();
+                CourseHelper::copyLessonDocuments($lesson, $newLesson);
+            }
+        }
+
+        do_action('fluent_community/course/created', $newCourse);
+
+        return [
+            'message' => __('Course duplicated successfully.', 'fluent-community'),
+            'course'  => $newCourse
         ];
     }
 
@@ -389,9 +451,11 @@ class CourseAdminController extends Controller
             }
         }
 
-        return [
+        $data = [
             'comments' => $comments
         ];
+
+        return apply_filters('fluent_community/admin_course_comments_api_response', $data, $request->all());
     }
 
     public function getCourseStudents(Request $request, $courseId)
@@ -418,9 +482,11 @@ class CourseAdminController extends Controller
             $student->progress = CourseHelper::getCourseProgress($courseId, $student->user_id);
         }
 
-        return [
+        $data = [
             'students' => $students
         ];
+        
+        return apply_filters('fluent_community/admin_course_students_api_response', $data, $request->all());
     }
 
     public function addStudent(Request $request, $courseId)
@@ -504,7 +570,7 @@ class CourseAdminController extends Controller
             $data['lockscreen'] = LockscreenService::getLockscreenSettings($course);
         }
 
-        return $data;
+        return apply_filters('fluent_community/admin_course_sections_api_response', $data, $request->all());
     }
 
     public function getSection(Request $request, $courseId, $topicId)
@@ -517,9 +583,11 @@ class CourseAdminController extends Controller
             ->with(['lessons'])
             ->firstOrFail();
 
-        return [
+        $data = [
             'topic' => $topic
         ];
+
+        return apply_filters('fluent_community/admin_course_section_api_response', $data, $request->all());
     }
 
     public function resetSectionIndexes(Request $request, $courseId)
@@ -605,7 +673,7 @@ class CourseAdminController extends Controller
         $section->load('lessons');
 
         return [
-            'message' => __('Topic has been created successfully.', 'fluent-community'),
+            'message' => __('Section has been created successfully.', 'fluent-community'),
             'section' => $section
         ];
     }
@@ -688,6 +756,41 @@ class CourseAdminController extends Controller
         ];
     }
 
+    public function copySection(Request $request, $toCourseId)
+    {
+        $sectionId = $request->getSafe('section_id', 'intval');
+        $fromCourseId = $request->getSafe('from_course_id', 'intval');
+
+        $originalSection = CourseTopic::where('id', $sectionId)
+            ->where('space_id', $fromCourseId)
+            ->firstOrFail();
+
+        $toCourse = Course::findOrFail($toCourseId);
+
+        $latestPriority = CourseTopic::where('type', 'course_section')->where('space_id', $toCourse->id)->max('priority');
+
+        $newSection = $originalSection->replicate();
+        $newSection->space_id = $toCourse->id;
+        $newSection->priority = $latestPriority ? $latestPriority + 1 : 0;
+        $newSection->save();
+
+        $originalLessons = CourseLesson::where('parent_id', $originalSection->id)->get();
+        foreach ($originalLessons as $lesson) {
+            $newLesson = $lesson->replicate();
+            $newLesson->space_id = $toCourse->id;
+            $newLesson->parent_id = $newSection->id;
+            $newLesson->save();
+            CourseHelper::copyLessonDocuments($lesson, $newLesson);
+        }
+
+        $newSection->load('lessons');
+
+        return [
+            'message' => __('Section has been copied to the selected course', 'fluent-community'),
+            'section' => $newSection
+        ];
+    }
+
     public function deleteSection(Request $request, $courseId, $sectionId)
     {
         $topic = CourseTopic::where([
@@ -729,9 +832,11 @@ class CourseAdminController extends Controller
 
         $lessons = $lessons->get();
 
-        return [
+        $data = [
             'lessons' => $lessons
         ];
+
+        return apply_filters('fluent_community/admin_course_lessons_api_response', $data, $request->all());
     }
 
     public function getLesson(Request $request, $courseId, $lessonId)
@@ -743,9 +848,11 @@ class CourseAdminController extends Controller
             ->with(['topic', 'course'])
             ->firstOrFail();
 
-        return [
+        $data = [
             'lesson' => $lesson
         ];
+
+        return apply_filters('fluent_community/admin_course_lesson_api_response', $data, $request->all());
     }
 
     public function createLesson(Request $request, $courseId)
@@ -872,7 +979,7 @@ class CourseAdminController extends Controller
             ->where('id', $lessionId)
             ->firstOrFail();
 
-        $acceptedFields = ['title', 'status'];
+        $acceptedFields = ['title', 'status', 'slug'];
 
         $lessonData = array_filter($request->only($acceptedFields));
 
@@ -914,8 +1021,6 @@ class CourseAdminController extends Controller
 
     public function getOtherUsers(Request $request, $courseId)
     {
-        $search = $request->getSafe('search');
-
         $selects = [
             'ID',
             'display_name'
@@ -925,23 +1030,35 @@ class CourseAdminController extends Controller
             $selects[] = 'user_email';
         }
 
-        $userIds = User::select(['ID'])
+        $userQuery = User::select(['ID'])
             ->whereDoesntHave('space_pivot', function ($q) use ($courseId) {
                 $q->where('space_id', $courseId);
             })
             ->limit(100)
-            ->searchBy($search)
-            ->get()
+            ->searchBy($request->getSafe('search'));
+
+        if (is_multisite()) {
+            global $wpdb;
+            $blogId = get_current_blog_id();
+            $blogPrefix = $wpdb->get_blog_prefix($blogId);
+            $userQuery->whereHas('usermeta', function($q) use ($blogPrefix) {
+                $q->where('meta_key', $blogPrefix . 'capabilities');
+            });
+        }
+
+        $userIds = $userQuery->get()
             ->pluck('ID')
             ->toArray();
 
-        $users = User::whereIn('ID', $userIds)
-            ->select($selects)
+        $users = User::select($selects)
+            ->whereIn('ID', $userIds)
             ->paginate(100);
 
-        return [
+        $data = [
             'users' => $users
         ];
+
+        return apply_filters('fluent_community/admin_course_non_members_api_response', $data, $request->all());
     }
 
     public function updateLinks(Request $request, $id)
@@ -967,7 +1084,7 @@ class CourseAdminController extends Controller
     public function getMetaSettings(Request $request, $id)
     {
         $course = Course::findOrFail($id);
-        $metaSettings = apply_filters('fluent_community/course/meta_fields', [], $course);
+        $metaSettings = apply_filters('fluent_community/course/meta_fields', [], $course, $request->all());
 
         if (!$metaSettings) {
             return [
@@ -991,9 +1108,11 @@ class CourseAdminController extends Controller
             ->searchBy($search)
             ->get();
 
-        return [
+        $data = [
             'instructors' => $instructors
         ];
+
+        return apply_filters('fluent_community/admin_course_other_instructors_api_response', $data, $request->all());
     }
 
 }

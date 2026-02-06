@@ -75,7 +75,7 @@ class RemoteUrlParser
 
         $title = $this->getTitle($html_head);
         if (!$title) {
-            return new \WP_Error('rest_invalid_url', __('Invalid URL'), array('status' => 404));
+            return new \WP_Error('rest_invalid_url', __('Invalid URL', 'fluent-community'), array('status' => 404));
         }
 
         $meta_elements = $this->getMetaWithContentElements($html_head);
@@ -89,7 +89,7 @@ class RemoteUrlParser
             'url'         => $url
         ]);
 
-        wp_cache_set($cacheKey, $data, 'fluent-community', apply_filters('rest_url_details_cache_expiration', HOUR_IN_SECONDS));
+        wp_cache_set($cacheKey, $data, 'fluent-community', apply_filters('rest_url_details_cache_expiration', HOUR_IN_SECONDS)); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         return $data;
     }
@@ -113,7 +113,7 @@ class RemoteUrlParser
          * @since 5.9.0
          *
          */
-        $args = apply_filters('rest_url_details_http_request_args', $args, $url);
+        $args = apply_filters('rest_url_details_http_request_args', $args, $url); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         $response = wp_safe_remote_get($url, $args);
 
@@ -121,7 +121,7 @@ class RemoteUrlParser
             // Not saving the error response to cache since the error might be temporary.
             return new \WP_Error(
                 'no_response',
-                __('URL not found. Response returned a non-200 status code for this URL.'),
+                __('URL not found. Response returned a non-200 status code for this URL.', 'fluent-community'),
                 array('status' => \WP_Http::NOT_FOUND)
             );
         }
@@ -131,7 +131,7 @@ class RemoteUrlParser
         if (empty($remote_body)) {
             return new \WP_Error(
                 'no_content',
-                __('Unable to retrieve body from response at this URL.'),
+                __('Unable to retrieve body from response at this URL.', 'fluent-community'),
                 array('status' => \WP_Http::NOT_FOUND)
             );
         }

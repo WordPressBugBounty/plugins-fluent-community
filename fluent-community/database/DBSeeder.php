@@ -34,7 +34,8 @@ class DBSeeder
         $endTime = microtime(true);
         $totalTime = round($endTime - $startTime, 2);
 
-        echo "Seeding completed in $totalTime seconds\n";
+        /* translators: %s is replaced by the total time */
+        echo sprintf(esc_html__('Seeding completed in %s seconds', 'fluent-community'), esc_html($totalTime)) . "\n";
     }
 
     public static function clean()

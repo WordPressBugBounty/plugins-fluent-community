@@ -173,10 +173,23 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-//            $notificationBagde = $this->getNotificationBadges($user->ID);
-//            if ($notificationBagde) {
-//              //  $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-//            }
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $newEmailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $newEmailBody);
+            }
+
+            $hooksSections = apply_filters('fluent_community/new_feed_notification/email_sections', [
+                'before_content' => '',
+                'after_content'  => ''
+            ], $user, $feed);
+
+            if (!empty($hooksSections['before_content'])) {
+                $newEmailBody = str_replace('<!--email_content_before-->', $hooksSections['before_content'], $newEmailBody);
+            }
+
+            if (!empty($hooksSections['after_content'])) {
+                $newEmailBody = str_replace('<!--email_content_after-->', $hooksSections['after_content'], $newEmailBody);
+            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
@@ -318,10 +331,23 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-            //  $notificationBagde = $this->getNotificationBadges($user->ID);
-//            if ($notificationBagde) {
-//             //   $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-//            }
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $newEmailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $newEmailBody);
+            }
+
+            $hooksSections = apply_filters('fluent_community/comment_notification/email_sections', [
+                'before_content' => '',
+                'after_content'  => ''
+            ], $user, $comment);
+
+            if (!empty($hooksSections['before_content'])) {
+                $newEmailBody = str_replace('<!--email_content_before-->', $hooksSections['before_content'], $newEmailBody);
+            }
+
+            if (!empty($hooksSections['after_content'])) {
+                $newEmailBody = str_replace('<!--email_content_after-->', $hooksSections['after_content'], $newEmailBody);
+            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
@@ -423,10 +449,23 @@ class EmailNotificationHandler
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
-//            $notificationBagde = $this->getNotificationBadges($user->ID);
-//            if ($notificationBagde) {
-//                $emailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $emailBody);
-//            }
+            $notificationBagde = $this->getNotificationBadges($user->ID);
+            if ($notificationBagde) {
+                $newEmailBody = str_replace('<!--before_footer_section-->', $notificationBagde, $newEmailBody);
+            }
+
+            $hooksSections = apply_filters('fluent_community/new_feed_everybody_notification/email_sections', [
+                'before_content' => '',
+                'after_content'  => ''
+            ], $user, $feed);
+
+            if (!empty($hooksSections['before_content'])) {
+                $newEmailBody = str_replace('<!--email_content_before-->', $hooksSections['before_content'], $newEmailBody);
+            }
+
+            if (!empty($hooksSections['after_content'])) {
+                $newEmailBody = str_replace('<!--email_content_after-->', $hooksSections['after_content'], $newEmailBody);
+            }
 
             $mailer = new Mailer('', $emailSubject, $newEmailBody);
             $mailer->to($user->user_email, $user->display_name);
@@ -555,6 +594,7 @@ class EmailNotificationHandler
         $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
 
         $emailComposer->addBlock('paragraph', __('Hi Space Leader,', 'fluent-community'));
+        /* translators: %1$s is replaced by the name of the user who requested to join the space, %2$s is replaced by the title of the space */
         $emailComposer->addBlock('paragraph', sprintf(__('You have a new join request from %1$s to join %2$s.', 'fluent-community'), '<b>' . $xProfile->display_name . '</b>', '<b>' . $space->title . '</b>'));
         $emailComposer->addBlock('paragraph', __('Please review the request in the portal', 'fluent-community'));
 
@@ -564,11 +604,13 @@ class EmailNotificationHandler
 
         $emailComposer->setDefaultLogo();
 
+        /* translators: %s is replaced by the title of the space */
         $emailComposer->addFooterLine('paragraph', sprintf(__('You are getting this email because you are an admin/moderator at %s', 'fluent-community'), '<a style="text-decoration: underline !important;" href="' . $space->getPermalink() . '">' . $space->title . '</a>'));
 
         $emailBody = $emailComposer->getHtml();
 
         $emailSubject = \sprintf(
+        /* translators: %1$s is replaced by the name of the user who requested to join the space, %2$s is replaced by the title of the space */
             __('%1$s requested to join %2$s', 'fluent-community'),
             $xProfile->display_name,
             $space->title
@@ -635,7 +677,8 @@ class EmailNotificationHandler
         $html = '';
         if ($unreadCount) {
             $notificationUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications'), $userId);
-            $html = '<a style="text-decoration: none;" href="' . $notificationUrl . '">' . sprintf(__('🔔 %d Unread Notifications.', 'fluent-communtiy'), $unreadCount) . '</a>';
+            /* translators: %d is replaced by the number of unread notifications */
+            $html = '<a style="text-decoration: none;" href="' . $notificationUrl . '">' . sprintf(__('🔔 %d Unread Notifications.', 'fluent-community'), $unreadCount) . '</a>';
             if ($unreadMessages) {
                 $html .= '<span style="margin: 0 10px;"> | </span>';
             }
@@ -643,7 +686,8 @@ class EmailNotificationHandler
 
         if ($unreadMessages) {
             $chatUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('chat'), $userId);
-            $html .= '<a style="text-decoration: none;" href="' . $chatUrl . '">' . sprintf(__('✉️ %d Unread Messages', 'fluent-communtiy'), $unreadMessages) . '</a>';
+            /* translators: %d is replaced by the number of unread messages */
+            $html .= '<a style="text-decoration: none;" href="' . $chatUrl . '">' . sprintf(__('✉️ %d Unread Messages', 'fluent-community'), $unreadMessages) . '</a>';
         }
 
         return $html;

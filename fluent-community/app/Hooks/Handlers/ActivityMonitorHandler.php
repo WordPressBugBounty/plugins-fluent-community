@@ -38,7 +38,7 @@ class ActivityMonitorHandler
 
         add_action('wp_ajax_fluent_community_renew_nonce', function () {
 
-            $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce');
+            $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
             if (!wp_verify_nonce($ajax_nonce, 'fluent_community_ajax_nonce')) {
                 wp_send_json(['message' => 'Invalid nonce'], 400);

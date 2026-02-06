@@ -18,6 +18,7 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
     $router->post('/', 'CourseAdminController@createCourse');
     $router->get('/{course_id}', 'CourseAdminController@findCourse')->int('course_id');
     $router->put('/{course_id}', 'CourseAdminController@updateCourse')->int('course_id');
+    $router->post('/{course_id}/duplicate', 'CourseAdminController@duplicateCourse')->int('course_id');
     $router->delete('/{course_id}', 'CourseAdminController@deleteCourse')->int('course_id');
     $router->get('/{course_id}/comments', 'CourseAdminController@getCourseComments')->int('course_id');
     $router->get('/{course_id}/students', 'CourseAdminController@getCourseStudents')->int('course_id');
@@ -43,6 +44,7 @@ $router->prefix('admin/courses')->namespace('\FluentCommunity\Modules\Course\Htt
 
     $router->get('/{course_id}/lessons', 'CourseAdminController@getLessons')->int('course_id');
     $router->post('/{course_id}/lessons', 'CourseAdminController@createLesson')->int('course_id');
+    $router->put('/{course_id}/copy-section', 'CourseAdminController@copySection')->int('course_id');
     $router->put('/{course_id}/move-lesson', 'CourseAdminController@moveLesson')->int('course_id');
     $router->get('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@getLesson')->int('course_id')->int('lesson_id');
     $router->put('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@updateLesson')->int('course_id')->int('lesson_id');

@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\App\Services;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\Framework\Support\Arr;
@@ -247,14 +246,14 @@ class OnboardingService
 
     public static function installAddons($addons = [])
     {
-        $validAddons = ['fluent-crm', 'fluent-smtp'];
+        $validAddons = ['fluent-crm', 'fluent-smtp', 'fluent-cart'];
         $validAddons = array_intersect($validAddons, $addons);
 
         if (!$validAddons || !current_user_can('install_plugins')) {
             return;
         }
 
-        foreach ($addons as $addon) {
+        foreach ($validAddons as $addon) {
             self::installPlugin($addon);
         }
 
@@ -310,6 +309,10 @@ class OnboardingService
             'fluent-smtp' => [
                 'admin_url' => admin_url('options-general.php?page=fluent-mail#/'),
                 'title'     => 'Go to FluentSMTP Dashboard'
+            ],
+            'fluent-cart' => [
+                'admin_url' => admin_url('admin.php?page=fluent-cart#/'),
+                'title'     => 'Go to FluentCart Dashboard'
             ]
         ];
 

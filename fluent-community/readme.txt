@@ -1,10 +1,10 @@
-=== FluentCommunity - Ultra-Fast High-Performance Social Network, Community, LMS & Online Courses Plugin ===
+=== FluentCommunity - Ultra-Fast High-Performance Social Network, Community, LMS & Online Courses ===
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.3
-Stable tag: 1.8.2
+Stable tag: 2.1.02
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,6 +22,7 @@ Get a fast & all-in-one community plugin. Create unlimited communities, and cour
 👉 Join Our Official Community: [Official Community](https://community.wpmanageninja.com/portal/space/community-meta/home)
 👉 User Guide: [Explore User Guide](https://fluentcommunity.co/docs/)
 👉 Get Support: [Support](https://wpmanageninja.com/support-tickets/)
+👉 Contribute: [GitHub](https://github.com/WPManageNinja/fluent-community/)
 
 Whether you’re looking to build a community for agencies, online courses, brands, or launch your course business, FluentCommunity provides everything you need with the robust, business-ready community and LMS features.
 
@@ -163,11 +164,12 @@ FluentCommunity helps you transform your customers into loyal brand advocates by
 Create a centralized workplace platform with custom features, a branded design, and tailored guidelines to suit your team's needs. FluentCommunity enables seamless collaboration, communication, and productivity, providing a unified space to streamline workflows and foster a positive team culture.
 
 ==One-Click Migration from BuddyBoss and BuddyPress==
-FluentCommunity offers a seamless migration process from BuddyBoss and BuddyPress, allowing you to effortlessly transfer your existing community data and settings. With just a few clicks, you can transition to FluentCommunity without losing any valuable content, activities, media, user profiles, ensuring a smooth and hassle-free experience.
+FluentCommunity offers a seamless migration process from BuddyBoss and BuddyPress, allowing you to effortlessly transfer your existing community data and settings. With just a few clicks, you can transition to FluentCommunity without losing any valuable content, activities, media, user profiles, ensuring a smooth and hassle-free experience. For large BuddyBoss community, you can run WP CLI comment to migrate all the data from BuddyBoss to FluentCommunity.
 
 == Integrations and Add-ons Available in the Free Version ==
 
 * <a href="https://wordpress.org/plugins/fluent-crm" target="_blank">FluentCRM</a>
+* <a href="https://wordpress.org/plugins/fluent-cart" target="_blank">FluentCart</a>
 * <a href="https://wordpress.org/plugins/fluent-support" target="_blank">Fluent Support</a>
 * <a href="https://wordpress.org/plugins/fluent-smtp" target="_blank">FluentSMTP</a>
 * <a href="https://wordpress.org/plugins/fluentform" target="_blank">FluentForms</a>
@@ -193,7 +195,8 @@ FluentCommunity offers a seamless migration process from BuddyBoss and BuddyPres
 
 == Other Plugins By WPManageNinja Team ==
 <ul>
-        <li><a href="https://wordpress.org/plugins/fluentform" target="_blank">FluentForms</a>
+        <li><a href="https://wordpress.org/plugins/fluent-cart" target="_blank">FluentCart - A New Era of eCommerce with WordPress – Faster, Lighter, and Simpler</a>
+        <li><a href="https://wordpress.org/plugins/fluentform" target="_blank">FluentForms - Customizable Contact Forms, Survey, Quiz, & Conversational Form Builder</a>
         <li><a href="https://wordpress.org/plugins/ninja-tables/" target="_blank">Ninja Tables – Best WP DataTables Plugin for WordPress</a></li>
         <li><a href="https://wordpress.org/plugins/fluent-crm/" target="_blank">Email Marketing, Newsletter, Email Automation and CRM Plugin for WordPress by FluentCRM</a></li>
         <li><a href="https://wordpress.org/plugins/fluent-support/" target="_blank">Fluent Support – WordPress Helpdesk and Customer Support Ticket Plugin</a></li>
@@ -221,7 +224,7 @@ Absolutely! If you’re not satisfied, just request a refund within 14 days of y
 No, FluentCommunity works perfectly on its own. You don’t need any other Fluent or WPManageNinja plugins to use it. However, you can quickly access all the WPManageNinja right from the FluentCommunity platform.
 
 = I found a security issue, where can I report? =
-We take every security report very seriously. Please report to our website here: [Security Report Page](https://fluentcommunity.co/security-report/)
+We take every security report very seriously. Please report to our website here: [Security Report Page](https://wpmanageninja.com/report-a-security-issue/)
 
 
 == Installation ==
@@ -247,7 +250,86 @@ OR
 
 == Changelog ==
 
-= 1.8.2 (Date: Oct 2, 2025) =
+= 2.1.02 (Date: Dec 04, 2025) =
+- Added: Join Space Option for Public Posts
+- Added: Flagged Post Edit Option
+- Improved: Space Settings Navbar UI
+- Fixed: Shared Document Delete Issue
+- Fixed: Migration Settings Access Issue
+- Fixed: Topic Post Filtering Issue
+- Fixed: Fluent-Messaging Not Installing
+- Fixed: UI Breaking for Multiple Image
+- Fixed: Script Not Loading in Block Theme
+- Fixed: Showing Deactivated Followers/Following
+- Fixed: Comment Reply Notification Not Sending
+- Fixed: FluentForms Integration Notification Issue
+- Fixed: Strikethrough Text Not Working in Post/Comment
+- Fixed: RTL Alignment Issue in Course Lesson List Options
+
+= 2.1.01 (Date: Nov 17, 2025) =
+- Hotfix: Issue with Translation String Placeholder
+- Hotfix: Document Delete Issue on Duplicate Course
+
+= 2.1.0 (Date: Nov 17, 2025) =
+- Added: App Notification When User Follow
+- Added: Gutenberg Block Support in Course and Space Lockscreen
+- Added: Breakdance Theme Support in Theme Compatibility
+- Added: Auto Scroll Pagination in Bookmark Listing
+- Added: Student Last Seen in Course Student List
+- Added: Lesson Slug Edit Option
+- Added: Spaces & Courses Counts in Listings
+- Added: Hook for Default Profile Tab
+- Added: Mentioned Users in Create Comment Hook
+- Improved: Email Notifications
+- Improved: Month Display in Mobile
+- Improved: From Email Address Select
+- Improved: Feed UI in RTL Mode
+- Improved: UI/UX and Responsiveness
+- Fixed: Multisite Compatibility in Manager and Course Student
+- Fixed: Default Order Ignored When User Can Change Order
+- Fixed: Document Delete Issue on Copy Course Section
+- Fixed: Max Topic Limit Per Space Not Working
+- Fixed: Edit Post Not Working from Profile Posts
+- Fixed: Post Topics Unable to Remove in Edit Post
+- Fixed: Recent Activity Not Updating on Post Move
+- Fixed: Topic Assigning Issue from Course Settings
+- Fixed: Issue on Course Description links
+- Fixed: Scheduled Course Delete Issue
+- Fixed: Issue with Feed Sort By
+- Fixed: Space Link Privacy Issue
+- Fixed: Deleted Comment Activity Not Removing
+- Fixed: Notification Preference Showing for Pending Users
+- Fixed: Allow Join Option Showing for Public Space
+- Fixed: Unlink URL Not Converting to Plain Text in Feed
+
+= 2.0.0 (Date: Oct 29, 2025) =
+- Introducing Native Monetization Features for courses and Spaces with FluentCart
+- Support Multiple Pricing Plans for Courses and Spaces
+- Copy Course Sections between courses
+- Duplicate Course with all settings
+- Image Gallery Improvements
+- New: Badge Remove Action for FluentCRM
+- New: Section Completed Trigger for FluentCRM
+- Styling Improvements for Feeds and Courses
+- Fixed Join Date Timezone issue
+- Hashtags now works on all languages
+- BuddyBoss Migration Improvements
+- Underline Framework upgrade for future feature updates
+- Improvements on Bookmarks
+- Other Bug fixes and Improvements
+
+= 1.8.3 (Date: Oct 07, 2025) =
+- Added: Mentioned Users Hook
+- Improved: Post Alignment in RTL Mode
+- Improved: Support All Languages in Profanity Filter
+- Fixed: Mention Search Working Only by First Name
+- Fixed: Group Visibility Issue for Public Spaces
+- Fixed: Document Attachments not Saving in Post
+- Fixed: Media Disabling Issue on Post Update
+- Fixed: Post Titles Not Migrating from BuddyBoss
+- Fixed: Space Not Mapping in BuddyBoss Migration
+
+= 1.8.2 (Date: Oct 02, 2025) =
 - New: Added Remove from course or spaces from FluentCRM Profile
 - Improved Follow/Unfollow Users
 - Hotfix: Course Enrollment Actions Hooks Fixed

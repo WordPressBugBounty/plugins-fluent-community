@@ -61,7 +61,7 @@ class Helper
 
         $poralUrl = self::baseUrl('/');
 
-        $urlPath = parse_url($siteUrl, PHP_URL_PATH);
+        $urlPath = wp_parse_url($siteUrl, PHP_URL_PATH);
 
         if ($urlPath) {
             // get the url without path
@@ -739,18 +739,23 @@ class Helper
             return [];
         }
 
+        $userSpaceIds = $user ? self::getUserSpaceIds($user->ID) : [];
         $isComModerator = $user && $user->hasCommunityModeratorAccess();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
-        $isNotMemberOfAnySpace = !$user || $user->isNotMemberOfAnySpace();
-        $formattedGroups = [];
+        $isSpaceModerator = $user && $user->isSpaceModerator();
 
+        $formattedGroups = [];
         foreach ($communityGroups as $communityGroup) {
             $validSpaces = [];
             $spaces = $communityGroup->spaces;
             $isShowAll = Arr::get($communityGroup->settings, 'always_show_spaces') === 'yes';
-
-            if (!$isShowAll && $isNotMemberOfAnySpace) {
-                continue;
+            
+            if (!$isShowAll && !$isSpaceModerator) {
+                $spaceIds = $spaces->pluck('id')->toArray();
+                $isNotMemberOfAnySpace = empty(array_intersect($spaceIds, $userSpaceIds));
+                if ($isNotMemberOfAnySpace) {
+                    continue;
+                }
             }
 
             foreach ($spaces as $space) {
@@ -795,7 +800,7 @@ class Helper
                 $validSpaces[] = $validSpace;
             }
 
-            if (!$validSpaces && !$isComModerator && !$isCourseCreator) {
+            if (!$validSpaces && !$isSpaceModerator) {
                 continue;
             }
 
@@ -811,20 +816,22 @@ class Helper
         return apply_filters('fluent_community/menu_groups_for_user', $formattedGroups, $user);
     }
 
-    public static function getUnreadFeedsCounts($spaceId)
+    public static function getUnreadFeedsCounts($spaceId, $force = false)
     {
         static $coutsCache = null;
-        if ($coutsCache !== null) {
+        if ($coutsCache !== null && !$force) {
             return Arr::get((array)$coutsCache, $spaceId);
         }
 
-        $xprofile = Helper::getCurrentProfile();
+        $xprofile = self::getCurrentProfile();
 
         if (!$xprofile || !$xprofile->last_activity) {
             return 0;
         }
 
-        $lastActivityDate = date('Y-m-d H:i:s', strtotime($xprofile->last_activity) - 300);
+        $lastActivityDate = gmdate('Y-m-d H:i:s', strtotime($xprofile->last_activity) - 300);
+
+        $lastActivityDate = apply_filters('fluent_community/last_activity_date_for_unread_feeds', $lastActivityDate, $xprofile);
 
         $unreadCounts = Feed::query()
             ->select('space_id', Utility::getApp('db')->raw('COUNT(*) as feed_count'))
@@ -1148,21 +1155,15 @@ class Helper
             $currentUser = self::getCurrentUser();
 
             $mainItems = array_filter($mainItems, function ($item) use ($currentUser) {
-                return Arr::get($item, 'enabled') === 'yes'
-                    && Arr::get($item, 'is_unavailable') !== 'yes'
-                    && self::isLinkAccessible($item, $currentUser);
+                return self::isLinkAccessible($item, $currentUser);
             });
 
             $profileDropDownItems = array_filter($profileDropDownItems, function ($item) use ($currentUser) {
-                return Arr::get($item, 'enabled') === 'yes'
-                    && Arr::get($item, 'is_unavailable') !== 'yes'
-                    && self::isLinkAccessible($item, $currentUser);
+                return self::isLinkAccessible($item, $currentUser);
             });
 
             $beforeCommunityMenuItems = array_filter($beforeCommunityMenuItems, function ($item) use ($currentUser) {
-                return Arr::get($item, 'enabled') === 'yes'
-                    && Arr::get($item, 'is_unavailable') !== 'yes'
-                    && self::isLinkAccessible($item, $currentUser);
+                return self::isLinkAccessible($item, $currentUser);
             });
 
             $validGroups = [];
@@ -1172,9 +1173,7 @@ class Helper
                 }
 
                 $group['items'] = array_filter($group['items'], function ($item) use ($currentUser) {
-                    return Arr::get($item, 'enabled') === 'yes'
-                        && Arr::get($item, 'is_unavailable') !== 'yes'
-                        && self::isLinkAccessible($item, $currentUser);
+                    return self::isLinkAccessible($item, $currentUser);
                 });
 
                 if ($group['items']) {
@@ -1197,8 +1196,15 @@ class Helper
         return $menuGroups;
     }
 
-    private static function isLinkAccessible($link, $currentUser = null)
+    public static function isLinkAccessible($link, $currentUser = null)
     {
+        $isEnabled = Arr::get($link, 'enabled') === 'yes';
+        $isUnavailable = Arr::get($link, 'is_unavailable') === 'yes';
+
+        if (!$isEnabled || $isUnavailable) {
+            return false;
+        }
+
         $privacy = Arr::get($link, 'privacy', '');
 
         if (!$privacy || $privacy === 'public') {
@@ -1274,7 +1280,7 @@ class Helper
             $meta = Meta::create([
                 'object_type' => 'space',
                 'object_id'   => $spaceId,
-                'meta_key'    => $key,
+                'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'value'       => $value
             ]);
         }
@@ -1421,7 +1427,7 @@ class Helper
     public static function getEnabledFeedLinks()
     {
         $links = array_filter(self::getFeedLinks(), function ($item) {
-            return Arr::get($item, 'enabled') == 'yes' && Arr::get($item, 'is_unavailable') != 'yes';
+            return self::isLinkAccessible($item);
         });
 
         return array_values($links);
@@ -1599,11 +1605,16 @@ class Helper
         ]);
 
         if ($space->type == 'course') {
+            if (!$space instanceof Course) {
+                $space = Course::find($space->id); // we are renewing the model to have access to course relations
+            }
             do_action('fluent_community/course/enrolled', $space, $userId, $by, $created);
         } else {
+            if (!$space instanceof Space) {
+                $space = Space::find($space->id); // we are renewing the model to have access to space relations
+            }
             do_action('fluent_community/space/joined', $space, $userId, $by, $created);
         }
-
         return true;
     }
 
@@ -1705,6 +1716,38 @@ class Helper
             <?php endif; ?>
         </a>
         <?php
+    }
+
+    public static function renderMenuItems($menuItems, $linkClass, $fallback = '', $renderIcon = false)
+    {
+        if (!$menuItems) {
+            return;
+        }
+
+        $renderIcon = $renderIcon || Utility::isCustomizationEnabled('icon_on_header_menu');
+
+        foreach ($menuItems as $itemKey => $item): ?>
+            <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
+                <?php self::renderLink($item, $linkClass, $fallback, $renderIcon); ?>
+            </li>
+        <?php endforeach;
+    }
+
+    public static function renderSettingsItems($settingsItems = [])
+    {
+        foreach ($settingsItems as $itemKey => $item): ?>
+            <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
+                <a class="fcom_menu_link <?php echo esc_attr(Arr::get($item, 'link_classes')); ?>"
+                   href="<?php echo esc_url($item['permalink']); ?>">
+                    <?php if (!empty($item['icon_svg'])): ?>
+                        <i class="el-icon">
+                            <?php echo CustomSanitizer::sanitizeSvg(Arr::get($item, 'el-icon', '')); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </i>
+                    <?php endif; ?>
+                    <span class="community_name"><?php echo wp_kses_post($item['title']); ?></span>
+                </a>
+            </li>
+        <?php endforeach;
     }
 
     /**
@@ -1970,11 +2013,13 @@ class Helper
             return false;
         }
         $profanity = array_map('trim', $profanity);
-        $profanity = array_map('strtolower', $profanity);
-        $text = strtolower($text);
+        $profanity = array_map(function ($word) {
+            return mb_strtolower($word, 'UTF-8');
+        }, $profanity);
+        $text = mb_strtolower($text, 'UTF-8');
 
         // Convert words into a regex pattern (ensuring whole-word matching)
-        $pattern = '/\b(' . implode('|', array_map('preg_quote', $profanity)) . ')\b/i';
+        $pattern = '/(?<!\p{L})(' . implode('|', array_map('preg_quote', $profanity)) . ')(?!\p{L})/iu';
 
         if (preg_match($pattern, $text, $matches)) {
             return $matches[0];

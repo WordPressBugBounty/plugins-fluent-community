@@ -147,14 +147,14 @@ class PostMigrator
         }
 
         if (!$content && !$this->attachments && !$this->mediaItems) {
-            error_log('Missing Post: ' . $this->post->id);
+            // error_log('Missing Post: ' . $this->post->id);
             return false;
         }
 
         // let's create the posts
         $feedData = [
             'user_id'          => $this->post->user_id,
-            'title'            => '',
+            'title'            => $this->post->post_title ?? '',
             'message'          => BPMigratorHelper::toMarkdown($content),
             'message_rendered' => FeedsHelper::mdToHtml($content),
             'type'             => 'text',
@@ -471,7 +471,7 @@ class PostMigrator
 
             $mediaData = [
                 'object_source' => 'space_document',
-                'media_key'     => md5($attachment['path'] . '_' . time() . '_' . rand(1000, 9999)),
+                'media_key'     => md5($attachment['path'] . '_' . time() . '_' . wp_rand(1000, 9999)),
                 'user_id'       => $feed->user_id,
                 'feed_id'       => $feed->id,
                 'is_active'     => 1,
@@ -571,7 +571,7 @@ class PostMigrator
 
             $mediaData = [
                 'object_source' => 'feed',
-                'media_key'     => md5($mediaItem['path'] . '_' . time() . '_' . rand(1000, 9999)),
+                'media_key'     => md5($mediaItem['path'] . '_' . time() . '_' . wp_rand(1000, 9999)),
                 'user_id'       => $feed->user_id,
                 'feed_id'       => $feed->id,
                 'is_active'     => 1,

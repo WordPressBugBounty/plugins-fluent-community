@@ -96,21 +96,21 @@ class Bootstrap extends IntegrationManagerController
                 [
                     'require_list' => false,
                     'title'        => __('For new users', 'fluent-community'),
-                    'html_info'    => '<h4 style="font-size: 16px;">' . __('For New Users - Data mapping') . '</h4><p>' . __('These settings will apply only if the provided email address is not a registered WordPress user', 'fluent-community') . '</p>',
+                    'html_info'    => '<h4 style="font-size: 16px;">' . __('For New Users - Data mapping', 'fluent-community') . '</h4><p>' . __('These settings will apply only if the provided email address is not a registered WordPress user', 'fluent-community') . '</p>',
                     'component'    => 'html_info',
                 ],
                 [
                     'require_list' => false,
                     'key'          => 'full_name',
                     'component'    => 'value_text',
-                    'label'        => __('Full Name (Only for new users)', 'fluent_community')
+                    'label'        => __('Full Name (Only for new users)', 'fluent-community')
                 ],
                 [
                     'require_list' => false,
                     'key'          => 'password',
                     'component'    => 'value_text',
-                    'label'        => __('Password (Only for new users)', 'fluent_community'),
-                    'inline_tip'   => __('Keep empty to auto generated password', 'fluent_community')
+                    'label'        => __('Password (Only for new users)', 'fluent-community'),
+                    'inline_tip'   => __('Keep empty to auto generated password', 'fluent-community')
                 ],
                 [
                     'require_list'   => false,
@@ -131,7 +131,7 @@ class Bootstrap extends IntegrationManagerController
                     'key'          => 'conditionals',
                     'label'        => __('Conditional Logics', 'fluent-community'),
                     'tips'         => __('Allow this integration conditionally based on your submission values',
-                        'fluentformpro'),
+                        'fluent-community'),
                     'component'    => 'conditional_block'
                 ],
             ],
@@ -174,7 +174,7 @@ class Bootstrap extends IntegrationManagerController
 
         $formattedSpaces = [];
         foreach ($allSpaces as $space) {
-            $type = $space->type == 'course' ? __('Course', 'fluent-comunity') : __('Space', 'fluent-community');
+            $type = $space->type == 'course' ? __('Course', 'fluent-community') : __('Space', 'fluent-community');
             $formattedSpaces[$space->id] = "{$space->title} ({$type})";
         }
         return $formattedSpaces;
@@ -185,7 +185,7 @@ class Bootstrap extends IntegrationManagerController
         $fields = [
             [
                 'key'           => 'email',
-                'label'         => __('Email Address', 'fluent_community'),
+                'label'         => __('Email Address', 'fluent-community'),
                 'input_options' => 'emails',
                 'required'      => true,
             ]
@@ -200,6 +200,7 @@ class Bootstrap extends IntegrationManagerController
             'category'                => 'wp_core',
             'disable_global_settings' => 'yes',
             'logo'                    => '',
+            /* translators: %s is replaced by the title of the integration */
             'title'                   => sprintf(__(' %s Integration', 'fluent-community'), 'FluentCommunity'),
             'is_active'               => $this->isConfigured()
         ];
@@ -226,7 +227,7 @@ class Bootstrap extends IntegrationManagerController
             return $this->addLog(
                 $feed['settings']['name'],
                 'failed',
-                'No Course/Space selected',
+                __('No Course/Space selected', 'fluent-community'),
                 $form->id,
                 $entry->id,
                 $this->integrationKey
@@ -238,7 +239,7 @@ class Bootstrap extends IntegrationManagerController
             return $this->addLog(
                 $feed['settings']['name'],
                 'failed',
-                'No Course/Space found',
+                __('No Course/Space found', 'fluent-community'),
                 $form->id,
                 $entry->id,
                 $this->integrationKey
@@ -255,7 +256,7 @@ class Bootstrap extends IntegrationManagerController
             $userId = $entry->user_id;
         } else {
             $emailAddress = Arr::get($formData, $emailKey);
-            $existingUser = get_user_by('ID', $emailAddress);
+            $existingUser = get_user_by('email', $emailAddress);
 
             if ($existingUser) {
                 $userId = $existingUser->ID;
@@ -269,7 +270,8 @@ class Bootstrap extends IntegrationManagerController
                     return $this->addLog(
                         $feed['settings']['name'],
                         'failed',
-                        'Failed to create user. Reason: ' . $userId->get_error_message(),
+                        /* translators: %s is replaced by the error message */
+                        __('Failed to create user. Reason: %s', 'fluent-community'), $userId->get_error_message(),
                         $form->id,
                         $entry->id,
                         $this->integrationKey
@@ -376,11 +378,11 @@ class Bootstrap extends IntegrationManagerController
         return true;
     }
 
-    protected function maybeLogin($userId, $entry = false)
+    protected function maybeLogin($userId, $entry = null)
     {
         // check if it's payment success page
         // or direct url
-        if (isset($_REQUEST['fluentform_payment_api_notify']) && $entry) {
+        if (isset($_REQUEST['fluentform_payment_api_notify']) && $entry) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             // This payment IPN request so let's keep a reference for real request
             Helper::setSubmissionMeta($entry->id, '_make_auto_login', $userId, $entry->form_id);
             return;

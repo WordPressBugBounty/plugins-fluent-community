@@ -30,12 +30,12 @@ class AuthModdule
         add_action('wp_ajax_fcom_user_login_form', [$this, 'handleUserLogin']);
 
         add_filter('fluent_auth/login_redirect_url', function ($redirectUrl, $user) {
-            if (empty($_REQUEST['is_fcom_auth']) || empty($_REQUEST['fcom_redirect'])) {
+            if (empty($_REQUEST['is_fcom_auth']) || empty($_REQUEST['fcom_redirect'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 return $redirectUrl;
             }
 
             // validate the url
-            $redirectUrl = $_REQUEST['fcom_redirect'];
+            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['fcom_redirect'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             if (!filter_var($redirectUrl, FILTER_VALIDATE_URL)) {
                 $redirectUrl = Helper::baseUrl();
             }
@@ -60,9 +60,9 @@ class AuthModdule
         }
 
         // Remove fcom_action and fcom_url_hash from the current url
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
+        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $url = remove_query_arg(['fcom_action', 'fcom_url_hash'], $currentUrl);
-        wp_redirect($url);
+        wp_safe_redirect($url);
         exit();
     }
 
@@ -78,7 +78,7 @@ class AuthModdule
 
         $currentUserId = get_current_user_id();
         // check if there has any invitation token
-        $inivtationToken = Arr::get($_GET, 'invitation_token');
+        $inivtationToken = Arr::get($_GET, 'invitation_token'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         $inviation = null;
         if ($inivtationToken) {
@@ -90,8 +90,8 @@ class AuthModdule
 
         if ($currentUserId && !$inviation) {
             $redirectUrl = null;
-            if (!empty($_REQUEST['redirect_to'])) {
-                $redirectUrl = sanitize_url($_REQUEST['redirect_to']);
+            if (!empty($_REQUEST['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $redirectUrl = sanitize_url(wp_unslash($_REQUEST['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             }
             if (!$redirectUrl) {
                 $redirectUrl = Helper::baseUrl();
@@ -107,16 +107,16 @@ class AuthModdule
                 if (Helper::isUserInSpace($currentUserId, $inviation->post_id)) {
                     // let's redirect the user to the space
                     $redirectUrl = $space->getPermalink();
-                    wp_redirect($redirectUrl);
+                    wp_safe_redirect($redirectUrl);
                     exit();
                 }
 
-                if (!empty($_REQUEST['auto_accept'])) {
+                if (!empty($_REQUEST['auto_accept'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                     $redirectUrl = (new InvitationHandler())->handleInvitationLogin(Helper::baseUrl(), get_user_by('ID', $currentUserId), $inviation->message_rendered);
                     if (is_wp_error($redirectUrl) || !$redirectUrl) {
                         $redirectUrl = Helper::baseUrl();
                     }
-                    wp_redirect($redirectUrl);
+                    wp_safe_redirect($redirectUrl);
                     exit();
                 }
             }
@@ -125,7 +125,7 @@ class AuthModdule
         do_action('fluent_community/auth/before_auth_page_process', $currentUserId, $inviation);
 
         $acceptedForms = ['login', 'register', 'reset_password'];
-        $targetForm = Arr::get($_GET, 'form');
+        $targetForm = Arr::get($_GET, 'form'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         if (!in_array($targetForm, $acceptedForms)) {
             $targetForm = 'login';
         }
@@ -150,7 +150,7 @@ class AuthModdule
 
         $isFluentAuth = AuthHelper::isFluentAuthAvailable();
         if (!$isFluentAuth && $targetForm == 'reset_password') {
-            wp_redirect(wp_lostpassword_url(Helper::baseUrl()));
+            wp_safe_redirect(wp_lostpassword_url(Helper::baseUrl()));
             exit();
         }
 
@@ -159,6 +159,7 @@ class AuthModdule
 
         $frameData = [
             'logo'         => Arr::get($portalSettings, 'logo', ''),
+            /* translators: %s is replaced by the title of the site */
             'title'        => sprintf(__('Join %s', 'fluent-community'), $titleVar),
             'description'  => __('Login or Signup to join the community', 'fluent-community'),
             'button_label' => __('Login', 'fluent-community'),
@@ -169,13 +170,13 @@ class AuthModdule
             if (!$inviation) {
                 $customSignupUrl = Arr::get($portalSettings, 'custom_signup_url');
                 if ($customSignupUrl) {
-                    wp_redirect($customSignupUrl);
+                    wp_safe_redirect($customSignupUrl);
                     exit();
                 }
             }
         }
 
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
+        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         do_action('fluent_community/enqueue_global_assets', true);
         add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm, $inviation) {
@@ -202,6 +203,7 @@ class AuthModdule
             'layout'         => 'signup',
             'portal'         => [
                 'logo'        => Arr::get($portalSettings, 'logo', ''),
+                /* translators: %s is replaced by the title of the site */
                 'title'       => \sprintf(__('Welcome to %s', 'fluent-community'), Arr::get($portalSettings, 'site_title')),
                 'description' => get_bloginfo('description')
             ]
@@ -240,7 +242,7 @@ class AuthModdule
                             <h2><?php echo esc_html($frameData['title']); ?></h2>
                         </div>
                         <div class="fcom_onboard_sub">
-                            <p><?php _e('Please enter your email address. You will receive an email message with instructions on how to reset your password.', 'fluent-community'); ?></p>
+                            <p><?php esc_html_e('Please enter your email address. You will receive an email message with instructions on how to reset your password.', 'fluent-community'); ?></p>
                         </div>
                     </div>
                     <div class="fcom_onboard_body">
@@ -249,7 +251,7 @@ class AuthModdule
                             <div class="fcom_spaced_divider">
                                 <div class="fcom_alt_auth_text">
                                     <a href="<?php echo esc_url(add_query_arg('form', 'login', $currentUrl)); ?>">
-                                        <?php _e('Back to Login', 'fluent-community'); ?>
+                                        <?php esc_html_e('Back to Login', 'fluent-community'); ?>
                                     </a>
                                 </div>
                             </div>
@@ -262,7 +264,7 @@ class AuthModdule
             } else {
                 //check if the registration is disabled
                 if (!AuthHelper::isRegistrationEnabled()) {
-                    echo '<div class="fcom_completed"><div class="fcom_complted_header"><h4>' . __('Registration is disabled for this community', 'fluent-community') . '</h4>';
+                    echo '<div class="fcom_completed"><div class="fcom_complted_header"><h4>' . esc_html__('Registration is disabled for this community', 'fluent-community') . '</h4>';
                     return;
                 }
 
@@ -285,10 +287,10 @@ class AuthModdule
             <link rel="canonical" href="<?php echo esc_url(Helper::getAuthUrl()); ?>" />
             <style>
                 .fcom_layout_side {
-                <?php foreach ($bannerColors as $colorKey => $colorValue): ?> --fcom_ <?php echo $colorKey; ?>: <?php echo $colorValue; ?>;
+                <?php foreach ($bannerColors as $colorKey => $colorValue): ?> --fcom_ <?php echo esc_html($colorKey); ?>: <?php echo esc_html($colorValue); ?>;
                 <?php endforeach; ?>
                 }
-                <?php echo $css; ?>
+                <?php echo esc_html($css); ?>
             </style>
             <?php
         });
@@ -313,7 +315,7 @@ class AuthModdule
 
         if (!AuthHelper::isRegistrationEnabled()) {
             wp_send_json([
-                'message' => __('Registration is disabled for this community', 'fluent-community')
+                'message' => esc_html__('Registration is disabled for this community', 'fluent-community')
             ], 422);
         }
 
@@ -338,7 +340,7 @@ class AuthModdule
 
         if (empty($data['username'])) {
             wp_send_json([
-                'message' => __('Username is not valid', 'fluent-community'),
+                'message' => esc_html__('Username is not valid', 'fluent-community'),
                 'errors'  => [
                     'username' => __('Please provide a valid username', 'fluent-community')
                 ]
@@ -347,7 +349,7 @@ class AuthModdule
 
         if (!ProfileHelper::isUsernameAvailable($data['username'])) {
             wp_send_json([
-                'message' => __('Username is already taken', 'fluent-community'),
+                'message' => esc_html__('Username is already taken', 'fluent-community'),
                 'errors'  => [
                     'username' => __('Username is already taken. Please use a different username', 'fluent-community')
                 ]
@@ -366,7 +368,7 @@ class AuthModdule
 
             if ($invitation->message && $invitation->message != $data['email']) {
                 wp_send_json([
-                    'message' => __('Email does not match with the invitation', 'fluent-community')
+                    'message' => esc_html__('Email does not match with the invitation', 'fluent-community')
                 ], 422);
             }
 
@@ -379,7 +381,7 @@ class AuthModdule
         if (!$invitation && AuthenticationService::getCustomSignupPageUrl()) {
             // we have custom signup page enabled
             wp_send_json([
-                'message' => __('Direct Registration is disabled for this community', 'fluent-community')
+                'message' => esc_html__('Direct Registration is disabled for this community', 'fluent-community')
             ], 422);
         }
 
@@ -512,7 +514,7 @@ class AuthModdule
 
         $redirectUrl = Helper::baseUrl();
 
-        $redirectUrl = apply_filters('fluent_community/auth/after_signup_redirect_url', $redirectUrl, $user, $_REQUEST);
+        $redirectUrl = apply_filters('fluent_community/auth/after_signup_redirect_url', $redirectUrl, $user, $_REQUEST); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $btnText = __('Continue to the community', 'fluent-community');
 
         $html = '<div class="fcom_completed"><div class="fcom_complted_header"><h2>' . __('Congratulations!', 'fluent-community') . '</h2>';
@@ -582,8 +584,8 @@ class AuthModdule
         InvitationService::makeLogin($user);
 
         $redirectUrl = null;
-        if (!empty($_REQUEST['redirect_to'])) {
-            $redirectUrl = sanitize_url($_REQUEST['redirect_to']);
+        if (!empty($_REQUEST['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
 
         if (!$redirectUrl) {
@@ -626,7 +628,8 @@ class AuthModdule
         $isFluentAuth = AuthHelper::isFluentAuthAvailable();
         $loginSettings = AuthenticationService::getFormattedAuthSettings('login');
         $formSettings = Arr::get($loginSettings, 'form');
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
+        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        /* translators: %s is replaced by the title of the site */
         $title = sprintf(__('Login to %s', 'fluent-community'), Arr::get($portalSettings, 'site_title'));
 
         $description = '';
@@ -638,6 +641,7 @@ class AuthModdule
                     $title = $space->title . ' - ' . Arr::get($portalSettings, 'site_title');
                 }
             }
+            /* translators: %s is replaced by the name of the inviter */
             $inviteDescription = \sprintf(__('%s has invited you to join this community. Please login to accept your invitation.', 'fluent-community'), $invitationBy);
             add_action('fluent_community/before_auth_form_header', function ($formType) use ($inviteDescription) {
                 ?>
@@ -663,7 +667,7 @@ class AuthModdule
 
         if ($isFluentAuth) {
             add_filter('login_form_top', function () use ($invitation) {
-                $reditectUrl = Arr::get($_GET, 'redirect_to');
+                $reditectUrl = Arr::get($_GET, 'redirect_to'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 if (!$reditectUrl) {
                     $reditectUrl = apply_filters('fluent_community/default_redirect_url', Helper::baseUrl());
                 }
@@ -700,15 +704,15 @@ class AuthModdule
                         <div class="fcom_spaced_divider">
                             <?php if (AuthHelper::isRegistrationEnabled()): ?>
                                 <div class="fcom_alt_auth_text">
-                                    <?php _e('Don\'t have an account?', 'fluent-community'); ?>
+                                    <?php esc_html_e('Don\'t have an account?', 'fluent-community'); ?>
                                     <a href="<?php echo esc_url($signupUrl); ?>">
-                                        <?php _e('Signup', 'fluent-community'); ?>
+                                        <?php esc_html_e('Signup', 'fluent-community'); ?>
                                     </a>
                                 </div>
                             <?php endif; ?>
                             <p class="fcom_reset_pass_text">
-                                <a href="<?php echo AuthHelper::getLostPasswordUrl($currentUrl); ?>">
-                                    <?php _e('Lost your password?', 'fluent-community'); ?>
+                                <a href="<?php echo esc_url(AuthHelper::getLostPasswordUrl($currentUrl)); ?>">
+                                    <?php esc_html_e('Lost your password?', 'fluent-community'); ?>
                                 </a>
                             </p>
                         </div>
@@ -743,8 +747,8 @@ class AuthModdule
 
         $frameData['settings'] = $formSettings;
 
-        if (isset($_GET['redirect_to'])) {
-            $frameData['redirect_to'] = sanitize_url($_GET['redirect_to']);
+        if (isset($_GET['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $frameData['redirect_to'] = sanitize_url(wp_unslash($_GET['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
 
         App::make('view')->render('auth.login_form', $frameData);
@@ -778,6 +782,7 @@ class AuthModdule
             ];
 
             $invitationBy = $invitation->xprofile ? $invitation->xprofile->display_name : __('Someone', 'fluent-community');
+            /* translators: %s is replaced by the name of the inviter */
             $inviteDescription = sprintf(__('%s has invited you to join this community. Please create an account to accept your invitation.', 'fluent-community'), $invitationBy);
 
             add_action('fluent_community/before_auth_form_header', function ($formType) use ($inviteDescription) {
@@ -799,14 +804,14 @@ class AuthModdule
 
         add_action('fluent_community/before_registration_form', function ($frameData) {
             if (AuthHelper::isFluentAuthAvailable()) {
-                $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request));
+                $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 ob_start();
                 $titlePrefix = __('Signup with', 'fluent-community');
                 do_shortcode('[fs_auth_buttons redirect="' . $currentUrl . '" title_prefix="' . $titlePrefix . ' " title=""]');
                 $html = ob_get_clean();
                 if ($html) {
                     echo '<div class="fcom_social_auth_wrap">';
-                    echo $html;
+                    echo wp_kses_post($html);
                     echo '</div>';
                 }
             }

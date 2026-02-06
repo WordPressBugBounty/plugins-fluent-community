@@ -315,7 +315,7 @@ class User extends Model
         return Meta::create([
             'object_type' => 'user',
             'object_id'   => $this->ID,
-            'meta_key'    => $key,
+            'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
             'value'       => $value
         ]);
     }
@@ -730,7 +730,7 @@ class User extends Model
 
         $data['username'] = $initialUserName;
         if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
-            $data['created_at'] = $this->user_registered;
+            $data['created_at'] = get_date_from_gmt($this->user_registered, 'Y-m-d H:i:s');
         }
 
         $xprofile = XProfile::create($data);

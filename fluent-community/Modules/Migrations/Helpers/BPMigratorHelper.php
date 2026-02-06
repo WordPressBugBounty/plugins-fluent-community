@@ -565,8 +565,8 @@ class BPMigratorHelper
             fluentCommunityApp('db')->table('bp_groups_groupmeta')
                 ->insert([
                     'group_id'   => $group->id,
-                    'meta_key'   => '_fcom_space_id',
-                    'meta_value' => $existingSpace->id
+                    'meta_key'   => '_fcom_space_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_value' => $existingSpace->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ]);
         }
 
@@ -636,7 +636,7 @@ class BPMigratorHelper
         \FluentCommunity\App\Models\Media::truncate();
         \FluentCommunity\App\Models\Activity::truncate();
         \FluentCommunity\App\Models\XProfile::truncate();
-        \FluentCommunity\App\Models\Space::truncate();
+        \FluentCommunity\App\Models\Space::where('type', 'community')->delete();
 
         // reset buddypress meta data
         fluentCommunityApp('db')->table('bp_groups_groupmeta')->where('meta_key', '_fcom_space_id')->delete();
@@ -694,7 +694,7 @@ class BPMigratorHelper
     private static function getFilePathFromUrl($url)
     {
         // Parse the URL to get its components
-        $parsed_url = parse_url($url);
+        $parsed_url = wp_parse_url($url);
         // Get the path from the URL
         $url_path = isset($parsed_url['path']) ? $parsed_url['path'] : '';
 
@@ -775,6 +775,18 @@ class BPMigratorHelper
         }
 
         return Media::create($mediaArgs);
+    }
+
+    public static function recalculateUserPoints($userId)
+    {
+        // SUM of all the points of the Comment Model
+        $commentPoints = Comment::where('user_id', $userId)
+            ->sum('reactions_count');
+
+        $postsPoints = Feed::where('user_id', $userId)
+            ->sum('reactions_count');
+
+        return $commentPoints + $postsPoints;
     }
 
     public static function maybeEnableFollowersModule()

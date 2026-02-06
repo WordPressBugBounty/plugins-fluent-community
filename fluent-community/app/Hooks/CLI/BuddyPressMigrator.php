@@ -94,8 +94,8 @@ class BuddyPressMigrator
             fluentCommunityApp('db')->table('bp_activity_meta')
                 ->insert([
                     'activity_id' => $post->id,
-                    'meta_key'    => '_fcom_feed_id',
-                    'meta_value'  => $feed->id
+                    'meta_key'    => '_fcom_feed_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_value'  => $feed->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ]);
         }
 
@@ -106,7 +106,7 @@ class BuddyPressMigrator
             return true;
         }
 
-        \WP_CLI::line($migrated . ' posts migrated successfully. Last Post ID: ' . $lastPostId . ' at ' . date('Y-m-d H:i:s'));
+        \WP_CLI::line($migrated . ' posts migrated successfully. Last Post ID: ' . $lastPostId . ' at ' . gmdate('Y-m-d H:i:s'));
 
         return $this->migratePosts($lastPostId);
     }
@@ -153,7 +153,7 @@ class BuddyPressMigrator
 
         update_option('_bp_fcom_last_user_id', $lastUserId);
 
-        \WP_CLI::line('Synced ' . count($users) . ' users successfully. Last User ID: ' . $lastUserId . ' at ' . date('Y-m-d H:i:s'));
+        \WP_CLI::line('Synced ' . count($users) . ' users successfully. Last User ID: ' . $lastUserId . ' at ' . gmdate('Y-m-d H:i:s'));
 
         return $this->syncUsers();
     }
@@ -211,7 +211,7 @@ class BuddyPressMigrator
             return true;
         }
 
-        \WP_CLI::line('Synced ' . count($groupMemberEntries) . ' group members successfully. Last Member ID: ' . $lastMemberId . ' at ' . date('Y-m-d H:i:s'));
+        \WP_CLI::line('Synced ' . count($groupMemberEntries) . ' group members successfully. Last Member ID: ' . $lastMemberId . ' at ' . gmdate('Y-m-d H:i:s'));
 
         return $this->syncGroupMembers();
 

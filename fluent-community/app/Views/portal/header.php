@@ -1,9 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
 
 <?php
-
-$renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('icon_on_header_menu');
-
 /**
  *
  * @var string $portal_url
@@ -54,11 +51,7 @@ $renderIcon = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('ic
         <?php if ($menuItems): ?>
             <nav>
                 <ul aria-label="Main menu" class="fcom_header_menu top_menu_items">
-                    <?php foreach ($menuItems as $itemKey => $item): ?>
-                        <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
-                            <?php \FluentCommunity\App\Services\Helper::renderLink($item, 'fcom_menu_link', null, $renderIcon); ?>
-                        </li>
-                    <?php endforeach; ?>
+                    <?php \FluentCommunity\App\Services\Helper::renderMenuItems($menuItems, 'fcom_menu_link'); ?>
                 </ul>
             </nav>
         <?php endif; ?>

@@ -2,11 +2,6 @@
 
 namespace FluentCommunity\App\Models;
 
-use FluentCommunity\App\Functions\Utility;
-use FluentCommunity\App\Services\Helper;
-use FluentCommunity\App\Services\LockscreenService;
-use FluentCommunity\Framework\Support\Arr;
-
 /**
  *  Space Model - DB Model for Individual Space
  *
@@ -30,6 +25,7 @@ class Space extends BaseSpace
             'can_request_join'      => 'no',
             'layout_style'          => 'timeline',
             'show_sidebar'          => 'yes',
+            'show_paywalls'         => 'no',
             'og_image'              => '',
             'links'                 => [],
             'document_library'      => 'no',

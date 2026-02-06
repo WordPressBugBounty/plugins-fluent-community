@@ -29,12 +29,13 @@ class AdminController extends Controller
 
         unset($formatedRoles['administrator']);
 
-        return [
+        $data = [
             'settings'                     => $settings,
             'user_roles'                   => $formatedRoles,
             'users_can_register'           => !!get_option('users_can_register'),
             'user_registration_enable_url' => admin_url('options-general.php')
         ];
+        return apply_filters('fluent_community/general_settings_api_response', $data, $request->all());
     }
 
     public function saveGeneralSettings(Request $request)
@@ -153,9 +154,10 @@ class AdminController extends Controller
             $emailSettings['global_logo'] = $globalSettings['logo'];
         }
 
-        return [
+        $data = [
             'email_settings' => $emailSettings
         ];
+        return apply_filters('fluent_community/email_settings_api_response', $data, $request->all());
     }
 
     public function saveEmailSettings(Request $request)
@@ -210,7 +212,7 @@ class AdminController extends Controller
 
         return apply_filters('fluent_community/storage_settings_response', [
             'config' => $config
-        ]);
+        ], $request->all());
     }
 
     public function updateStorageSettings(Request $request)
@@ -326,7 +328,7 @@ class AdminController extends Controller
 
     public function getWelcomeBannerSettings(Request $request)
     {
-        $settings = apply_filters('fluent_community/get_welcome_banner_settings', Helper::getWelcomeBannerSettings());
+        $settings = apply_filters('fluent_community/get_welcome_banner_settings', Helper::getWelcomeBannerSettings(), $request->all());
 
         return [
             'settings' => $settings
@@ -394,9 +396,11 @@ class AdminController extends Controller
 
         $settings['has_fluentcrm'] = defined('FLUENTCRM') ? 'yes' : 'no';
         $settings['has_fluentsmtp'] = defined('FLUENTMAIL_PLUGIN_FILE') ? 'yes' : 'no';
+        $settings['has_fluentcart'] = defined('FLUENTCART_VERSION') ? 'yes' : 'no';
         $settings['template'] = '';
         $settings['install_fluentcrm'] = 'yes';
         $settings['install_fluentsmtp'] = 'yes';
+        $settings['install_fluentcart'] = 'yes';
         $settings['subscribe_to_newsletter'] = 'yes';
         $settings['share_data'] = 'no';
         if ($currentUser) {
@@ -407,9 +411,10 @@ class AdminController extends Controller
             $settings['user_email_address'] = '';
         }
 
-        return [
+        $data = [
             'settings' => $settings
         ];
+        return apply_filters('fluent_community/onboarding_settings_api_response', $data, $this->request->all());
     }
 
 
@@ -456,6 +461,7 @@ class AdminController extends Controller
         $installableAddons = array_keys(array_filter([
             'fluent-crm'  => Arr::get($inputs, 'install_fluentcrm', 'no') == 'yes',
             'fluent-smtp' => Arr::get($inputs, 'install_fluentsmtp', 'no') == 'yes',
+            'fluent-cart' => Arr::get($inputs, 'install_fluentcart', 'no') == 'yes',
         ]));
 
         // Install Plugins which are checked
@@ -512,9 +518,10 @@ class AdminController extends Controller
 
     public function getProfileLinkProviders(Request $request)
     {
-        return [
+        $data = [
             'providers' => ProfileHelper::socialLinkProviders()
         ];
+        return apply_filters('fluent_community/profile_link_providers_api_response', $data, $request->all());
     }
 
     public function updateProfileLinkProviders(Request $request)
@@ -535,11 +542,12 @@ class AdminController extends Controller
 
     public function getAllSpaceCourses(Request $request)
     {
-        return [
+        $data = [
             'all_spaces' => BaseSpace::query()->withoutGlobalScopes()
                 ->whereIn('type', ['community', 'course'])
                 ->orderBy('serial', 'ASC')->get()
         ];
+        return apply_filters('fluent_community/all_space_courses_api_response', $data, $request->all());
     }
 
 }

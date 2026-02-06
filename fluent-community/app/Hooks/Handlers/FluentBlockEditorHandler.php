@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Hooks\Handlers;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
@@ -19,43 +20,62 @@ class FluentBlockEditorHandler
                 'supports'     => ['title', 'editor', 'thumbnail'],
             ]);
 
-            if (isset($_REQUEST['fluent_community_block_editor'])) {
-                if (!defined('IFRAME_REQUEST')) {
-                    define('IFRAME_REQUEST', true);
-                }
+            register_post_type('fcom-lockscreen', [
+                'label'        => 'Lockscreen',
+                'public'       => false,
+                'show_in_rest' => true,
+                'supports'     => ['editor'],
+            ]);
 
-                remove_action('enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets');
-                add_action('fluent_community/block_editor_head', function () {
-                    $url = FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.css';
-                    ?>
-                    <link rel="stylesheet" href="<?php echo esc_url($url); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
-                    <?php
-                });
-                add_filter('should_load_separate_core_block_assets', '__return_false', 20);
-                $this->renderLessonEditor($_REQUEST);
-
-                add_action('template_redirect', function () {
-                    $this->renderPage();
-                    exit(200);
-                }, -1000);
-
+            if (!isset($_REQUEST['fluent_community_block_editor'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                return;
             }
+
+            if (!defined('IFRAME_REQUEST')) {
+                define('IFRAME_REQUEST', true); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
+            }
+
+            remove_action('enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets');
+            add_action('fluent_community/block_editor_head', function () {
+                $url = FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.css';
+                ?>
+                <link rel="stylesheet" href="<?php echo esc_url($url); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
+                <?php
+            });
+            add_filter('should_load_separate_core_block_assets', '__return_false', 20);
+            $this->renderCustomEditor($_REQUEST); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+            add_action('template_redirect', function () {
+                $this->renderPage();
+                exit(200);
+            }, -1000);
         }, 2);
     }
 
-    public function renderLessonEditor($data = [])
+    public function renderCustomEditor($data = [])
     {
-        do_action('litespeed_control_set_nocache', 'fluentcommunity api request');
+        do_action('litespeed_control_set_nocache', 'fluentcommunity api request'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         // set no cache headers
         nocache_headers();
 
-        $context = Arr::get($data, 'context');
         $hasAccess = false;
-        if ($context == 'course_lesson') {
+        $postType = 'fcom-dummy';
+        $context = Arr::get($data, 'context');
+
+        if ($context === 'course_lesson') {
             $lessonId = Arr::get($data, 'lesson_id');
             if ($lessonId) {
                 $lesson = CourseLesson::find($lessonId);
                 $hasAccess = $lesson && $lesson->course && $lesson->course->isCourseAdmin();
+            }
+        }
+
+        if ($context === 'lockscreen') {
+            $postType = 'fcom-lockscreen';
+            $spaceId = Arr::get($data, 'space_id');
+            if ($spaceId) {
+                $space = BaseSpace::query()->onlyMain()->find($spaceId);
+                $hasAccess = $space && $space->isAdmin(get_current_user_id(), true);
             }
         }
 
@@ -68,7 +88,7 @@ class FluentBlockEditorHandler
         show_admin_bar(false);
 
         $firstPost = Utility::getApp('db')->table('posts')
-            ->where('post_type', 'fcom-dummy')
+            ->where('post_type', $postType)
             ->first();
 
         if ($firstPost) {
@@ -76,9 +96,9 @@ class FluentBlockEditorHandler
             $simulatedPost->post_content = '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         } else {
             $newPostId = wp_insert_post(array(
-                'post_title'   => 'Demo Lesson Title',
+                'post_title'   => $context == 'course_lesson' ? 'Demo Lesson Title' : '',
                 'post_content' => '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->',
-                'post_type'    => 'fcom-dummy',
+                'post_type'    => $postType,
                 'post_status'  => 'draft',
             ));
 
@@ -89,7 +109,7 @@ class FluentBlockEditorHandler
         $post = $simulatedPost;
 
         add_action('wp_enqueue_scripts', function () use ($post) {
-            wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array('jquery-ui-sortable'), false, 1);
+            wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array('jquery-ui-sortable'), FLUENT_COMMUNITY_PLUGIN_VERSION, true);
             wp_enqueue_style('dashicons');
             wp_enqueue_style('media');
             wp_enqueue_style('admin-menu');
@@ -102,7 +122,7 @@ class FluentBlockEditorHandler
                     'wp.apiFetch.use( wp.apiFetch.createPreloadingMiddleware( %s ) );',
                     wp_json_encode(
                         array(
-                            '/wp/v2/fcom-dummy/' . $post->ID . '?context=edit' => array(
+                            '/wp/v2/' . $post->post_type . '/' . $post->ID . '?context=edit' => array(
                                 'body' => array(
                                     'id'                 => $post->ID,
                                     'title'              => array('raw' => $post->post_title),
@@ -126,7 +146,7 @@ class FluentBlockEditorHandler
                                     'template'           => '',
                                     'meta'               => array(),
                                     '_links'             => array(),
-                                    'type'               => 'fcom-dummy',
+                                    'type'               => $post->post_type,
                                     'status'             => 'pending', // pending is the best state to remove draft saving possibilities.
                                     'slug'               => '',
                                     'generated_slug'     => '',
@@ -169,9 +189,6 @@ class FluentBlockEditorHandler
 
     function gutenberg_editor_scripts_and_styles($hook, $post)
     {
-
-
-
         $initial_edits = array(
             'title'   => $post->post_title,
             'content' => $post->post_content,
@@ -180,15 +197,14 @@ class FluentBlockEditorHandler
 
         $editor_settings = $this->getEditorSettings($post);
         
-        $init_script = <<<JS
-			( function() {
-				window._wpLoadBlockEditor = new Promise( function( resolve ) {
-					wp.domReady( function() {
-						resolve( wp.editPost.initializeEditor( 'editor', "%s", %d, %s, %s ) );
-					} );
-				} );
-			} )();
-			JS;
+        $init_script = 
+            "(function() {
+                window._wpLoadBlockEditor = new Promise(function(resolve) {
+                    wp.domReady(function() {
+                        resolve(wp.editPost.initializeEditor('editor', \"%s\", %d, %s, %s));
+                    });
+                });
+            })();";
 
         $script = sprintf(
             $init_script,
@@ -239,17 +255,16 @@ class FluentBlockEditorHandler
 
         wp_register_style('fluent_com_editor_styles', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/style.css', false, FLUENT_COMMUNITY_PLUGIN_VERSION, 'all');
 
-        //   add_editor_style('fluent_com_editor_styles.css');
+        // add_editor_style('fluent_com_editor_styles.css');
 
         // wp_enqueue_style('fluent_com_editor_styles', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/style-editor.css', false, FLUENT_COMMUNITY_PLUGIN_VERSION, 'all');
 
+        // wp_dequeue_style('global-styles');
 
-        //    wp_dequeue_style('global-styles');
 
-
-//        add_action('fluent_enqueue_block_editor_assets', 'enqueue_editor_block_styles_assets');
+        // add_action('fluent_enqueue_block_editor_assets', 'enqueue_editor_block_styles_assets');
         add_action('fluent_enqueue_block_editor_assets', 'wp_enqueue_editor_format_library_assets');
-//        add_action('fluent_enqueue_block_editor_assets', 'wp_enqueue_global_styles_css_custom_properties');
+        // add_action('fluent_enqueue_block_editor_assets', 'wp_enqueue_global_styles_css_custom_properties');
 
         /**
          * Fires after block assets have been enqueued for the editing interface.
@@ -261,7 +276,7 @@ class FluentBlockEditorHandler
          *
          * @since 0.4.0
          */
-        //  do_action('enqueue_block_editor_assets');
+        // do_action('enqueue_block_editor_assets');
         do_action('fluent_enqueue_block_editor_assets');
 
         wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', ['react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins'], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
@@ -270,12 +285,12 @@ class FluentBlockEditorHandler
     function gutenberg_get_available_image_sizes()
     {
         $size_names = apply_filters(
-            'image_size_names_choose',
+            'fluent_community/image_size_names_choose',
             array(
-                'thumbnail' => __('Thumbnail', 'gutenberg'),
-                'medium'    => __('Medium', 'gutenberg'),
-                'large'     => __('Large', 'gutenberg'),
-                'full'      => __('Full Size', 'gutenberg'),
+                'thumbnail' => __('Thumbnail', 'fluent-community'),
+                'medium'    => __('Medium', 'fluent-community'),
+                'large'     => __('Large', 'fluent-community'),
+                'full'      => __('Full Size', 'fluent-community'),
             )
         );
         $all_sizes = array();
@@ -742,7 +757,7 @@ do_action('fluent_community/block_editor_footer');
                     ],
                     'core/image'     => [
                         'lightbox' => [
-                            'allowEditing' => true,
+                            'allowEditing' => false,
                         ]
                     ],
                     'core/pullquote' => [
@@ -957,7 +972,6 @@ do_action('fluent_community/block_editor_footer');
             'titlePlaceholder' => __('Add Lesson title', 'fluent-community')
         );
 
-
         $colorSchema = Utility::getColorSchemaConfig();
         $lightSchemaConfig = Arr::get($colorSchema, 'light');
         $colorSchmeaCss = ':root {';
@@ -995,7 +1009,6 @@ do_action('fluent_community/block_editor_footer');
             ]
         ];
 
-
         $resovedStyles = [
             'wp-components-css'           => includes_url('/css/dist/components/style.min.css'),
             'wp-preferences-css'          => includes_url('/css/dist/preferences/style.min.css'),
@@ -1011,11 +1024,11 @@ do_action('fluent_community/block_editor_footer');
         global $wp_version;
         $cssFiles = '';
         foreach ($resovedStyles as $name => $file) {
-            $cssFiles .= "<link rel='stylesheet' id='{$name}' href='{$file}?ver={$wp_version}' media='all' />\n";
+            $cssFiles .= "<link rel='stylesheet' id='{$name}' href='{$file}?ver={$wp_version}' media='all' />\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
         }
 
         $editor_settings['__unstableResolvedAssets'] = [
-            'scripts' => '<script src="' . includes_url('/js/dist/vendor/wp-polyfill.min.js?ver=3.15.0') . '" id="wp-polyfill-js"></script>',
+            'scripts' => '<script src="' . includes_url('/js/dist/vendor/wp-polyfill.min.js?ver=3.15.0') . '" id="wp-polyfill-js"></script>', // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
             'styles'  => $cssFiles
         ];
 

@@ -139,6 +139,7 @@ class ProfileHelper
         ]);
 
         $enabledKeys = self::getEnabledLinkProviderKeys();
+
         foreach ($links as $key => $provider) {
             if (in_array($key, $enabledKeys)) {
                 $links[$key]['enabled'] = 'yes';
@@ -316,7 +317,7 @@ class ProfileHelper
         $meta = Meta::create([
             'object_type' => 'user',
             'object_id'   => $userId,
-            'meta_key'    => 'auth_hash',
+            'meta_key'    => 'auth_hash', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
             'value'       => [
                 [
                     'hash'      => $newHash,
@@ -460,10 +461,10 @@ This email has been sent to ###EMAIL###
 
 Regards,
 All at ###SITENAME###
-###SITEURL###'
+###SITEURL###', 'fluent-community'
         );
 
-        $content = apply_filters('new_user_email_content', $email_text, $new_user_email);
+        $content = apply_filters('new_user_email_content', $email_text, $new_user_email); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         $content = str_replace('###USERNAME###', $current_user->user_login, $content);
         $content = str_replace('###ADMIN_URL###', esc_url(self_admin_url('profile.php?newuseremail=' . $hash)), $content);
@@ -472,6 +473,6 @@ All at ###SITENAME###
         $content = str_replace('###SITEURL###', home_url(), $content);
 
         /* translators: New email address notification email subject. %s: Site title. */
-        return wp_mail($newEmail, sprintf(__('[%s] Email Change Request'), $sitename), $content);
+        return wp_mail($newEmail, sprintf(__('[%s] Email Change Request', 'fluent-community'), $sitename), $content);
     }
 }

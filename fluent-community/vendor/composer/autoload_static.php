@@ -386,9 +386,13 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Gutenberg\\EditorBlock' => __DIR__ . '/../..' . '/Modules/Gutenberg/EditorBlock.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseCompletedTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/CourseCompletedTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseEnrollmentTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/CourseEnrollmentTrigger.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentCRM\\CourseTopicCompletedTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/CourseTopicCompletedTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\LessonCompletedTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/LessonCompletedTrigger.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\ProfileSection' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/ProfileSection.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCRM\\SpaceJoinTrigger' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCRM/SpaceJoinTrigger.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentCart\\CartCheckout' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCart/CartCheckout.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentCart\\Http\\Controllers\\PaywallController' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCart/Http/Controllers/PaywallController.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentCart\\Paywalls' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCart/Paywalls.php',
         'FluentCommunity\\Modules\\Integrations\\FluentForms\\Bootstrap' => __DIR__ . '/../..' . '/Modules/Integrations/FluentForms/Bootstrap.php',
         'FluentCommunity\\Modules\\Integrations\\Integrations' => __DIR__ . '/../..' . '/Modules/Integrations/Integrations.php',
         'FluentCommunity\\Modules\\Migrations\\Helpers\\BPMigratorHelper' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/BPMigratorHelper.php',
@@ -396,6 +400,8 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/MigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\MigrationModule' => __DIR__ . '/../..' . '/Modules/Migrations/MigrationModule.php',
+        'FluentCommunity\\Modules\\PushNotification\\FnSubscriptionModel' => __DIR__ . '/../..' . '/Modules/PushNotification/FnSubscriptionModel.php',
+        'FluentCommunity\\Modules\\PushNotification\\PushNotificationModule' => __DIR__ . '/../..' . '/Modules/PushNotification/PushNotificationModule.php',
         'FluentCommunity\\Modules\\Theming\\TemplateLoader' => __DIR__ . '/../..' . '/Modules/Theming/TemplateLoader.php',
     );
 

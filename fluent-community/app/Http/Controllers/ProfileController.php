@@ -115,7 +115,7 @@ class ProfileController extends Controller
         ];
 
         $profile['profile_nav_actions'] = [];
-
+        
         $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile);
 
         return [
@@ -324,7 +324,11 @@ class ProfileController extends Controller
         $maxDescriptionLength = apply_filters('fluent_community/max_profile_description_length', 5000);
         if ($updateData['short_description'] && strlen($updateData['short_description']) > $maxDescriptionLength) {
             return $this->sendError([
-                'message' => sprintf(__('Profile bio should not exceed %d characters.', 'fluent-community'), $maxDescriptionLength)
+                'message' => sprintf(
+                    /* translators: %d: Maximum number of characters allowed in the profile bio. */
+                    __('Profile bio should not exceed %d characters.', 'fluent-community'),
+                    $maxDescriptionLength
+                )
             ]);
         }
 
@@ -429,9 +433,11 @@ class ProfileController extends Controller
             $space->members_count = $space->members()->count();
         }
 
-        return [
-            'spaces' => $spaces
-        ];
+            $data = [
+                'spaces' => $spaces
+            ];
+            
+            return apply_filters('fluent_community/profile_spaces_api_response', $data, $request->all());
     }
 
     public function getComments(Request $request, $userName)
@@ -468,10 +474,12 @@ class ProfileController extends Controller
             ->orderBy('id', 'desc')
             ->paginate();
 
-        return [
-            'comments' => $comments,
-            'xprofile' => $xProfile
-        ];
+            $data = [
+                'comments' => $comments,
+                'xprofile' => $xProfile
+            ];
+
+            return apply_filters('fluent_community/profile_comments_api_response', $data, $request->all());
     }
 
     public function getNotificationPreferance(Request $request, $userName)
@@ -529,7 +537,8 @@ class ProfileController extends Controller
 
         $spaceGroups = SpaceGroup::with(['spaces' => function ($query) {
             $query->whereHas('members', function ($q) {
-                $q->where('user_id', get_current_user_id());
+                $q->where('user_id', get_current_user_id())
+                  ->where('status', 'active');
             })
                 ->where('type', 'community');
         }])
@@ -622,13 +631,15 @@ class ProfileController extends Controller
             }
         }
 
-        return [
+        $data = [
             'user_globals'                      => (object)$userGlobalPrefs,
             'spaceGroups'                       => $formattedSpaceGroups,
             'space_prefs'                       => $spaceWisePrefs,
             'digestEmailDay'                    => $digestDay,
             'default_messaging_email_frequency' => Arr::get($messagingConfig, 'messaging_email_status') !== 'yes' ? 'no' : Arr::get($messagingConfig, 'messaging_email_frequency'),
         ];
+
+        return apply_filters('fluent_community/profile_notification_pref_api_response', $data, $request->all());
     }
 
     public function saveNotificationPreferance(Request $request, $userName)

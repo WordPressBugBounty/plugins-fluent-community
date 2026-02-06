@@ -27,9 +27,11 @@ class SpaceController extends Controller
             })
             ->get();
 
-        return [
+        $data = [
             'spaces' => $spaces
         ];
+
+        return apply_filters('fluent_community/spaces_api_response', $data, $this->request->all());
     }
 
     public function create(Request $request)
@@ -124,7 +126,9 @@ class SpaceController extends Controller
         ]);
 
         if (Arr::has($data, 'topic_ids')) {
+            $topicsConfig = Helper::getTopicsConfig();
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
+            $topicIds = array_slice($topicIds, 0, $topicsConfig['max_topics_per_space']);
             $space->syncTopics($topicIds);
         }
 
@@ -190,10 +194,12 @@ class SpaceController extends Controller
                 ->count();
         }
 
-        return [
+        $data = [
             'spaces'         => $spaces,
             'execution_time' => microtime(true) - $start
         ];
+
+        return apply_filters('fluent_community/spaces_api_response', $data, $request->all());
     }
 
     public function getBySlug(Request $request, $spaceSlug)
@@ -213,9 +219,10 @@ class SpaceController extends Controller
 
         do_action_ref_array('fluent_community/space', [&$space]);
 
-        return [
+        $data = [
             'space' => $space
         ];
+        return apply_filters('fluent_community/space_api_response', $data, $request->all());
     }
 
     public function patchBySlug(Request $request, $slug)
@@ -280,9 +287,12 @@ class SpaceController extends Controller
         }
 
         if (Arr::has($data, 'topic_ids')) {
+            $topicsConfig = Helper::getTopicsConfig();
             $topicIds = (array)Arr::get($data, 'topic_ids', []);
+            $topicIds = array_slice($topicIds, 0, $topicsConfig['max_topics_per_space']);
             $space->syncTopics($topicIds);
         }
+
         do_action('fluent_community/space/updated', $space, $data);
         $slugUpdated = $slug != $space->slug;
 
@@ -358,7 +368,7 @@ class SpaceController extends Controller
             ->where('status', 'active')
             ->orderBy('created_at', 'ASC')
             ->paginate();
-
+        
         return apply_filters('fluent_community/space_members_api_response', [
             'members'       => $spaceMembers,
             'pending_count' => $pendingCount
@@ -638,7 +648,7 @@ class SpaceController extends Controller
                 $q->where('space_id', $space->id);
             })
             ->limit(100)
-            ->searchBy($request->get('search'));
+            ->searchBy($request->getSafe('search'));
 
         if (is_multisite()) {
             global $wpdb;
@@ -653,14 +663,14 @@ class SpaceController extends Controller
             ->pluck('ID')
             ->toArray();
 
-
         $users = User::select($selects)
             ->whereIn('ID', $userIds)
             ->paginate(100);
 
-        return [
+        $data = [
             'users' => $users
         ];
+        return apply_filters('fluent_community/space_non_members_api_response', $data, $request->all());
     }
 
     public function updateLinks(Request $request, $slug)
@@ -732,10 +742,11 @@ class SpaceController extends Controller
             }
         }
 
-        return [
+        $data = [
             'groups'          => $groups,
             'orphaned_spaces' => $orphanedSpaces
         ];
+        return apply_filters('fluent_community/space_groups_api_response', $data, $request->all);
     }
 
     public function createSpaceGroup(Request $request)
@@ -800,7 +811,7 @@ class SpaceController extends Controller
         $group->fill($formattedData)->save();
 
         return [
-            'message' => __('Space group has been created updated', 'fluent-community'),
+            'message' => __('Space group has been updated', 'fluent-community'),
             'group'   => $group
         ];
     }

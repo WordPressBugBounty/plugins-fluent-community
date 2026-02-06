@@ -17,7 +17,7 @@ class InvitationService
 
         $sanitized_user_login = sanitize_user($user_login);
 
-        $user_email = apply_filters('user_registration_email', $user_email);
+        $user_email = apply_filters('user_registration_email', $user_email); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         // Check the username.
         if ('' === $sanitized_user_login) {
@@ -29,7 +29,7 @@ class InvitationService
             $errors->add('username_exists', __('<strong>Error</strong>: This username is already registered. Please choose another one.', 'fluent-community'));
         } else {
             /** This filter is documented in wp-includes/user.php */
-            $illegal_user_logins = (array)apply_filters('illegal_user_logins', array());
+            $illegal_user_logins = (array)apply_filters('illegal_user_logins', array()); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             if (in_array(strtolower($sanitized_user_login), array_map('strtolower', $illegal_user_logins), true)) {
                 $errors->add('invalid_username', __('<strong>Error</strong>: Sorry, that username is not allowed.', 'fluent-community'));
             }
@@ -48,9 +48,9 @@ class InvitationService
             );
         }
 
-        do_action('register_post', $sanitized_user_login, $user_email, $errors);
+        do_action('register_post', $sanitized_user_login, $user_email, $errors); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
-        $errors = apply_filters('registration_errors', $errors, $sanitized_user_login, $user_email);
+        $errors = apply_filters('registration_errors', $errors, $sanitized_user_login, $user_email); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         if ($errors->has_errors()) {
             return $errors;
@@ -107,13 +107,13 @@ class InvitationService
         }
 
         if (!empty($_COOKIE['wp_lang'])) {
-            $wp_lang = sanitize_text_field($_COOKIE['wp_lang']);
+            $wp_lang = sanitize_text_field(wp_unslash($_COOKIE['wp_lang']));
             if (in_array($wp_lang, get_available_languages(), true)) {
                 update_user_meta($user_id, 'locale', $wp_lang); // Set user locale if defined on registration.
             }
         }
 
-        do_action('register_new_user', $user_id);
+        do_action('register_new_user', $user_id); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         return $user_id;
     }
@@ -127,7 +127,7 @@ class InvitationService
         $user = get_user_by('ID', $user->ID);
 
         if ($user) {
-            do_action('wp_login', $user->user_login, $user);
+            do_action('wp_login', $user->user_login, $user); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
 
         return $user;
@@ -222,8 +222,8 @@ class InvitationService
 
         $portalSettings = Helper::generalSettings();
 
-        $subject = \sprintf(
-            __('%1$s has invited you to join the %2$s', 'fluent-community'),
+        /* translators: %1$s is replaced by the name of the user, %2$s is replaced by the title of the site */
+        $subject = \sprintf(__('%1$s has invited you to join the %2$s', 'fluent-community'),
             $xProfile->display_name,
             Arr::get($portalSettings, 'site_title')
         );
@@ -232,6 +232,7 @@ class InvitationService
             $space = $invitation->space;
             if ($space) {
                 $subject = \sprintf(
+                    /* translators: %1$s is replaced by the name of the user, %2$s is replaced by the title of the space, %3$s is replaced by the title of the site */
                     __('%1$s has invited you to join the %2$s on %3$s', 'fluent-community'),
                     $xProfile->display_name,
                     $space->title,
@@ -262,6 +263,7 @@ class InvitationService
         $siteTitle = Arr::get($portalSettings, 'site_title');
 
         if ($invitation->space) {
+            /* translators: %1$s is replaced by the title of the space, %2$s is replaced by the title of the site */
             $siteTitle = \sprintf(__('%1$s on %2$s', 'fluent-community'), $invitation->space->title, $siteTitle);
         }
 

@@ -19,7 +19,7 @@ class PortalSettingsHandler
 
             $user = Helper::getCurrentUser();
             if (!$user) {
-                wp_redirect(Helper::baseUrl());
+                wp_safe_redirect(Helper::baseUrl());
                 exit();
             }
 
@@ -28,7 +28,7 @@ class PortalSettingsHandler
             $acceptedRoles = ['admin', 'moderator', 'course_admin', 'course_creator'];
 
             if(!$roles || !array_intersect($roles, $acceptedRoles)) {
-                wp_redirect(Helper::baseUrl());
+                wp_safe_redirect(Helper::baseUrl());
                 exit();
             }
 
@@ -40,8 +40,14 @@ class PortalSettingsHandler
             ];
 
             if (!Utility::isDev()) {
+                if ($isRtl) {
+                    $fileName = 'admin_app.rtl.css';
+                } else {
+                    $fileName = 'admin_app.css';
+                }
+
                 $vars['css_files']['fcom_admin_vendor'] = [
-                    'url' => Vite::getStaticSrcUrl('admin_app.css', $isRtl) // vite automatically build src/admin_app.css for all components also styles inside components
+                    'url' => Vite::getStaticSrcUrl($fileName)
                 ];
             }
 
@@ -53,7 +59,7 @@ class PortalSettingsHandler
             add_filter('fluent_community/will_render_default_sidebar_items', '__return_false');
 
             add_action('fluent_community/after_header_menu', function () {
-                echo '<h4 style="margin: 0; font-size: 20px;">' . __('Portal Settings', 'fluent-community') . '</h4>';
+                echo '<h4 style="margin: 0; font-size: 20px;">' . esc_html__('Portal Settings', 'fluent-community') . '</h4>';
             });
 
             $settingsMenuItems = apply_filters('fluent_community/portal_settings_menu_items', $this->getPortalSettingsMenuItems());
@@ -62,11 +68,13 @@ class PortalSettingsHandler
 
             $vars['js_vars']['fluentComAdmin']['portal_slug'] = ltrim(Helper::getPortalSlug(true), '/') . '/admin';
 
+            $vars['js_vars']['fluentComAdmin']['verified_email_senders'] = Utility::getVerifiedSenders();
+
             return $vars;
         });
 
         add_action('admin_enqueue_scripts', function () {
-            if (isset($_GET['page']) && $_GET['page'] === 'fluent-community') {
+            if (isset($_GET['page']) && $_GET['page'] === 'fluent-community') { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 wp_enqueue_style('fluent_community_admin', Vite::getStaticSrcUrl('onboarding.css'), [], FLUENT_COMMUNITY_PLUGIN_VERSION);
             }
         });
@@ -195,7 +203,7 @@ class PortalSettingsHandler
             'has_pro'             => defined('FLUENT_COMMUNITY_PRO_VERSION'),
             'upgrade_url'         => Utility::getProductUrl(false),
             'settings_page_url'   => admin_url('admin.php?page=fluent-community'),
-            'is_license_page'     => isset($_GET['license']) && $_GET['license'] === 'yes',
+            'is_license_page'     => isset($_GET['license']) && $_GET['license'] === 'yes', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             'license_url_page'    => defined('FLUENT_COMMUNITY_PRO_VERSION') ? admin_url('admin.php?page=fluent-community&license=yes') : '',
         ]);
 

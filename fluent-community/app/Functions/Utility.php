@@ -74,7 +74,7 @@ class Utility
 
         } else {
             $exist = \FluentCommunity\App\Models\Meta::create([
-                'meta_key'    => $key,
+                'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'object_type' => 'option',
                 'value'       => $value
             ]);
@@ -1151,6 +1151,20 @@ class Utility
             'has_color_scheme' => Helper::hasColorScheme(),
             'context'          => $scope,
         ], $userModel);
+    }
+
+    public static function getVerifiedSenders()
+    {
+        $verifiedSenders = [];
+
+        if (defined('FLUENTMAIL')) {
+            $smtpSettings = get_option('fluentmail-settings', []);
+            if ($smtpSettings && count($smtpSettings['mappings'])) {
+                $verifiedSenders = array_keys($smtpSettings['mappings']);
+            }
+        }
+
+        return apply_filters('fluent_community/verified_email_senders', $verifiedSenders);
     }
 
     public static function safeUnserialize($data)

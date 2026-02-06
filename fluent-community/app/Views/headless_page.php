@@ -44,8 +44,8 @@
 
     <?php do_action('fluent_community/headless/head_early', $scope); ?>
 
-    <?php foreach ($css_files as $css_file): ?>
-        <link rel="stylesheet" href="<?php echo esc_url($css_file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/>
+    <?php foreach ($css_files as $fluentCommunityCssFile): ?>
+        <link rel="stylesheet" href="<?php echo esc_url($fluentCommunityCssFile); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" media="screen"/> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
     <?php endforeach; ?>
     <?php do_action('fluent_community/headless/head', $scope); ?>
 </head>
@@ -86,15 +86,15 @@
 <?php endif; ?>
 
 <script>
-    <?php foreach ($js_vars as $varKey => $values): ?>
-    var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
+    <?php foreach ($js_vars as $fluentCommunityVarKey => $fluentCommunityValues): ?>
+    var <?php echo esc_attr($fluentCommunityVarKey); ?> = <?php echo wp_json_encode($fluentCommunityValues); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
     <?php endforeach; ?>
 </script>
 
 <?php do_action('fluent_community/headless/before_js_loaded', $scope); ?>
 
-<?php foreach ($js_files as $file): ?>
-    <script type="module" src="<?php echo esc_url($file); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script>
+<?php foreach ($js_files as $fluentCommunityFile): ?>
+    <script type="module" src="<?php echo esc_url($fluentCommunityFile); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
 <?php endforeach; ?>
 
 <?php if (!empty($load_wp)) { wp_footer(); } ?>

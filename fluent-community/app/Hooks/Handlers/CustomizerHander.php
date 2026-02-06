@@ -17,7 +17,7 @@ class CustomizerHander
                     <li class="customizer_menu_item">
                         <a
                            href="<?php echo esc_url(Helper::baseUrl('/?customizer_panel=1')); ?>">
-                           <?php _e('Customize Colors', 'fluent-community'); ?>
+                           <?php esc_html_e('Customize Colors', 'fluent-community'); ?>
                         </a>
                     </li>
                     <li class="top_menu_item customizer_menu_button">
@@ -27,7 +27,7 @@ class CustomizerHander
                     </li>
                     <?php
                 });
-            } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) {
+            } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 $vars['css_files'] = array_merge($vars['css_files'], [
                     'customizer'     => [
                         'url' => Vite::getStaticSrcUrl('customizer.css')

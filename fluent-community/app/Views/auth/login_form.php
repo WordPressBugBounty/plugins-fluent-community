@@ -28,15 +28,15 @@
             <div class="fcom_spaced_divider">
                 <?php if (!empty($signupUrl)): ?>
                     <div class="fcom_alt_auth_text">
-                        <?php _e('Don\'t have an account?', 'fluent-community'); ?>
+                        <?php esc_html_e('Don\'t have an account?', 'fluent-community'); ?>
                         <a href="<?php echo esc_url($signupUrl); ?>">
-                            <?php _e('Signup', 'fluent-community'); ?>
+                            <?php esc_html_e('Signup', 'fluent-community'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
                 <p class="fcom_reset_pass_text">
-                    <a href="<?php echo wp_lostpassword_url($redirect) ?>">
-                        <?php _e('Lost your password?', 'fluent-community'); ?>
+                    <a href="<?php echo esc_url(wp_lostpassword_url($redirect)); ?>">
+                        <?php esc_html_e('Lost your password?', 'fluent-community'); ?>
                     </a>
                 </p>
             </div>

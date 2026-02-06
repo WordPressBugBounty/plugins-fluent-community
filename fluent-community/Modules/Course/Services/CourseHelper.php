@@ -13,6 +13,7 @@ use FluentCommunity\App\Services\SmartCodeParser;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
+use FluentCommunity\Modules\Course\Model\CourseTopic;
 
 class CourseHelper
 {
@@ -185,6 +186,24 @@ class CourseHelper
 
         do_action('fluent_community/course/lesson_completed', $lesson, $userId);
 
+        // check if the whole module is completed
+        $allTopicLessonIds = CourseLesson::where('space_id', $lesson->space_id)
+            ->where('parent_id', $lesson->parent_id)
+            ->where('status', 'published')
+            ->pluck('id')
+            ->toArray();
+
+        $completedLessonCount = Reaction::where('user_id', $userId)
+            ->whereIn('object_id', $allTopicLessonIds)
+            ->where('object_type', 'lesson_completed')
+            ->where('type', 'completed')
+            ->count();
+
+        if (count($allTopicLessonIds) == $completedLessonCount) {
+            $topic = CourseTopic::find($lesson->parent_id);
+            do_action('fluent_community/course/topic_completed', $topic, $userId, $lesson);
+        }
+
         return true;
     }
 
@@ -215,7 +234,7 @@ class CourseHelper
         }
 
         return Meta::create([
-            'meta_key'    => $key,
+            'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
             'value'       => $value,
             'object_type' => 'course'
         ]);
@@ -457,7 +476,7 @@ class CourseHelper
         if ($parseContent && $canViewLesson) {
             $content = $lesson->message_rendered;
             if (!$content && $lesson->message) {
-                $content = apply_filters('the_content', $lesson->message);
+                $content = apply_filters('the_content', $lesson->message); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             }
             if (!$content) {
                 $content = '';
@@ -491,6 +510,29 @@ class CourseHelper
         return $formattedLesson;
     }
 
+    public static function copyLessonDocuments($lesson, $newLesson)
+    {
+        if (!$lesson || !$newLesson) {
+            return;
+        }
+
+        $newLessonMeta = $newLesson->meta;
+        $newLessonMeta['document_lists'] = [];
+        foreach ($lesson->media as $media) {
+            $newMedia = $media->replicate();
+            $newMedia->feed_id = $newLesson->id;
+            $newMedia->save();
+            if ($media->object_source == 'lesson_document') {
+                $newLessonMeta['document_lists'][] = $newMedia->getPrivateFileMeta();
+            }
+        }
+
+        if (!empty($newLessonMeta['document_lists'])) {
+            $newLesson->meta = $newLessonMeta;
+            $newLesson->save();
+        }
+    }
+
     public static function getAccessMessage($course, $lesson, $config)
     {
         $isLocked = Arr::get($config, 'is_locked', false);
@@ -503,14 +545,14 @@ class CourseHelper
 
         if ($isLocked && $unlockDate) {
             $headerMessage = __('This lesson is not published for you yet', 'fluent-community');
-            $bodyMessage = sprintf(
-                __('It will be available to you on %s', 'fluent-community'),
+            /* translators: %s is replaced by the date */
+            $bodyMessage = sprintf(__('It will be available to you on %s', 'fluent-community'),
                 date_i18n(get_option('date_format'), strtotime($unlockDate))
             );
         }
 
-        $accessMessage = sprintf(
-            '<div class="fcom_locker"><h1>%s</h1><p>%s</p><a href="%s" class="el-button el-button--info">%s</a></div>',
+        /* translators: %s is replaced by the header message, %s is replaced by the body message, %s is replaced by the course lessons url, %s is replaced by the back to course text */
+        $accessMessage = sprintf('<div class="fcom_locker"><h1>%s</h1><p>%s</p><a href="%s" class="el-button el-button--info">%s</a></div>',
             $headerMessage,
             $bodyMessage,
             $courseLessonsUrl,

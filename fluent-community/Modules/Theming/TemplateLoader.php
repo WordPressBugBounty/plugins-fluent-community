@@ -16,7 +16,7 @@ class TemplateLoader
             }
 
             if ($templateName == 'kadence' && defined('KTP_VERSION')) {
-                if (function_exists('\Kadence\kadence') && \Kadence\kadence()->option('dark_mode_enable') && apply_filters('kadence_dark_mode_enable', true)) {
+                if (function_exists('\Kadence\kadence') && \Kadence\kadence()->option('dark_mode_enable') && apply_filters('kadence_dark_mode_enable', true)) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                     $cookie_name = substr(base_convert(md5(get_site_url()), 16, 32), 0, 12) . '-paletteCookie';
                     $vars['color_switch_cookie_name'] = $cookie_name;
                 }
@@ -33,7 +33,7 @@ class TemplateLoader
         // support for blocksy
         add_action('fluent_community/theme_body_atts', function ($themeName) {
             if ($themeName == 'blocksy') {
-                echo blocksy_body_attr();
+                echo blocksy_body_attr(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             }
         });
 
@@ -46,8 +46,8 @@ class TemplateLoader
             return $templates;
         }
 
-        $templates['fluent-community-frame.php'] = __('FluentCommunity Frame', 'fluent-community');
-        $templates['fluent-community-frame-full.php'] = __('FluentCommunity Full Width Frame', 'fluent-community');
+        $templates['fluent-community-frame.php'] = esc_html__('FluentCommunity Frame', 'fluent-community');
+        $templates['fluent-community-frame-full.php'] = esc_html__('FluentCommunity Full Width Frame', 'fluent-community');
         return $templates;
     }
 
@@ -123,21 +123,31 @@ class TemplateLoader
             case 'bricks':
                 $this->renderBricks($wrapperType);
                 break;
+            case 'breakdance-zero':
+                $this->renderBreakdance();
+                break;
             default:
                 $this->renderFallBack($wrapperType);
                 break;
         }
     }
 
-    private function loadScriptsAndStyles()
+    public function loadScriptsAndStyles()
     {
+        $themeName = get_option('template');
 
-        add_filter('body_class', function ($classes) {
+        add_filter('body_class', function ($classes) use ($themeName) {
             $classes[] = 'fluent_com_wp_pages';
+
+            if (
+                $themeName === 'breakdance-zero' &&
+                !in_array('breakdance', $classes, true)
+            ) {
+                $classes[] = 'breakdance';
+            }
+
             return $classes;
         });
-
-        $themeName = get_option('template');
 
         add_action('wp_head', function () use ($themeName) {
             $isAlignSupportedTheme = in_array($themeName, ['blocksy'], true);
@@ -193,14 +203,14 @@ class TemplateLoader
     private function renderBlocksy()
     {
         ?>
-        <main <?php echo blocksy_main_attr() ?>>
+        <main <?php echo blocksy_main_attr(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
             <?php
             if (is_singular()) {
-                do_action('blocksy:content:top');
+                do_action('blocksy:content:top'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                 blocksy_before_current_template();
                 get_template_part('template-parts/single');
                 blocksy_after_current_template();
-                do_action('blocksy:content:bottom');
+                do_action('blocksy:content:bottom'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             } else {
                 get_template_part('template-parts/archive');
             }
@@ -241,9 +251,9 @@ class TemplateLoader
     {
         \Kadence\kadence()->print_styles('kadence-content');
         if (is_singular()) {
-            do_action('kadence_single');
+            do_action('kadence_single'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         } else {
-            do_action('kadence_archive');
+            do_action('kadence_archive'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
     }
 
@@ -251,14 +261,14 @@ class TemplateLoader
     {
         ?>
         <div <?php generate_do_attr('page'); ?>>
-            <?php do_action('generate_inside_site_container'); ?>
+            <?php do_action('generate_inside_site_container'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
             <div <?php generate_do_attr('site-content'); ?>>
-                <?php do_action('generate_inside_container'); ?>
+                <?php do_action('generate_inside_container'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                 <div <?php generate_do_attr('content'); ?>>
                     <main <?php generate_do_attr('main'); ?>>
                         <?php if (is_singular()): ?>
                             <?php
-                            do_action('generate_before_main_content');
+                            do_action('generate_before_main_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                             if (generate_has_default_loop()) {
                                 while (have_posts()) :
                                     the_post();
@@ -266,31 +276,31 @@ class TemplateLoader
                                 endwhile;
                             }
 
-                            do_action('generate_after_main_content');
+                            do_action('generate_after_main_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                             ?>
                         <?php else: ?>
                             <?php
-                            do_action('generate_before_main_content');
+                            do_action('generate_before_main_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                             if (generate_has_default_loop()) {
                                 if (have_posts()) :
-                                    do_action('generate_archive_title');
-                                    do_action('generate_before_loop', 'archive');
+                                    do_action('generate_archive_title'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                                    do_action('generate_before_loop', 'archive'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                                     while (have_posts()) :
                                         the_post();
                                         generate_do_template_part('archive');
                                     endwhile;
-                                    do_action('generate_after_loop', 'archive');
+                                    do_action('generate_after_loop', 'archive'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                                 else :
                                     generate_do_template_part('none');
                                 endif;
                             }
-                            do_action('generate_after_main_content');
+                            do_action('generate_after_main_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                             ?>
                         <?php endif; ?>
                     </main>
                 </div>
                 <?php
-                do_action('generate_after_primary_content_area');
+                do_action('generate_after_primary_content_area'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                 generate_construct_sidebars(); ?>
             </div>
         </div>
@@ -302,16 +312,16 @@ class TemplateLoader
         ?>
         <div id="outer-wrap" class="site clr">
             <div id="wrap" class="clr">
-                <?php do_action('ocean_before_main'); ?>
+                <?php do_action('ocean_before_main'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                 <main id="main" class="site-main clr"<?php oceanwp_schema_markup('main'); ?> role="main">
-                    <?php do_action('ocean_page_header'); ?>
+                    <?php do_action('ocean_page_header'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                     <?php do_action('ocean_before_content_wrap'); ?>
                     <div id="content-wrap" class="container clr">
                         <?php do_action('ocean_before_primary'); ?>
                         <div id="primary" class="content-area clr">
-                            <?php do_action('ocean_before_content'); ?>
+                            <?php do_action('ocean_before_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                             <div id="content" class="site-content clr">
-                                <?php do_action('ocean_before_content_inner'); ?>
+                                <?php do_action('ocean_before_content_inner'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                                 <?php if (is_singular()): ?>
                                     <?php
                                     // Elementor `single` location.
@@ -381,15 +391,15 @@ class TemplateLoader
                                     <?php endif; ?>
 
                                 <?php endif; ?>
-                                <?php do_action('ocean_after_content_inner'); ?>
+                                <?php do_action('ocean_after_content_inner'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                             </div><!-- #content -->
-                            <?php do_action('ocean_after_content'); ?>
+                            <?php do_action('ocean_after_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                         </div><!-- #primary -->
-                        <?php do_action('ocean_after_primary'); ?>
+                        <?php do_action('ocean_after_primary'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                     </div><!-- #content-wrap -->
-                    <?php do_action('ocean_after_content_wrap'); ?>
+                    <?php do_action('ocean_after_content_wrap'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                 </main>
-                <?php do_action('ocean_after_main'); ?>
+                <?php do_action('ocean_after_main'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
             </div>
         </div>
         <?php
@@ -397,17 +407,17 @@ class TemplateLoader
 
     private function renderNeve()
     {
-        $container_class = apply_filters('neve_container_class_filter', 'container', 'single-page');
+        $container_class = apply_filters('neve_container_class_filter', 'container', 'single-page'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         $context = class_exists('WooCommerce', false) && (is_cart() || is_checkout() || is_account_page()) ? 'woo-page' : 'single-page';
         ?>
         <div class="<?php echo esc_attr($container_class); ?> single-page-container">
             <div class="row">
-                <?php do_action('neve_do_sidebar', $context, 'left'); ?>
+                <?php do_action('neve_do_sidebar', $context, 'left'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                 <div class="nv-single-page-wrap col">
                     <?php
-                    do_action('neve_before_page_header');
-                    do_action('neve_page_header', $context);
-                    do_action('neve_before_content', $context);
+                    do_action('neve_before_page_header'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                    do_action('neve_page_header', $context); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                    do_action('neve_before_content', $context); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
                     if (have_posts()) {
                         while (have_posts()) {
@@ -417,10 +427,10 @@ class TemplateLoader
                     } else {
                         get_template_part('template-parts/content', 'none');
                     }
-                    do_action('neve_after_content', $context);
+                    do_action('neve_after_content', $context); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                     ?>
                 </div>
-                <?php do_action('neve_do_sidebar', $context, 'right'); ?>
+                <?php do_action('neve_do_sidebar', $context, 'right'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
             </div>
         </div>
         <?php
@@ -437,6 +447,19 @@ class TemplateLoader
         }
 
         $this->renderFallback($wrapperType);
+    }
+
+    private function renderBreakdance()
+    {
+        if (!function_exists('\\Breakdance\\Render\\render')) {
+            $this->renderFallback();
+            return;
+        }
+
+        $html = \Breakdance\Render\render(get_the_ID());
+        if ($html) {
+            echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        }
     }
 
     private function renderFallback($wrapperType = 'default')
@@ -479,7 +502,7 @@ class TemplateLoader
                     <div>
                         <a class="focm_menu_item" href="<?php echo esc_url($permalink); ?>">
                         <span class="el-icon">
-                            <?php echo Arr::get($menuItem, 'icon_svg'); ?>
+                            <?php echo Arr::get($menuItem, 'icon_svg'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </span>
                             <?php if ($label = Arr::get($menuItem, 'html')): ?>
                                 <span><?php echo wp_kses_post($label); ?></span>

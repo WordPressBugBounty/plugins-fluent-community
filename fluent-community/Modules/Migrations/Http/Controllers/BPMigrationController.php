@@ -266,8 +266,8 @@ class BPMigrationController extends Controller
                 fluentCommunityApp('db')->table('bp_activity_meta')
                     ->insert([
                         'activity_id' => $post->id,
-                        'meta_key'    => '_fcom_feed_id',
-                        'meta_value'  => $feed->id
+                        'meta_key'    => '_fcom_feed_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_value'  => $feed->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                     ]);
             }
         }
@@ -283,8 +283,9 @@ class BPMigrationController extends Controller
             if ($createdSpace) {
                 $createdMaps[$group->id] = $createdSpace->id;
             }
-
         }
+
+        update_option('_bp_fcom_group_maps', $createdMaps);
 
         return $createdMaps;
     }
@@ -339,8 +340,6 @@ class BPMigrationController extends Controller
 
     private function deleteCurrentData()
     {
-
         BPMigratorHelper::deleteCurrentData();
-
     }
 }

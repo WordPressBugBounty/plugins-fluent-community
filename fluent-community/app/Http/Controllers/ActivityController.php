@@ -85,10 +85,13 @@ class ActivityController extends Controller
 
         if ($spaceId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_space', '', $spaceId, $context);
+            $beforeContent = apply_filters('fluent_community/activity/before_contents_space', '', $spaceId, $context);
         } else if ($userId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_user', '', $userId, $context);
+            $beforeContent = apply_filters('fluent_community/activity/before_contents_user', '', $userId, $context);
         } else {
             $afterContent = apply_filters('fluent_community/activity/after_contents', '', $context);
+            $beforeContent = apply_filters('fluent_community/activity/before_contents', '', $context);
         }
 
         $returnData = [
@@ -99,15 +102,14 @@ class ActivityController extends Controller
                 'current_page' => $activities->currentPage(),
             ],
             'after_contents' => $afterContent,
+            'before_contents' => $beforeContent,
         ];
 
         if (!$spaceId) {
-
             if (!$userId) {
                 $returnData['pinned_posts'] = $this->getPinnedPosts(null, true);
             }
-
-            return $returnData;
+            return apply_filters('fluent_community/activities_api_response', $returnData, $request->all());
         }
 
         if ($request->get('with_pins')) {
@@ -129,7 +131,7 @@ class ActivityController extends Controller
             $returnData['pending_count'] = $pendingCount;
         }
 
-        return $returnData;
+        return apply_filters('fluent_community/activities_api_response', $returnData, $request->all());
     }
 
     private function getPinnedPosts($spaceId = null, $isTrending = false)
@@ -171,6 +173,6 @@ class ActivityController extends Controller
             ];
         }
 
-        return $formattedActivities;
+        return apply_filters('fluent_community/pinned_posts_api_response', $formattedActivities, $spaceId, $isTrending);
     }
 }

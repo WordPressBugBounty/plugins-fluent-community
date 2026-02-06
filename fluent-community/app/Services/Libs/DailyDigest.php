@@ -60,12 +60,13 @@ class DailyDigest
         $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
 
         $headingHtml = \sprintf(
+            /* translators: %s is replaced by the title of the site */
             '<h2 style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; margin: 0; margin-bottom: 5px;">' . __('This week on %s', 'fluent-community') . '</h2>',
             Arr::get($settings, 'site_title')
         );
 
-        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . 
-            sprintf(__('%1$s - %2$s', 'fluent-community'), date_i18n('F d', strtotime('-7 days')), date_i18n('F d, Y')) . '</p>';
+        /* translators: %1$s is replaced by the start date of the week, %2$s is replaced by the end date of the week */
+        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . sprintf(__('%1$s - %2$s', 'fluent-community'), date_i18n('F d', strtotime('-7 days')), date_i18n('F d, Y')) . '</p>';
 
         $emailComposer->addBlock('html_content', $headingHtml);
         $emailComposer->addBlock('paragraph', __('Here are some of the most popular posts and notifications you may have missed from the last week 🔥.', 'fluent-community'));
@@ -101,6 +102,19 @@ class DailyDigest
             ProfileHelper::getSignedNotificationPrefUrl($this->user->ID)
         ], $emailBody);
 
+        $hooksSections = apply_filters('fluent_community/digest_notification/email_sections', [
+            'before_content' => '',
+            'after_content'  => ''
+        ], $this->user);
+
+        if(!empty($hooksSections['before_content'])) {
+            $emailBody = str_replace('<!--email_content_before-->', $hooksSections['before_content'], $emailBody);
+        }
+
+        if(!empty($hooksSections['after_content'])) {
+            $emailBody = str_replace('<!--email_content_after-->', $hooksSections['after_content'], $emailBody);
+        }
+
         return apply_filters('fluent_community/digest_email_body', $emailBody, $this->user);
     }
 
@@ -118,6 +132,7 @@ class DailyDigest
         $settings = Helper::generalSettings();
 
         $emailSubject = \sprintf(
+            /* translators: %1$s is replaced by the name of the user, %2$s is replaced by the title of the site */
             __('Hey %1$s, here\'s your weekly digest from %2$s', 'fluent-community'),
             $this->user->display_name,
             Arr::get($settings, 'site_title')
@@ -126,7 +141,7 @@ class DailyDigest
         $notificationCount = count($this->getUnreadNotifications());
 
         if ($notificationCount > 0) {
-            // translators: %d is the number of unread notifications for digest email subject
+            /* translators: %d is replaced by the number of unread notifications for digest email subject */
             $emailSubject .= ' ' . \sprintf(__('(🔔%d)', 'fluent-community'), $notificationCount);
         }
 
@@ -183,11 +198,11 @@ class DailyDigest
                                style="padding: 10px;<?php echo $isLast ? '' : 'border-bottom: 1px solid #dedede;'; ?>"
                                cellspacing="0" cellpadding="0" border="0">
                             <tr>
-                                <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; width: 32px">
+                                <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; height: 32px; width: 32px;">
                                     <a href="<?php echo esc_url($permalink); ?>">
                                         <img alt="<?php echo esc_html($notification->xprofile ? $notification->xprofile->display_name : ''); ?>"
-                                             src="<?php echo esc_url($notification->xprofile->avatar); ?>" width="32"
-                                             height="32" style="border-radius: 50%; min-width: 32px; min-height: 32px; display: block;">
+                                            src="<?php echo esc_url($notification->xprofile->avatar); ?>" height="32" width="32"
+                                            style="border-radius: 50%; height: 32px; width: 32px; display: block;">
                                     </a>
                                 </td>
                                 <td style="font-family: Arial, sans-serif; font-size: 16px;color: #3c434a; padding-left: 5px; vertical-align: middle;">
@@ -196,7 +211,8 @@ class DailyDigest
                                         <?php echo wp_kses_post($notification->content); ?>
                                     </a>
                                     <p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-top: 5px;">
-                                        <?php echo sprintf(__('%s ago', 'fluent-community'), human_time_diff(strtotime($notification->created_at), current_time('timestamp'))); ?>
+                                        <?php /* translators: %s is replaced by the time ago */ ?>
+                                        <?php echo esc_html( sprintf(__('%s ago', 'fluent-community'), esc_html(human_time_diff(strtotime($notification->created_at), current_time('timestamp'))))); ?>
                                     </p>
                                 </td>
                             </tr>

@@ -67,9 +67,10 @@ class Scheduler
         global $wpdb;
 
         // Get the timestamp for 7 days ago
-        $cutoff_date = date('Y-m-d H:i:s', strtotime("-{$days_old} days"));
+        $cutoff_date = gmdate('Y-m-d H:i:s', strtotime("-{$days_old} days"));
 
         // Get the group ID
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $group_id = $wpdb->get_var($wpdb->prepare(
             "SELECT group_id FROM {$wpdb->prefix}actionscheduler_groups WHERE slug = %s",
             $group_slug
@@ -80,6 +81,7 @@ class Scheduler
         }
 
         // Delete old actions and their associated logs
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $deleted = $wpdb->query($wpdb->prepare("
         DELETE a, l
         FROM {$wpdb->prefix}actionscheduler_actions a
@@ -89,6 +91,7 @@ class Scheduler
         AND a.scheduled_date_gmt < %s", $group_id, $cutoff_date));
 
         // Clean up orphaned claims
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query("
         DELETE c
         FROM {$wpdb->prefix}actionscheduler_claims c

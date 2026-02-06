@@ -24,7 +24,7 @@ class ProfileSection
     {
         $sections['fluent_community'] = [
             'name'    => 'fluentcrm_profile_extended',
-            'title'   => __('Community', 'fluent-communtiy'),
+            'title'   => __('Community', 'fluent-community'),
             'handler' => 'route',
             'query'   => [
                 'handler' => 'fluent_community'
@@ -69,7 +69,7 @@ class ProfileSection
                 $tableBuilder->addRow([
                     'id'         => $space->id,
                     'title'      => '<a target="_blank" rel="noopener" href="' . $space->getPermalink() . '">' . $space->title . '</a>',
-                    'created_at' => date($dateFormat, strtotime($space->space_pivot->created_at)),
+                    'created_at' => gmdate($dateFormat, strtotime($space->space_pivot->created_at)),
                     'status'     => $space->space_pivot->status,
                     'role'       => $space->space_pivot->role
                 ]);
@@ -95,7 +95,7 @@ class ProfileSection
                     $tableBuilder->addRow([
                         'id'              => $course->id,
                         'title'           => '<a target="_blank" rel="noopener" href="' . $course->getPermalink() . '">' . $course->title . '</a>',
-                        'enrollment_date' => date($dateFormat, strtotime($course->enrollment->created_at)),
+                        'enrollment_date' => gmdate($dateFormat, strtotime($course->enrollment->created_at)),
                         'status'          => $course->enrollment->status,
                         'progress'        => CourseHelper::getCourseProgress($course->id, $userId) . '%'
                     ]);
@@ -195,13 +195,13 @@ class ProfileSection
 
 
         if (!$spaceIds && !$removeSpaceIds) {
-            throw new \Exception(__('No Space or Course selected', 'fluent-community'));
+            throw new \Exception(esc_html__('No Space or Course selected', 'fluent-community'));
         }
 
         $userId = $subscriber->getWpUserId();
 
         if (!$userId) {
-            throw new \Exception(__('No user found for this contact', 'fluent-community'));
+            throw new \Exception(esc_html__('No user found for this contact', 'fluent-community'));
         }
 
         foreach ($removeSpaceIds as $removeSpaceId) {
