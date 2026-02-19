@@ -25,7 +25,7 @@ class EditorBlock
             $asset_file['version']
         );
 
-        wp_register_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', Helper::isRtl()), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+        wp_register_style('fluent_community_global', Vite::getStaticSrcUrl('global.css', Helper::isRtl()), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
 
         wp_register_script(
             'custom-layout-block-editor',
@@ -54,7 +54,7 @@ class EditorBlock
                 array(
                     'editor_script'   => 'custom-layout-block-editor',
                     'editor_style'    => 'custom-layout-block-editor-style',
-                    //'style'           => 'fluent_community_global',
+                    'style'           => 'fluent_community_global',
                     'render_callback' => [$this, 'render'],
                     'supports'        => [
                         'html' => false

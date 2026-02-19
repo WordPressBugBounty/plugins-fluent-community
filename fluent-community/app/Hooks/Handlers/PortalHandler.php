@@ -77,9 +77,11 @@ class PortalHandler
 
         add_action('fluent_community/enqueue_global_assets', function ($useDefaultTheme = true) {
             $isRtl = Helper::isRtl();
-            wp_enqueue_style('fluent_community_global', Vite::getDynamicSrcUrl('global.scss', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+
+            wp_enqueue_style('fluent_community_global', Vite::getStaticSrcUrl('global.css', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+
             if ($useDefaultTheme) {
-                wp_enqueue_style('fluent_community_default_theme', Vite::getDynamicSrcUrl('theme-default.scss', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
+                wp_enqueue_style('fluent_community_default_theme', Vite::getStaticSrcUrl('theme-default.css', $isRtl), [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'screen');
             }
             $css = Utility::getColorCssVariables();
             wp_add_inline_style('fluent_community_global', $css);
