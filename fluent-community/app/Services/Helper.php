@@ -1959,7 +1959,7 @@ class Helper
         $portalSlug = self::getPortalSlug();
 
         // If portal is mounted at site root, ignore unrelated query args like page builders / previews.
-        if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && !isset($_GET['fcom_route'])) {
+        if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && (!isset($_GET['fcom_route']) && !isset($_GET['fcom_action']))) {
             return false;
         }
 
