@@ -47,7 +47,7 @@ class CleanupHandler
             return;
         }
 
-        if ($media && $media->object_source == 'lesson_document') {
+        if ($media && $media instanceof Media && $media->object_source == 'lesson_document') {
             $this->handleLessonMediaDelete($media->feed_id, $media);
             return;
         }

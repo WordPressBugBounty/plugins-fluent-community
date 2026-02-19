@@ -47,14 +47,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
         </style>
     <?php endif; ?>
 
-    <?php do_action('fluent_community/portal_head'); ?>
-
     <style id="fcom_css_vars">
         <?php echo esc_html(\FluentCommunity\App\Functions\Utility::getColorCssVariables()); ?>
         .dark body .el-dialog {
             --el-dialog-bg-color: #2B2E33;
         }
     </style>
+
+    <?php do_action('fluent_community/portal_head'); ?>
 </head>
 <body>
 <div class="fcom_wrap">

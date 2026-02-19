@@ -2,9 +2,9 @@
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 2.1.02
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -249,6 +249,36 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.2.0 (Date: Feb 19, 2026) =
+- Introduced: Card Layout View option
+- Introduced: Comment Pinning feature
+- Introduced: Profile Page Privacy Settings
+- Introduced: Real-time Chat functionality
+- Introduced: Video Upload with Fluent Player
+- Introduced: Ability to add users to Spaces/Courses from profile
+- Introduced: Chat Widget in Portal
+- Improved: Portal performance for faster loading
+- Improved: Course comments with filtering capability
+- Improved: Feed commenter app notifications
+- Improved: Various UI and UX enhancements across the portal
+- Added: Inline Image support in Feed
+- Added: Media upload rate limiting
+- Added: Mentioned User Profile popover
+- Added: Default comment sorting option
+- Added: Tooltip for badge titles
+- Added: Editor Draft Guard to prevent accidental content loss
+- Fixed: Cloudflare compatibility issue in specific regions
+- Fixed: Feed document deletion issue
+- Fixed: Mentions not working in course comments
+- Fixed: Unable to copy course comment link
+- Fixed: oEmbed issue with external providers
+- Fixed: User name not updating properly
+- Fixed: XML sitemap showing 404 when portal is set as root
+- Fixed: Feed icon not updating in Side Menu
+- Fixed: Prevented portal rendering on unrelated root requests
+- Redesigned: Lesson Editor for improved usability
+- Enhanced: Bookmark listing with filtering, layout view, and search
 
 = 2.1.02 (Date: Dec 04, 2025) =
 - Added: Join Space Option for Public Posts

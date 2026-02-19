@@ -27,6 +27,7 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
 
     $router->get('/users/search', 'SpaceController@getOtherUsers');
     $router->get('/discover', 'SpaceController@discover');
+    $router->get('/all-spaces', 'SpaceController@getAllSpaces');
     $router->get('/space_groups', 'SpaceController@getSpaceGroups');
     $router->post('/space_groups', 'SpaceController@createSpaceGroup');
     $router->put('/space_groups/{id}', 'SpaceController@updateSpaceGroup')->int('id');
@@ -50,19 +51,18 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->get('/{feed_id}/comments', 'CommentsController@getComments')->int('feed_id');
     $router->post('/{feed_id}/comments', 'CommentsController@store')->int('feed_id');
     $router->post('/{feed_id}/comments/{comment_id}', 'CommentsController@update')->int('feed_id')->int('comment_id');
+    $router->patch('/{feed_id}/comments/{comment_id}', 'CommentsController@patchComment')->int('feed_id')->int('comment_id');
     $router->post('/{feed_id}/react', 'CommentsController@addOrRemovePostReact')->int('feed_id');
-    $router->delete('/{feed_id}/comments/{comment_id}', 'CommentsController@deleteComment')->int('feed_id')->int(
-        'comment_id'
-    );
+    $router->delete('/{feed_id}/comments/{comment_id}', 'CommentsController@deleteComment')->int('feed_id')->int('comment_id');
 
-    $router->post('/{feed_id}/comments/{comment_id}/reactions', 'CommentsController@toggleReaction')->int(
-        'feed_id'
-    )->int('comment_id');
+    $router->post('/{feed_id}/comments/{comment_id}/reactions', 'CommentsController@toggleReaction')->int('feed_id')->int('comment_id');
 
     $router->delete('/{feed_id}', 'FeedsController@deleteFeed')->int('feed_id');
     $router->delete('/{feed_id}/media-preview', 'FeedsController@deleteMediaPreview')->int('feed_id');
 
     $router->get('ticker', 'FeedsController@getTicker');
+    $router->get('ticker-updates', 'FeedsController@getTickerUpdates');
+    $router->post('batch', 'FeedsController@batchFetch');
 
     $router->get('oembed', 'FeedsController@getOembed');
 
@@ -85,6 +85,7 @@ $router->prefix('profile')->withPolicy('PortalPolicy')->group(function ($router)
     $router->post('/{username}', 'ProfileController@updateProfile')->alphaNumDash('username');
     $router->put('/{username}', 'ProfileController@patchProfile')->alphaNumDash('username');
     $router->get('/{username}/spaces', 'ProfileController@getSpaces')->alphaNumDash('username');
+    $router->get('/{username}/memberships', 'ProfileController@getAllMemberships')->alphaNumDash('username');
     $router->get('/{username}/comments', 'ProfileController@getComments')->alphaNumDash('username');
 
     $router->get('/{username}/notification-preferences', 'ProfileController@getNotificationPreferance')->alphaNumDash('username');
@@ -158,5 +159,8 @@ $router->prefix('settings')->withPolicy('AdminPolicy')->group(function ($router)
     $router->get('color-config', 'SettingController@getColorConfig');
 
     $router->get('crm-tagging-config', 'SettingController@getCrmTaggingConfig');
+
+    $router->get('fluent-player-settings', 'SettingController@getFluentPlayerSettings');
+    $router->post('fluent-player-settings', 'SettingController@updateFluentPlayerSettings');
 
 });

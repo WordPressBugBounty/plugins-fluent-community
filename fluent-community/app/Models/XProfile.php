@@ -55,7 +55,7 @@ class XProfile extends Model
         'username'
     ];
 
-    protected $appends = ['badge'];
+    protected $appends = ['badge', 'permalink'];
 
     public function scopeSearchBy($query, $search)
     {
@@ -213,6 +213,11 @@ class XProfile extends Model
         return apply_filters('fluent_community/xprofile/badge', null, $this);
     }
 
+    public function getPermalinkAttribute()
+    {
+        return $this->getPermalink();
+    }
+
     public function getCrmContact()
     {
         if (!defined('FLUENTCRM')) {
@@ -236,7 +241,15 @@ class XProfile extends Model
         if (!$settings) {
             $settings = [
                 'cover_photo' => '',
+                'badge_slug'  => [],
                 'website'     => ''
+            ];
+        }
+
+        if (!Utility::canViewUserProfile($this->user_id)) {
+            return [
+                'cover_photo' => Arr::get($settings, 'cover_photo', ''),
+                'badge_slug'  => Arr::get($settings, 'badge_slug', [])
             ];
         }
 

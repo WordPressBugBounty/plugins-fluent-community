@@ -29,6 +29,30 @@ class Helper
     }
 
     /**
+     * Check if POST content length exceeds PHP limits
+     *
+     * @return array|false Error array if limit exceeded, false otherwise
+     */
+    public static function checkUploadSizeError()
+    {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Server variable check
+        $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+        $postMaxSize = wp_convert_hr_to_bytes(ini_get('post_max_size'));
+
+        if ($contentLength > 0 && ($contentLength > $postMaxSize || (empty($_FILES) && empty($_POST)))) {
+            return [
+                'message' => sprintf(
+                    /* translators: %s: max size */
+                    __('Upload failed: File exceeds server limit (%s). Please upload a smaller file.', 'fluent-community'),
+                    size_format($postMaxSize)
+                )
+            ];
+        }
+
+        return false;
+    }
+
+    /**
      * Get the portal slug.
      *
      * @return string The portal slug.
@@ -1934,6 +1958,11 @@ class Helper
     {
         $portalSlug = self::getPortalSlug();
 
+        // If portal is mounted at site root, ignore unrelated query args like page builders / previews.
+        if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && !isset($_GET['fcom_route'])) {
+            return false;
+        }
+
         if ($portalSlug == $requestUri) {
             return 'portal_home';
         }
@@ -2058,6 +2087,17 @@ class Helper
         return apply_filters('fluent_community/post_order_options', $options, $context);
     }
 
+    public static function getCommentOrderOptions($context = 'comment')
+    {
+        $options = [
+            'oldest'       => __('Earliest', 'fluent-community'),
+            'latest'       => __('Latest', 'fluent-community'),
+            'popular'      => __('Popular', 'fluent-community'),
+            'most_replied' => __('Most Replied', 'fluent-community'),
+        ];
+
+        return apply_filters('fluent_community/comment_order_options', $options, $context);
+    }
 
     public static function convertPhpDateToDayJSFormay($phpFormat)
     {

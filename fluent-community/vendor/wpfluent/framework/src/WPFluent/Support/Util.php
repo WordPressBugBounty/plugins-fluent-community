@@ -59,7 +59,7 @@ class Util
 	 * Get the user locale.
 	 * 
 	 * @param  int|null $userId
-	 * @return \FluentCommunity\Framework\Support\UserLocale
+	 * @return \FluentCommunity\Framework\Support\Locale
 	 */
 	public static function getLocale($userId = null)
 	{

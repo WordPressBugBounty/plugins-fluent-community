@@ -26,6 +26,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
             'label'       => __('Enrolled in a course', 'fluent-community'),
             'description' => __('This automation will be initiated when a user enrolls in a course.', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
+            'svg_icon' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="10" r="2" stroke="currentColor" stroke-width="2"/><path d="M7.5 15c.8-1.8 2.6-2.8 3.5-2.8s2.7 1 3.5 2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M18 16v4M16 18h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
         ];
     }
 

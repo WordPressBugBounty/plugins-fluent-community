@@ -2,7 +2,7 @@
 
 namespace FluentCommunity\Framework\Randomizer;
 
-use InvalidArgumentException;
+use FluentCommunity\Framework\Support\InvalidArgumentException;
 
 trait GetStringTrait
 {

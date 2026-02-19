@@ -51,7 +51,7 @@ class Activity extends Model
             return $query->where('space_id', $spaceId);
         }
 
-        return $query->where('space_id', $spaceId);
+        return $query;
     }
 
     public function feed()

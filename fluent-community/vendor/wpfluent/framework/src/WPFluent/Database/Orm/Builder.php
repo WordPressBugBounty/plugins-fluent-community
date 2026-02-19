@@ -13,6 +13,7 @@ use FluentCommunity\Framework\Support\Helper;
 use FluentCommunity\Framework\Pagination\Paginator;
 use FluentCommunity\Framework\Support\ForwardsCalls;
 use FluentCommunity\Framework\Support\ArrayableInterface;
+use FluentCommunity\Framework\Support\HelperFunctionsTrait;
 use FluentCommunity\Framework\Database\Query\Expression;
 use FluentCommunity\Framework\Database\Concerns\BuildsQueries;
 use FluentCommunity\Framework\Database\RecordsNotFoundException;
@@ -27,9 +28,13 @@ use FluentCommunity\Framework\Database\Query\Builder as QueryBuilder;
  * @property-read HigherOrderBuilderProxy $orWhere
  *
  * @mixin \FluentCommunity\Framework\Database\Query\Builder
+ *
+ * @template TModel of \FluentCommunity\Framework\Database\Orm\Model
  */
 class Builder
 {
+    use HelperFunctionsTrait;
+    
     use BuildsQueries, ForwardsCalls, QueriesRelationships {
         BuildsQueries::sole as baseSole;
     }
@@ -224,7 +229,7 @@ class Builder
      * @param  array|null  $scopes
      * @return $this
      */
-    public function withoutGlobalScopes(array $scopes = null)
+    public function withoutGlobalScopes(?array $scopes = null)
     {
         if (! is_array($scopes)) {
             $scopes = array_keys($this->scopes);
@@ -523,7 +528,7 @@ class Builder
     {
         $result = $this->find($id, $columns);
 
-        $id = $id instanceof Arrayable ? $id->toArray() : $id;
+        $id = $id instanceof ArrayableInterface ? $id->toArray() : $id;
 
         if (is_array($id)) {
             if (count($result) !== count(array_unique($id))) {
@@ -568,13 +573,9 @@ class Builder
      * @param  mixed  $id
      * @param  (\Closure(): TValue)|list<string>|string  $columns
      * @param  (\Closure(): TValue)|null  $callback
-     * @return (
-     *     $id is (\FluentCommunity\Framework\Support\ArrayableInterface<array-key, mixed>|array<mixed>)
-     *     ? \FluentCommunity\Framework\Database\Orm\Collection<int, TModel>
-     *     : TModel|TValue
-     * )
+     * @return TModel|TValue|\FluentCommunity\Framework\Database\Orm\Collection
      */
-    public function findOr($id, $columns = ['*'], Closure $callback = null)
+    public function findOr($id, $columns = ['*'], ?Closure $callback = null)
     {
         if ($columns instanceof Closure) {
             $callback = $columns;
@@ -679,7 +680,7 @@ class Builder
      * @param  \Closure|null  $callback
      * @return \FluentCommunity\Framework\Database\Orm\Model|static|mixed
      */
-    public function firstOr($columns = ['*'], Closure $callback = null)
+    public function firstOr($columns = ['*'], ?Closure $callback = null)
     {
         if ($columns instanceof Closure) {
             $callback = $columns;
@@ -955,7 +956,25 @@ class Builder
         return $this->applyScopes()->query->cursor()->map(function ($record) {
             $model = $this->newModelInstance()->newFromBuilder($record);
 
-            return $this->applyAfterQueryCallbacks($this->newModelInstance()->newCollection([$model]))->first();
+            return $this->applyAfterQueryCallbacks(
+                $this->newModelInstance()->newCollection([$model])
+            )->first();
+        })->reject(fn ($model) => is_null($model));
+    }
+
+    /**
+     * Get a lazy collection for the given query using raw query.
+     *
+     * @return \FluentCommunity\Framework\Support\LazyCollection
+     */
+    public function rawCursor()
+    {
+        return $this->applyScopes()->query->rawCursor()->map(function ($record) {
+            $model = $this->newModelInstance()->newFromBuilder($record);
+
+            return $this->applyAfterQueryCallbacks(
+                $this->newModelInstance()->newCollection([$model])
+            )->first();
         })->reject(fn ($model) => is_null($model));
     }
 
@@ -2105,6 +2124,7 @@ class Builder
         }
 
         if ($method === 'mixin') {
+            // @phpstan-ignore-next-line
             return static::registerMixin($parameters[0], $parameters[1] ?? true);
         }
 

@@ -14,86 +14,209 @@ return array(
     'cipher' => 'AES-256-CBC',
     'key' => 'base64:4/VF9KA9s8xP4czFwFgf5/PkrJ/+AxsTjK/a8jEi9Uk=',
     //manifest start
-     'manifest' => [
-        'src/app.css' => array(
-            'file' => 'app.css',
-            'src' => 'src/app.css',
+    'manifest' => [
+        '_dayjs.js' => array(
+            'file' => 'dayjs.js',
+        ),
+        '_element-plus.js' => array(
+            'file' => 'element-plus.js',
+            'imports' => array(
+                '_vue.js',
+                '_lodash.js',
+                '_vendor.js',
+                '_dayjs.js',
+            ),
+        ),
+        '_emoji-picker.js' => array(
+            'file' => 'emoji-picker.js',
+            'imports' => array(
+                '_vue.js',
+            ),
+        ),
+        '_index6.js' => array(
+            'file' => 'index6.js',
+        ),
+        '_lodash.js' => array(
+            'file' => 'lodash.js',
+            'imports' => array(
+                '_dayjs.js',
+            ),
+        ),
+        '_milkdown.js' => array(
+            'file' => 'milkdown.js',
+            'imports' => array(
+                '_vendor.js',
+                '_lodash.js',
+                '_vue.js',
+            ),
+        ),
+        '_pinia.js' => array(
+            'file' => 'pinia.js',
+            'imports' => array(
+                '_vendor.js',
+                '_vue.js',
+            ),
+        ),
+        '_todoList.js' => array(
+            'file' => 'todoList.js',
+            'imports' => array(
+                '_vendor.js',
+            ),
+        ),
+        '_vendor.js' => array(
+            'file' => 'vendor.js',
+            'imports' => array(
+                '_vue.js',
+                '_dayjs.js',
+            ),
+        ),
+        '_vue-router.js' => array(
+            'file' => 'vue-router.js',
+            'imports' => array(
+                '_vue.js',
+            ),
+        ),
+        '_vue.js' => array(
+            'file' => 'vue.js',
+        ),
+        'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts' => array(
+            'file' => 'index2.js',
+            'imports' => array(
+                '_index6.js',
+                '_vendor.js',
+                '_todoList.js',
+                '_milkdown.js',
+                '_vue.js',
+                '_dayjs.js',
+                '_lodash.js',
+            ),
+            'isDynamicEntry' => true,
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts',
+        ),
+        'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts' => array(
+            'file' => 'index5.js',
+            'imports' => array(
+                '_todoList.js',
+                '_milkdown.js',
+                '_vendor.js',
+                '_vue.js',
+                '_dayjs.js',
+                '_lodash.js',
+            ),
+            'isDynamicEntry' => true,
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts',
+        ),
+        'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts' => array(
+            'file' => 'index.js',
+            'imports' => array(
+                '_todoList.js',
+                '_milkdown.js',
+                '_vendor.js',
+                '_vue.js',
+                '_dayjs.js',
+                '_lodash.js',
+            ),
+            'isDynamicEntry' => true,
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
+        ),
+        'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts' => array(
+            'file' => 'index3.js',
+            'imports' => array(
+                '_index6.js',
+                '_milkdown.js',
+                '_vendor.js',
+                '_lodash.js',
+                '_dayjs.js',
+                '_vue.js',
+            ),
+            'isDynamicEntry' => true,
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts',
+        ),
+        'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts' => array(
+            'file' => 'index4.js',
+            'imports' => array(
+                '_index6.js',
+                '_vendor.js',
+                '_todoList.js',
+                '_milkdown.js',
+                '_vue.js',
+                '_dayjs.js',
+                '_lodash.js',
+            ),
+            'isDynamicEntry' => true,
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts',
         ),
         'src/app.js' => array(
-            'css' => array(
-                'app.css',
+            'dynamicImports' => array(
+                'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
+                'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts',
+                'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts',
+                'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts',
+                'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts',
             ),
             'file' => 'app.js',
+            'imports' => array(
+                '_vue.js',
+                '_vue-router.js',
+                '_pinia.js',
+                '_vendor.js',
+                '_element-plus.js',
+                '_emoji-picker.js',
+                '_lodash.js',
+                '_milkdown.js',
+                '_dayjs.js',
+            ),
             'isEntry' => true,
             'src' => 'src/app.js',
         ),
-        'src/admin_app.css' => array(
-            'file' => 'admin_app.css',
-            'src' => 'src/admin_app.css',
+        'style.css' => array(
+            'file' => 'global.css',
+            'src' => 'style.css',
         ),
         'src/admin_app.js' => array(
-            'css' => array(
-                'admin_app.css',
-            ),
             'file' => 'admin_app.js',
             'isEntry' => true,
             'src' => 'src/admin_app.js',
         ),
-        'src/customizer/customizer_app.css' => array(
-            'file' => 'customizer_app.css',
-            'src' => 'src/customizer/customizer_app.css',
-        ),
         'src/customizer/customizer_app.js' => array(
-            'css' => array(
-                'customizer_app.css',
-            ),
             'file' => 'customizer_app.js',
             'isEntry' => true,
             'src' => 'src/customizer/customizer_app.js',
         ),
-        'src/Onboarding/onboarding.css' => array(
-            'file' => 'onboarding.css',
-            'src' => 'src/Onboarding/onboarding.css',
-        ),
         'src/Onboarding/onboarding.js' => array(
-            'css' => array(
-                'onboarding.css',
-            ),
             'file' => 'onboarding.js',
             'isEntry' => true,
             'src' => 'src/Onboarding/onboarding.js',
         ),
-        'src/public/js/user_registration.css' => array(
-            'file' => 'user_registration.css',
-            'src' => 'src/public/js/user_registration.css',
-        ),
         'src/public/js/user_registration.js' => array(
-            'css' => array(
-                'user_registration.css',
-            ),
             'file' => 'user_registration.js',
             'isEntry' => true,
             'src' => 'src/public/js/user_registration.js',
-        ),
-        'src/global.scss' => array(
-            'file' => 'global.css',
-            'isEntry' => true,
-            'src' => 'src/global.scss',
-        ),
-        'src/portal_general.js' => array(
-            'file' => 'portal_general.js',
-            'isEntry' => true,
-            'src' => 'src/portal_general.js',
         ),
         'src/start.js' => array(
             'file' => 'start.js',
             'isEntry' => true,
             'src' => 'src/start.js',
         ),
+        'src/portal_general.js' => array(
+            'file' => 'portal_general.js',
+            'isEntry' => true,
+            'src' => 'src/portal_general.js',
+        ),
+        'src/app_css.scss' => array(
+            'file' => 'app_css.js',
+            'isEntry' => true,
+            'src' => 'src/app_css.scss',
+        ),
         'src/theme-default.scss' => array(
-            'file' => 'theme-default.css',
+            'file' => 'theme-default.js',
             'isEntry' => true,
             'src' => 'src/theme-default.scss',
+        ),
+        'src/global.scss' => array(
+            'file' => 'global.js',
+            'isEntry' => true,
+            'src' => 'src/global.scss',
         ),
     ]
     //manifest end

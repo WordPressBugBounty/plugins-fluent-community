@@ -105,17 +105,17 @@ class Utility
         $features = self::getOption('fluent_community_features', []);
 
         $defaults = [
-            'leader_board_module' => 'yes',
-            'course_module'       => 'yes',
-            'giphy_module'        => 'no',
-            'giphy_api_key'       => '',
-            'emoji_module'        => 'yes',
-            'cloud_storage'       => 'no',
-            'invitation'          => 'yes',
-            'user_badge'          => 'yes',
-            'has_crm_sync'        => 'no',
-            'content_moderation'  => 'no',
-            'followers_module'   => 'no'
+            'leader_board_module'  => 'yes',
+            'course_module'        => 'yes',
+            'giphy_module'         => 'no',
+            'giphy_api_key'        => '',
+            'emoji_module'         => 'yes',
+            'cloud_storage'        => 'no',
+            'invitation'           => 'yes',
+            'user_badge'           => 'yes',
+            'has_crm_sync'         => 'no',
+            'content_moderation'   => 'no',
+            'followers_module'     => 'no',
         ];
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
@@ -214,18 +214,16 @@ class Utility
             'disable_feed_sort_by' => 'no',
             'default_feed_sort_by' => ''
         ];
-
         $settings = self::getOption('customization_settings', $defaults);
 
         $settings = wp_parse_args($settings, $defaults);
-
+		$settings = apply_filters('fluent_community/customization_settings', $settings);
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             $settings['show_powered_by'] = 'yes';
             $settings['affiliate_id'] = '';
             $settings['rich_post_layout'] = 'classic';
             $settings['member_list_layout'] = 'classic';
         }
-
         return $settings;
     }
 
@@ -262,6 +260,7 @@ class Utility
             'enable_gravatar'                => 'yes',
             'enable_user_sync'               => 'yes',
             'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
+            'profile_page_visibility'        => 'everybody', // everybody, logged_in, admin_only
             'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
             'leaderboard_members_visibility' => 'everybody', // everybody, logged_in, admin_only
         ];
@@ -309,6 +308,23 @@ class Utility
         return apply_filters('fluent_community/can_view_leaderboard_members', Helper::isModerator(), $pageStatus);
     }
 
+    public static function canViewUserProfile($targetUserId = null)
+    {
+        $pageStatus = self::getPrivacySetting('profile_page_visibility');
+
+        if ($pageStatus == 'everybody') {
+            return apply_filters('fluent_community/can_view_user_profile', true, $pageStatus, $targetUserId);
+        }
+
+        if ($pageStatus == 'logged_in') {
+            return apply_filters('fluent_community/can_view_user_profile', is_user_logged_in(), $pageStatus, $targetUserId);
+        }
+
+        $isOwn = $targetUserId && (get_current_user_id() === $targetUserId);
+
+        return apply_filters('fluent_community/can_view_user_profile', ($isOwn || Helper::isModerator()), $pageStatus, $targetUserId);
+    }
+
     public static function getPrivacySetting($key)
     {
         $settings = self::getPrivacySettings();
@@ -324,6 +340,11 @@ class Utility
         self::forgetCache('privacy_settings');
 
         return $settings;
+    }
+
+    public static function showLastActivity()
+    {
+        return self::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator();
     }
 
     public static function isCustomizationEnabled($key, $matchingValue = 'yes')

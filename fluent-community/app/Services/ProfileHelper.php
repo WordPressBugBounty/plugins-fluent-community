@@ -21,11 +21,52 @@ class ProfileHelper
 
     public static function getXProfilePublicFields()
     {
-        if (Utility::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator()) {
-            return ['user_id', 'total_points', 'is_verified', 'status', 'display_name', 'username', 'avatar', 'created_at', 'short_description', 'meta', 'last_activity'];
+        static $fields;
+        if ($fields) {
+            return $fields;
         }
 
-        return ['user_id', 'total_points', 'is_verified', 'status', 'display_name', 'username', 'avatar', 'created_at', 'short_description', 'meta'];
+        $fields = [
+            'user_id',
+            'display_name',
+            'username',
+            'avatar',
+            'status',
+            'total_points',
+            'is_verified',
+            'meta'
+        ];
+
+        if (Utility::canViewUserProfile()) {
+            array_push($fields, 'created_at', 'short_description');
+        }
+
+        if (Utility::showLastActivity()) {
+            $fields[] = 'last_activity';
+        }
+
+        return apply_filters('fluent_community/xprofile_public_fields', $fields);
+    }
+
+    public static function getXprofileHiddenFields()
+    {
+        static $hiddenFields;
+        if ($hiddenFields) {
+            return $hiddenFields;
+        }
+
+
+        $hiddenFields = [
+            'id',
+            'created_at',
+            'updated_at'
+        ];
+
+        if (Utility::showLastActivity()) {
+            $hiddenFields[] = 'last_activity';
+        }
+
+        return $hiddenFields;
     }
 
     public static function socialLinkProviders($enabledOnly = false)
@@ -104,7 +145,7 @@ class ProfileHelper
             'reddit'    => [
                 'title'       => __('Reddit', 'fluent-community'),
                 'icon_svg'    => '<svg viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none"><ellipse cx="12" cy="15.5" rx="9" ry="6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M15.5 16.7803C14.5149 17.548 13.3062 18.0002 12 18.0002C10.6938 18.0002 9.48512 17.548 8.5 16.7803" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="19" cy="4" r="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M18 10.0694C18.3687 9.43053 19.0634 9 19.8595 9C21.0417 9 22 9.94921 22 11.1201C22 11.937 21.5336 12.6459 20.8502 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 10.0694C5.63125 9.43053 4.93663 9 4.14048 9C2.95833 9 2 9.94921 2 11.1201C2 11.937 2.4664 12.6459 3.14981 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 9V6C12 4.89543 12.8954 4 14 4H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M9.00801 13L8.99902 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M15.008 13L14.999 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>',
-                'placeholder' => 'techjewel',
+                'placeholder' => 'reddit_username',
                 'domain'      => 'https://www.reddit.com/user/',
                 'enabled'     => 'no'
             ],
@@ -118,7 +159,7 @@ class ProfileHelper
             'vk'        => [
                 'title'       => __('VK', 'fluent-community'),
                 'icon_svg'    => '<svg viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none"><path d="M2.00053 5.5H5.50053C5.50053 13.5 10.0005 14.5 10.0005 14.5L10.0015 5.5H13.5015L13.4995 10.5C17.9995 8.5 18.4995 5.5 18.4995 5.5H21.9995C21.9995 5.5 20.9995 10 17.0926 12.1534C19.1115 13.3511 21.2684 15.3315 21.9995 18.5H18.4995C18.4995 18.5 17.4995 15.5 13.4995 14L13.5015 18.5C1.88755 18.5 2.00232 7.5 2.00053 5.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>',
-                'placeholder' => 'vk useranme',
+                'placeholder' => __('vk username', 'fluent-community'),
                 'domain'      => 'https://vk.com/',
                 'enabled'     => 'yes'
             ],

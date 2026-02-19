@@ -27,27 +27,30 @@ class PortalSettingsHandler
 
             $acceptedRoles = ['admin', 'moderator', 'course_admin', 'course_creator'];
 
-            if(!$roles || !array_intersect($roles, $acceptedRoles)) {
+            if (!$roles || !array_intersect($roles, $acceptedRoles)) {
                 wp_safe_redirect(Helper::baseUrl());
                 exit();
             }
 
             $isRtl = Helper::isRtl();
             unset($vars['js_files']['fcom_app_admin']);
-            $vars['js_files']['fcom_app'] = [
-                'url'  => Vite::getStaticSrcUrl('admin_app.js'),
-                'deps' => []
-            ];
 
             if (!Utility::isDev()) {
-                if ($isRtl) {
-                    $fileName = 'admin_app.rtl.css';
-                } else {
-                    $fileName = 'admin_app.css';
-                }
-
                 $vars['css_files']['fcom_admin_vendor'] = [
-                    'url' => Vite::getStaticSrcUrl($fileName)
+                    'url' => Vite::getStaticSrcUrl('admin_app.css', $isRtl)
+                ];
+
+                $vars['js_files']['fcom_app'] = [
+                    'url'  => Vite::getStaticSrcUrl('admin_app.js'),
+                    'deps' => []
+                ];
+            } else {
+                $vars['css_files']['fcom_admin_vendor'] = [
+                    'url' => Vite::getDynamicSrcUrl('app_css.scss', $isRtl)
+                ];
+                $vars['js_files']['fcom_app'] = [
+                    'url'  => Vite::getDynamicSrcUrl('admin_app.js'),
+                    'deps' => []
                 ];
             }
 
@@ -140,7 +143,7 @@ class PortalSettingsHandler
                 'route'    => 'menu_settings',
                 'icon_svg' => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.33301 4.1665L16.6663 4.1665" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.33301 10L16.6663 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.33301 15.833L11.6663 15.833" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
             ],
-            'content_moderation'          => [
+            'content_moderation'  => [
                 'label'    => __('Content Moderation', 'fluent-community'),
                 'route'    => 'content_moderation',
                 'icon_svg' => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.99818 1.6665C7.4917 1.6665 5.86649 3.349 3.94444 3.96226C3.16291 4.21161 2.77215 4.33629 2.61401 4.51205C2.45587 4.6878 2.40956 4.94463 2.31694 5.45828C1.32587 10.9548 3.49209 16.0365 8.65825 18.0144C9.21333 18.2269 9.49087 18.3332 10.0009 18.3332C10.511 18.3332 10.7885 18.2269 11.3435 18.0144C16.5093 16.0365 18.6735 10.9548 17.6822 5.45828C17.5895 4.94454 17.5432 4.68767 17.385 4.51191C17.2268 4.33615 16.8361 4.21154 16.0546 3.96233C14.1318 3.34913 12.5047 1.6665 9.99818 1.6665Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 10.8333C7.5 10.8333 8.33333 10.8333 9.16667 12.5C9.16667 12.5 11.8137 8.33333 14.1667 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -150,14 +153,14 @@ class PortalSettingsHandler
                 'route'    => 'privacy_settings',
                 'icon_svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none"><path d="M10.8338 1.53871C11.5609 1.15376 12.4391 1.15376 13.1662 1.53871C14.3681 2.17509 16.8304 3.32075 19.7836 3.8341C20.873 4.02349 21.75 4.95478 21.75 6.12325V11.0511C21.75 14.5419 19.9704 17.2085 18.0079 19.0834C16.0479 20.9559 13.848 22.0975 12.8466 22.5619C12.3057 22.8127 11.6943 22.8127 11.1534 22.5619C10.152 22.0975 7.95205 20.9559 5.99214 19.0834C4.02964 17.2085 2.25 14.5419 2.25 11.0511V6.12325C2.25 4.95478 3.12696 4.02349 4.21644 3.8341C7.1696 3.32075 9.63189 2.17509 10.8338 1.53871Z" fill="currentColor" /></svg>'
             ],
-            'crm_access_config'    => [
+            'crm_access_config'   => [
                 'label'    => __('Access Management', 'fluent-community'),
                 'route'    => 'crm_access_config',
                 'icon_svg' => '<svg width="100%" height="100%" viewBox="0 0 300 235" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g><path d="M300,0c0,0 -211.047,56.55 -279.113,74.788c-12.32,3.301 -20.887,14.466 -20.887,27.221l0,38.719c0,0 169.388,-45.387 253.602,-67.952c27.368,-7.333 46.398,-32.134 46.398,-60.467c0,-7.221 0,-12.309 0,-12.309Z"/><path d="M184.856,124.521c0,-0 -115.6,30.975 -163.969,43.935c-12.32,3.302 -20.887,14.466 -20.887,27.221l0,38.719c0,0 83.701,-22.427 138.458,-37.099c27.368,-7.334 46.398,-32.134 46.398,-60.467c0,-7.221 0,-12.309 0,-12.309Z"/></g></svg>'
             ],
-            'incoming_webhooks' => [
-                'label' => __('Incoming Webhook', 'fluent-community'),
-                'route' => 'incoming_webhooks',
+            'incoming_webhooks'   => [
+                'label'    => __('Incoming Webhook', 'fluent-community'),
+                'route'    => 'incoming_webhooks',
                 'icon_svg' => '<svg viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none"><path d="M5.062 13C3.83229 13.6824 3 14.994 3 16.5C3 18.7091 4.79086 20.5 7 20.5C9.20914 20.5 11 18.7091 11 16.5H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 7.5L15.0571 13.0027C15.6323 12.6825 16.2949 12.5 17 12.5C19.2091 12.5 21 14.2909 21 16.5C21 18.7091 19.2091 20.5 17 20.5C16.0541 20.5 15.1848 20.1716 14.5 19.6227" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 8.5C12.5523 8.5 13 8.05228 13 7.5C13 6.94772 12.5523 6.5 12 6.5M12 8.5C11.4477 8.5 11 8.05228 11 7.5C11 6.94772 11.4477 6.5 12 6.5M12 8.5V6.5" stroke="currentColor" stroke-width="1.5" /><path d="M7 17.5C7.55228 17.5 8 17.0523 8 16.5C8 15.9477 7.55228 15.5 7 15.5M7 17.5C6.44772 17.5 6 17.0523 6 16.5C6 15.9477 6.44772 15.5 7 15.5M7 17.5V15.5" stroke="currentColor" stroke-width="1.5" /><path d="M17 17.5C17.5523 17.5 18 17.0523 18 16.5C18 15.9477 17.5523 15.5 17 15.5M17 17.5C16.4477 17.5 16 17.0523 16 16.5C16 15.9477 16.4477 15.5 17 15.5M17 17.5V15.5" stroke="currentColor" stroke-width="1.5" /><path d="M16 7.5C16 5.29086 14.2091 3.5 12 3.5C9.79086 3.5 8 5.29086 8 7.5C8 9.004 8.83007 10.3141 10.0571 10.9973L7 16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>'
             ],
             'tools'               => [

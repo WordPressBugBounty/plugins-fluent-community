@@ -127,6 +127,9 @@ class AuthenticationService
         $formattedFields = [];
         foreach ($settingFields as $section => $settings) {
             foreach ($settings as $key => $setting) {
+                if (!is_array($setting)) {
+                    continue;
+                }
                 $textValues = array_map('sanitize_text_field', Arr::only($setting, $textFields));
                 $mediaUrls = array_map('sanitize_url', Arr::only($setting, $mediaFields));
 

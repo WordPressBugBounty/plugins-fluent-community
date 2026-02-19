@@ -11,7 +11,7 @@ class Schema
 	/**
 	 * Get the global $wpdb instance
 	 * 
-	 * @return global $wpdb instance
+	 * @return \wpdb The global $wpdb
 	 */
 	public static function db()
 	{
@@ -28,14 +28,18 @@ class Schema
 		$db = static::db();
 
 		$info = [
-			'dbname' => $db->dbname,
-			'prefix' => $db->prefix,
-			'dbhost' => $db->dbhost,
+		    // @phpstan-ignore-next-line
+		    'dbname' => $db->dbname,
+		    'prefix' => $db->prefix,
+		    // @phpstan-ignore-next-line
+		    'dbhost' => $db->dbhost,
+		    // @phpstan-ignore-next-line
 		    'username' => $db->dbuser,
+		    // @phpstan-ignore-next-line
 		    'password' => $db->dbpassword,
 		    'charset' => $db->charset,
 		    'collation' => $db->collate,
-		    'tables' => static::getTableList()
+		    'tables' => static::getTableList(),
 		];
 
 		return $key ? $info[$key] : $info;
@@ -177,6 +181,34 @@ class Schema
         return $sql;
     }
 
+    /**
+     * Clean the sql string by removing the comments.
+     * 
+     * @param  string $sql
+     * @return string
+     */
+	public static function cleanUp($sql)
+	{
+	    $sql = static::sql($sql);
+
+	    // Remove inline -- comments
+	    $sql = preg_replace('/--.*$/m', '', $sql);
+
+	    // Remove inline # comments
+	    $sql = preg_replace('/#.*$/m', '', $sql);
+
+	    // Remove block /* ... */
+	    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+
+	    // Collapse multiple spaces & newlines
+	    // $sql = preg_replace('/\s+/', ' ', $sql);
+
+	    // Remove dangling commas before closing parenthesis
+	    $sql = preg_replace('/,\s*\)/', ')', $sql);
+
+	    return trim($sql);
+	}
+
 	/**
 	 * Creates a new table using dbDelta function or alters the table if exists.
 	 * 
@@ -190,7 +222,7 @@ class Schema
 	{
 		$table = static::table($table);
 
-		$sql = static::sql($sql);
+		$sql = static::cleanUp($sql);
 
         $collate = static::db()->get_charset_collate();
 
@@ -230,7 +262,7 @@ class Schema
 	{
 		$table = static::table($table);
 
-		$sql = static::sql($sql);
+		$sql = static::cleanUp($sql);
 
 		$sql = array_map(function($i) { return trim($i);}, explode(',', $sql));
         
@@ -261,43 +293,55 @@ class Schema
 	 */
 	public static function updateTable($table, $sql)
 	{
-		$result = static::createTable(
-			$table, implode(",\n", array_map('trim', explode(',', $sql)))
-		);
+	    $sql = static::cleanUp($sql);
 
-		if ($existingColumns = static::getColumns($table)) {
+	    $columnsDefinitions = array_map('trim', explode(',', $sql));
 
-			$columns = array_map(function($l) {
-				if (preg_match('/(\S+)/', $l, $matches)) return $matches[1];
-			}, array_map('trim', explode(',', $sql)));
+	    // Run createTable/dbDelta to create the table if it doesn't exist
+	    $result = static::createTable($table, implode(",\n", $columnsDefinitions));
 
-			foreach ($existingColumns as $column) {
-				if (!in_array($column, $columns)) {
-					$tbl = static::table($table);
-					static::query("alter table $tbl drop column $column");
-					$tblColumn = $tbl.'.'.$column;
-					$result[$tblColumn] = "Dropped column {$tblColumn}";
-				}
-			}
-		}
+	    $existingColumns = static::getColumns($table) ?: [];
 
-		return $result;
+	    // Extract column names from definitions
+	    $columns = [];
+	    foreach ($columnsDefinitions as $definition) {
+	        if (preg_match('/^`?(\w+)`?\s+/i', $definition, $matches)) {
+	            $columns[$matches[1]] = $definition;
+	        }
+	    }
+
+	    $tbl = static::table($table);
+
+	    // Add missing columns
+	    foreach ($columns as $colName => $definition) {
+	        if (!in_array($colName, $existingColumns)) {
+	            static::query("ALTER TABLE $tbl ADD COLUMN $definition");
+	            $result[$tbl.'.'.$colName] = "Added column {$tbl}.{$colName}";
+	        }
+	    }
+
+	    // Drop extra columns
+	    foreach ($existingColumns as $column) {
+	        if (!isset($columns[$column])) {
+	            static::query("ALTER TABLE $tbl DROP COLUMN $column");
+	            $result[$tbl.'.'.$column] = "Dropped column {$tbl}.{$column}";
+	        }
+	    }
+
+	    return $result;
 	}
 
     /**
      * Drops/deletes an existing table if exists
      *
      * @param string $table The table name without the prefix
-     * @param bool $disableForeignKeyCheck Optional. Whether to disable foreign key checks before dropping the table. Default is true.     *
+     * @param bool $disableForeignKeyCheck Optional.
      * @return bool
      */
 
     public static function dropTableIfExists($table, $disableForeignKeyCheck = true)
     {
         if (static::hasTable($table)) {
-            if ($disableForeignKeyCheck) {
-                static::db()->query("ALTER TABLE " . static::table($table) . " DISABLE KEYS;");
-            }
             return static::db()->query('DROP TABLE ' . static::table($table));
         }
     }
@@ -359,7 +403,7 @@ class Schema
 	 * and can form a full table name including the table prefix if
 	 * the table name is wrapped like: %table_name% in the query.
 	 * 
-	 * @param  straing $query
+	 * @param  string $query
 	 * @return mixed
 	 */
 	public static function query($query)
@@ -394,12 +438,15 @@ class Schema
 	 * @param  string $table The table name without the prefix
 	 * @return array
 	 */
-	public static function getColumnsWithTypes($table)
+	protected static function protectedGetColumnsWithTypes($table)
 	{
 		if (!static::hasTable($table)) return;
-		
+
+		// @phpstan-ignore-next-line		
 		$db = static::db()->dbname;
+		
 		$table = static::table($table);
+
 		$fields = [
 			'COLUMN_NAME',
 			'ORDINAL_POSITION',
@@ -423,6 +470,77 @@ class Schema
 			}
 			return $item;
 		}, static::db()->get_results($sql));
+	}
+
+	public static function getColumnsWithTypes($table)
+	{
+	    $columns = static::protectedGetColumnsWithTypes($table);
+
+	    if (!empty($columns)) {
+	    	return $columns;
+	    }
+
+	    $columns = static::db()->get_results(
+	    	'SHOW COLUMNS FROM `'.static::table($table).'`'
+	    );
+
+        return array_map(function ($col) {
+            return [
+                'column_name' => $col->Field,
+                'ordinal_position' => null,
+                'column_default' => $col->Default,
+                'is_nullable' => ($col->Null === 'YES' ? 'YES' : 'NO'),
+                'data_type' => strtolower(
+                	preg_replace('/\(.*/', '', $col->Type)
+                ),
+                'character_maximum_length' => preg_match(
+                	'/\((\d+)\)/', $col->Type, $matches
+                ) ? (int)$matches[1] : null,
+                'numeric_precision' => null,
+                'numeric_scale' => null,
+                'column_key' => $col->Key,
+                'extra' => $col->Extra,
+            ];
+        }, $columns);
+	}
+
+	/**
+	 * Gets a list of all columns including column information
+	 * 
+	 * @param  string $table The table name without the prefix
+	 * @return array
+	 */
+	public static function describeTable($table)
+	{
+		return static::getColumnsWithTypes($table);
+	}
+
+	/**
+	 * Gets a list of all foreign keys from the given table name.
+	 * 
+	 * @param  string $table
+	 * @return array
+	 */
+	public static function getTableForeignKeys($table)
+	{
+		// @phpstan-ignore-next-line
+	    $db = static::db()->dbname;
+
+	    $table = static::table($table);
+
+	    $sql = "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+	            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+	            WHERE TABLE_NAME = '{$table}' 
+	              AND TABLE_SCHEMA = '{$db}'
+	              AND REFERENCED_TABLE_NAME IS NOT NULL";
+
+	    return array_map(function ($i) {
+	        return [
+	            'column_name' => $i->COLUMN_NAME,
+	            'referenced_table' => $i->REFERENCED_TABLE_NAME,
+	            'referenced_column' => $i->REFERENCED_COLUMN_NAME,
+	        ];
+	    }, static::db()->get_results($sql));
 	}
 
 	/**
@@ -460,6 +578,7 @@ class Schema
 	 */
 	public static function getTableList($dbname = null)
 	{
+		// @phpstan-ignore-next-line
 		$dbname = $dbname ?: static::db()->dbname;
 		$sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES";
 		$sql .= " WHERE TABLE_SCHEMA = '".$dbname."'";

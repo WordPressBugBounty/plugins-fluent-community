@@ -2,7 +2,9 @@
 
 namespace FluentCommunity\Framework\Database\Query;
 
-class Expression
+use FluentCommunity\Framework\Database\BaseGrammar;
+
+class Expression implements ExpressionInterface
 {
 
 	/**
@@ -24,23 +26,23 @@ class Expression
 	}
 
 	/**
-	 * Get the value of the expression.
-	 *
-	 * @return mixed
-	 */
-	public function getValue()
+     * Get the value of the expression.
+     *
+     * @param  \FluentCommunity\Framework\Database\BaseGrammar $grammar
+     * @return mixed
+     */
+	public function getValue(BaseGrammar $grammar)
 	{
 		return $this->value;
 	}
 
 	/**
-	 * Get the value of the expression.
-	 *
-	 * @return string
+	 * Convert the object to its string representation.
+	 * 
+	 * @return string [description]
 	 */
 	public function __toString()
 	{
-		return (string) $this->getValue();
+		return (string) $this->value;
 	}
-
 }

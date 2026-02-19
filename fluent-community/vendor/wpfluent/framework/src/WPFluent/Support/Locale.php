@@ -50,7 +50,7 @@ class Locale
      * Load the locale info of a user.
      * 
      * @param  int|null $userIdOrLocale
-     * @return \stdCalss
+     * @return \stdClass
      */
     protected function populateLocaleInfo($userIdOrLocale = null)
     {
@@ -64,75 +64,82 @@ class Locale
             $this->locale = get_user_locale(get_current_user_id());
         }
 
-        if ($originalLocale = get_locale() !== $this->locale) {
+        $didSwitch = false;
+        $originalLocale = get_locale();
+
+        if ($originalLocale !== $this->locale) {
             switch_to_locale($this->locale);
+            $didSwitch = true;
         }
 
-        $userLocale = new \stdClass();
+        try {
+            $userLocale = new \stdClass();
 
-        $wpLocale = $GLOBALS['wp_locale'];
+            $wpLocale = $GLOBALS['wp_locale'];
 
-        // Weekdays
-        $userLocale->weekday = $wpLocale->weekday;
+            // Weekdays
+            $userLocale->weekday = $wpLocale->weekday;
 
-        // Rebuild array with weekday names as keys
-        $userLocale->weekday_initial = array_combine(
-            static::$weekdayNames, $wpLocale->weekday_initial
-        );
+            // Rebuild array with weekday names as keys
+            $userLocale->weekday_initial = array_combine(
+                static::$weekdayNames, $wpLocale->weekday_initial
+            );
 
-        // Rebuild array with weekday names as keys
-        $userLocale->weekday_abbrev = array_combine(
-            static::$weekdayNames, $wpLocale->weekday_abbrev
-        );
+            // Rebuild array with weekday names as keys
+            $userLocale->weekday_abbrev = array_combine(
+                static::$weekdayNames, $wpLocale->weekday_abbrev
+            );
 
-        // Months with exact keys (01-12)
-        $monthNumbers = array_keys($wpLocale->month);
+            // Months with exact keys (01-12)
+            $monthNumbers = array_keys($wpLocale->month);
 
-        $userLocale->month = array_combine(
-            $monthNumbers, $wpLocale->month
-        );
+            $userLocale->month = array_combine(
+                $monthNumbers, $wpLocale->month
+            );
 
-        $userLocale->month_genitive = array_combine(
-            $monthNumbers, $wpLocale->month_genitive
-        );
+            $userLocale->month_genitive = array_combine(
+                $monthNumbers, $wpLocale->month_genitive
+            );
 
-        // Rebuild month_abbrev with english month names as keys
-        $userLocale->month_abbrev = array_combine(
-            static::$monthNames, $wpLocale->month_abbrev
-        );
+            // Rebuild month_abbrev with english month names as keys
+            $userLocale->month_abbrev = array_combine(
+                static::$monthNames, $wpLocale->month_abbrev
+            );
 
-        // Meridiem
-        $userLocale->meridiem = [
-            'am' => $wpLocale->meridiem['am'],
-            'pm' => $wpLocale->meridiem['pm'],
-            'AM' => $wpLocale->meridiem['AM'],
-            'PM' => $wpLocale->meridiem['PM'],
-        ];
+            // Meridiem
+            $userLocale->meridiem = [
+                'am' => $wpLocale->meridiem['am'],
+                'pm' => $wpLocale->meridiem['pm'],
+                'AM' => $wpLocale->meridiem['AM'],
+                'PM' => $wpLocale->meridiem['PM'],
+            ];
 
-        // Text Direction and other locale-specific settings
-        $userLocale->text_direction = $wpLocale->text_direction;
-        $userLocale->number_format = $wpLocale->number_format;
-        $userLocale->list_item_separator = $wpLocale->list_item_separator;
-        $userLocale->word_count_type = $wpLocale->word_count_type;
-        $userLocale->start_day_of_week = get_option('start_of_week');
+            // Text Direction and other locale-specific settings
+            $userLocale->text_direction = $wpLocale->text_direction;
+            $userLocale->number_format = $wpLocale->number_format;
+            $userLocale->list_item_separator = $wpLocale->list_item_separator;
+            $userLocale->word_count_type = $wpLocale->word_count_type;
+            $userLocale->start_day_of_week = get_option('start_of_week');
 
-        $userLocale->id = $this->locale;
+            $userLocale->id = $this->locale;
 
-        $userLocale->mappings = [
-            // Add the mapping of month index to number
-            'month_index_to_num' => array_combine(
-                array_keys(static::$monthNames),
-                array_map('intval', $monthNumbers)
-            ),
-            // Add the english names
-            'month' => static::$monthNames,
-            'weekday' => static::$weekdayNames
-        ];
+            $userLocale->mappings = [
+                // Add the mapping of month index to number
+                'month_index_to_num' => array_combine(
+                    array_keys(static::$monthNames),
+                    array_map('intval', $monthNumbers)
+                ),
+                // Add the english names
+                'month' => static::$monthNames,
+                'weekday' => static::$weekdayNames
+            ];
 
-        // Restore the original locale
-        switch_to_locale($originalLocale);
-        
-        return $userLocale;
+            return $userLocale;
+        } finally {
+            if ($didSwitch) {
+                restore_previous_locale();
+            }
+        }
     }
 
     /**
@@ -155,7 +162,6 @@ class Locale
     /**
      * Restore to the user's original locale.
      * 
-     * @param  string $locale
      * @return void
      */
     public function restore()
@@ -187,9 +193,13 @@ class Locale
             }
         }
 
+        // Validate numeric day is within valid range 0-6
+        if (!is_int($day) || $day < 0 || $day > 6) {
+            return '';
+        }
+
         return $this->localeInfo->weekday[$day] ?? '';
     }
-
     /**
      * Get specific weekday.
      * 
@@ -235,8 +245,14 @@ class Locale
     public function getMonth($month)
     {
         $month = $this->resolveMonthNumber($month);
-        $month = $month < 10 ? '0'.$month : $month;
-        return $this->localeInfo->month[$month] ?? '';
+
+        if (!$month) {
+            return '';
+        }
+
+        $key = $month < 10 ? '0' . $month : (string) $month;
+
+        return $this->localeInfo->month[$key] ?? '';
     }
 
     /**
@@ -381,16 +397,23 @@ class Locale
      */
     public function resolveMonthNumber($month)
     {
-        if (is_string($month)) {
+        if (is_numeric($month)) {
+            $month = (int) $month;
+            $month = $this->localeInfo->mappings['month_index_to_num'][$month] ?? null;
+        } elseif (is_string($month)) {
             if (strlen($month) === 3) {
-                $month = key(Arr::startsLike(
+                $found = Arr::startsLike(
                     $this->localeInfo->mappings['month'], Str::title($month)
-                )) + 1;
+                );
+                $month = $found ? key($found) + 1 : null;
             } else {
-                $month = array_search(Str::title($month), static::$monthNames) + 1;
+                $pos = array_search(Str::title($month), static::$monthNames);
+                $month = ($pos !== false) ? $pos + 1 : null;
             }
-        } elseif (is_numeric($month)) {
-            $month = $this->localeInfo->mappings['month_index_to_num'][$month];
+        }
+
+        if (!is_int($month) || $month < 1 || $month > 12) {
+            return false;
         }
 
         return $month;
@@ -423,7 +446,7 @@ class Locale
     /**
      * Resolve the weekday key.
      * 
-     * @param  int|string $month
+     * @param  int|string $day
      * @return int
      */
     public function resolveWeekdayKey($day)
@@ -487,7 +510,7 @@ class Locale
     /**
      * Alternative constructor.
      * 
-     * @param  int|null $userId
+     * @param  int|null $userIdOrLocale
      * @return $this
      */
     public static function init($userIdOrLocale = null)
@@ -499,7 +522,7 @@ class Locale
      * Load the locale info of a user.
      * 
      * @param  int|null $userIdOrLocale
-     * @return \stdCalss
+     * @return \stdClass
      */
     public static function getInfo($userIdOrLocale = null)
     {

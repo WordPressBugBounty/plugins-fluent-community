@@ -135,7 +135,7 @@ class Course extends BaseSpace
 
     public function getCourseType()
     {
-        return Arr::get($this->settings, 'course_type', 'self_paced'); // possible values: slef_paced | scheduled | structured
+        return Arr::get($this->settings, 'course_type', 'self_paced'); // possible values: self_paced | scheduled | structured
     }
 
     public function group()

@@ -81,10 +81,10 @@ class CustomSanitizer
         $svg_content = preg_replace('/on\w+="[^"]*"/i', '', $svg_content);
 
         $allowed_tags = [
-            'svg'            => ['width' => true, 'height' => true, 'viewBox' => true, 'version' => true, 'xmlns' => true, 'xmlns:xlink' => true, 'xml:space' => true, 'style' => true, 'preserveAspectRatio' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'color' => true],
+            'svg'            => ['width' => true, 'height' => true, 'viewBox' => true, 'version' => true, 'xmlns' => true, 'xmlns:xlink' => true, 'xml:space' => true, 'preserveAspectRatio' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'color' => true],
             'g'              => ['fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'clip-path' => true, 'transform' => true],
-            'path'           => ['d' => true, 'opacity' => true, 'stroke-linecap' => true, 'fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'style' => true, 'transform' => true],
-            'rect'           => ['width' => true, 'height' => true, 'x' => true, 'y' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true, 'style' => true],
+            'path'           => ['d' => true, 'opacity' => true, 'stroke-linecap' => true, 'fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
+            'rect'           => ['width' => true, 'height' => true, 'x' => true, 'y' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
             'circle'         => ['cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
             'ellipse'        => ['cx' => true, 'cy' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
             'line'           => ['x1' => true, 'x2' => true, 'y1' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
@@ -98,7 +98,7 @@ class CustomSanitizer
             'linearGradient' => ['id' => true, 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'gradientUnits' => true, 'gradientTransform' => true],
             'radialGradient' => ['id' => true, 'cx' => true, 'cy' => true, 'r' => true, 'fx' => true, 'fy' => true, 'gradientUnits' => true, 'gradientTransform' => true],
             'mask'           => ['id' => true, 'maskUnits' => true, 'maskContentUnits' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true],
-            'use'            => ['xlink:href' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true],
+            'use'            => ['x' => true, 'y' => true, 'width' => true, 'height' => true],
             'title'          => [],
             'desc'           => [],
         ];
@@ -504,6 +504,10 @@ class CustomSanitizer
         $validOrderOptions = array_keys(Helper::getPostOrderOptions());
         $defaultOrder = Arr::get($settings, 'default_post_sort_by', '');
         $settings['default_post_sort_by'] = in_array($defaultOrder, $validOrderOptions) ? $defaultOrder : '';
+
+        $validCommentOrderOptions = array_keys(Helper::getCommentOrderOptions());
+        $defaultCommentOrder = Arr::get($settings, 'default_comment_sort_by', '');
+        $settings['default_comment_sort_by'] = in_array($defaultCommentOrder, $validCommentOrderOptions) ? $defaultCommentOrder : '';
 
         return $settings;
     }

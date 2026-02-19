@@ -14,7 +14,7 @@ use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
 /**
- *  Clourse Lesson Model - DB Model for Individual Clourse Lesson
+ *  Course Lesson Model - DB Model for Individual Course Lesson
  *
  *  Database Model
  *

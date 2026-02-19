@@ -21,7 +21,7 @@ class OptionController extends Controller
             'appVars'           => $appVars,
             'menu_links_groups' => Utility::getPortalSidebarData('sidebar')
         ];
-        
+
         return apply_filters('fluent_community/app_vars_api_response', $data, $this->request->all());
     }
 

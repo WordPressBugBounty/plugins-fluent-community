@@ -17,7 +17,7 @@
     <title><?php echo esc_attr($title); ?></title>
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="description" content="<?php echo esc_attr($description); ?>">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover,interactive-widget=resizes-content"/>
     <?php
     if (!empty($load_wp)) :
         wp_head();
@@ -52,7 +52,7 @@
 <body class="fcom_headless_page fcom_headless_scope_<?php echo esc_attr($scope); ?>">
 
 <?php if ($layout == 'signup'): ?>
-    <div class="fcom_full_layout fluent_com_auth" <?php echo $portal['position'] == 'right' ? 'style="flex-direction: row-reverse;"' : ''; ?>>
+    <div class="fcom_full_layout fluent_com_auth <?php echo $portal['position'] == 'right' ? ' fcom_auth_page_row_reverse' : ' fcom_auth_page'; ?>">
         <div class="fcom_layout_side"
              style="<?php if (!empty($portal['background_image'])) echo 'background-image: url(' . esc_url($portal['background_image']) . ');'; ?>
              <?php if (!empty($portal['background_color'])) echo 'background-color: ' . esc_attr($portal['background_color']) . ';'; ?>

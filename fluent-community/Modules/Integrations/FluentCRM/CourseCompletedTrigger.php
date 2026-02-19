@@ -26,6 +26,7 @@ class CourseCompletedTrigger extends BaseTrigger
             'label'       => __('Completed a course', 'fluent-community'),
             'description' => __('This automation will be initiated when a user completes course.', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
+            'svg_icon'    => '<svg viewBox="0 0 64 64" fill="none"><rect x="12" y="10" width="40" height="34" rx="6" stroke="currentColor" stroke-width="3"/><line x1="20" y1="20" x2="44" y2="20" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="28" x2="38" y2="28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="46" cy="42" r="9" fill="currentColor"/><path d="M42.8 42.3l2.6 2.6L49.5 39.8" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 44v12l6-4 6 4V44" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>'
         ];
     }
 

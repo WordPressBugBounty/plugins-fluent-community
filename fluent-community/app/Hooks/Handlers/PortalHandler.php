@@ -244,8 +244,8 @@ class PortalHandler
             <?php do_action('fluent_community/before_header_right_menu_items', $auth); ?>
             <?php if ($has_color_scheme): ?>
                 <li class="top_menu_item fcom_color_mode">
-                    <button class="fcom_color_mode_core fcom_menu_button">
-                        <span class="fcom_color_mode_action fcom_mode_switch el-icon">
+                    <button class="fcom_color_mode_core fcom_mode_switch fcom_menu_button">
+                        <span class="fcom_color_mode_action el-icon">
                             <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none"
                                  xmlns="http://www.w3.org/2000/svg">
                                 <path
@@ -298,7 +298,8 @@ class PortalHandler
                                 </svg>
                             </i>
                             <?php if ($notificationCount): ?>
-                                <sup class="el-badge__content fcomc_unread_badge el-badge__content--danger is-fixed"><?php echo $notificationCount > 20 ? '20+' : esc_html($notificationCount); ?></sup>
+                                <sup
+                                    class="el-badge__content fcomc_unread_badge el-badge__content--danger is-fixed"><?php echo $notificationCount > 20 ? '20+' : esc_html($notificationCount); ?></sup>
                             <?php endif; ?>
                         </a>
                     <?php endif; ?>
@@ -481,29 +482,30 @@ class PortalHandler
                     includes_url('css/dist/block-editor/content.min.css?ver=' . $wp_version),
                 ]
             ],
-            'features'                   => [
-                'disable_global_posts'   => Arr::get($settings, 'disable_global_posts', '') == 'yes',
-                'has_survey_poll'        => true,
-                'is_onboarding_enabled'  => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
-                'can_switch_layout'      => true,
-                'mention_mail'           => Utility::hasEmailAnnouncementEnabled(),
-                'max_media_per_post'     => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
-                'has_post_title'         => Utility::postTitlePref(),
-                'has_course'             => Helper::isFeatureEnabled('course_module'),
-                'followers_module'       => Helper::isFeatureEnabled('followers_module'),
-                'skicky_sidebar'         => Utility::isCustomizationEnabled('fixed_sidebar'),
-                'post_layout'            => Utility::getCustomizationSetting('rich_post_layout'),
-                'member_list_layout'     => Utility::getCustomizationSetting('member_list_layout'),
-                'default_feed_layout'    => Utility::getCustomizationSetting('default_feed_layout'),
-                'disable_feed_sort_by'   => Utility::getCustomizationSetting('disable_feed_sort_by'),
-                'default_feed_sort_by'   => Utility::getCustomizationSetting('default_feed_sort_by'),
-                'video_embeder'          => apply_filters('fluent_community/has_video_embeder', true),
-                'has_topics'             => !!Utility::getTopics(),
-                'show_post_modal'        => Utility::isCustomizationEnabled('show_post_modal'),
-                'has_analytics'          => Utility::hasAnalyticsEnabled(),
-                'can_deactivate_account' => Utility::getPrivacySetting('can_deactive_account') === 'yes',
+            'features'                    => [
+                'disable_global_posts'    => Arr::get($settings, 'disable_global_posts', '') == 'yes',
+                'has_survey_poll'         => true,
+                'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
+                'can_switch_layout'       => true,
+                'mention_mail'            => Utility::hasEmailAnnouncementEnabled(),
+                'max_media_per_post'      => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
+                'has_post_title'          => Utility::postTitlePref(),
+                'has_course'              => Helper::isFeatureEnabled('course_module'),
+                'followers_module'        => Helper::isFeatureEnabled('followers_module'),
+                'skicky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
+                'post_layout'             => Utility::getCustomizationSetting('rich_post_layout'),
+                'member_list_layout'      => Utility::getCustomizationSetting('member_list_layout'),
+                'default_feed_layout'     => Utility::getCustomizationSetting('default_feed_layout'),
+                'disable_feed_sort_by'    => Utility::getCustomizationSetting('disable_feed_sort_by'),
+                'default_feed_sort_by'    => Utility::getCustomizationSetting('default_feed_sort_by'),
+                'video_embeder'           => apply_filters('fluent_community/has_video_embeder', true),
+                'has_inline_image_upload' => apply_filters('fluent_community/has_inline_image_upload', 'yes'),
+                'has_topics'              => !!Utility::getTopics(),
+                'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
+                'has_analytics'           => Utility::hasAnalyticsEnabled(),
+                'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
             ],
-            'route_classes'              => array_filter([
+            'route_classes'               => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
                 'fcom_sticky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu')
@@ -526,6 +528,7 @@ class PortalHandler
             'mobileMenuItems'            => Helper::getMobileMenuItems(),
             'feed_links'                 => Helper::getEnabledFeedLinks(),
             'post_order_by_options'      => Helper::getPostOrderOptions('feed'),
+            'comment_order_by_options'   => Helper::getCommentOrderOptions('comment'),
             'user_post_order_by_options' => Helper::getPostOrderOptions('user'),
             'routing_system'             => Helper::getPortalRouteType(),
             'portal_url'                 => Helper::baseUrl('/'),
@@ -720,7 +723,8 @@ class PortalHandler
             'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
                 'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
-            ]
+            ],
+            'debug_mode'                 => 1
         ]);
 
         $portalVars['welcome_banner'] = Helper::getWelcomeBanner($userModel ? 'login' : 'logout');
@@ -875,7 +879,7 @@ class PortalHandler
         }
 
         foreach ($data['js_vars'] as $varKey => $values) {
-            wp_localize_script('fcom_strat', $varKey, $values);
+            wp_localize_script('fcom_start', $varKey, $values);
         }
     }
 
@@ -888,18 +892,59 @@ class PortalHandler
 
         $appVars = $this->appVars();
         $generalSettings = Helper::generalSettings();
+        $isDev = Utility::isDev();
 
         $dataVars = [
             'title'           => Arr::get($generalSettings, 'site_title'),
             'description'     => get_bloginfo('description'),
             'featured_image'  => Arr::get($generalSettings, 'featured_image', ''),
             'header_js_files' => [],
-            'js_files'        => [
+            'js_vars'         => [
+                'fluentComAdmin'      => $appVars,
+                'fcom_portal_general' => $this->getGlobalScriptVars('portal'),
+            ],
+            'url'             => $url,
+            'current_route'   => $this->currentPath,
+            'contact'         => $appVars['auth'],
+            'user'            => $userId ? get_user_by('ID', $userId) : null,
+            'route_group'     => Helper::getRouteNameByRequestPath($this->currentPath),
+            'is_dev'          => $isDev
+        ];
+
+        if ($isDev) {
+            $dataVars['css_files'] = [
+                'fcom_theme_default' => [
+                    'url' => Vite::getDynamicSrcUrl('theme-default.scss')
+                ],
+                'fcom_global'        => [
+                    'url' => Vite::getDynamicSrcUrl('global.scss')
+                ],
+                'fcom_vendor'        => [
+                    'url' => Vite::getDynamicSrcUrl('app_css.scss')
+                ]
+            ];
+            $dataVars['js_files'] = [
+                'fcom_general' => [
+                    'url'  => Vite::getDynamicSrcUrl('portal_general.js'),
+                    'deps' => []
+                ],
+                'fcom_start'   => [
+                    'url'  => Vite::getDynamicSrcUrl('start.js'),
+                    'deps' => []
+                ],
+                'fcom_app'     => [
+                    'url'  => Vite::getDynamicSrcUrl('app.js'),
+                    'deps' => []
+                ]
+            ];
+
+        } else {
+            $dataVars['js_files'] = [
                 'fcom_general' => [
                     'url'  => Vite::getStaticSrcUrl('portal_general.js'),
                     'deps' => []
                 ],
-                'fcom_strat'   => [
+                'fcom_start'   => [
                     'url'  => Vite::getStaticSrcUrl('start.js'),
                     'deps' => []
                 ],
@@ -907,39 +952,20 @@ class PortalHandler
                     'url'  => Vite::getStaticSrcUrl('app.js'),
                     'deps' => []
                 ]
-            ],
-            'js_vars'         => [
-                'fluentComAdmin'      => $appVars,
-                'fcom_portal_general' => $this->getGlobalScriptVars('portal'),
-            ],
-            'css_files'       => array_filter([
+            ];
+            $dataVars['css_files'] = [
                 'fcom_theme_default' => [
-                    'url' => Vite::getDynamicSrcUrl('theme-default.scss', $isRtl)
+                    'url' => Vite::getStaticSrcUrl('theme-default.css', $isRtl)
                 ],
                 'fcom_global'        => [
-                    'url' => Vite::getDynamicSrcUrl('global.scss', $isRtl)
-                ]
-            ]),
-            'url'             => $url,
-            'current_route'   => $this->currentPath,
-            'contact'         => $appVars['auth'],
-            'user'            => $userId ? get_user_by('ID', $userId) : null,
-            'route_group'     => Helper::getRouteNameByRequestPath($this->currentPath)
-        ];
-
-        if (!Utility::isDev()) {
-            if ($isRtl) {
-                $fileName = 'app.rtl.css';
-            } else {
-                $fileName = 'app.css';
-            }
-
-            $dataVars['css_files']['fcom_vendor'] = [
-                'url' => Vite::getStaticSrcUrl($fileName)
-            ];
-        } else {
-            $dataVars['css_files']['fcom_vendor'] = [
-                'url' => Vite::getDynamicSrcUrl('app_css.scss')
+                    'url' => Vite::getStaticSrcUrl('global.css', $isRtl)
+                ],
+                'fcom_app_css'       => [
+                    'url' => Vite::getStaticSrcUrl('app.css', $isRtl)
+                ],
+                'fcom_vendor'        => [
+                    'url' => Vite::getStaticSrcUrl('app_css.css', $isRtl)
+                ],
             ];
         }
 

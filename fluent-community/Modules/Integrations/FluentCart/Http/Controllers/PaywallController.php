@@ -19,7 +19,7 @@ class PaywallController extends Controller
     {
         $space = BaseSpace::withoutGlobalScopes()->findOrFail($spaceId);
 
-        $paywallIds = $request->getSafe('paywall_ids', 'intval', []);
+        $paywallIds = array_map('intval', $request->get('paywall_ids', []));
         $productIds = Arr::get($space->settings, 'cart_product_ids', []);
 
         $paywallQuery = Product::whereIn('ID', $productIds)
@@ -31,7 +31,7 @@ class PaywallController extends Controller
 
         if (!empty($paywallIds)) {
             $paywallQuery->whereHas('variants', function ($query) use ($paywallIds) {
-                $query->whereIn('id', $paywallIds);
+                $query->whereIn('id', (array) $paywallIds);
             });
         }
 

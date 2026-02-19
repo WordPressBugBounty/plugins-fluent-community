@@ -444,13 +444,13 @@ class PostMigrator
             return $feed;
         }
 
-        $fromattedAttachments = [];
+        $formattedAttachments = [];
 
         foreach ($this->attachments as $attachment) {
             $path = $attachment['path'];
             $fileName = basename($path);
 
-            $orginalName = $fileName;
+            $originalName = $fileName;
 
             // get the path folder from path
             $newFileName = 'fluentcom-' . md5(wp_generate_uuid4()) . '-fluentcom-' . $fileName;
@@ -480,7 +480,7 @@ class PostMigrator
                 'media_path'    => $newPath,
                 'media_url'     => $newUrl,
                 'settings'      => [
-                    'original_name' => $orginalName
+                    'original_name' => $originalName
                 ]
             ];
 
@@ -490,17 +490,17 @@ class PostMigrator
             $newMedia->created_at = $feed->created_at;
             $newMedia->updated_at = $feed->created_at;
             $newMedia->save();
-            $fromattedAttachments[] = [
+            $formattedAttachments[] = [
                 'id'        => $newMedia->id,
                 'url'       => $newMedia->getPrivateDownloadUrl(),
                 'media_key' => $newMedia->media_key,
-                'title'     => $orginalName,
+                'title'     => $originalName,
                 'type'      => $mediaType
             ];
         }
 
         $feedMeta = $feed->meta ? $feed->meta : [];
-        $feedMeta['document_lists'] = $fromattedAttachments;
+        $feedMeta['document_lists'] = $formattedAttachments;
 
         $feed->meta = $feedMeta;
         $feed->save();
@@ -521,7 +521,7 @@ class PostMigrator
 
             $fileName = basename($path);
 
-            $orginalName = $fileName;
+            $originalName = $fileName;
 
             // get the path folder from path
             $newFileName = 'fluentcom-' . md5(wp_generate_uuid4()) . '-fluentcom-' . $fileName;
@@ -564,7 +564,7 @@ class PostMigrator
             $mediaType = mime_content_type($newPath);
 
             $settings = array_filter([
-                'original_name' => $orginalName,
+                'original_name' => $originalName,
                 'width'         => $mediaItem['width'] ?? null,
                 'height'        => $mediaItem['height'] ?? null
             ]);
@@ -591,7 +591,7 @@ class PostMigrator
             $fromattedAttachments[] = array_filter([
                 'media_id' => $newMedia->id,
                 'url'      => $newUrl,
-                'title'    => $mediaItem['title'] ?? $orginalName,
+                'title'    => $mediaItem['title'] ?? $originalName,
                 'type'     => $mediaItem['media_type'],
                 'width'    => $mediaItem['width'] ?? null,
                 'height'   => $mediaItem['height'] ?? null,

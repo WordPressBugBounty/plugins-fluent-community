@@ -7,11 +7,11 @@ namespace Composer\Autoload;
 class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
 {
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WPFluent\\' => 9,
         ),
-        'F' => 
+        'F' =>
         array (
             'FluentCommunity\\Modules\\' => 24,
             'FluentCommunity\\Framework\\' => 26,
@@ -21,23 +21,23 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     );
 
     public static $prefixDirsPsr4 = array (
-        'WPFluent\\' => 
+        'WPFluent\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Modules\\' => 
+        'FluentCommunity\\Modules\\' =>
         array (
             0 => __DIR__ . '/../..' . '/Modules',
         ),
-        'FluentCommunity\\Framework\\' => 
+        'FluentCommunity\\Framework\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Dev\\' => 
+        'FluentCommunity\\Dev\\' =>
         array (
             0 => __DIR__ . '/../..' . '/dev',
         ),
-        'FluentCommunity\\App\\' => 
+        'FluentCommunity\\App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
         ),
@@ -123,6 +123,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Services\\RemoteUrlParser' => __DIR__ . '/../..' . '/app/Services/RemoteUrlParser.php',
         'FluentCommunity\\App\\Services\\SmartCodeParser' => __DIR__ . '/../..' . '/app/Services/SmartCodeParser.php',
         'FluentCommunity\\App\\Services\\TransStrings' => __DIR__ . '/../..' . '/app/Services/TransStrings.php',
+        'FluentCommunity\\App\\Services\\UploadHelper' => __DIR__ . '/../..' . '/app/Services/UploadHelper.php',
         'FluentCommunity\\App\\Vite' => __DIR__ . '/../..' . '/app/Vite.php',
         'FluentCommunity\\Database\\DBMigrator' => __DIR__ . '/../..' . '/database/DBMigrator.php',
         'FluentCommunity\\Database\\DBSeeder' => __DIR__ . '/../..' . '/database/DBSeeder.php',
@@ -167,13 +168,26 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Database\\BaseGrammar' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/BaseGrammar.php',
         'FluentCommunity\\Framework\\Database\\ClassMorphViolationException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/ClassMorphViolationException.php',
         'FluentCommunity\\Framework\\Database\\Concerns\\BuildsQueries' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/BuildsQueries.php',
+        'FluentCommunity\\Framework\\Database\\Concerns\\BuildsWhereDateClauses' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/BuildsWhereDateClauses.php',
         'FluentCommunity\\Framework\\Database\\Concerns\\CompilesJsonPaths' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/CompilesJsonPaths.php',
         'FluentCommunity\\Framework\\Database\\Concerns\\ExplainsQueries' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/ExplainsQueries.php',
         'FluentCommunity\\Framework\\Database\\Concerns\\MaintainsDatabase' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/MaintainsDatabase.php',
+        'FluentCommunity\\Framework\\Database\\Concerns\\ManagesTransactions' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Concerns/ManagesTransactions.php',
         'FluentCommunity\\Framework\\Database\\ConnectionInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/ConnectionInterface.php',
         'FluentCommunity\\Framework\\Database\\ConnectionResolver' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/ConnectionResolver.php',
         'FluentCommunity\\Framework\\Database\\ConnectionResolverInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/ConnectionResolverInterface.php',
+        'FluentCommunity\\Framework\\Database\\DBManager' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DBManager.php',
+        'FluentCommunity\\Framework\\Database\\DatabaseManager' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DatabaseManager.php',
+        'FluentCommunity\\Framework\\Database\\DatabaseTransactionRecord' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DatabaseTransactionRecord.php',
+        'FluentCommunity\\Framework\\Database\\DatabaseTransactionsManager' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DatabaseTransactionsManager.php',
+        'FluentCommunity\\Framework\\Database\\DeadlockException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DeadlockException.php',
+        'FluentCommunity\\Framework\\Database\\DetectsLostConnections' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/DetectsLostConnections.php',
+        'FluentCommunity\\Framework\\Database\\Events\\ConnectionEvent' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/ConnectionEvent.php',
         'FluentCommunity\\Framework\\Database\\Events\\QueryExecuted' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/QueryExecuted.php',
+        'FluentCommunity\\Framework\\Database\\Events\\TransactionBeginning' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionBeginning.php',
+        'FluentCommunity\\Framework\\Database\\Events\\TransactionCommitted' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionCommitted.php',
+        'FluentCommunity\\Framework\\Database\\Events\\TransactionCommitting' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionCommitting.php',
+        'FluentCommunity\\Framework\\Database\\Events\\TransactionRolledBack' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Events/TransactionRolledBack.php',
         'FluentCommunity\\Framework\\Database\\LazyLoadingViolationException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/LazyLoadingViolationException.php',
         'FluentCommunity\\Framework\\Database\\MultipleColumnsSelectedException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/MultipleColumnsSelectedException.php',
         'FluentCommunity\\Framework\\Database\\MultipleRecordsFoundException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/MultipleRecordsFoundException.php',
@@ -237,10 +251,12 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Database\\Orm\\SoftDeletes' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Orm/SoftDeletes.php',
         'FluentCommunity\\Framework\\Database\\Orm\\SoftDeletingScope' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Orm/SoftDeletingScope.php',
         'FluentCommunity\\Framework\\Database\\Orm\\SupportsPartialRelations' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Orm/SupportsPartialRelations.php',
+        'FluentCommunity\\Framework\\Database\\Orm\\UserProxyTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Orm/UserProxyTrait.php',
         'FluentCommunity\\Framework\\Database\\QueryException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/QueryException.php',
         'FluentCommunity\\Framework\\Database\\Query\\Builder' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/Builder.php',
         'FluentCommunity\\Framework\\Database\\Query\\ConditionExpression' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/ConditionExpression.php',
         'FluentCommunity\\Framework\\Database\\Query\\Expression' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/Expression.php',
+        'FluentCommunity\\Framework\\Database\\Query\\ExpressionInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/ExpressionInterface.php',
         'FluentCommunity\\Framework\\Database\\Query\\Grammars\\Grammar' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/Grammars/Grammar.php',
         'FluentCommunity\\Framework\\Database\\Query\\Grammars\\MySqlGrammar' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/Grammars/MySqlGrammar.php',
         'FluentCommunity\\Framework\\Database\\Query\\Grammars\\SQLiteGrammar' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/Query/Grammars/SQLiteGrammar.php',
@@ -260,18 +276,23 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Events\\Dispatcher' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Events/Dispatcher.php',
         'FluentCommunity\\Framework\\Events\\DispatcherInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Events/DispatcherInterface.php',
         'FluentCommunity\\Framework\\Events\\NullDispatcher' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Events/NullDispatcher.php',
+        'FluentCommunity\\Framework\\Events\\ShouldDispatchAfterCommit' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Events/ShouldDispatchAfterCommit.php',
+        'FluentCommunity\\Framework\\Events\\ShouldHandleEventsAfterCommit' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Events/ShouldHandleEventsAfterCommit.php',
         'FluentCommunity\\Framework\\Foundation\\App' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/App.php',
         'FluentCommunity\\Framework\\Foundation\\Application' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Application.php',
         'FluentCommunity\\Framework\\Foundation\\Async' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Async.php',
         'FluentCommunity\\Framework\\Foundation\\ComponentBinder' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/ComponentBinder.php',
+        'FluentCommunity\\Framework\\Foundation\\Concerns\\AjaxTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Concerns/AjaxTrait.php',
+        'FluentCommunity\\Framework\\Foundation\\Concerns\\DynamicFacadeTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Concerns/DynamicFacadeTrait.php',
+        'FluentCommunity\\Framework\\Foundation\\Concerns\\FoundationTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Concerns/FoundationTrait.php',
+        'FluentCommunity\\Framework\\Foundation\\Concerns\\HooksRemovalTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Concerns/HooksRemovalTrait.php',
         'FluentCommunity\\Framework\\Foundation\\Config' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Config.php',
         'FluentCommunity\\Framework\\Foundation\\ForbiddenException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/ForbiddenException.php',
-        'FluentCommunity\\Framework\\Foundation\\FoundationTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/FoundationTrait.php',
-        'FluentCommunity\\Framework\\Foundation\\HooksRemovalTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/HooksRemovalTrait.php',
         'FluentCommunity\\Framework\\Foundation\\Policy' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/Policy.php',
         'FluentCommunity\\Framework\\Foundation\\RequestGuard' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/RequestGuard.php',
         'FluentCommunity\\Framework\\Foundation\\UnAuthorizedException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/UnAuthorizedException.php',
         'FluentCommunity\\Framework\\Foundation\\WPException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Foundation/WPException.php',
+        'FluentCommunity\\Framework\\Http\\Ajax' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Ajax.php',
         'FluentCommunity\\Framework\\Http\\Client' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Client.php',
         'FluentCommunity\\Framework\\Http\\Controller' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Controller.php',
         'FluentCommunity\\Framework\\Http\\Cookie' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Cookie.php',
@@ -288,8 +309,9 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Http\\Response\\Response' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Response/Response.php',
         'FluentCommunity\\Framework\\Http\\Route' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Route.php',
         'FluentCommunity\\Framework\\Http\\Router' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/Router.php',
-        'FluentCommunity\\Framework\\Http\\SubstituteRouteParametersTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/SubstituteRouteParametersTrait.php',
+        'FluentCommunity\\Framework\\Http\\SubstituteParameters' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/SubstituteParameters.php',
         'FluentCommunity\\Framework\\Http\\URL' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/URL.php',
+        'FluentCommunity\\Framework\\Http\\UrlGenerator' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Http/UrlGenerator.php',
         'FluentCommunity\\Framework\\Pagination\\AbstractCursorPaginator' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Pagination/AbstractCursorPaginator.php',
         'FluentCommunity\\Framework\\Pagination\\AbstractPaginator' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Pagination/AbstractPaginator.php',
         'FluentCommunity\\Framework\\Pagination\\Cursor' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Pagination/Cursor.php',
@@ -324,12 +346,16 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Support\\HigherOrderTapProxy' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/HigherOrderTapProxy.php',
         'FluentCommunity\\Framework\\Support\\HigherOrderWhenProxy' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/HigherOrderWhenProxy.php',
         'FluentCommunity\\Framework\\Support\\InvalidArgumentException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/InvalidArgumentException.php',
+        'FluentCommunity\\Framework\\Support\\Invoker' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Invoker.php',
         'FluentCommunity\\Framework\\Support\\ItemNotFoundException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/ItemNotFoundException.php',
         'FluentCommunity\\Framework\\Support\\JsonableInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/JsonableInterface.php',
         'FluentCommunity\\Framework\\Support\\LazyCollection' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/LazyCollection.php',
         'FluentCommunity\\Framework\\Support\\Locale' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Locale.php',
         'FluentCommunity\\Framework\\Support\\MacroableTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MacroableTrait.php',
+        'FluentCommunity\\Framework\\Support\\Mail' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Mail.php',
         'FluentCommunity\\Framework\\Support\\MathException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MathException.php',
+        'FluentCommunity\\Framework\\Support\\Media' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Media.php',
+        'FluentCommunity\\Framework\\Support\\MediaUploader' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MediaUploader.php',
         'FluentCommunity\\Framework\\Support\\MultipleItemsFoundException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MultipleItemsFoundException.php',
         'FluentCommunity\\Framework\\Support\\Number' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Number.php',
         'FluentCommunity\\Framework\\Support\\NumberToWords' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/NumberToWords.php',
@@ -341,7 +367,6 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Support\\ReflectsClosures' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/ReflectsClosures.php',
         'FluentCommunity\\Framework\\Support\\Sanitizer' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Sanitizer.php',
         'FluentCommunity\\Framework\\Support\\Serializer' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Serializer.php',
-        'FluentCommunity\\Framework\\Support\\StdObject' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/StdObject.php',
         'FluentCommunity\\Framework\\Support\\Str' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Str.php',
         'FluentCommunity\\Framework\\Support\\Stringable' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Stringable.php',
         'FluentCommunity\\Framework\\Support\\Tappable' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Tappable.php',
@@ -394,6 +419,8 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Integrations\\FluentCart\\Http\\Controllers\\PaywallController' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCart/Http/Controllers/PaywallController.php',
         'FluentCommunity\\Modules\\Integrations\\FluentCart\\Paywalls' => __DIR__ . '/../..' . '/Modules/Integrations/FluentCart/Paywalls.php',
         'FluentCommunity\\Modules\\Integrations\\FluentForms\\Bootstrap' => __DIR__ . '/../..' . '/Modules/Integrations/FluentForms/Bootstrap.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentPlayer\\Bootstrap' => __DIR__ . '/../..' . '/Modules/Integrations/FluentPlayer/Bootstrap.php',
+        'FluentCommunity\\Modules\\Integrations\\FluentPlayer\\Http\\Controllers\\MediaController' => __DIR__ . '/../..' . '/Modules/Integrations/FluentPlayer/Http/Controllers/MediaController.php',
         'FluentCommunity\\Modules\\Integrations\\Integrations' => __DIR__ . '/../..' . '/Modules/Integrations/Integrations.php',
         'FluentCommunity\\Modules\\Migrations\\Helpers\\BPMigratorHelper' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/BPMigratorHelper.php',
         'FluentCommunity\\Modules\\Migrations\\Helpers\\PostMigrator' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/PostMigrator.php',

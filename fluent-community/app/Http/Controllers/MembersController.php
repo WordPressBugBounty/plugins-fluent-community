@@ -44,7 +44,7 @@ class MembersController extends Controller
             if (!$space) {
                 $spaceId = $request->getSafe('space_id', 'intval');
                 if ($spaceId) {
-                    $space = BaseSpace::find($spaceId);
+                    $space = BaseSpace::withoutGlobalScopes()->find($spaceId);
                     if (!$space || !Helper::isUserInSpace(get_current_user_id(), $space->id)) {
                         return $this->sendError([
                             'message' => __('Space not found', 'fluent-community'),
@@ -56,7 +56,7 @@ class MembersController extends Controller
 
             if ($space) {
                 $members = $members->whereHas('spaces', function ($query) use ($space) {
-                    $query->where('space_id', $space->id);
+                    $query->withoutGlobalScopes()->where('space_id', $space->id);
                 });
             }
 

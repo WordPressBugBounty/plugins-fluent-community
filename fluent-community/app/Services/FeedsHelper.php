@@ -3,8 +3,10 @@
 namespace FluentCommunity\App\Services;
 
 use FluentCommunity\App\Functions\Utility;
+use \FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
+use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
@@ -93,10 +95,10 @@ class FeedsHelper
             'li'         => array(),
             'span'       => array(),
             'a'          => array(
-                'href'    => true,
-                'title'   => true,
-                'rel'     => true,
-                'target'  => true,
+                'href'   => true,
+                'title'  => true,
+                'rel'    => true,
+                'target' => true,
             ),
             'img'        => array(
                 'src' => true,
@@ -284,7 +286,7 @@ class FeedsHelper
         if ($spaceId) {
             $xProfiles = XProfile::whereIn('username', $mentions)
                 ->whereHas('spaces', function ($query) use ($spaceId) {
-                    $query->where('space_id', $spaceId);
+                    $query->withoutGlobalScopes()->where('space_id', $spaceId);
                 })
                 ->get();
         } else {
@@ -498,6 +500,14 @@ class FeedsHelper
     {
         $message = CustomSanitizer::unslashMarkdown(trim(Arr::get($data, 'message')));
 
+        // Decode HTML entities and strip all whitespace for validation
+        $messageForValidation = html_entity_decode($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $messageForValidation = preg_replace('/\s+/u', '', $messageForValidation);
+
+        if (!$messageForValidation) {
+            throw new \Exception(esc_html__('Message is required', 'fluent-community'));
+        }
+
         $processedData = [
             'message' => $message,
             'type'    => 'text'
@@ -610,24 +620,24 @@ class FeedsHelper
                 $feed->media = $mediaPreview;
             }
 
-            $feedMedias = Media::where('object_source', 'feed')
-                ->where('feed_id', $feed->id)
-                ->where('is_active', 1)
-                ->get();
+            // Only fetch the specific attached media, not all media (which would include inline images)
+            $mediaId = Arr::get($mediaPreview, 'media_id');
+            if ($mediaId) {
+                $media = Media::where('id', $mediaId)
+                    ->where('feed_id', $feed->id)
+                    ->where('is_active', 1)
+                    ->first();
 
-            if (!$feedMedias->isEmpty()) {
-                $mediaItems = [];
-                foreach ($feedMedias as $media) {
-                    $mediaItems[] = [
+                if ($media) {
+                    $feed->media_images = [[
                         'url'      => $media->public_url,
                         'type'     => 'image',
                         'media_id' => $media->id,
                         'width'    => Arr::get($media->settings, 'width'),
                         'height'   => Arr::get($media->settings, 'height'),
                         'provider' => Arr::get($media->settings, 'provider', 'uploader')
-                    ];
+                    ]];
                 }
-                $feed->media_images = $mediaItems;
             } else if ($type != 'meta_data') {
                 $feed->meta = $meta;
             }
@@ -698,7 +708,13 @@ class FeedsHelper
         }
 
         // Handling Video Embed
-        if (Arr::get($requestData, 'media') && (Arr::get($requestData, 'media.type') == 'oembed' || Arr::get($requestData, 'media.type') == 'iframe_html')) {
+	    if (
+		    Arr::get($requestData, 'media') &&
+		    (
+			    (Arr::get($requestData, 'media.type') == 'oembed' && Arr::get($requestData, 'media.player') != 'fluent_player') ||
+			    Arr::get($requestData, 'media.type') == 'iframe_html'
+		    )
+	    ) {
             if (Arr::get($requestData, 'media.type') == 'iframe_html') {
                 $data['meta']['media_preview'] = array_filter(Arr::get($requestData, 'media', []));
                 return [$data, $uplaodedDocs];
@@ -715,7 +731,8 @@ class FeedsHelper
         }
 
         // Let's handle the uploaded media
-        if ($mediaImages = Arr::get($requestData, 'media_images', [])) {
+        $mediaImages = Arr::get($requestData, 'media_images', []);
+        if ($mediaImages) {
             $uploadedImages = Helper::getMediaByProvider($mediaImages);
             if (!$existingFeed) {
                 $uploadedMediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
@@ -771,7 +788,11 @@ class FeedsHelper
                 $data['meta']['media_items'] = $mediaPreviews;
             }
 
-            return [$data, $uploadedMediaItems];
+            $maxMediaPerPost = apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post'));
+
+            $allMediaItems = array_slice($uploadedMediaItems, 0, (int)$maxMediaPerPost);
+
+            return [$data, $allMediaItems];
         }
 
         if ($existingFeed && Arr::get($existingFeed->meta, 'auto_flagged') == 'yes') {
@@ -809,13 +830,40 @@ class FeedsHelper
             }
         }
 
+        $uplaodedDocs = apply_filters('fluent_community/feed/uploaded_feed_medias', $uplaodedDocs, $requestData);
         return [$data, $uplaodedDocs];
     }
 
     protected static function tranformFeedData(Feed $feed, $config = [])
     {
         $userId = Arr::get($config, 'user_id', 0);
+        $commentLikeIds = $userId ? Arr::get($config, 'comment_like_ids', []) : [];
 
+        $stickyComment = Comment::where('post_id', $feed->id)
+            ->where('is_sticky', 1)
+            ->with(['xprofile' => function ($q) {
+                $q->select(ProfileHelper::getXProfilePublicFields());
+            }])
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })->first();
+
+        if ($stickyComment) {
+            self::setCurrentRelatedUserId($stickyComment->user_id);
+            if ($commentLikeIds && in_array($stickyComment->id, $commentLikeIds)) {
+                $stickyComment->liked = 1;
+            }
+            $feed->sticky_comment = $stickyComment;
+        }
+
+        $feed->comments->each(function ($comment) use ($commentLikeIds) {
+            self::setCurrentRelatedUserId($comment->user_id);
+            if ($commentLikeIds && in_array($comment->id, $commentLikeIds)) {
+                $comment->liked = 1;
+            }
+        });
+
+        // User-specific processing
         if ($userId) {
             $interactions = Arr::get($config, 'interactions', []);
 
@@ -823,15 +871,6 @@ class FeedsHelper
                 $feed->has_user_react = Arr::get($interactions, 'like', false);
                 $feed->bookmarked = Arr::get($interactions, 'bookmark', false);
             }
-
-            $commentLikeIds = Arr::get($config, 'comment_like_ids', []);
-
-            $feed->comments->each(function ($comment) use ($commentLikeIds) {
-                self::setCurrentRelatedUserId($comment->user_id);
-                if ($commentLikeIds && in_array($comment->id, $commentLikeIds)) {
-                    $comment->liked = 1;
-                }
-            });
 
             if ($feed->content_type == 'survey') {
                 $votedOptions = $feed->getSurveyCastsByUserId($userId);
@@ -859,6 +898,9 @@ class FeedsHelper
             $feed->meta = $feedMeta;
         }
 
+        $spaceSettings = Space::where('id', $feed->space_id)->value('settings');
+        $feed->default_comment_sort_by = Arr::get($spaceSettings, 'default_comment_sort_by', '');
+
         self::setCurrentRelatedUserId($feed->user_id);
 
         return apply_filters('fluent_community/rendering_feed_model', $feed, $config);
@@ -877,8 +919,8 @@ class FeedsHelper
 
         if ($userId) {
             $config['interactions'] = [
-                'like'             => $feed->hasUserReact($userId, 'like'),
-                'bookmark'         => $feed->hasUserReact($userId, 'bookmark'),
+                'like'     => $feed->hasUserReact($userId, 'like'),
+                'bookmark' => $feed->hasUserReact($userId, 'bookmark'),
             ];
             $config['comment_like_ids'] = self::getLikedIdsByUserFeedId($feed->id, $userId);
         }
@@ -976,5 +1018,66 @@ class FeedsHelper
         $pattern = '/(?<=^|\W)@everyone(?=\W|\z)/iu';
 
         return preg_match($pattern, $message) === 1;
+    }
+
+    public static function replaceImageUrlsWithRealMediaArchive($markdown, $existingFeed = null)
+    {
+        $imageUrls = self::getInlineImageUrls($markdown);
+
+        if (!$imageUrls) {
+            return [$markdown, []];
+        }
+
+        $mediaItems = [];
+
+        foreach ($imageUrls as $url) {
+            $url = sanitize_url($url);
+            $media = Helper::getMediaFromUrl($url);
+            if ($media) {
+                if ($media->is_active && (!$existingFeed || $media->feed_id != $existingFeed->id) ) {
+                    continue;
+                }
+
+                $realUrl = $media->public_url;
+                $markdown = str_replace($url, $realUrl, $markdown);
+                $mediaItems[] = $media;
+            }
+        }
+
+        return [$markdown, $mediaItems];
+    }
+
+    private static function getInlineImageUrls($markdown)
+    {
+        $urls = [];
+        // Match ![alt](url) and ![alt](url "title")
+        if (preg_match_all('/!\[[^\]]*\]\(([^\s\)]+)(?:\s+"[^"]*")?\)/', $markdown, $matches)) {
+            $urls = array_merge($urls, $matches[1]);
+        }
+
+        // Match reference-style image usage: ![alt][id] and map only those IDs to their definitions [id]: url
+        if (preg_match_all('/!\[[^\]]*\]\[([^\]]+)\]/', $markdown, $imageRefMatches)) {
+            $usedIds = array_unique($imageRefMatches[1]);
+
+            if (preg_match_all('/^\[([^\]]+)\]:\s+(\S+)/m', $markdown, $refMatches)) {
+                $refMap = [];
+                foreach ($refMatches[1] as $index => $id) {
+                    $refMap[$id] = $refMatches[2][$index];
+                }
+
+                foreach ($usedIds as $id) {
+                    if (isset($refMap[$id])) {
+                        $urls[] = $refMap[$id];
+                    }
+                }
+            }
+        }
+
+        // Match HTML <img> tags
+        if (preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $markdown, $matches)) {
+            $urls = array_merge($urls, $matches[1]);
+        }
+
+        return array_unique($urls);
     }
 }

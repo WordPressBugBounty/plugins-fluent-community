@@ -25,6 +25,7 @@ class CourseTopicCompletedTrigger extends BaseTrigger
             'category'    => __('Community', 'fluent-community'),
             'label'       => __('Section/Topic Completed', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
+            'svg_icon' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 6a3 3 0 0 1 3-3h4v14H7a3 3 0 0 0-3 3V6zM20 6a3 3 0 0 0-3-3h-4v14h4a3 3 0 0 1 3 3V6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M16.5 18l1.3 1.3L20 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
             'description' => __('This Automation runs when a student completes a Section/Topic', 'fluent-community')
         ];
     }

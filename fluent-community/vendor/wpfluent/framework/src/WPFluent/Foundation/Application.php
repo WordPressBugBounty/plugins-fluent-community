@@ -9,8 +9,14 @@ use FluentCommunity\Framework\Http\Client;
 use FluentCommunity\Framework\Foundation\Config;
 use FluentCommunity\Framework\Container\Container;
 use FluentCommunity\Framework\Foundation\ComponentBinder;
-use FluentCommunity\Framework\Foundation\FoundationTrait;
+use FluentCommunity\Framework\Foundation\Concerns\FoundationTrait;
 
+/**
+ * @property \FluentCommunity\Framework\Foundation\Config $config
+ * @property \FluentCommunity\Framework\Http\Router\Router $router
+ * @property \FluentCommunity\Framework\Http\Request\Request $request
+ * @property \FluentCommunity\Framework\Http\Response\Response $response
+ */
 class Application extends Container
 {
     use FoundationTrait;
@@ -55,7 +61,7 @@ class Application extends Container
      * 
      * @var string
      */
-    protected $permissionNamespace = null;
+    protected $policyNamespace = null;
 
     /**
      * Composer JSON
@@ -70,6 +76,13 @@ class Application extends Container
      * @var array
      */
     protected $onReady = [];
+
+    /**
+     * Flag to check if components are bound.
+     * 
+     * @var boolean
+     */
+    protected $componentsBound = false;
 
     /**
      * Construct the application instance
@@ -100,6 +113,12 @@ class Application extends Container
         $this->baseUrl = plugin_dir_url($this->file);
     }
 
+    /**
+     * Load the environment bariables from .env file.
+     * 
+     * @param  string $path
+     * @return void
+     */
     protected function loadEnvironmentVars($path = null)
     {
         $path = $path ?: $this->basePath . '.env';
@@ -160,7 +179,6 @@ class Application extends Container
         $this->loadConfigIfExists();
         $this->registerTextdomain();
         $this->bindCoreComponents();
-        // $this->registerAsyncActions();
         $this->requireCommonFiles($this);
         $this->addRestApiInitAction($this);
     }
@@ -238,6 +256,7 @@ class Application extends Container
 
     /**
      * Resolve the given type from the container.
+     * This method is required for unit testing.
      *
      * @param  string  $abstract
      * @param  array   $parameters
@@ -291,7 +310,10 @@ class Application extends Container
      */
     protected function bindCoreComponents()
     {
-        (new ComponentBinder($this))->bindComponents();
+        if (!$this->componentsBound) {
+            $this->componentsBound = true;
+            (new ComponentBinder($this))->bindComponents();
+        }
     }
 
     /**
@@ -319,9 +341,9 @@ class Application extends Container
      * Handler for rest_pre_serve_request filter.
      * 
      * @param  bool $served  (default: false)
-     * @param  \WP_Rest_Response $result
-     * @param  \WP_Rest_Request  $request
-     * @param  \WP_Rest_Server   $server
+     * @param  \WP_REST_Response $result
+     * @param  \WP_REST_Request  $request
+     * @param  \WP_REST_Server   $server
      * @return bool (false to intercept, otherwise true)
      */
     public function preServeRequest($served, $result, $request, $server)
@@ -334,6 +356,7 @@ class Application extends Container
                 if ($this->isRequestForEndpoints($route)) {
                     status_header(200);
                     $result->set_status(200);
+                    // @phpstan-ignore-next-line
                     $result->set_data($this->endpoints);
                 } else {
                     $result->set_data(
@@ -401,8 +424,8 @@ class Application extends Container
     /**
      * Prepare a custom not found response.
      * 
-     * @param  \WP_Rest_Response $result
-     * @param  \WP_Rest_Request  $request
+     * @param  \WP_REST_Response $result
+     * @param  \WP_REST_Request  $request
      * 
      * @return array
      */
@@ -461,10 +484,11 @@ class Application extends Container
      * 
      * @param \FluentCommunity\Framework\Http\Router $router
      * 
-     * @return null
+     * @return void
      */
     protected function registerRestRoutes($router)
     {
+        // @phpstan-ignore-next-line
         $router->registerRoutes(
             $this->requireRouteFile($router)
         );
@@ -482,35 +506,24 @@ class Application extends Container
     }
 
     /**
-     * Register plugin booted callbacks.
+     * Register plugin ready (booted) callbacks.
      * 
      * @param  callable $callback
      * @return void
      */
-    protected function ready(callable $callback)
+    public function ready(callable $callback)
     {
         $this->onReady[] = $callback;
     }
 
     /**
-     * Register Async Actions.
-     * 
-     * @return void
-     */
-    // protected function registerAsyncActions()
-    // {
-    //     Client::registerAsyncRequestHandler();
-    // }
-
-    /**
      * Execute plugin booted callbacks.
      * 
-     * @param  callable $callback
      * @return void
      */
     protected function callPluginReadyCallbacks()
     {
-        while ($callback = array_shift($this->onReady)) {
+        while ($callback = array_pop($this->onReady)) {
             $callback($this);
         }
     }

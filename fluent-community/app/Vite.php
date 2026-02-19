@@ -51,7 +51,7 @@ class Vite
         $config = App::getInstance()->config;
         $manifest = $config->get('app.manifest');
 
-        if(!$manifest) {
+        if (!$manifest) {
             throw new \Exception('Manifest config could not be found on the app config');
         }
 
@@ -79,7 +79,7 @@ class Vite
                     }
                 }
 
-                if($isRtl) {
+                if ($isRtl) {
                     $file = $manifest[$src]['file'];
                     $file = str_replace('.css', '.rtl.css', $file);
                     return static::$assetsURL . $file;
@@ -92,13 +92,13 @@ class Vite
         return static::$resourceURL . $src;
     }
 
-    public static function getStaticSrcUrl($src)
+    public static function getStaticSrcUrl($src, $isRtl = null)
     {
-        if (!static::isDev()) {
-            return static::$assetsURL . $src;
+        if ($isRtl) {
+            $src = str_replace('.css', '.rtl.css', $src);
         }
 
-        return static::$resourceURL . $src;
+        return static::$assetsURL . $src;
     }
 
     public static function getDynamicSrcUrl($src, $isRtl = null)

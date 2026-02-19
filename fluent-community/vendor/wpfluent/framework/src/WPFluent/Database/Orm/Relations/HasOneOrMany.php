@@ -10,6 +10,9 @@ use FluentCommunity\Framework\Database\UniqueConstraintViolationException;
 use FluentCommunity\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
 use FluentCommunity\Framework\Database\Orm\Relations\Concerns\SupportsInverseRelations;
 
+/**
+ * @template TRelatedModel of Model
+ */
 abstract class HasOneOrMany extends Relation
 {
     use InteractsWithDictionary, SupportsInverseRelations;

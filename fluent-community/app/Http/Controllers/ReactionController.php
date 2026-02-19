@@ -92,6 +92,7 @@ class ReactionController extends Controller
                 if ($type == 'like') {
                     $feed->reactions_count = $feed->reactions_count - 1;
                     $feed->save();
+                    do_action('fluent_community/feed/react_removed', $feed);
                 }
             }
 
@@ -131,11 +132,14 @@ class ReactionController extends Controller
 
     public function castSurveyVote(Request $request, $feed_id)
     {
+
+        $userId = $this->getUserId();
+
         $feed = Feed::where('id', $feed_id)
             ->byUserAccess($this->getUserId())
             ->first();
 
-        if (!$feed || $feed->content_type != 'survey') {
+        if (!$feed || $feed->content_type != 'survey' || !$userId) {
             return $this->sendError([
                 'message' => __('Sorry! you do not have access to this post or invalid request', 'fluent-community')
             ]);
@@ -150,16 +154,18 @@ class ReactionController extends Controller
         }
 
         $voteIndexes = $request->get('vote_indexes', []);
-        $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $this->getUserId());
+        $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $userId);
         $surveyConfig = $feed->meta['survey_config'];
 
-        $votedOptions = $feed->getSurveyCastsByUserId($this->getUserId());
+        $votedOptions = $feed->getSurveyCastsByUserId($userId);
 
         foreach ($surveyConfig['options'] as $index => $option) {
             if (in_array($option['slug'], $votedOptions)) {
                 $surveyConfig['options'][$index]['voted'] = true;
             }
         }
+
+        $surveyConfig = add_filter('fluent_community/survey_config_response', $surveyConfig, $feed, $userId);
 
         return [
             'survey_config' => $surveyConfig
@@ -183,9 +189,9 @@ class ReactionController extends Controller
             ->limit(100)
             ->get(); // Todo: Add lazy loading in the future
 
-            $data = [
-                'voters' => $voters
-            ];
-            return apply_filters('fluent_community/survey_voters_api_response', $data, $this->request->all());
+        $data = [
+            'voters' => $voters
+        ];
+        return apply_filters('fluent_community/survey_voters_api_response', $data, $this->request->all());
     }
 }

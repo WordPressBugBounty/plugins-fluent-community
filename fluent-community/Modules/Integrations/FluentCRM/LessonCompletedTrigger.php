@@ -25,7 +25,8 @@ class LessonCompletedTrigger extends BaseTrigger
             'category'    => __('Community', 'fluent-community'),
             'label'       => __('Lesson Completed', 'fluent-community'),
 	        'icon'        => 'fc-icon-wp_new_user_signup',
-            'description' => __('This funnel runs when a student completes a lesson', 'fluent-community')
+            'description' => __('This funnel runs when a student completes a lesson', 'fluent-community'),
+            'svg_icon' => '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="7" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="7" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M16.5 18l1.3 1.3L20 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         ];
     }
 

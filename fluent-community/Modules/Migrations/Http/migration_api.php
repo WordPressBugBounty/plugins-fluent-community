@@ -5,7 +5,7 @@
  */
 
 $router->prefix('migrations')
-    ->namespace('\FluentCommunity\Modules\Migrations\Http\Controllers')
+    ->namespace('FluentCommunity\Modules\Migrations\Http\Controllers')
     ->withPolicy(\FluentCommunity\App\Http\Policies\AdminPolicy::class)
     ->group(function ($router) {
         $router->get('/', 'MigrationController@getAvailableMigrations');

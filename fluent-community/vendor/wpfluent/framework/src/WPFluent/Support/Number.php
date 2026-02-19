@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Framework\Support;
 
+use FluentCommunity\Framework\Support\InvalidArgumentException;
 use RangeException;
 use TypeError;
 
@@ -12,18 +13,21 @@ class Number
 	 * 
 	 * @param  int|float $value
 	 * @param  integer $dec
-	 * @return Formatted number
+	 * @return string Formatted number
 	 * @see    https://developer.wordpress.org/reference/functions/number_format_i18n
 	 */
 	public static function format($value, $dec = 0)
 	{
 		$locale = Locale::init();
 
+		// @phpstan-ignore-next-line
 		if (isset($locale)) {
 			$formatted = number_format(
 				$value,
 				absint($dec),
+				// @phpstan-ignore-next-line
 				$locale->number_format['decimal_point'],
+				// @phpstan-ignore-next-line
 				$locale->number_format['thousands_sep']
 			);
 		} else {
@@ -36,7 +40,7 @@ class Number
 	/**
 	 * Format a number as int
 	 * 
-	 * @param  int|float $value
+	 * @param  int|float $val
 	 * @return int
 	 */
 	public static function toInt($val)
@@ -47,7 +51,7 @@ class Number
 	/**
 	 * Format a number as float
 	 * 
-	 * @param  int|float $value
+	 * @param  int|float $val
 	 * @param  integer $dec
 	 * @return float
 	 */
@@ -64,15 +68,18 @@ class Number
 	 */
 	public static function toBool($val)
 	{
-		return boolval(intval($val));
+		if (is_bool($val)) {
+	        return $val;
+	    }
+	    return (bool) $val;
 	}
 
 	/**
 	 * Format a number to currency depending on the locale
 	 * 
 	 * @param  int|float $value
-	 * @param  array $before Options fpr formatting
-	 * @return Formatted number with currency symbol
+	 * @param  array $options
+	 * @return string Formatted number with currency symbol
 	 */
 	public static function toCurrency($value, $options = [])
 	{
@@ -112,33 +119,68 @@ class Number
 	 * This function transforms the php.ini notation
 	 * for numbers (like '2M') to an integer.
 	 *
-	 * @param  string $size Size value.
+	 * @param  string $num
 	 * @return int
 	 */
 	public static function notationToNum($num)
 	{
-		$l = substr($num, -1);
-	    $ret = (int) substr($num, 0, -1);
+	    $num = trim($num);
 
-	    switch (strtoupper($l)) {
-	        case 'P':
-	            $ret *= 1024;
-	            // No break.
-	        case 'T':
-	            $ret *= 1024;
-	            // No break.
-	        case 'G':
-	            $ret *= 1024;
-	            // No break.
-	        case 'M':
-	            $ret *= 1024;
-	            // No break.
-	        case 'K':
-	            $ret *= 1024;
-	            break; // Added for clarity
+	    if ($num === '') {
+	        throw new InvalidArgumentException(
+	        	'Input cannot be empty.'
+	        );
 	    }
 
-	    return $ret;
+	    // Extract the last character to check for unit
+	    $unit = strtoupper(substr($num, -1));
+
+	    // Determine if the last char is a recognized unit
+	    $units = ['P', 'T', 'G', 'M', 'K'];
+
+	    if (in_array($unit, $units, true)) {
+	        // Numeric part without the unit
+	        $numberPart = substr($num, 0, -1);
+
+	        if (!is_numeric($numberPart)) {
+	            throw new InvalidArgumentException(
+	            	'Invalid numeric value in notation.'
+	            );
+	        }
+
+	        $value = (float) $numberPart;
+
+	        // Multiply based on unit with fall-through logic
+	        switch ($unit) {
+	            case 'P':
+	                $value *= 1024;
+	                // no break
+	            case 'T':
+	                $value *= 1024;
+	                // no break
+	            case 'G':
+	                $value *= 1024;
+	                // no break
+	            case 'M':
+	                $value *= 1024;
+	                // no break
+	            case 'K':
+	                $value *= 1024;
+	                break;
+	        }
+	    } else {
+	        // No unit, just parse the number directly
+	        if (!is_numeric($num)) {
+	            throw new InvalidArgumentException(
+	            	'Invalid numeric value without unit.'
+	            );
+	        }
+	        
+	        $value = (float) $num;
+	    }
+
+	    // Return as integer (bytes)
+	    return (int) round($value);
 	}
 
 	/**
@@ -159,7 +201,7 @@ class Number
 	 * 
 	 * @param  int|float $bytes
 	 * @param  integer $decimals
-	 * @return Formatted size units of bytes, i.e: 1mb/1gb e.t.c.
+	 * @return string Formatted size units of bytes, i.e: 1mb/1gb e.t.c.
 	 */
 	public static function formatBytes($bytes, $decimals = 0)
 	{
@@ -170,7 +212,7 @@ class Number
 	 * Makes an ordinal number from the integer
 	 * 
 	 * @param  int $number
-	 * @return The ordinal number, i.e: 1st, 5th e.t.c.
+	 * @return string The ordinal number, i.e: 1st, 5th e.t.c.
 	 */
 	public static function toOrdinal($number)
 	{
@@ -252,11 +294,17 @@ class Number
 
         switch (true) {
             case floatval($number) === 0.0:
-                return $precision > 0 ? static::format(0, $precision, $maxPrecision) : '0';
+                return $precision > 0 ? static::format(0, $precision) : '0';
+
             case $number < 0:
-                return sprintf('-%s', static::summarize(abs($number), $precision, $maxPrecision, $units));
+                return sprintf('-%s', static::summarize(
+                	abs($number), $precision, $maxPrecision, $units
+                ));
+
             case $number >= 1e15:
-                return sprintf('%s'.end($units), static::summarize($number / 1e15, $precision, $maxPrecision, $units));
+                return sprintf('%s'.end($units), static::summarize(
+                	$number / 1e15, $precision, $maxPrecision, $units
+                ));
         }
 
         $numberExponent = floor(log10($number));
@@ -265,25 +313,28 @@ class Number
 
         return trim(
         	sprintf('%s%s', static::format(
-        		$number, $precision, $maxPrecision
+        		$number, $precision
         	), $units[$displayExponent] ?? '')
         );
     }
 
 	/**
-	 * Converts a numeric number in words
-	 * 
-	 * @param  int|float $number
-	 * @param  boolean $round whether to round (float to int)
-	 * @param  boolean $inCents whether the result should say
-	 * "and n cents" for the fraction.
-	 * 
-	 * @return string number in words (in human readable words),
-	 * i.e: from 199900010500.91 to:
-	 * one hundred and ninety nine billion nine hundred million
-	 * ten thousand five hundred and ninety one cents.
-	 * 
-	 * @throws \RangeException
+	 * Convert a numeric value to words.
+	 *
+	 * Example:
+	 * 199900010500.91 → "one hundred and ninety-nine billion nine hundred million
+	 * ten thousand five hundred and 91 cents"
+	 *
+	 * @param int|float|string $number The number to convert.
+	 * @param array $options Optional configuration:
+	 *   - 'thousand_separator' => string (default ',')
+	 *   - 'decimal_separator'  => string (default '.')
+	 *   - 'round'              => bool (default false) Whether to round floats.
+	 *   - 'inCents'            => bool (default true) Include the fraction as cents.
+	 *
+	 * @return string The human-readable word representation of the number.
+	 *
+	 * @throws \RangeException If the number is out of acceptable bounds.
 	 */
 	public static function inWords($number, $options = [])
 	{

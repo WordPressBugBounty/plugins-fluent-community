@@ -94,7 +94,9 @@ class CourseController extends Controller
 
         $intendtedLessonSlug = $request->get('intended_lesson_slug');
 
-        return $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
+        $data = $this->processCourse($course, $isCourseCreator, $intendtedLessonSlug);
+
+        return apply_filters('fluent_community/get_course_api_response', $data, $request->all());
     }
 
     public function getCourseBySlug(Request $request, $slug)
@@ -201,7 +203,7 @@ class CourseController extends Controller
         $data = [
             'lesson' => $formattedLesson
         ];
-        
+
         return apply_filters('fluent_community/course_lesson_api_response', $data, $request->all());
     }
 
@@ -397,4 +399,49 @@ class CourseController extends Controller
         ];
     }
 
+    public function getAllCourses(Request $request)
+    {
+        $user = $this->getUser();
+        $isCourseCreator = $user && $user->hasCourseCreatorAccess();
+
+        $courses = Course::when(!$isCourseCreator, function ($q) {
+                $q->where('status', 'published');
+            })
+            ->with(['creator'])
+            ->paginate();
+
+        $formattedCourses = [];
+        foreach ($courses as $course) {
+            $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
+            $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
+
+            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
+                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+            } else {
+                $course->studentsCount = 0;
+            }
+
+            $showInstructorView = Arr::get($course->settings, 'hide_instructor_view') != 'yes';
+            $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') == 'yes';
+            if ($showInstructorView) {
+                if ($course->creator) {
+                    $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
+                    $course->creator->total_courses = count($creatorCourseIds);
+                    if ($showStudentCount) {
+                        $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                    }
+                    if ($course->creator->short_description) {
+                        $course->creator->short_description_rendered = wp_kses_post(FeedsHelper::mdToHtml($course->creator->short_description));
+                    }
+                }
+            }
+
+            $formattedCourses[] = $this->processCourse($course, $isCourseCreator);
+        }
+
+        return apply_filters('fluent_community/all_courses_api_response', [
+            'courses' => $formattedCourses,
+            'total'   => $courses->total()
+        ], $request->all());
+    }
 }

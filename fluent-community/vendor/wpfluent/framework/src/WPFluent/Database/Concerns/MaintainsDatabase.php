@@ -8,7 +8,7 @@ trait MaintainsDatabase
 	 * Check the table.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function check($table)
 	{
@@ -31,7 +31,7 @@ trait MaintainsDatabase
 	 * Analyze the table.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function analyze($table)
 	{
@@ -54,7 +54,7 @@ trait MaintainsDatabase
 	 * Repair or rebuild the table based on the storage engine.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function repair($table)
 	{   
@@ -79,7 +79,7 @@ trait MaintainsDatabase
 	 * Repair the InnoDB table.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function repairInnoDB($table)
 	{
@@ -110,7 +110,7 @@ trait MaintainsDatabase
 	 * Repair the MYISAM table.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function repairMyISAM($table)
 	{
@@ -133,7 +133,7 @@ trait MaintainsDatabase
 	 * Optimize the table.
 	 * 
 	 * @param  string $table
-	 * @return stdClass
+	 * @return \stdClass
 	 */
 	public static function optimize($table)
 	{

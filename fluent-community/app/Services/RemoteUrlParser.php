@@ -33,7 +33,7 @@ class RemoteUrlParser
             'discover' => false
         ]);
 
-        if (!$data || is_wp_error($data) || empty($data->provider_name)) {
+        if (empty($data) || is_wp_error($data) || empty($data->provider_name)) {
             return null;
         }
 

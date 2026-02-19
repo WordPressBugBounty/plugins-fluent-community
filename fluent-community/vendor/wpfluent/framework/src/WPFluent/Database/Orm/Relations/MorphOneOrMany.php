@@ -72,7 +72,7 @@ abstract class MorphOneOrMany extends HasOneOrMany
      * Create a new instance of the related model. Allow mass-assignment.
      *
      * @param  array  $attributes
-     * @return TRelatedModel
+     * @return \FluentCommunity\Framework\Database\Orm\Model
      */
     public function forceCreate(array $attributes = [])
     {

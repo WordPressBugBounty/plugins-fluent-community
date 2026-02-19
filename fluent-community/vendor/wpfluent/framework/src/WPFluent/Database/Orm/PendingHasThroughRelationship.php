@@ -23,15 +23,15 @@ class PendingHasThroughRelationship
     /**
      * The local relationship.
      *
-     * @var \FluentCommunity\Framework\Database\Orm\Relations\HasMany<TIntermediateModel, TDeclaringModel>|\FluentCommunity\Framework\Database\Orm\Relations\HasOne<TIntermediateModel, TDeclaringModel>
+     * @var \FluentCommunity\Framework\Database\Orm\Relations\HasMany|\FluentCommunity\Framework\Database\Orm\Relations\HasOne
      */
     protected $localRelationship;
 
     /**
      * Create a pending has-many-through or has-one-through relationship.
      *
-     * @param  TDeclaringModel  $rootModel
-     * @param  \FluentCommunity\Framework\Database\Orm\Relations\HasMany<TIntermediateModel, TDeclaringModel>|\FluentCommunity\Framework\Database\Orm\Relations\HasOne<TIntermediateModel, TDeclaringModel>  $localRelationship
+     * @param mixed $rootModel
+     * @param \FluentCommunity\Framework\Database\Orm\Relations\HasMany|\FluentCommunity\Framework\Database\Orm\Relations\HasOne $localRelationship
      */
     public function __construct($rootModel, $localRelationship)
     {
@@ -43,18 +43,9 @@ class PendingHasThroughRelationship
     /**
      * Define the distant relationship that this model has.
      *
-     * @template TRelatedModel of \FluentCommunity\Framework\Database\Orm\Model
-     *
-     * @param  string|(callable(TIntermediateModel): (\FluentCommunity\Framework\Database\Orm\Relations\HasOne<TRelatedModel, TIntermediateModel>|\FluentCommunity\Framework\Database\Orm\Relations\HasMany<TRelatedModel, TIntermediateModel>|\FluentCommunity\Framework\Database\Orm\Relations\MorphOneOrMany<TRelatedModel, TIntermediateModel>))  $callback
-     * @return (
-     *     $callback is string
-     *     ? \FluentCommunity\Framework\Database\Orm\Relations\HasManyThrough<\FluentCommunity\Framework\Database\Orm\Model, TIntermediateModel, TDeclaringModel>|\FluentCommunity\Framework\Database\Orm\Relations\HasOneThrough<\FluentCommunity\Framework\Database\Orm\Model, TIntermediateModel, TDeclaringModel>
-     *     : (
-     *         $callback is callable(TIntermediateModel): \FluentCommunity\Framework\Database\Orm\Relations\HasOne<TRelatedModel, TIntermediateModel>
-     *         ? \FluentCommunity\Framework\Database\Orm\Relations\HasOneThrough<TRelatedModel, TIntermediateModel, TDeclaringModel>
-     *         : \FluentCommunity\Framework\Database\Orm\Relations\HasManyThrough<TRelatedModel, TIntermediateModel, TDeclaringModel>
-     *     )
-     * )
+     * @param string|callable $callback Either the distant relationship name or a callback returning the local relation.
+     * @return \FluentCommunity\Framework\Database\Orm\Relations\HasManyThrough|\FluentCommunity\Framework\Database\Orm\Relations\HasOneThrough
+     *         The distant relationship instance.
      */
     public function has($callback)
     {

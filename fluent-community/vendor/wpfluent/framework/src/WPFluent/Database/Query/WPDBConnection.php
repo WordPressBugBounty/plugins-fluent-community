@@ -13,16 +13,28 @@ use FluentCommunity\Framework\Foundation\App;
 use FluentCommunity\Framework\Database\Schema;
 use FluentCommunity\Framework\Database\QueryException;
 use FluentCommunity\Framework\Database\ConnectionInterface;
+use FluentCommunity\Framework\Database\MultipleColumnsSelectedException;
 use FluentCommunity\Framework\Database\Events\QueryExecuted;
 use FluentCommunity\Framework\Database\Query\Expression;
+use FluentCommunity\Framework\Database\Query\Processors\Processor;
 use FluentCommunity\Framework\Database\Query\Processors\MySqlProcessor;
 use FluentCommunity\Framework\Database\Query\Processors\SQLiteProcessor;
 use FluentCommunity\Framework\Database\Query\Builder as QueryBuilder;
+use FluentCommunity\Framework\Database\Query\Grammars\Grammar;
 use FluentCommunity\Framework\Database\Query\Grammars\MySqlGrammar;
 use FluentCommunity\Framework\Database\Query\Grammars\SQLiteGrammar;
+use FluentCommunity\Framework\Database\Concerns\ManagesTransactions;
+use FluentCommunity\Framework\Database\DetectsLostConnections;
+
+use FluentCommunity\Framework\Database\Events\TransactionBeginning;
+use FluentCommunity\Framework\Database\Events\TransactionCommitted;
+use FluentCommunity\Framework\Database\Events\TransactionCommitting;
+use FluentCommunity\Framework\Database\Events\TransactionRolledBack;
 
 class WPDBConnection implements ConnectionInterface
 {
+    use DetectsLostConnections, ManagesTransactions;
+
     /**
      * $wpdb Global $wpdb instance
      * @var Object
@@ -65,46 +77,43 @@ class WPDBConnection implements ConnectionInterface
     protected $postProcessor;
 
     /**
-     * The number of total transactions.
+     * The number of active transactions.
      *
      * @var int
      */
-    protected $transactionCount = 0;
+    protected $transactions = 0;
+
+    /**
+     * The transaction manager instance.
+     *
+     * @var \FluentCommunity\Framework\Database\DatabaseTransactionsManager|null
+     */
+    protected $transactionsManager;
+
+    /**
+     * All of the callbacks that should be invoked before a transaction is started.
+     *
+     * @var \Closure[]
+     */
+    protected $beforeStartingTransaction = [];
 
     /**
      * The event dispatcher.
      *
-     * @var FluentCommunity\Framework\Events
+     * @var \FluentCommunity\Framework\Events\Dispatcher
      */
     protected $event = null;
 
     /**
      * Create a new database connection instance.
      *
-     * @param  $wpdb $pdo
-     * @param string $database
-     * @param string $tablePrefix
-     * @param array $config
+     * @param \wpdb $wpdb The WordPress database instance.
      * @return void
      */
-    public function __construct(
-        $pdo, $database = '', $tablePrefix = '', array $config = []
-    )
+    public function __construct($wpdb)
     {
-        $this->setupWpdbInstance($pdo);
+        $this->setupWpdbInstance($wpdb);
 
-        // First we will setup the default properties. We keep track of the DB
-        // name we are connected to since it is needed when some reflective
-        // type commands are run such as checking whether a table exists.
-        $this->database = $database;
-
-        $this->tablePrefix = $tablePrefix;
-
-        $this->config = $config;
-
-        // We need to initialize a query grammar and the query post processors
-        // which are both very important parts of the database abstractions
-        // so we initialize these to their default values while starting.
         $this->useDefaultQueryGrammar();
 
         $this->useDefaultPostProcessor();
@@ -122,9 +131,19 @@ class WPDBConnection implements ConnectionInterface
     {
         $this->wpdb = $wpdb;
 
-        if (!str_starts_with(App::env(), 'prod')) {
-            $this->wpdb->show_errors(false);
-        }
+        $this->wpdb->show_errors(
+            $this->shouldShowErrors()
+        );
+    }
+
+    /**
+     * Determine if database errors should be shown.
+     *
+     * @return bool
+     */
+    protected function shouldShowErrors()
+    {
+        return strpos(App::env(), 'prod') === false;
     }
 
     /**
@@ -350,11 +369,11 @@ class WPDBConnection implements ConnectionInterface
      * @param array $bindings
      * @param bool $useReadPdo
      * @return \Generator
+     * @throws \FluentCommunity\Framework\Database\QueryException
      */
     public function cursor($query, $bindings = [], $useReadPdo = true)
     {
-        // When the underlying driver is not the mysqli.
-        // it's not a pure cursor just mimicked like one.
+        // If not mysqli, just mimic the cursor but does not do the cursor query
         if (!$this->wpdb->dbh instanceof \mysqli) {
             foreach ($this->select($query, $bindings) as $row) {
                 yield $row;
@@ -362,7 +381,7 @@ class WPDBConnection implements ConnectionInterface
             return;
         }
 
-        // The underlying driver is the mysqli
+        // Flush previous queries and check connection
         $this->wpdb->flush();
         $this->wpdb->insert_id = 0;
         $this->wpdb->check_current_query = true;
@@ -379,58 +398,109 @@ class WPDBConnection implements ConnectionInterface
             $this->wpdb->timer_start();
         }
 
+        // Prepare the statement
         $statement = $this->wpdb->dbh->prepare(
             $this->bindParamsForSqli($query, $bindings)
         );
 
-        $bindings && $statement->bind_param(
-            str_repeat('s', count($bindings)),
-            ...$bindings
-        );
+        // Check if the statement preparation failed
+        if ($statement === false) {
+            throw new QueryException(
+                $query, $bindings, new Exception(
+                    'Failed to prepare statement: ' . $this->wpdb->dbh->error
+                )
+            );
+        }
 
-        $start = microtime(true);
-
-        if ($statement->execute()) {
-
-            $result = $statement->get_result();
-
-            $this->wpdb->num_queries++;
-            $this->wpdb->last_query = $query;
-            $this->wpdb->num_rows = $result->num_rows;
-
-            if (defined('SAVEQUERIES') && SAVEQUERIES) {
-                $this->wpdb->log_query(
-                    $query,
-                    $this->wpdb->timer_stop(),
-                    $this->wpdb->get_caller(),
-                    $this->wpdb->time_start,
-                    []
+        // Bind parameters if necessary
+        if ($bindings) {
+            $types = '';
+            foreach ($bindings as $binding) {
+                $types .= is_int($binding) ? 'i' : (
+                    is_double($binding) ? 'd' : 's'
                 );
             }
 
-            $time = $this->getElapsedTime($this->wpdb->time_start);
+            $statement->bind_param($types, ...$bindings);
+        }
 
-            $this->event->dispatch(
-                new QueryExecuted($query, $bindings, $time, $this)
-            );
+        // Execute the statement and check if it's successful
+        if ($statement->execute()) {
+            // Check if the statement has a result set
+            if ($result = $statement->get_result()) {
+                $i = 0;
+                while ($row = $result->fetch_assoc()) {
+                    $this->wpdb->last_result[$i] = $row;
+                    $i++;
+                    yield $row;
+                }
 
-            $i = 0;
-            while ($row = $result->fetch_assoc()) {
-                $this->wpdb->last_result[$i] = $row;
-                $i++;
-                yield $row;
+                $result->free();
+            } else {
+                // Handle the case where no result is returned
+                throw new QueryException(
+                    $query, $bindings, new Exception(
+                        'No result set returned from query.'
+                    )
+                );
             }
 
             return;
         }
 
+        // Error handling if statement execution fails
         if ($statement->error || $statement->errno) {
+            $err = $statement->error
+                ? $statement->error
+                : 'Mysqli Error No: ' . $statement->errno;
 
-            $this->wpdb->last_error = $statement->error || 'Mysqli Error No: ' . $statement->errno;
+            $this->wpdb->last_error = $err;
 
             throw new QueryException(
+                $query, $bindings, new Exception($err)
+            );
+        }
+    }
+
+    /**
+     * Raw cursor query for MySQLi (non-prepared).
+     * 
+     * @param  string $query
+     * @param  array  $bindings
+     * @return \Generator
+     * @throws \FluentCommunity\Framework\Database\QueryException
+     */
+    public function rawCursor($query, $bindings = [])
+    {
+        // Sanitize bindings manually
+        if (!empty($bindings)) {
+            foreach ($bindings as $binding) {
+                $escaped = $this->wpdb->dbh->real_escape_string($binding);
+                // Replace the first occurrence of ? with the escaped binding
+                $query = preg_replace('/\?/', "'{$escaped}'", $query, 1);
+            }
+        }
+
+        // If not mysqli, mimic cursor
+        if (!$this->wpdb->dbh instanceof \mysqli) {
+            foreach ($this->select($query) as $row) {
+                yield $row;
+            }
+            return;
+        }
+
+        // Real raw cursor
+        $stmt = $this->wpdb->dbh->query($query, MYSQLI_USE_RESULT);
+
+        if ($stmt) {
+            while ($row = $stmt->fetch_assoc()) {
+                yield $row;
+            }
+        } else {
+            $err = $this->wpdb->dbh->error;
+            throw new QueryException(
                 $query, $bindings, new Exception(
-                    $statement->error || 'Mysqli Error No: ' . $statement->errno
+                    $err ? $err : 'MySQL Error: ' . $this->wpdb->dbh->errno
                 )
             );
         }
@@ -567,6 +637,14 @@ class WPDBConnection implements ConnectionInterface
         return $bindings;
     }
 
+    /**
+     * Run a SQL statement and log its execution context.
+     * 
+     * @param  string $query
+     * @param  array $bindings
+     * @param  \Closure $callback
+     * @return mixed
+     */
     public function run($query, $bindings, $callback)
     {
         $start = microtime(true);
@@ -703,89 +781,6 @@ class WPDBConnection implements ConnectionInterface
     }
 
     /**
-     * Execute a Closure within a transaction.
-     *
-     * @param Closure $callback
-     * @param int $attempts
-     *
-     * @return mixed
-     *
-     * @throws Exception
-     */
-    public function transaction(Closure $callback, $attempts = 1)
-    {
-        $this->beginTransaction();
-        try {
-            $data = $callback();
-            $this->commit();
-            return $data;
-        } catch (Exception $e) {
-            $this->rollBack();
-            throw $e;
-        }
-    }
-
-    /**
-     * Start a new database transaction.
-     *
-     * @return void
-     */
-    public function beginTransaction()
-    {
-        $transaction = $this->unprepared("START TRANSACTION;");
-
-        if (false !== $transaction) {
-            $this->transactionCount++;
-        }
-    }
-
-    /**
-     * Commit the active database transaction.
-     *
-     * @return void
-     */
-    public function commit()
-    {
-        if ($this->transactionCount < 1) {
-            return;
-        }
-
-        $transaction = $this->unprepared("COMMIT;");
-
-        if (false !== $transaction) {
-            $this->transactionCount--;
-        }
-    }
-
-    /**
-     * Rollback the active database transaction.
-     *
-     * @return void
-     */
-    public function rollBack()
-    {
-        if ($this->transactionCount < 1) {
-            return;
-        }
-
-        $transaction = $this->unprepared("ROLLBACK;");
-
-        if ($transaction !== false) {
-            $this->transactionCount--;
-        }
-    }
-
-    /**
-     * Get the number of active transactions.
-     *
-     * @return int
-     */
-    public function transactionLevel()
-    {
-        return $this->transactionCount;
-    }
-
-    /**
      * Get the column listing for a given table.
      *
      * @param string $table
@@ -799,7 +794,7 @@ class WPDBConnection implements ConnectionInterface
     /**
      * Alias for getColumnListing.
      *
-     * @param  @param  string  $t
+     * @param  string  $t
      * @return array
      */
     public function getColumns($t)
@@ -828,6 +823,19 @@ class WPDBConnection implements ConnectionInterface
     }
 
     /**
+     * Register a hook to be run just before a database transaction is started.
+     *
+     * @param  \Closure  $callback
+     * @return $this
+     */
+    public function beforeStartingTransaction(Closure $callback)
+    {
+        $this->beforeStartingTransaction[] = $callback;
+
+        return $this;
+    }
+
+    /**
      * Register a database query listener with the connection.
      *
      * @param \Closure $callback
@@ -839,6 +847,41 @@ class WPDBConnection implements ConnectionInterface
     }
 
     /**
+     * Fire an event for this connection.
+     *
+     * @param  string  $event
+     * @return array|null
+     */
+    protected function fireConnectionEvent($event)
+    {
+        if (!$this->event) {
+            return;
+        }
+
+        switch ($event) {
+            case 'beganTransaction':
+                $payload = new TransactionBeginning($this);
+                break;
+            case 'committed':
+                $payload = new TransactionCommitted($this);
+                break;
+            case 'committing':
+                $payload = new TransactionCommitting($this);
+                break;
+            case 'rollingBack':
+                $payload = new TransactionRolledBack($this);
+                break;
+            default:
+                $payload = null;
+                break;
+        }
+
+        if ($payload !== null) {
+            return $this->event->dispatch($payload);
+        }
+    }
+
+    /**
      * Get the elapsed time since a given starting point.
      *
      * @param int $start
@@ -847,5 +890,30 @@ class WPDBConnection implements ConnectionInterface
     protected function getElapsedTime($start)
     {
         return round((microtime(true) - $start) * 1000, 2);
+    }
+
+    /**
+     * Get the table prefix for the connection.
+     * 
+     * @return [type] [description]
+     */
+    public function getTablePrefix()
+    {
+        if (!$this->tablePrefix) {
+            $this->tablePrefix = $this->queryGrammar->getTablePrefix();
+        }
+
+        return $this->tablePrefix;
+    }
+
+    /**
+     * Get the table name with the table prefix.
+     * 
+     * @param  string $table
+     * @return string       
+     */
+    public function getTableName($table)
+    {
+        return $this->getTablePrefix() . $table;
     }
 }

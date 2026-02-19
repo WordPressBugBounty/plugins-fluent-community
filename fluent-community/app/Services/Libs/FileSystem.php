@@ -152,7 +152,7 @@ class FileSystem
      */
     public function _renameFileName($file)
     {
-        $prefix = 'fluentcom-' . md5(wp_generate_uuid4()) . '-fluentcom-';
+        $prefix = 'fluentcom-' . wp_generate_password(32, false) . '-fluentcom-';
         $originalName = $file['name'];
         $file['name'] = $prefix . $file['name'];
         $file['name'] = apply_filters('fluent_community/generated_upload_file_name', $file['name'], $originalName, $file);

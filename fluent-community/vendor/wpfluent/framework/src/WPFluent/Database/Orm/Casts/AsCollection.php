@@ -13,7 +13,7 @@ class AsCollection implements Castable
      * Get the caster class to use when casting from / to this cast target.
      *
      * @param  array  $arguments
-     * @return \FluentCommunity\Framework\Contracts\Database\Orm\CastsAttributes<\FluentCommunity\Framework\Support\Collection<array-key, mixed>, iterable>
+     * @return \FluentCommunity\Framework\Database\Orm\CastsAttributes
      */
     public static function castUsing(array $arguments)
     {

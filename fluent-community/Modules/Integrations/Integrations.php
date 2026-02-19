@@ -35,5 +35,7 @@ class Integrations
             (new \FluentCommunity\Modules\Integrations\FluentCart\Paywalls())->register($app);
             (new \FluentCommunity\Modules\Integrations\FluentCart\CartCheckout())->register();
         }
+
+        (new \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap())->register($app);
     }
 }

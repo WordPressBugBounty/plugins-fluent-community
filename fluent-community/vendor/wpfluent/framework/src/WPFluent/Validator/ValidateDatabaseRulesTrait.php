@@ -147,9 +147,9 @@ trait ValidateDatabaseRulesTrait
     /**
      * Add the given conditions to the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \FluentCommunity\Framework\Database\Query\Builder  $query
      * @param  array  $conditions
-     * @return \Illuminate\Database\Query\Builder
+     * @return \FluentCommunity\Framework\Database\Query\Builder
      */
     protected function addConditions($query, $conditions)
     {
@@ -169,7 +169,7 @@ trait ValidateDatabaseRulesTrait
     /**
      * Add a "where" clause to the given query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \FluentCommunity\Framework\Database\Query\Builder  $query
      * @param  string  $key
      * @param  string  $extraValue
      * @return void
@@ -191,7 +191,7 @@ trait ValidateDatabaseRulesTrait
      * Get a query builder for the given table.
      *
      * @param  string  $table
-     * @return \Illuminate\Database\Query\Builder
+     * @return \FluentCommunity\Framework\Database\Query\Builder
      */
     protected function table($table)
     {

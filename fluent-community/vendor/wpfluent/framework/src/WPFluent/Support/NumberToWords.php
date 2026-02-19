@@ -4,6 +4,7 @@ namespace FluentCommunity\Framework\Support;
 
 use TypeError;
 use RangeException;
+use FluentCommunity\Framework\Support\InvalidArgumentException;
 
 /**
  * Class NumberToWords
@@ -60,21 +61,6 @@ class NumberToWords
         'trillion',
         'quadrillion',
         'quintillion',
-        'sextillion',
-        'septillion',
-        'octillion',
-        'nonillion',
-        'decillion',
-        'undecillion',
-        'duodecillion',
-        'tredecillion',
-        'quattuordecillion',
-        'quindecillion',
-        'sexdecillion',
-        'septendecillion',
-        'octodecillion',
-        'novemdecillion',
-        'vigintillion'
     ];
 
     /**
@@ -115,7 +101,7 @@ class NumberToWords
 
         $num = $this->validateNumber($num);
 
-        if ($num == 0) return 'zero dollar';
+        if ($num == 0) return 'zero dollars';
 
         // Separate the whole number and decimal part
         $parts = explode('.', (string)$num);
@@ -132,16 +118,12 @@ class NumberToWords
         for ($i = 0; $i < count($numLevels); $i++) {
             $levels--;
 
-            // Get the hundreds digit
-            $hundreds = (int)($numLevels[$i] / 100);
+            $level = (int) $numLevels[$i];
+            $hundreds = intdiv($level, 100);
+            $tens = $level % 100;
 
-            // Get the last two digits (tens and ones)
-            $tens = (int)($numLevels[$i] % 100);
-
-            // Create the word for hundreds
             $hundredsWord = $hundreds ? $this->units[$hundreds] . ' hundred' : '';
 
-            // Create the word for tens and ones
             $tensWord = '';
             if ($tens < 20) {
                 $tensWord = $tens ? $this->units[$tens] : '';
@@ -151,28 +133,40 @@ class NumberToWords
                 $tensWord .= $onesWord ? ' ' . $onesWord : '';
             }
 
-            // Combine hundreds and tens/ones
-            $wordsPart = trim($hundredsWord . ' ' . $tensWord);
-            // Append large number group if exists
-            if ($levels && (int)($numLevels[$i])) {
+            // Add "and" inside the triple group if both
+            // hundreds and tens/ones exist
+            if ($hundredsWord && $tensWord) {
+                $wordsPart = trim($hundredsWord . ' and ' . $tensWord);
+            } else {
+                $wordsPart = trim($hundredsWord . ' ' . $tensWord);
+            }
+
+            if ($levels > 0 && (int)$numLevels[$i] !== 0) {
                 $wordsPart .= ' ' . $this->largeNumbers[$levels];
             }
 
-            // Store the combined words for this part
             if ($wordsPart) {
-                $words[] = trim($wordsPart);
+                $words[] = $wordsPart;
             }
         }
 
         // Add "and" only before the last unit and make string
-        $result = $this->insertAndBeforeLastUnit($words);
+        if ($result = $this->insertAndBeforeLastUnit($words)) {
+            // Match all occurrences of ' and '
+            $parts = explode(' and ', $result);
+
+            if (count($parts) > 1) {
+                $last = array_pop($parts);
+                $result = implode(' ', $parts) . ' and ' . $last;
+            }
+        }
 
         // Add the cents part if it exists
         $result = $this->addCentsIfExists($result, $cents);
 
         // Fix spacing issues by trimming individual parts
         // and remove redundant ands and add currency name.
-        return $this->fixSpacingIssuesAndAddCurrencyName($result);
+        return $this->fixSpacingIssuesAndAddCurrencyName($result, $num);
     }
 
     /**
@@ -183,35 +177,85 @@ class NumberToWords
      */
     private function validateNumber($num)
     {
-        // Remove commas and spaces, then trim
+        // Remove commas, spaces, and trim
         $num = str_replace([',', ' '], '', trim($num));
 
-        // Check if the input is numeric
+        // Check numeric
         if (!is_numeric($num)) {
             throw new TypeError('Input must be a numeric type.');
         }
 
-        // Range checks
-        if (is_int($num) && $num > PHP_INT_MAX) {
-            throw new RangeException(
-                "The Number can't be greater than " . PHP_INT_MAX
-            );
-        } elseif ($num > PHP_FLOAT_MAX) {
-            throw new RangeException(
-                "The Number can't be greater than " . PHP_FLOAT_MAX
+        // Reject negatives (string check)
+        if (strpos($num, '-') === 0) {
+            throw new InvalidArgumentException(
+                'Negative numbers are not supported.'
             );
         }
 
-        // Handle scientific notation properly
-        if (stripos($num, 'E') !== false) {
-            // Directly convert scientific notation to float
-            $num = sprintf('%.f', floatval($num));
-        } else {
-            // Ensure we handle large numbers correctly
-            $num = sprintf('%.f', $num);
+        // Normalize scientific notation first (if present)
+        if (stripos($num, 'e') !== false) {
+            $num = $this->sciNotationToString($num);
         }
+
+        // Check integer part length against PHP_INT_MAX
+        $integerPart = explode('.', $num)[0];
+        $integerPart = ltrim($integerPart, '0');
+        if ($integerPart === '') {
+            $integerPart = '0';
+        }
+
+        $phpIntMaxStr = (string) PHP_INT_MAX;
+
+        if (
+            strlen($integerPart) > strlen($phpIntMaxStr) || (
+                strlen($integerPart) === strlen($phpIntMaxStr)
+                && strcmp($integerPart, $phpIntMaxStr) > 0
+            )
+        ) {
+            throw new RangeException("Number exceeds PHP_INT_MAX.");
+        }
+
+        // Format as integer string (remove decimals)
+        $num = sprintf('%.f', $num);
 
         return $num;
+    }
+
+    /**
+     * Convert scientific notation to decimal string without precision loss.
+     */
+    private function sciNotationToString($num)
+    {
+        if (!preg_match('/^([\d\.]+)e([+-]?\d+)$/i', $num, $matches)) {
+            return $num;
+        }
+
+        $base = str_replace('.', '', $matches[1]);
+        $decimalPos = strpos($matches[1], '.') !== false ? strlen($matches[1]) - strpos($matches[1], '.') - 1 : 0;
+        $exponent = (int) $matches[2];
+        $decimalPos -= $exponent;
+
+        if ($decimalPos <= 0) {
+            $result = $base . str_repeat('0', abs($decimalPos));
+        } else {
+            $result = substr(
+                $base, 0, -$decimalPos
+            ) . '.' . substr($base, -$decimalPos);
+            
+            $result = rtrim($result, '.');
+        }
+
+        $result = ltrim($result, '0');
+        
+        if (strpos($result, '.') === 0) {
+            $result = '0' . $result;
+        }
+
+        if ($result === '') {
+            $result = '0';
+        }
+
+        return $result;
     }
 
     /**
@@ -240,23 +284,24 @@ class NumberToWords
      */
     private function insertAndBeforeLastUnit($words)
     {
-        if (count($words) > 1) {
+        $count = count($words);
 
+        if ($count > 1) {
             $last = array_pop($words);
-            
-            $pices = explode(' ', $last);
-            
-            if ($pices > 2) {
-                $last = array_pop($pices);
-                $pices = array_merge($pices, ['and', $last]);
-                $words = array_merge($words, $pices);
-                return trim(implode(' ', $words));
+            $beforeLast = implode(' ', $words);
+
+            // Only add 'and' if not already present at boundary
+            if (
+                str_ends_with($beforeLast, ' and')
+                || str_starts_with($last, 'and ')
+            ) {
+                return trim($beforeLast . ' ' . $last);
             }
 
-            $words = array_merge($words, ['and', $last]);
+            return trim($beforeLast . ' and ' . $last);
         }
 
-        return trim(implode(' ', $words));
+        return $words[0] ?? '';
     }
 
     /**
@@ -283,9 +328,13 @@ class NumberToWords
      * @param  string $result
      * @return string
      */
-    private function fixSpacingIssuesAndAddCurrencyName($result)
+    private function fixSpacingIssuesAndAddCurrencyName($result, $num)
     {
         $result = preg_replace('/\s+/', ' ', $result);
+
+        $dollarWord = $num > 1 ? 'dollars' : 'dollar';
+        
+        $dollarWord = $num < 2 ? 'dollar' : $dollarWord;
         
         if (str_starts_with($result, ' and ')) {
             $result = str_replace(' and ', '', $result);
@@ -293,10 +342,10 @@ class NumberToWords
 
         if (str_contains($result, 'cent')) {
             if (str_contains($result, ' and ')) {
-                $result = str_replace(' and ', ' dollar and ', $result);
+                $result = str_replace(' and ', " $dollarWord and ", $result);
             }
         } else {
-            $result .= ' dollar';
+            $result .= " $dollarWord";
         }
 
         return $result;

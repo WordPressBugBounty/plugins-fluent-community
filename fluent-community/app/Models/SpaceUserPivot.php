@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Models;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\XProfile;
 
@@ -15,7 +16,8 @@ class SpaceUserPivot extends Model
         'space_id',
         'user_id',
         'status',
-        'role'
+        'role',
+        'meta'
     ];
 
     public function scopeBySpace($query, $spaceId)
@@ -55,4 +57,32 @@ class SpaceUserPivot extends Model
     {
         return $this->belongsTo(BaseSpace::class, 'space_id', 'id')->withoutGlobalScopes();
     }
+
+    public function setMetaAttribute($value)
+    {
+        $this->attributes['meta'] = maybe_serialize($value);
+    }
+
+    public function getMetaAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $decodedMeta = json_decode($value, true);
+            if (is_array($decodedMeta)) {
+                $value = $decodedMeta;
+            }
+        }
+
+        $value = Utility::safeUnserialize($value);
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return $value;
+    }
+
 }

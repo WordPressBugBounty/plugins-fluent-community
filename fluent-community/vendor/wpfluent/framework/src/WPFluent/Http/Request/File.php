@@ -66,7 +66,7 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
      * 
      * @param  string $path
      * @param  int|null $size
-     * @param  string|nill $error
+     * @param  string|null $error
      * @return void
      */
     protected function init($path, $size, $error)
@@ -144,6 +144,11 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
     public function isValid()
     {
         $isOk = UPLOAD_ERR_OK === $this->getError();
+
+        // Allow fake uploads in tests
+        if (str_contains(App::make()->env(), 'test')) {
+            return $isOk;
+        }
 
         return $isOk && is_uploaded_file($this->getPathname());
     }
@@ -423,7 +428,7 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
      *
      * @param string $directory Target Path
      * @param string $name Target file name (optional)
-     * @return self
+     * @return string
      * @throws RuntimeException
      */
     protected function getTargetFile($directory, $name = null)
@@ -440,18 +445,71 @@ class File extends SplFileInfo implements Contract, JsonSerializable, ArrayAcces
             );
         }
 
-        return $directory . DIRECTORY_SEPARATOR . (
-            $name ? $this->getName($name) : $this->originalName
-        );
+        return $this->makeTargetPath($directory, $name);
     }
 
-    protected function newInstance($directory, $targetName)
+    /**
+     * Resolves the absolute path for saving.
+     * 
+     * @param  string $dir
+     * @param  string $name
+     * @return string
+     */
+    protected function makeTargetPath($dir, $name)
     {
-        $sep = DIRECTORY_SEPARATOR;
+        return $dir . DIRECTORY_SEPARATOR . $this->resolveFileName($name);
+    }
 
-        $path = rtrim($directory, "/\\") . $sep . $targetName;
+    /**
+     * Resolves the file name for saving.
+     * 
+     * @param  string|null $name
+     * @return string
+     */
+    protected function resolveFileName($name = null)
+    {
+        if ($name) {
+            $name = $this->getName($name);
+            if (!$this->hasExtension($name)) {
+                $name .= '.' . $this->guessExtension();
+            }
+        } else {
+            $name = $this->originalName;
+        }
 
-        return new static($path, '');
+        return $name;
+    }
+
+    /**
+     * Retrieve the extension of the uploaded file.
+     * 
+     * @return string
+     */
+    public function extension()
+    {
+        return $this->guessExtension();
+    }
+
+    /**
+     * Get the temporary file path.
+     *
+     * @return string
+     */
+    public function path()
+    {
+        return $this->getPathname();
+    }
+
+    /**
+     * Check if the given filename has an extension.
+     * 
+     * @param  string $filename
+     * @return boolean
+     */
+    protected function hasExtension($filename)
+    {
+        $info = pathinfo($filename);
+        return isset($info['extension']) && $info['extension'] !== '';
     }
 
     /**

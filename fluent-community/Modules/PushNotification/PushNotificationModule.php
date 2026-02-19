@@ -83,7 +83,7 @@ class PushNotificationModule
                 $title = \sprintf(__('💬 by %1$s: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             case 'notifed_to_mentions':
-                $title = \sprintf(__('%1s mentioned you on: %2$s', 'fluent-community'), $commenter, $feedTitle);
+                $title = \sprintf(__('%1$s mentioned you on: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             case 'notifed_to_other_users':
                 $title = \sprintf(__('New comment by %1$s on: %2$s', 'fluent-community'), $commenter, $feedTitle);

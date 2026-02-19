@@ -21,7 +21,8 @@ class ProfileController extends Controller
 {
     public function getProfile(Request $request, $userName)
     {
-        $xprofile = XProfile::where('username', $userName)->firstOrFail();
+        $xprofile = XProfile::where('username', $userName)
+            ->firstOrFail();
 
         if ($xprofile->status != 'active' && !Helper::isModerator()) {
             return $this->sendError([
@@ -30,28 +31,34 @@ class ProfileController extends Controller
             ]);
         }
 
+        $canViewProfile = Utility::canViewUserProfile($xprofile->user_id);
+
         $user = get_user_by('ID', $xprofile->user_id);
 
         $profile = [
-            'user_id'                    => $xprofile->user_id,
-            'is_verified'                => $xprofile->is_verified,
-            'display_name'               => $xprofile->display_name,
-            'username'                   => $xprofile->username,
-            'avatar'                     => $xprofile->avatar,
-            'created_at'                 => $xprofile->created_at->format('Y-m-d H:i:s'),
-            'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml($xprofile->short_description)),
-            'cover_photo'                => Arr::get($xprofile->meta, 'cover_photo'),
-            'website'                    => Arr::get($xprofile->meta, 'website'),
-            'social_links'               => (object)Arr::get($xprofile->meta, 'social_links', []),
-            'status'                     => $xprofile->status,
-            'badge_slugs'                => (array)Arr::get($xprofile->meta, 'badge_slug', []),
-            'compilation_score'          => $xprofile->getCompletionScore(),
-            'total_points'               => $xprofile->total_points,
-            'canViewUserSpaces'          => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
+            'user_id'           => $xprofile->user_id,
+            'is_verified'       => $xprofile->is_verified,
+            'display_name'      => $xprofile->display_name,
+            'username'          => $xprofile->username,
+            'avatar'            => $xprofile->avatar,
+            'cover_photo'       => Arr::get($xprofile->meta, 'cover_photo'),
+            'total_points'      => $xprofile->total_points,
+            'badge_slugs'       => (array)Arr::get($xprofile->meta, 'badge_slug', []),
+            'status'            => $xprofile->status,
+            'is_restricted'     => !$canViewProfile,
+            'canViewUserSpaces' => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
         ];
 
-        if (Utility::getPrivacySetting('show_last_activity') === 'yes' || Helper::isModerator()) {
+        if (Utility::showLastActivity()) {
             $profile['last_activity'] = $xprofile->last_activity;
+        }
+
+        if ($canViewProfile) {
+            $profile['website'] = Arr::get($xprofile->meta, 'website');
+            $profile['created_at'] = $xprofile->created_at->format('Y-m-d H:i:s');
+            $profile['social_links'] = (object) Arr::get($xprofile->meta, 'social_links', []);
+            $profile['compilation_score'] = $xprofile->getCompletionScore();
+            $profile['short_description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($xprofile->short_description));
         }
 
         $currentUserId = get_current_user_id();
@@ -61,9 +68,14 @@ class ProfileController extends Controller
         $isAdmin = Helper::isSiteAdmin($currentUserId);
 
         if ($isOwn || $isAdmin) {
+            $enableUserSync = Utility::getPrivacySetting('enable_user_sync') === 'yes';
+            $nameArray = explode(' ', trim($xprofile->display_name));
+            $xprofileLastName = array_pop($nameArray);
+            $xprofileFirstName = implode(' ', $nameArray);
+
             $profile['email'] = $user->user_email;
-            $profile['first_name'] = $user->first_name;
-            $profile['last_name'] = $user->last_name;
+            $profile['first_name'] = $enableUserSync ? $user->first_name : $xprofileFirstName;
+            $profile['last_name'] = $enableUserSync ? $user->last_name : $xprofileLastName;
             $profile['short_description'] = $xprofile->short_description;
             $profile['can_change_username'] = $isAdmin || Utility::getPrivacySetting('can_customize_username') === 'yes';
             $profile['can_change_email'] = current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn);
@@ -115,7 +127,7 @@ class ProfileController extends Controller
         ];
 
         $profile['profile_nav_actions'] = [];
-        
+
         $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile);
 
         return [
@@ -213,11 +225,10 @@ class ProfileController extends Controller
         $currentUser = $this->getUser(true);
         $data = $request->get('data', []);
 
-        if ($currentUser->isCommunityModerator()) {
-            $xProfile = XProfile::where('user_id', $data['user_id'])->firstOrFail();
-        } else {
-            $xProfile = XProfile::where('username', $userName)->firstOrFail();
-            if ($xProfile->user_id != get_current_user_id()) {
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+
+        if ($xProfile->user_id != get_current_user_id()) {
+            if(!$currentUser->isCommunityModerator()) {
                 return $this->sendError([
                     'message' => __('You are not allowed to update this profile', 'fluent-community')
                 ]);
@@ -399,6 +410,28 @@ class ProfileController extends Controller
         ];
     }
 
+    public function getAllMemberships(Request $request, $userName)
+    {
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+
+        $currentUser = $this->getUser();
+
+        if (!ProfileHelper::canViewUserSpaces($xProfile->user_id, $currentUser)) {
+            return $this->sendError([
+                'message'           => __('You are not allowed to view this profile\'s membership.', 'fluent-community'),
+                'permission_failed' => true
+            ]);
+        }
+
+        $memberships = $xProfile->space_pivot()
+            ->where('status', 'active')
+            ->pluck('space_id');
+
+        return apply_filters('fluent_community/profile_all_memberships_api_response', [
+            'memberships' => $memberships
+        ], $request->all());
+    }
+
     public function getSpaces(Request $request, $userName)
     {
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
@@ -423,7 +456,6 @@ class ProfileController extends Controller
         }
 
         foreach ($spaces as $space) {
-
             $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
             if ($shouldHideMembersCount && !$canViewMembers) {
@@ -465,8 +497,8 @@ class ProfileController extends Controller
                         ]);
                 }
             ])
-            ->when(!$hasAllAccess, function ($q) use ($xProfile) {
-                $q->whereHas('post', function ($query) use ($xProfile) {
+            ->when(!$hasAllAccess, function ($q) {
+                $q->whereHas('post', function ($query) {
                     $query->byUserAccess(get_current_user_id());
                     $query->where('type', 'text');
                 });

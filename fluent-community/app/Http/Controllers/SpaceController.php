@@ -202,26 +202,59 @@ class SpaceController extends Controller
         return apply_filters('fluent_community/spaces_api_response', $data, $request->all());
     }
 
+    public function getAllSpaces(Request $request)
+    {
+        $spaces = Space::paginate();
+
+        $currentUser = $this->getUser();
+
+        foreach ($spaces as $space) {
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
+
+            if ($shouldHideMembersCount && !$canViewMembers) {
+                $space->members_count = 0;
+                continue;
+            }
+
+            $space->members_count = SpaceUserPivot::where('space_id', $space->id)->where('status', 'active')
+                ->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                })
+                ->whereHas('user')
+                ->count();
+
+            $space->formatSpaceData($currentUser);
+            do_action_ref_array('fluent_community/space', [&$space]);
+        }
+
+        return apply_filters('fluent_community/all_spaces_api_response', [
+            'spaces' => $spaces
+        ], $request->all());
+    }
+
     public function getBySlug(Request $request, $spaceSlug)
     {
         $user = $this->getUser();
         $space = Space::where('slug', $spaceSlug)
             ->firstOrFail();
 
-        $space = $space->formatSpaceData($user);
-
-        if ($space->privacy == 'secret' && !$space->membership) {
+        $userId = $user ? $user->ID : null;
+        if ($space->privacy == 'secret' && !$space->getMembership($userId)) {
             return $this->sendError([
                 'message'    => __('You are not allowed to view this space', 'fluent-community'),
                 'error_type' => 'restricted'
             ]);
         }
 
+        $space = $space->formatSpaceData($user);
+
         do_action_ref_array('fluent_community/space', [&$space]);
 
         $data = [
             'space' => $space
         ];
+
         return apply_filters('fluent_community/space_api_response', $data, $request->all());
     }
 
@@ -304,7 +337,7 @@ class SpaceController extends Controller
         }
 
         return [
-            'message'      => __('Settings has been updated', 'fluent-community'),
+            'message'      => __('Settings have been updated', 'fluent-community'),
             'redirect_url' => $slugUpdated ? $space->getPermalink() : ''
         ];
     }
@@ -350,10 +383,10 @@ class SpaceController extends Controller
                     ->where('status', 'pending')
                     ->paginate();
 
-                return [
+                return apply_filters('fluent_community/space_members_api_response', [
                     'members'       => $pendingRequests,
                     'pending_count' => $pendingCount
-                ];
+                ], $pendingRequests, $request->all());
             }
         }
 
@@ -718,10 +751,10 @@ class SpaceController extends Controller
 
         foreach ($groups as $group) {
             foreach ($group->spaces as $space) {
+                $space->permalink = $space->getPermalink();
                 if ($space->type === 'community') {
                     $space = $space->formatSpaceData($user);
                 } else {
-                    $space->permalink = $space->getPermalink();
                     $space->topics = Utility::getTopicsBySpaceId($space->id);
                 }
             }
@@ -734,10 +767,10 @@ class SpaceController extends Controller
             ->get();
 
         foreach ($orphanedSpaces as $space) {
+            $space->permalink = $space->getPermalink();
             if ($space->type === 'community') {
                 $space = $space->formatSpaceData($user);
             } else {
-                $space->permalink = $space->getPermalink();
                 $space->topics = Utility::getTopicsBySpaceId($space->id);
             }
         }

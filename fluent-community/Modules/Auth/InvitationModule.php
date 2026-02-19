@@ -17,8 +17,8 @@ class InvitationModule
     {
         $app->router->group(function ($router) {
             $router->prefix('invitations')
-                ->namespace('\FluentCommunity\Modules\Auth\Classes')
-                ->withPolicy('\FluentCommunity\Modules\Auth\Classes\InvitationPolicy')
+                ->namespace('FluentCommunity\Modules\Auth\Classes')
+                ->withPolicy('FluentCommunity\Modules\Auth\Classes\InvitationPolicy')
                 ->group(function ($router) {
                     $router->get('/', 'InvitationController@getInvitations');
                     $router->delete('/{invitation_id}', 'InvitationController@delete')->int('invitation_id');

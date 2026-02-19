@@ -34,16 +34,26 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
                             <div class="community_avatar">
                             <span class="fcom_shape">
                                 <i class="el-icon">
-                                    <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
-                                        <path fill-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"/>
-                                        <path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"/>
-                                        <path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    </svg>
+                                    <?php if (!empty($primaryItems['all_feeds'])): ?>
+                                        <?php echo Helper::printLinkIcon($primaryItems['all_feeds']); ?>
+                                    <?php else: ?>
+                                        <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
+                                            <path fill-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"/>
+                                            <path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    <?php endif; ?>
                                 </i>
                             </span>
                             </div>
-                            <span class="community_name"><?php esc_html_e('Feed', 'fluent-community'); ?></span>
+                            <span class="community_name">
+                                <?php if (!empty($primaryItems['all_feeds']['title'])): ?>
+                                    <?php echo esc_html($primaryItems['all_feeds']['title']); ?>
+                                <?php else: ?>
+                                    <?php esc_html_e('Feed', 'fluent-community'); ?>
+                                <?php endif; ?>
+                            </span>
                         </a>
                     </li>
                 <?php endif; ?>

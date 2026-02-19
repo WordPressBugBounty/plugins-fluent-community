@@ -27,9 +27,22 @@ class CommentsController extends Controller
             ];
         }
 
+        $stickyComment = Comment::where('post_id', $feed->id)
+            ->where('is_sticky', 1)
+            ->with([
+                'xprofile' => function ($q) {
+                    $q->select(ProfileHelper::getXProfilePublicFields());
+                }
+            ])
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->first();
+
         $comments = Comment::where('post_id', $feed->id)
             ->byContentModerationAccessStatus($this->getUser())
             ->orderBy('created_at', 'asc')
+            ->where('is_sticky', 0)
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
@@ -40,7 +53,7 @@ class CommentsController extends Controller
             })
             ->get();
 
-        $comments = apply_filters('fluent_community/comments_query_response', $comments, $request->all());    
+        $comments = apply_filters('fluent_community/comments_query_response', $comments, $request->all());
 
         $userId = $this->getUserId();
 
@@ -53,11 +66,18 @@ class CommentsController extends Controller
                         $comment->liked = 1;
                     }
                 });
+
+                if ($stickyComment) {
+                    if (in_array($stickyComment->id, $likedIds)) {
+                        $stickyComment->liked = 1;
+                    }
+                }
             }
         }
 
         $data = [
-            'comments' => $comments
+            'comments'       => $comments,
+            'sticky_comment' => $stickyComment
         ];
 
         return apply_filters('fluent_community/comments_api_response', $data, $request->all());
@@ -81,24 +101,28 @@ class CommentsController extends Controller
 
         $requestData = $request->all();
 
-        // Check for duplicate
-        $exist = Comment::where('user_id', get_current_user_id())
-            ->where('message', $text)
-            ->where('post_id', $feed->id)
-            ->first();
+        // Check for duplicate (only for comments with text)
+        if ($text) {
+            $exist = Comment::where('user_id', get_current_user_id())
+                ->where('message', $text)
+                ->where('post_id', $feed->id)
+                ->first();
 
-        if ($exist) {
-            return $this->sendError([
-                'message' => __('No duplicate comment please!', 'fluent-community')
-            ]);
+            if ($exist) {
+                return $this->sendError([
+                    'message' => __('No duplicate comment please!', 'fluent-community')
+                ]);
+            }
         }
 
-        $mentions = FeedsHelper::getMentions($text, $feed->space_id, true);
-        $commentHtml = $this->generateCommentHtml($text, $mentions);
+        [$markdown, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($text);
+        $mentions = FeedsHelper::getMentions($markdown, $feed->space_id, true);
+        $commentHtml = $this->generateCommentHtml($markdown, $mentions);
+
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
 
-        if ($parentId = $request->get('parent_id')) {
-            $parentId = (int)$parentId;
+        if (!empty($requestData['parent_id'])) {
+            $parentId = (int)$requestData['parent_id'];
             $parentComment = Comment::where('id', $parentId)
                 ->where('post_id', $feed->id)
                 ->first();
@@ -129,15 +153,23 @@ class CommentsController extends Controller
         $feed->comments_count = $feed->comments_count + 1;
         $feed->save();
 
+
+        // Merge and save all media in one loop
+        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [$mediaItems]) : [];
+
+        if ($inlineMedias) {
+            $mediaItems = array_merge($mediaItems, $inlineMedias);
+        }
+
         if ($mediaItems) {
-            foreach ($mediaItems as $mediaItem) {
-                $mediaItem->fill([
+            foreach ($mediaItems as $media) {
+                $media->fill([
                     'is_active'     => 1,
                     'feed_id'       => $feed->id,
                     'object_source' => 'comment',
                     'sub_object_id' => $comment->id
                 ]);
-                $mediaItem->save();
+                $media->save();
             }
         }
 
@@ -165,6 +197,7 @@ class CommentsController extends Controller
     public function update(Request $request, $feedId, $commentId)
     {
         $text = $this->validateCommentText($request->all());
+
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $this->verifySpacePermission($feed);
 
@@ -180,9 +213,11 @@ class CommentsController extends Controller
             ]);
         }
 
-        $mentions = FeedsHelper::getMentions($text, $feed->space_id);
+        [$markdown, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($text, $feed);
 
-        $commentHtml = $this->generateCommentHtml($text, $mentions);
+        $mentions = FeedsHelper::getMentions($markdown, $feed->space_id);
+
+        $commentHtml = $this->generateCommentHtml($markdown, $mentions);
 
         $commentData = $this->prepareCommentData($feed->id, $text, $commentHtml);
 
@@ -198,8 +233,16 @@ class CommentsController extends Controller
             $comment->save();
         }
 
+        // Merge and save all media in one loop
+        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [$mediaItems]) : [];
+
+        if ($inlineMedias) {
+            $mediaItems = array_merge($mediaItems, $inlineMedias);
+        }
+
+        $allMediaIds = [];
+
         if ($mediaItems) {
-            $mediaIds = [];
             foreach ($mediaItems as $media) {
                 $media->fill([
                     'is_active'     => 1,
@@ -208,29 +251,20 @@ class CommentsController extends Controller
                     'sub_object_id' => $comment->id
                 ]);
                 $media->save();
-                $mediaIds[] = $media->id;
+                $allMediaIds[] = $media->id;
             }
+        }
 
-            // remove other media
-            $otherMedias = Media::where('object_source', 'comment')
-                ->when($mediaIds, function ($q) use ($mediaIds) {
-                    $q->whereNotIn('id', $mediaIds);
-                })
-                ->where('sub_object_id', $comment->id)
-                ->get();
+        // Remove old media not in current list
+        $otherMedias = Media::where('object_source', 'comment')
+            ->when($allMediaIds, function ($q) use ($allMediaIds) {
+                $q->whereNotIn('id', $allMediaIds);
+            })
+            ->where('sub_object_id', $comment->id)
+            ->get();
 
-            if (!$otherMedias->isEmpty()) {
-                do_action('fluent_community/comment/media_deleted', $otherMedias);
-            }
-        } else {
-            // remove other media
-            $otherMedias = Media::where('object_source', 'comment')
-                ->where('sub_object_id', $comment->id)
-                ->get();
-
-            if (!$otherMedias->isEmpty()) {
-                do_action('fluent_community/comment/media_deleted', $otherMedias);
-            }
+        if (!$otherMedias->isEmpty()) {
+            do_action('fluent_community/comment/media_deleted', $otherMedias);
         }
 
         $this->loadCommentRelations($comment);
@@ -244,6 +278,58 @@ class CommentsController extends Controller
             'comment' => $comment,
             'message' => __('Comment has been updated', 'fluent-community'),
         ];
+    }
+
+    public function patchComment(Request $request, $feedId, $commentId)
+    {
+        $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
+
+        $comment = Comment::findOrFail($commentId);
+
+        $user = $this->getUser(true);
+
+        $isMod = $user && $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
+        $isAdmin = $user && $user->hasPermissionOrInCurrentSpace('community_admin', $feed->space);
+
+        if (!$isMod && !$isAdmin) {
+            return $this->sendError([
+                'message' => __('You do not have permission to perform this action', 'fluent-community')
+            ]);
+        }
+
+        $allData = $request->all();
+        $validKeys = ['is_sticky'];
+
+        $data = Arr::only($allData, $validKeys);
+
+        $data = array_map('intval', $data);
+
+        if (isset($data['is_sticky'])) {
+            if ($comment->parent_id) {
+                return $this->sendError([
+                    'message' => __('You cannot pin a reply comment', 'fluent-community')
+                ]);
+            }
+
+            $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
+            if ($data['is_sticky']) {
+                Comment::where('post_id', $feed->id)->update(['is_sticky' => 0]);
+            }
+        }
+
+        if ($data) {
+            $comment->fill($data);
+            $dirty = $comment->getDirty();
+            if ($dirty) {
+                $comment->save();
+                do_action('fluent_community/comment/updated', $comment, $dirty);
+            }
+        }
+
+        return apply_filters('fluent_community/comment/patch_comment_response', [
+            'comment' => $comment,
+            'message' => __('Comment updated', 'fluent-community')
+        ], $comment, $feed, $request->all());
     }
 
     private function prepareCommentMedia($commentData, $requestData, $exisitngComment = null)
@@ -278,33 +364,33 @@ class CommentsController extends Controller
                 }
                 $commentData['meta']['media_items'] = $mediaData;
                 return [$commentData, $mediaItems];
-            } else {
-                $uploadedImages = Helper::getMediaByProvider($mediaImages);
-                if ($uploadedImages) {
-                    $mediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
-                    if ($mediaItems) {
-                        $mediaPreviews = [];
-                        foreach ($mediaItems as $mediaItem) {
-                            $mediaData = [
-                                'media_id' => $mediaItem->id,
-                                'url'      => $mediaItem->public_url,
-                                'type'     => 'image',
-                                'width'    => Arr::get($mediaItem->settings, 'width'),
-                                'height'   => Arr::get($mediaItem->settings, 'height'),
-                                'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
-                            ];
+            }
 
-                            $mediaPreviews[] = array_filter($mediaData);
-                        }
-                        $commentData['meta']['media_items'] = $mediaPreviews;
-                        return [$commentData, $mediaItems];
+            $uploadedImages = Helper::getMediaByProvider($mediaImages);
+            if ($uploadedImages) {
+                $mediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
+                if ($mediaItems) {
+                    $mediaPreviews = [];
+                    foreach ($mediaItems as $mediaItem) {
+                        $mediaData = [
+                            'media_id' => $mediaItem->id,
+                            'url'      => $mediaItem->public_url,
+                            'type'     => 'image',
+                            'width'    => Arr::get($mediaItem->settings, 'width'),
+                            'height'   => Arr::get($mediaItem->settings, 'height'),
+                            'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
+                        ];
+
+                        $mediaPreviews[] = array_filter($mediaData);
                     }
+                    $commentData['meta']['media_items'] = $mediaPreviews;
+                    return [$commentData, $mediaItems];
                 }
             }
         }
 
         if (empty($requestData['meta']['media_preview']['image'])) {
-            return [$commentData, null];
+            return [$commentData, []];
         }
 
         if ($exisitngComment) {
@@ -316,7 +402,7 @@ class CommentsController extends Controller
 
             if ($existingMedia) {
                 $commentData['meta'] = $exisitngComment->meta;
-                return [$commentData, $existingMedia];
+                return [$commentData, [$existingMedia]];
             }
         }
 
@@ -328,7 +414,7 @@ class CommentsController extends Controller
             'width'    => Arr::get($requestData, 'meta.media_preview.width', 0),
         ]);
 
-        return [$commentData, null];
+        return [$commentData, []];
     }
 
     private function validateCommentText($data)
@@ -336,10 +422,19 @@ class CommentsController extends Controller
         $text = trim(Arr::get($data, 'comment'));
         $text = CustomSanitizer::unslashMarkdown($text);
 
+        // Decode HTML entities (e.g., &#x20; for space) and strip all whitespace for validation
+        $textForValidation = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $textForValidation = preg_replace('/\s+/u', '', $textForValidation);
+
         $hasMedia = Arr::get($data, 'media_images', []) || Arr::get($data, 'meta.media_preview.image', false);
 
-        if (!$text && !$hasMedia) {
-            throw new \Exception(esc_html__('Please provide your reply text', 'fluent-community'), 422);
+        $isReply = !empty($data['parent_id']);
+        if (!$textForValidation && !$hasMedia) {
+            if ($isReply) {
+                throw new \Exception(esc_html__('Reply cannot be empty.', 'fluent-community'), 422);
+            } else {
+                throw new \Exception(esc_html__('Comment cannot be empty.', 'fluent-community'), 422);
+            }
         }
 
         $maxCommentLength = apply_filters('fluent_community/max_comment_char_length', 10000);
@@ -361,7 +456,6 @@ class CommentsController extends Controller
 
     private function verifySpacePermission($feed)
     {
-
         if ($feed->space_id && $feed->space) {
             $user = $this->getUser(true);
             $user->verifySpacePermission('can_comment', $feed->space);
@@ -431,6 +525,7 @@ class CommentsController extends Controller
                     $feed->reactions_count = $feed->reactions_count - 1;
                     $feed->timestamps = false; // Don't update the updated_at timestamp
                     $feed->save();
+                    do_action('fluent_community/feed/react_removed', $feed);
                 }
             }
 
@@ -545,6 +640,7 @@ class CommentsController extends Controller
             if ($reaction->wasRecentlyCreated) {
                 $comment->reactions_count = $comment->reactions_count + 1;
                 $comment->save();
+                do_action('fluent_community/comment/react_added', $reaction, $comment, $feed);
             }
         } else {
             // remove the reaction
@@ -556,6 +652,7 @@ class CommentsController extends Controller
             if ($deleted) {
                 $comment->reactions_count = $comment->reactions_count - 1;
                 $comment->save();
+                do_action('fluent_community/comment/react_removed', $comment, $feed);
             }
         }
 

@@ -1,82 +1,205 @@
 {
-  "src/app.css": {
-    "file": "app.css",
-    "src": "src/app.css"
+  "_dayjs.js": {
+    "file": "dayjs.js"
+  },
+  "_element-plus.js": {
+    "file": "element-plus.js",
+    "imports": [
+      "_vue.js",
+      "_lodash.js",
+      "_vendor.js",
+      "_dayjs.js"
+    ]
+  },
+  "_emoji-picker.js": {
+    "file": "emoji-picker.js",
+    "imports": [
+      "_vue.js"
+    ]
+  },
+  "_index6.js": {
+    "file": "index6.js"
+  },
+  "_lodash.js": {
+    "file": "lodash.js",
+    "imports": [
+      "_dayjs.js"
+    ]
+  },
+  "_milkdown.js": {
+    "file": "milkdown.js",
+    "imports": [
+      "_vendor.js",
+      "_lodash.js",
+      "_vue.js"
+    ]
+  },
+  "_pinia.js": {
+    "file": "pinia.js",
+    "imports": [
+      "_vendor.js",
+      "_vue.js"
+    ]
+  },
+  "_todoList.js": {
+    "file": "todoList.js",
+    "imports": [
+      "_vendor.js"
+    ]
+  },
+  "_vendor.js": {
+    "file": "vendor.js",
+    "imports": [
+      "_vue.js",
+      "_dayjs.js"
+    ]
+  },
+  "_vue-router.js": {
+    "file": "vue-router.js",
+    "imports": [
+      "_vue.js"
+    ]
+  },
+  "_vue.js": {
+    "file": "vue.js"
+  },
+  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts": {
+    "file": "index2.js",
+    "imports": [
+      "_index6.js",
+      "_vendor.js",
+      "_todoList.js",
+      "_milkdown.js",
+      "_vue.js",
+      "_dayjs.js",
+      "_lodash.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts"
+  },
+  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts": {
+    "file": "index5.js",
+    "imports": [
+      "_todoList.js",
+      "_milkdown.js",
+      "_vendor.js",
+      "_vue.js",
+      "_dayjs.js",
+      "_lodash.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts"
+  },
+  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts": {
+    "file": "index.js",
+    "imports": [
+      "_todoList.js",
+      "_milkdown.js",
+      "_vendor.js",
+      "_vue.js",
+      "_dayjs.js",
+      "_lodash.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts"
+  },
+  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts": {
+    "file": "index3.js",
+    "imports": [
+      "_index6.js",
+      "_milkdown.js",
+      "_vendor.js",
+      "_lodash.js",
+      "_dayjs.js",
+      "_vue.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts"
+  },
+  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts": {
+    "file": "index4.js",
+    "imports": [
+      "_index6.js",
+      "_vendor.js",
+      "_todoList.js",
+      "_milkdown.js",
+      "_vue.js",
+      "_dayjs.js",
+      "_lodash.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts"
   },
   "src/app.js": {
-    "css": [
-      "app.css"
+    "dynamicImports": [
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts",
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts",
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts",
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts",
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts"
     ],
     "file": "app.js",
+    "imports": [
+      "_vue.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_vendor.js",
+      "_element-plus.js",
+      "_emoji-picker.js",
+      "_lodash.js",
+      "_milkdown.js",
+      "_dayjs.js"
+    ],
     "isEntry": true,
     "src": "src/app.js"
   },
-  "src/admin_app.css": {
-    "file": "admin_app.css",
-    "src": "src/admin_app.css"
+  "style.css": {
+    "file": "global.css",
+    "src": "style.css"
   },
   "src/admin_app.js": {
-    "css": [
-      "admin_app.css"
-    ],
     "file": "admin_app.js",
     "isEntry": true,
     "src": "src/admin_app.js"
   },
-  "src/customizer/customizer_app.css": {
-    "file": "customizer_app.css",
-    "src": "src/customizer/customizer_app.css"
-  },
   "src/customizer/customizer_app.js": {
-    "css": [
-      "customizer_app.css"
-    ],
     "file": "customizer_app.js",
     "isEntry": true,
     "src": "src/customizer/customizer_app.js"
   },
-  "src/Onboarding/onboarding.css": {
-    "file": "onboarding.css",
-    "src": "src/Onboarding/onboarding.css"
-  },
   "src/Onboarding/onboarding.js": {
-    "css": [
-      "onboarding.css"
-    ],
     "file": "onboarding.js",
     "isEntry": true,
     "src": "src/Onboarding/onboarding.js"
   },
-  "src/public/js/user_registration.css": {
-    "file": "user_registration.css",
-    "src": "src/public/js/user_registration.css"
-  },
   "src/public/js/user_registration.js": {
-    "css": [
-      "user_registration.css"
-    ],
     "file": "user_registration.js",
     "isEntry": true,
     "src": "src/public/js/user_registration.js"
-  },
-  "src/global.scss": {
-    "file": "global.css",
-    "isEntry": true,
-    "src": "src/global.scss"
-  },
-  "src/portal_general.js": {
-    "file": "portal_general.js",
-    "isEntry": true,
-    "src": "src/portal_general.js"
   },
   "src/start.js": {
     "file": "start.js",
     "isEntry": true,
     "src": "src/start.js"
   },
+  "src/portal_general.js": {
+    "file": "portal_general.js",
+    "isEntry": true,
+    "src": "src/portal_general.js"
+  },
+  "src/app_css.scss": {
+    "file": "app_css.js",
+    "isEntry": true,
+    "src": "src/app_css.scss"
+  },
   "src/theme-default.scss": {
-    "file": "theme-default.css",
+    "file": "theme-default.js",
     "isEntry": true,
     "src": "src/theme-default.scss"
+  },
+  "src/global.scss": {
+    "file": "global.js",
+    "isEntry": true,
+    "src": "src/global.scss"
   }
 }

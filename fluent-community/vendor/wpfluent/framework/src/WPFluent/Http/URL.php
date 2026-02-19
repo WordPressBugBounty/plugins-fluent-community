@@ -54,6 +54,7 @@ class URL
 	 * Sign a URL
 	 * 
 	 * @param  string $url
+	 * @param  array $params
 	 * @return string
 	 */
 	public function sign($url, $params = [])
@@ -85,6 +86,7 @@ class URL
 	 * 
 	 * @param  array $params
 	 * @return array
+	 * @throws Exception
 	 */
 	public function validateExpiryTime($params)
 	{
@@ -158,9 +160,11 @@ class URL
 
         parse_str($this->encrypter->decrypt($data), $params);
 
-        if (isset($params['expires_at']) && time() > $params['expires_at']) {
-            return false;
-        }
+        $expiresAt = $params['expires_at'] ?? null;
+
+		if (is_numeric($expiresAt) && time() > (int) $expiresAt) {
+		    return false;
+		}
 
         return empty($params) ? true : $params;
 	}
@@ -267,6 +271,19 @@ class URL
 	public function fromFile($path)
 	{
 		return Util::pathToUrl($path);
+	}
+
+	/**
+	 * Generate a URL from a named route.
+	 * 
+	 * @param  string $name
+	 * @param  array  $params
+	 * @param  array  $query
+	 * @return string|null
+	 */
+	public function route($name, $params = [], $query = [])
+	{
+	    return (new UrlGenerator)->route($name, $params, $query);
 	}
 
 	/**

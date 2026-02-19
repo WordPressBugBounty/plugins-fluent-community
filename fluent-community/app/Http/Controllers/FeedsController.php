@@ -53,6 +53,7 @@ class FeedsController extends Controller
                     },
                     'comments'  => function ($q) use ($space, $currentUserModel) {
                         $q->byContentModerationAccessStatus($currentUserModel, $space)
+                            ->where('is_sticky', 0)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }])
@@ -80,7 +81,7 @@ class FeedsController extends Controller
             )
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
-            ->customOrderBy($request->get('order_by_type', ''));
+            ->customOrderBy($request->getSafe('order_by_type'));
 
         $stickyFeed = null;
 
@@ -102,9 +103,13 @@ class FeedsController extends Controller
                             },
                             'comments'  => function ($q) use ($space) {
                                 $q->byContentModerationAccessStatus($this->getUser(), $space)
+                                    ->where('is_sticky', 0)
                                     ->with(['xprofile' => function ($q) {
                                         $q->select(ProfileHelper::getXProfilePublicFields());
-                                    }]);
+                                    }])
+                                    ->whereHas('xprofile', function ($q) {
+                                        $q->where('status', 'active');
+                                    });
                             },
                             'space'     => function ($q) {
                                 $q->select(['id', 'title', 'slug', 'type']);
@@ -212,7 +217,6 @@ class FeedsController extends Controller
             ];
 
             return apply_filters('fluent_community/feed_api_response', $data, $request->all());
-
         }
 
         $feed = Feed::where('slug', $feed_slug)
@@ -226,6 +230,7 @@ class FeedsController extends Controller
                 },
                 'comments'  => function ($q) {
                     $q->byContentModerationAccessStatus($this->getUser())
+                        ->where('is_sticky', 0)
                         ->with(['xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
                         }])
@@ -261,7 +266,7 @@ class FeedsController extends Controller
 
         if ($feed->status != 'published' && !$feed->hasEditAccess($this->getUserId())) {
             return $this->sendError([
-                'message' => __('Sorry, you do not have permission to view this ', 'fluent-community')
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
             ], 404);
         }
 
@@ -292,24 +297,30 @@ class FeedsController extends Controller
                     },
                     'comments' => function ($q) {
                         $q->byContentModerationAccessStatus($this->getUser())
+                            ->where('is_sticky', 0)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
-                            }]);
+                            }])
+                            ->whereHas('xprofile', function ($q) {
+                                $q->where('status', 'active');
+                            });
                     },
                     'space'
                 ]
             )
             ->byBookMarked($userId)
             ->byUserAccess($userId)
-            ->searchBy($request->get('search'));
+            ->byTopicSlug($request->getSafe('topic_slug'))
+            ->customOrderBy($request->getSafe('order_by_type'))
+            ->searchBy($request->getSafe('search'));
 
         if ($type = $request->get('type')) {
             $feedsQuery = $feedsQuery->where('type', $type);
         }
 
         $queryArgs = [
-            'per_page'       => (int)$request->get('per_page', 10),
-            'page'           => (int)$request->get('page', 1)
+            'per_page' => (int)$request->get('per_page', 10),
+            'page'     => (int)$request->get('page', 1)
         ];
 
         $feeds = $feedsQuery->orderBy('id', 'DESC')
@@ -325,7 +336,7 @@ class FeedsController extends Controller
         $feeds = FeedsHelper::transformFeedsCollection($feeds);
 
         $data = [
-            'feeds'  => [
+            'feeds' => [
                 'data'         => $feeds,
                 'current_page' => $queryArgs['page'],
                 'per_page'     => $queryArgs['per_page'],
@@ -342,14 +353,16 @@ class FeedsController extends Controller
                 $data['last_id'] = $lastItem;
             }
         }
-        
+
         return apply_filters('fluent_community/bookmarks_api_response', $data, $request->all());
     }
 
     public function store(Request $request)
     {
         $user = $this->getUser(true);
+
         do_action('fluent_community/check_rate_limit/create_post', $user);
+
         $requestData = $request->all();
 
         $data = $this->sanitizeAndValidateData($requestData);
@@ -411,12 +424,18 @@ class FeedsController extends Controller
             $message = $mentions['text'];
         }
 
+        [$message, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($message);
+
         // replace new line with br
         $data['message_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($message));
 
         $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $space);
 
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData);
+
+        if ($inlineMedias) {
+            $mediaItems = array_merge($mediaItems, $inlineMedias);
+        }
 
         if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
             $data['meta']['send_announcement_email'] = 'yes';
@@ -542,10 +561,16 @@ class FeedsController extends Controller
             $message = $mentions['text'];
         }
 
+        [$message, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($message, $existingFeed);
+
         // replace new line with br
         $data['message_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($message));
 
         [$data, $mediaItems] = FeedsHelper::processFeedMetaData($data, $requestData, $existingFeed);
+
+        if($inlineMedias) {
+            $mediaItems = array_merge($mediaItems, $inlineMedias);
+        }
 
         if (isset($existingFeed->meta['comments_disabled'])) {
             $data['meta']['comments_disabled'] = $existingFeed->meta['comments_disabled'];
@@ -570,6 +595,10 @@ class FeedsController extends Controller
 
         $newContentType = Arr::get($requestData, 'content_type', '');
         $exisitngContentType = $existingFeed->content_type;
+
+        if (($newContentType === 'document' && empty($requestData['document_ids'])) || ($newContentType === '' && $exisitngContentType === 'document' && empty($requestData['survey']))) {
+            $newContentType = $data['content_type'] = 'text';
+        }
 
         if ($newContentType != $exisitngContentType) {
             // Content Type Changed
@@ -717,7 +746,9 @@ class FeedsController extends Controller
             $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
             if ($data['is_sticky'] && $feed->space_id) {
                 // remove all the sticky posts from the space
-                Feed::where('space_id', $feed->space_id)->update(['is_sticky' => 0]);
+                Feed::where('space_id', $feed->space_id)
+                    ->where('is_sticky', 1)
+                    ->update(['is_sticky' => 0]);
             }
         }
 
@@ -888,6 +919,14 @@ class FeedsController extends Controller
 
     public function handleMediaUpload(Request $request)
     {
+        if ($error = Helper::checkUploadSizeError()) {
+            return $this->sendError($error, 413);
+        }
+
+        $user = $this->getUser(true);
+
+        do_action('fluent_community/check_rate_limit/media_upload', $user);
+
         $allowedTypes = implode(
             ',',
             apply_filters('fluent_community/support_attachment_types', [
@@ -1148,39 +1187,273 @@ class FeedsController extends Controller
     {
         $start = microtime(true);
 
-        do_action('fluent_community/track_activity');
-        $lastLoadedTimeStamp = (int)$request->get('last_fetched_timestamp');
-
-        //check if $lastLoadedTimeStamp is valid date
-        if (!$lastLoadedTimeStamp || (current_time('timestamp') - $lastLoadedTimeStamp) > HOUR_IN_SECONDS) {
+        $userId = get_current_user_id();
+        if (!$userId) {
             return [
-                'last_fetched_timestamp' => current_time('timestamp'),
-                'error'                  => 'Invalid timestamp',
-                'given'                  => $lastLoadedTimeStamp
+                'timestamp'   => current_time('mysql', true),
+                'has_changes' => false,
+                'error'       => 'User not authenticated',
+                'feeds'       => []
+            ];
+        }
+
+        do_action('fluent_community/track_activity');
+
+
+        // Support both old and new format
+        $since = $request->get('since');
+        if (!$since) {
+            $since = date('Y-m-d H:i:s', current_time('timestamp') - 60);
+        } else {
+            $timestamp = strtotime($since);
+            if (current_time('timestamp') - $timestamp > 300) {
+                $since = date('Y-m-d H:i:s', current_time('timestamp') - 60);
+            }
+        }
+
+        $feedUpdates = [];
+        $hasChanges = false;
+
+        // Get feed updates if since timestamp provided
+        if ($since) {
+            // Get all updated/created feeds with full data (including relationships)
+            $currentUserModel = Helper::getCurrentUser();
+            $updatedFeeds = Feed::where('updated_at', '>', $since)
+                ->where('status', 'published')
+                ->byUserAccess($userId)
+                ->with([
+                    'xprofile'  => function ($q) {
+                        $q->select(ProfileHelper::getXProfilePublicFields());
+                    },
+                    'comments'  => function ($q) use ($currentUserModel) {
+                        $q->byContentModerationAccessStatus($currentUserModel, null)
+                            ->where('is_sticky', 0)
+                            ->with(['xprofile' => function ($q) {
+                                $q->select(ProfileHelper::getXProfilePublicFields());
+                            }])
+                            ->whereHas('xprofile', function ($q) {
+                                $q->where('status', 'active');
+                            });
+                    },
+                    'space'     => function ($q) {
+                        $q->select(['id', 'title', 'slug', 'type']);
+                    },
+                    'reactions' => function ($q) {
+                        $q->with([
+                            'xprofile' => function ($query) {
+                                $query->select(['user_id', 'avatar', 'display_name']);
+                            }
+                        ])
+                            ->where('type', 'like')
+                            ->limit(3);
+                    },
+                    'terms'     => function ($q) {
+                        $q->select(['title', 'slug'])
+                            ->where('taxonomy_name', 'post_topic');
+                    }
+                ])
+                ->orderBy('updated_at', 'desc')
+                ->limit(20) // Reduced limit since we're sending full data
+                ->get();
+
+            // Transform feeds to include all necessary data
+            $transformedFeeds = FeedsHelper::transformFeedsCollection($updatedFeeds);
+
+            foreach ($transformedFeeds as $feed) {
+                $isNew = $feed->created_at >= $since;
+
+                // Determine context (primary context)
+                $context = 'global';
+                if ($feed->space_id && $feed->space) {
+                    $context = 'space-' . $feed->space->slug;
+                }
+
+                $feedUpdates[] = [
+                    'id'         => $feed->id,
+                    'updated_at' => $feed->updated_at,
+                    'action'     => $isNew ? 'created' : 'updated',
+                    'context'    => $context,
+                    'user_id'    => $feed->user_id,
+                    'feed_data'  => $feed // Include full feed data
+                ];
+            }
+
+            $hasChanges = !empty($feedUpdates);
+        }
+
+        // Get notification count
+        $notificationCount = NotificationSubscriber::unread()->where('user_id', $userId)->count();
+
+        $response = [
+            'timestamp'      => current_time('mysql'),
+            'has_changes'    => $hasChanges,
+            'feeds'          => $feedUpdates,
+            'notifications'  => [
+                'unread_count' => $notificationCount,
+                'new_count'    => 0 // Could track new since last check
+            ],
+            'spaces'         => [], // For future use
+            'execution_time' => microtime(true) - $start
+        ];
+
+        return apply_filters('fluent_community/feed_ticker', $response, $request->all());
+    }
+
+    public function batchFetch(Request $request)
+    {
+        $feedIds = $request->get('feed_ids', []);
+
+        if (empty($feedIds) || !is_array($feedIds)) {
+            return [
+                'feeds' => [],
+                'error' => 'No feed IDs provided'
             ];
         }
 
         $userId = get_current_user_id();
+
+        // Limit to 20 feeds per batch to prevent abuse
+        $feedIds = array_slice($feedIds, 0, 20);
+
+        // Build query based on context
+        $query = Feed::whereIn('id', $feedIds)
+            ->where('status', 'published')
+            ->byUserAccess($userId);
+
+        $currentUserModel = $this->getUser();
+
+        $feeds = $query
+            ->with([
+                    'xprofile'  => function ($q) {
+                        $q->select(ProfileHelper::getXProfilePublicFields());
+                    },
+                    'comments'  => function ($q) use ($currentUserModel) {
+                        $q->byContentModerationAccessStatus($currentUserModel)
+                            ->with(['xprofile' => function ($q) {
+                                $q->select(ProfileHelper::getXProfilePublicFields());
+                            }])
+                            ->whereHas('xprofile', function ($q) {
+                                $q->where('status', 'active');
+                            });
+                    },
+                    'space'     => function ($q) {
+                        $q->select(['id', 'title', 'slug', 'type']);
+                    },
+                    'reactions' => function ($q) {
+                        $q->with([
+                            'xprofile' => function ($query) {
+                                $query->select(['user_id', 'avatar', 'display_name']);
+                            }
+                        ])
+                            ->where('type', 'like')
+                            ->limit(3);
+                    },
+                    'terms'     => function ($q) {
+                        $q->select(['title', 'slug'])
+                            ->where('taxonomy_name', 'post_topic');
+                    }
+                ]
+            )
+            ->get();
+
+        $feeds = FeedsHelper::transformFeedsCollection($feeds);
+
+        return [
+            'feeds' => $feeds,
+            'count' => $feeds->count()
+        ];
+    }
+
+    public function getTickerUpdates(Request $request)
+    {
+        $context = $request->get('context', 'global');
+        $since = $request->get('since'); // ISO 8601 timestamp
+
+        $userId = get_current_user_id();
         if (!$userId) {
             return [
-                'last_fetched_timestamp' => current_time('timestamp'),
-                'error'                  => 'Invalid user'
+                'updates'     => [],
+                'timestamp'   => current_time('mysql', true),
+                'has_changes' => false,
+                'error'       => 'User not authenticated'
             ];
         }
 
-        $newItemsCount = Feed::where('created_at', '>', gmdate('Y-m-d H:i:s', $lastLoadedTimeStamp))
-            ->where('status', 'published')
-            ->byUserAccess(get_current_user_id())
-            ->count();
+        // Parse since timestamp
+        try {
+            $sinceDate = $since ? new \DateTime($since) : null;
+        } catch (\Exception $e) {
+            return [
+                'updates'     => [],
+                'timestamp'   => current_time('mysql', true),
+                'has_changes' => false,
+                'error'       => 'Invalid timestamp format'
+            ];
+        }
 
-        $notificationCount = NotificationSubscriber::unread()->where('user_id', $userId)->count();
+        // Build query based on context
+        $query = Feed::query();
 
-        return apply_filters('fluent_community/feed_ticker', [
-            'last_fetched_timestamp'    => current_time('timestamp'),
-            'new_items_count'           => $newItemsCount > 10 ? 10 : $newItemsCount,
-            'unread_notification_count' => $notificationCount,
-            'execution_time'            => microtime(true) - $start
-        ], $request->all());
+        if ($context === 'global') {
+            $query->where('type', 'feed');
+        } elseif (str_starts_with($context, 'space-')) {
+            $spaceSlug = str_replace('space-', '', $context);
+            $space = Space::where('slug', $spaceSlug)->first();
+            if ($space) {
+                $query->where('space_id', $space->id);
+            }
+        } elseif (str_starts_with($context, 'user-')) {
+            $targetUserId = str_replace('user-', '', $context);
+            $query->where('user_id', $targetUserId);
+        }
+
+        // Apply access control
+        $query->byUserAccess($userId);
+
+        $updates = [];
+
+        // Get updated feeds (updated_at changed)
+        if ($sinceDate) {
+            $updatedFeeds = (clone $query)
+                ->where('updated_at', '>', $sinceDate->format('Y-m-d H:i:s'))
+                ->where('status', 'published')
+                ->select(['id', 'updated_at', 'created_at'])
+                ->orderBy('updated_at', 'desc')
+                ->limit(100)
+                ->get();
+
+            foreach ($updatedFeeds as $feed) {
+                $isNew = $feed->created_at >= $sinceDate->format('Y-m-d H:i:s');
+
+                $updates[] = [
+                    'id'         => $feed->id,
+                    'updated_at' => gmdate('c', strtotime($feed->updated_at)),
+                    'action'     => $isNew ? 'created' : 'updated'
+                ];
+            }
+
+            // Check for deleted feeds (status changed to deleted)
+            $deletedFeeds = (clone $query)
+                ->where('updated_at', '>', $sinceDate->format('Y-m-d H:i:s'))
+                ->whereIn('status', ['deleted', 'draft'])
+                ->select(['id', 'updated_at'])
+                ->limit(50)
+                ->get();
+
+            foreach ($deletedFeeds as $feed) {
+                $updates[] = [
+                    'id'         => $feed->id,
+                    'updated_at' => gmdate('c', strtotime($feed->updated_at)),
+                    'action'     => 'deleted'
+                ];
+            }
+        }
+
+        return [
+            'updates'     => $updates,
+            'timestamp'   => current_time('mysql', true),
+            'has_changes' => !empty($updates)
+        ];
     }
 
     public function getOembed(Request $request)

@@ -2,6 +2,8 @@
 
 namespace FluentCommunity\Framework\Http;
 
+use Closure;
+
 class Router
 {
     /**
@@ -9,6 +11,18 @@ class Router
      * @var \FluentCommunity\Framework\Foundation\Application
      */
     protected $app = null;
+
+    /**
+     * Name for the route.
+     * @var array
+     */
+    protected $name = [];
+
+    /**
+     * Mapping of named routes.
+     * @var array
+     */
+    protected $namedRoutes = [];
     
     /**
      * Prefix for the route
@@ -61,16 +75,20 @@ class Router
     /**
      * Create a route group
      * @param  array $attributes
-     * @param  \Closure|null $callback
+     * @param  Closure|null $callback
      * @return null
      */
-    public function group($attributes = [], \Closure $callback = null)
+    public function group($attributes = [], ?Closure $callback = null)
     {
         $this->groupCount += 1;
 
-        if ($attributes instanceof \Closure) {
+        if ($attributes instanceof Closure) {
             $callback = $attributes;
             $attributes = [];
+        }
+
+        if (isset($attributes['name'])) {
+            $this->name($attributes['name']);
         }
 
         if (isset($attributes['prefix'])) {
@@ -128,6 +146,19 @@ class Router
     }
 
     /**
+     * Set the route name
+     * 
+     * @param  string $name
+     * @return self
+     */
+    public function name($name)
+    {
+        $this->name[] = $name;
+
+        return $this;
+    }
+
+    /**
      * Set the route prefix
      * 
      * @param  string $prefix
@@ -143,14 +174,34 @@ class Router
     /**
      * Set the namespace for the action/controller
      * 
-     * @param  string $namespace
+     * @param  string $ns
      * @return self
      */
     public function namespace($ns)
     {
+        /**
+         * @todo: remove this ltrim in future versions after deprecating
+         * the leading slash usage in namespace declaration.
+         */
+        // remove the leading slash if exists
+        $ns = ltrim($ns, '\\');
+
         $this->namespace[] = $ns;
 
         return $this;
+    }
+
+    /**
+     * Set the default route policy.
+     * 
+     * @return self
+     */
+    public function withDefaultPolicy()
+    {
+        return $this->withPolicy(
+            // @phpstan-ignore-next-line
+            $this->app->__namespace__.'\\App\\Http\\Policies\\Policy'
+        );
     }
 
     /**
@@ -222,6 +273,7 @@ class Router
     {
         $callback($this);
         $this->groupCount -= 1;
+        array_pop($this->name);
         array_pop($this->prefix);
         array_pop($this->namespace);
         array_pop($this->middleware['before']);
@@ -336,6 +388,10 @@ class Router
             $method
         );
 
+        if ($this->name) {
+            $route->withName($this->name);
+        }
+
         if ($this->namespace) {
             $route->withNamespace($this->namespace);
         }
@@ -407,5 +463,29 @@ class Router
     public function getRoutes()
     {
         return $this->routes;
+    }
+
+    /**
+     * Set a named route in the router.
+     * 
+     * @param string $name
+     * @param Route  $route
+     */
+    public function setNamedRoute($name, Route $route)
+    {
+        $this->namedRoutes[$name] = $route;
+
+        return $route;
+    }
+
+    /**
+     * Get a route by name.
+     * 
+     * @param  string $name
+     * @return Route|null
+     */
+    public function getByName($name)
+    {
+        return $this->namedRoutes[$name] ?? null;
     }
 }

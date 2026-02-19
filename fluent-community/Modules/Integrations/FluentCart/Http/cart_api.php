@@ -5,7 +5,7 @@
  */
 
 $router->prefix('cart')
-    ->namespace('\FluentCommunity\Modules\Integrations\FluentCart\Http\Controllers')
+    ->namespace('FluentCommunity\Modules\Integrations\FluentCart\Http\Controllers')
     ->withPolicy(\FluentCommunity\App\Http\Policies\SpacePolicy::class)
     ->group(function ($router) {
         $router->get('/products/search', 'PaywallController@searchProduct');

@@ -24,6 +24,11 @@
         "wpfluent/framework": "^2.10",
         "woocommerce/action-scheduler": "^3.8"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "mockery/mockery": "^1.6",
+        "brain/monkey": "^2.6"
+    },
     "autoload": {
         "psr-4": {
             "FluentCommunity\\App\\": "app/",
@@ -36,6 +41,11 @@
         ],
         "files": []
     },
+    "autoload-dev": {
+        "psr-4": {
+            "FluentCommunity\\Tests\\": "tests/php/"
+        }
+    },
     "extra": {
         "branch-alias": {
             "dev-master": "2.0.x-dev"
@@ -47,6 +57,9 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "FluentCommunity\\Dev\\ComposerScript::postInstall"
+        ],
         "post-update-cmd": [
             "FluentCommunity\\Dev\\ComposerScript::postUpdate"
         ]

@@ -177,13 +177,22 @@ class SettingController extends Controller
                 'action_text'    => $this->isPluginInstalled('fluent-messaging/fluent-messaging.php') ? __('Active FluentCommunity Chat', 'fluent-community') : __('Install FluentCommunity Chat', 'fluent-community'),
                 'description'    => __('FluentCommunity Chat is a real-time chat plugin for WordPress. It allows you to create a chat room for your community members.', 'fluent-community')
             ],
+            'fluent-player'    => [
+                'is_repo'        => false,
+                'title'          => __('FluentPlayer', 'fluent-community'),
+                'logo'           => Helper::assetUrl('images/brands/fluent-player.svg'),
+                'is_installed'   => defined('FLUENT_PLAYER_VERSION'),
+                'learn_more_url' => 'https://wordpress.org/plugins/fluent-player/',
+                'action_text'    => $this->isPluginInstalled('fluent-player/fluent-player.php') ? __('Active FluentPlayer', 'fluent-community') : __('Install FluentPlayer', 'fluent-community'),
+                'description'    => __('Advanced video player with support for YouTube, Vimeo, HLS and more.', 'fluent-community')
+            ],
             'fluent-cart'      => [
                 'is_repo'        => true,
                 'title'          => __('FluentCart', 'fluent-community'),
                 'logo'           => Helper::assetUrl('images/brands/fluent-cart.svg'),
                 'is_installed'   => defined('FLUENTCART_VERSION'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-cart/',
-                'settings_url'   => admin_url('admin.php?page=fluent-cart#/'),
+                'settings_url'   => defined('FLUENTCART_VERSION') ? admin_url('admin.php?page=fluent-cart#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-cart/fluent-cart.php') ? __('Active FluentCart', 'fluent-community') : __('Install Fluent Cart', 'fluent-community'),
                 'description'    => __('The easiest way to sell digital and physical products in WordPress. Create, manage, and sell products with ease.', 'fluent-community')
             ],
@@ -193,7 +202,7 @@ class SettingController extends Controller
                 'logo'           => Helper::assetUrl('images/brands/fluentcrm.svg'),
                 'is_installed'   => defined('FLUENTCRM'),
                 'learn_more_url' => 'https://fluentcrm.com',
-                'settings_url'   => admin_url('admin.php?page=fluentcrm-admin#/'),
+                'settings_url'   => defined('FLUENTCRM') ? admin_url('admin.php?page=fluentcrm-admin#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-crm/fluent-crm.php') ? __('Active FluentCRM', 'fluent-community') : __('Install FluentCRM', 'fluent-community'),
                 'description'    => __('The Best Email Marketing Automation Plugin for WordPress. Capture, Segment and Automate your Marketing.', 'fluent-community')
             ],
@@ -203,7 +212,7 @@ class SettingController extends Controller
                 'logo'           => Helper::assetUrl('images/brands/fluentform.png'),
                 'is_installed'   => defined('FLUENTFORM'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluentform/',
-                'settings_url'   => admin_url('admin.php?page=fluent_forms'),
+                'settings_url'   => defined('FLUENTFORM') ? admin_url('admin.php?page=fluent_forms') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-form/fluent-form.php') ? __('Active Fluent Forms', 'fluent-community') : __('Install Fluent Forms', 'fluent-community'),
                 'description'    => __('Collect leads and build any type of forms, accept payments, connect with your CRM with the Fastest Contact Form Builder Plugin for WordPress', 'fluent-community')
             ],
@@ -213,7 +222,7 @@ class SettingController extends Controller
                 'logo'           => Helper::assetUrl('images/brands/fluent-smtp.svg'),
                 'is_installed'   => defined('FLUENTMAIL'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-smtp/',
-                'settings_url'   => admin_url('options-general.php?page=fluent-mail#/'),
+                'settings_url'   => defined('FLUENTMAIL') ? admin_url('options-general.php?page=fluent-mail#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-smtp/fluent-smtp.php') ? __('Active Fluent SMTP', 'fluent-community') : __('Install Fluent SMTP', 'fluent-community'),
                 'description'    => __('Fluent SMTP is the ultimate SMTP and SES plugin for WordPress. Connect with any SMTP service, including SendGrid, Mailgun, SES, Sendinblue, PepiPost, Google, Microsoft, and more.', 'fluent-community')
             ],
@@ -223,7 +232,7 @@ class SettingController extends Controller
                 'logo'           => Helper::assetUrl('images/brands/fluent-support.svg'),
                 'is_installed'   => defined('FLUENT_SUPPORT_VERSION'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-support/',
-                'settings_url'   => admin_url('admin.php?page=fluent-support#/'),
+                'settings_url'   => defined('FLUENT_SUPPORT_VERSION') ? admin_url('admin.php?page=fluent-support#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-support/fluent-support.php') ? __('Active Fluent Support', 'fluent-community') : __('Install Fluent Support', 'fluent-community'),
                 'description'    => __('WordPress Helpdesk and Customer Support Ticket Plugin. Provide awesome support and manage customer queries right from your WordPress dashboard.', 'fluent-community')
             ]
@@ -236,7 +245,7 @@ class SettingController extends Controller
                 'logo'           => Helper::assetUrl('images/brands/paymattic.png'),
                 'is_installed'   => defined('WPPAYFORM_VERSION'),
                 'learn_more_url' => 'https://wordpress.org/plugins/wp-payment-form/',
-                'settings_url'   => admin_url('admin.php?page=wppayform.php#/integrations/fluent_community'),
+                'settings_url'   => defined('WPPAYFORM_VERSION') ? admin_url('admin.php?page=wppayform.php#/integrations/fluent_community') : '',
                 'action_text'    => $this->isPluginInstalled('wp-payment-form/wp-payment-form.php') ? __('Active Paymattic', 'fluent-community') : __('Install Paymattic', 'fluent-community'),
                 'description'    => __('Paymattic – Secure, Simple Payment & Donation with Subscription Payments, Recurring Donations, Customer Management', 'fluent-community')
             ];
@@ -274,16 +283,20 @@ class SettingController extends Controller
                 'repo-slug' => $pluginSlug,
                 'file'      => $pluginSlug . '.php',
             ];
-
             $this->backgroundInstaller($plugin, $pluginSlug);
         } else {
             if ($pluginSlug == 'fluent-messaging') {
+                if (!defined('FLUENT_COMMUNITY_PRO')) {
+                    return $this->sendError(__('FluentMessaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community'));
+                }
+                do_action('fluent_community/install_messaging_plugin');
+            } else if ($pluginSlug == 'fluent-player') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError(__('Fluent Messaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community'));
+                    return $this->sendError(__('FluentMessaging is required pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community'));
                 }
 
-                do_action('fluent_community/install_messaging_plugin');
+                do_action('fluent_community/install_fluent_player_plugin');
             }
         }
 
@@ -447,6 +460,25 @@ class SettingController extends Controller
 
         return [
             'message' => __('Customization settings have been saved successfully.', 'fluent-community')
+        ];
+    }
+
+    public function getFluentPlayerSettings(Request $request)
+    {
+        return [
+            'settings' => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::getSettings()
+        ];
+    }
+
+    public function updateFluentPlayerSettings(Request $request)
+    {
+        $settings = $request->get('settings', []);
+
+        $updatedSettings = \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::updateSettings($settings);
+
+        return [
+            'message'  => __('FluentPlayer settings have been saved successfully.', 'fluent-community'),
+            'settings' => $updatedSettings
         ];
     }
 

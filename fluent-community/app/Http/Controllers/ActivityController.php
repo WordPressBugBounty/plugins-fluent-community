@@ -43,7 +43,9 @@ class ActivityController extends Controller
             ->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
             })
-            ->orderBy('id', 'DESC');
+            ->orderBy('id', 'DESC')
+            ->limit($request->get('per_page', 5) + 1)
+            ->offset(($request->get('page', 1) - 1) * $request->get('per_page', 5));
 
         $spaceId = null;
         $userId = null;
@@ -56,7 +58,8 @@ class ActivityController extends Controller
             $activities->where('user_ID', $context['user_id']);
         }
 
-        $activities = $activities->paginate();
+
+        $activities = $activities->get();
 
         $formattedActivities = [];
 
@@ -94,14 +97,23 @@ class ActivityController extends Controller
             $beforeContent = apply_filters('fluent_community/activity/before_contents', '', $context);
         }
 
+        $totalCount = count($formattedActivities);
+
+        $hasMore = $totalCount > $request->get('per_page', 5);
+
+        if ($hasMore) {
+            array_pop($formattedActivities);
+        }
+
+
         $returnData = [
-            'activities'     => [
+            'activities'      => [
                 'data'         => $formattedActivities,
-                'total'        => $activities->total(),
-                'per_page'     => $activities->perPage(),
-                'current_page' => $activities->currentPage(),
+                'has_more'     => (boolean) $hasMore,
+                'per_page'     => (int) $request->get('per_page', 5),
+                'current_page' => (int) $request->get('page', 1),
             ],
-            'after_contents' => $afterContent,
+            'after_contents'  => $afterContent,
             'before_contents' => $beforeContent,
         ];
 

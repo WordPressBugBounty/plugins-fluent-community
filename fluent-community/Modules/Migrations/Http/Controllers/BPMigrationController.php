@@ -301,7 +301,7 @@ class BPMigrationController extends Controller
 
     private function getCurrentStatus()
     {
-        $defults = [
+        $defaults = [
             'migrated_groups'         => [],
             'last_activity_id'        => 0,
             'migrated_posts_count'    => 0,
@@ -310,9 +310,9 @@ class BPMigrationController extends Controller
             'current_stage'           => 'groups',
         ];
 
-        $status = (array)get_option('_fcom_bp_migrations_status', $defults);
+        $status = (array)get_option('_fcom_bp_migrations_status', $defaults);
 
-        $status = wp_parse_args($status, $defults);
+        $status = wp_parse_args($status, $defaults);
 
         return $status;
     }

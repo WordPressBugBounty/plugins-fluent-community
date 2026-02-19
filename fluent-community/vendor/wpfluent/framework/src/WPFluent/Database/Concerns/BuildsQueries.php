@@ -383,7 +383,7 @@ trait BuildsQueries
      * @param  array|string  $columns
      * @param  string  $cursorName
      * @param  \FluentCommunity\Framework\Pagination\Cursor|string|null  $cursor
-     * @return \FluentCommunity\Framework\Contracts\Pagination\CursorPaginator
+     * @return \FluentCommunity\Framework\Pagination\CursorPaginator
      */
     protected function paginateUsingCursor($perPage, $columns = ['*'], $cursorName = 'cursor', $cursor = null)
     {

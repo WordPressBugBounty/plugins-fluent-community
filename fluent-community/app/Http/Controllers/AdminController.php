@@ -241,12 +241,11 @@ class AdminController extends Controller
 
         if ($driver == 'cloudflare_r2') {
             $validation = [
-                'driver'     => 'required',
-                'access_key' => 'required',
-                'secret_key' => 'required',
-                'bucket'     => 'required',
-                'public_url' => 'required|url',
-                'account_id' => 'required',
+                'driver'       => 'required',
+                'access_key'   => 'required',
+                'secret_key'   => 'required',
+                'public_url'   => 'required|url',
+                'endpoint_url' => 'required|url',
             ];
         } else if ($driver == 'amazon_s3') {
             $validation = [
@@ -288,7 +287,7 @@ class AdminController extends Controller
             $test = $driver->testConnection();
             if (!$test || is_wp_error($test)) {
                 return $this->sendError([
-                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . is_wp_error($test) ? $test->get_error_message() : 'Unknow Error'
+                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . is_wp_error($test) ? $test->get_error_message() : 'Unknown Error'
                 ]);
             }
         }
@@ -299,6 +298,7 @@ class AdminController extends Controller
             'secret_key',
             'bucket',
             'public_url',
+            'endpoint_url',
             'account_id',
             'sub_folder',
             's3_endpoint'
