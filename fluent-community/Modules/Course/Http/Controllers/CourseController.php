@@ -239,6 +239,7 @@ class CourseController extends Controller
         }
 
         $courseType = $course->getCourseType();
+
         $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
 
         $formattedSections = [];
@@ -253,7 +254,7 @@ class CourseController extends Controller
 
             if ($hasAcessSectionAcess) {
                 $unlockDate = CourseHelper::getSectionAccessDate($section, $courseType, $enrollment);
-                if (!$unlockDate || strtotime($unlockDate) > current_time('timestamp')) {
+                if ($unlockDate && strtotime($unlockDate) > current_time('timestamp')) {
                     $hasAcessSectionAcess = false;
                 } else {
                     $unlockDate = null;
