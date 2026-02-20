@@ -39,6 +39,21 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
         <?php endif; ?>
     <?php endif; ?>
 
+
+    <script type="text/javascript">
+        (function() {
+            const colorPref = localStorage.getItem('fcom_global_storage');
+            if(colorPref) {
+                const colorPrefObj = JSON.parse(colorPref);
+                if(colorPrefObj && colorPrefObj.colorScheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    // set data-color-mode attribute for better css handling
+                    document.documentElement.setAttribute('data-color-mode', 'dark');
+                }
+            }
+        })();
+    </script>
+
     <?php if (\FluentCommunity\App\Services\Helper::isRtl()): ?>
         <style>
             body {

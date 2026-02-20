@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.3
-Stable tag: 2.2.03
+Stable tag: 2.2.05
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -250,9 +250,12 @@ OR
 
 == Changelog ==
 
-= 2.2.03 (Date: Feb 19, 2026) =
-- Hotfix: Course Enrollment Issue Fixed
-- Hotfix: Auth Issue fixed when community is on root path
+= 2.2.05 (Date: Feb 20, 2026) =
+- Added: Disable Feed/Space Layout Switching
+- Fixed: Issue with Vote Casting
+- Fixed: Lesson Content Update Issue
+- Fixed: Child Comments Appearing as Parent Comments
+- Fixed: Minor UI Issue
 
 = 2.2.01 (Date: Feb 19, 2026) =
 - Hotfix: Issue Template Page Styling

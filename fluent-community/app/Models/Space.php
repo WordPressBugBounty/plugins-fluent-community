@@ -24,6 +24,7 @@ class Space extends BaseSpace
             'custom_lock_screen'      => 'no',
             'can_request_join'        => 'no',
             'layout_style'            => 'timeline',
+            'disable_layout_style'    => 'no',
             'show_sidebar'            => 'yes',
             'show_paywalls'           => 'no',
             'og_image'                => '',

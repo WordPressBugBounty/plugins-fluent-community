@@ -488,7 +488,7 @@ class PortalHandler
                 'disable_global_posts'    => Arr::get($settings, 'disable_global_posts', '') == 'yes',
                 'has_survey_poll'         => true,
                 'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
-                'can_switch_layout'       => true,
+                'can_switch_layout'       => Utility::getCustomizationSetting('disable_feed_layout') !== 'yes',
                 'mention_mail'            => Utility::hasEmailAnnouncementEnabled(),
                 'max_media_per_post'      => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
                 'has_post_title'          => Utility::postTitlePref(),

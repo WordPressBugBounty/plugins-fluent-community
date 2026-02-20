@@ -470,7 +470,8 @@ class CustomSanitizer
             'show_sidebar',
             'hide_members_count',
             'document_library',
-            'disable_post_sort_by'
+            'disable_post_sort_by',
+            'disable_layout_style'
         ];
 
         $settings = Arr::only($settings, array_keys((new Space())->defaultSettings()));

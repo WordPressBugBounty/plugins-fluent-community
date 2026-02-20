@@ -14,6 +14,10 @@ class Comment extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'is_sticky' => 'int'
+    ];
+
     protected $fillable = [
         'user_id',
         'post_id',

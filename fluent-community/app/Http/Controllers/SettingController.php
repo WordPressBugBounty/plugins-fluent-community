@@ -440,7 +440,7 @@ class SettingController extends Controller
         $settings = $request->get('settings', []);
 
         $yesNoFields = [
-            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu'
+            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout'
         ];
 
         foreach ($settings as $key => $value) {

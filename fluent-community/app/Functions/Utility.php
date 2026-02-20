@@ -209,6 +209,7 @@ class Utility
             'rich_post_layout'     => 'classic',
             'member_list_layout'   => 'classic', // grid, classic
             'default_feed_layout'  => 'timeline', // list, timeline
+            'disable_feed_layout'  => 'no',
             'post_title_pref'      => 'optional',
             'max_media_per_post'   => 4,
             'disable_feed_sort_by' => 'no',

@@ -132,7 +132,6 @@ class ReactionController extends Controller
 
     public function castSurveyVote(Request $request, $feed_id)
     {
-
         $userId = $this->getUserId();
 
         $feed = Feed::where('id', $feed_id)
@@ -165,7 +164,7 @@ class ReactionController extends Controller
             }
         }
 
-        $surveyConfig = add_filter('fluent_community/survey_config_response', $surveyConfig, $feed, $userId);
+        $surveyConfig = apply_filters('fluent_community/survey_config_response', $surveyConfig, $feed, $userId);
 
         return [
             'survey_config' => $surveyConfig
