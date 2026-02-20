@@ -1,4 +1,4 @@
-import{b5 as tt}from"./vendor.js?ver=2.2.05";import{ai as B,r as D,ah as H,ar as et,n as nt,k as rt,F as st,p as $,as as K,a8 as ot,at as ct,s as ut,L as it,G as at,g as ft}from"./vue.js?ver=2.2.05";/*!
+import{b5 as tt}from"./vendor.js?ver=2.2.06";import{ai as B,r as D,ah as H,ar as et,n as nt,k as rt,F as st,p as $,as as K,a8 as ot,at as ct,s as ut,L as it,G as at,g as ft}from"./vue.js?ver=2.2.06";/*!
  * pinia v2.3.1
  * (c) 2025 Eduardo San Martin Morote
  * @license MIT

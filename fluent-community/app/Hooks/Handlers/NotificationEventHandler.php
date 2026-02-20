@@ -30,7 +30,7 @@ class NotificationEventHandler
         $this->commentNotificationToAuthorFeed($comment, $feed);
 
         // now notify all users who commented on this feed
-        $this->commentNotificationToFeedCommenters($comment, $feed);
+         $this->commentNotificationToFeedCommenters($comment, $feed);
     }
 
     public function handleNewSpaceFeed($feed)
@@ -474,8 +474,8 @@ class NotificationEventHandler
         ];
 
         foreach ($userIds as $userId) {
-            $notification = Notification::create($notification);
-            $notification->subscribe([$userId]);
+            $createdNotification = Notification::create($notification);
+            $createdNotification->subscribe([$userId]);
         }
 
         $sendingUserIds = array_merge($userIds, $existingSubscriberUserIds);

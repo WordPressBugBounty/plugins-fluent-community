@@ -2,9 +2,9 @@
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.3
-Stable tag: 2.2.05
+Stable tag: 2.2.07
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -249,6 +249,10 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.2.07 (Date: Feb 20, 2026) =
+- Fixed: Issue with Notification System
+- Fixed: Fixed Duplicate Post issues for pinned posts
 
 = 2.2.05 (Date: Feb 20, 2026) =
 - Added: Disable Feed/Space Layout Switching
