@@ -53,7 +53,6 @@ class FeedsController extends Controller
                     },
                     'comments'  => function ($q) use ($space, $currentUserModel) {
                         $q->byContentModerationAccessStatus($currentUserModel, $space)
-                            ->where('is_sticky', 0)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }])
@@ -94,7 +93,7 @@ class FeedsController extends Controller
 
         if ($bySpace && !$disableSticky) {
             $feedsQuery = $feedsQuery->where('is_sticky', 0);
-            if ($request->page == 1) {
+            if ($queryArgs['page'] === 1) {
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
                     ->with([
@@ -103,7 +102,6 @@ class FeedsController extends Controller
                             },
                             'comments'  => function ($q) use ($space) {
                                 $q->byContentModerationAccessStatus($this->getUser(), $space)
-                                    ->where('is_sticky', 0)
                                     ->with(['xprofile' => function ($q) {
                                         $q->select(ProfileHelper::getXProfilePublicFields());
                                     }])
@@ -127,8 +125,7 @@ class FeedsController extends Controller
                                 $q->select(['title', 'slug'])
                                     ->where('taxonomy_name', 'post_topic');
                             }
-                        ]
-                    )
+                        ])
                     ->first();
             }
         }
@@ -188,7 +185,7 @@ class FeedsController extends Controller
             'sticky' => $stickyFeed
         ];
 
-        $isMainFeed = $request->get('page') == 1 && !$search && !$userId;
+        $isMainFeed = $queryArgs['page'] === 1 && !$search && !$userId;
         if ($isMainFeed && $currentUserId) {
             $data['last_fetched_timestamp'] = current_time('timestamp');
         }
@@ -230,7 +227,6 @@ class FeedsController extends Controller
                 },
                 'comments'  => function ($q) {
                     $q->byContentModerationAccessStatus($this->getUser())
-                        ->where('is_sticky', 0)
                         ->with(['xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
                         }])
@@ -297,7 +293,6 @@ class FeedsController extends Controller
                     },
                     'comments' => function ($q) {
                         $q->byContentModerationAccessStatus($this->getUser())
-                            ->where('is_sticky', 0)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }])
@@ -347,7 +342,7 @@ class FeedsController extends Controller
             ]
         ];
 
-        if ($request->get('page') == 1) {
+        if ($queryArgs['page'] === 1) {
             $lastItem = FeedsHelper::getLastFeedId();
             if ($lastItem) {
                 $data['last_id'] = $lastItem;
@@ -538,18 +533,18 @@ class FeedsController extends Controller
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
 
-        $edibaleStatuses = ['published', 'unlisted', 'scheduled', 'pending'];
+        $editableStatuses = ['published', 'unlisted', 'scheduled', 'pending'];
 
-        if (!in_array($existingFeed->status, $edibaleStatuses)) {
+        if (!in_array($existingFeed->status, $editableStatuses)) {
             return $this->sendError([
-                'message' => __('Sorry, You can only edit a post if it\'s in published state.', 'fluent-community')
+                'message' => __('Sorry, this post is not in an editable state.', 'fluent-community')
             ]);
         }
 
         $user->canEditFeed($existingFeed, true);
 
         if ($status = Arr::get($requestData, 'status')) {
-            if (in_array($status, $edibaleStatuses)) {
+            if (in_array($status, $editableStatuses)) {
                 $data['status'] = $status;
             }
         }
@@ -594,15 +589,15 @@ class FeedsController extends Controller
         }
 
         $newContentType = Arr::get($requestData, 'content_type', '');
-        $exisitngContentType = $existingFeed->content_type;
+        $existingContentType = $existingFeed->content_type;
 
-        if (($newContentType === 'document' && empty($requestData['document_ids'])) || ($newContentType === '' && $exisitngContentType === 'document' && empty($requestData['survey']))) {
+        if (($newContentType === 'document' && empty($requestData['document_ids'])) || ($newContentType === '' && $existingContentType === 'document' && empty($requestData['survey']))) {
             $newContentType = $data['content_type'] = 'text';
         }
 
-        if ($newContentType != $exisitngContentType) {
+        if ($newContentType != $existingContentType) {
             // Content Type Changed
-            do_action('fluent_community/feed/updating_content_type_old_' . $exisitngContentType, $existingFeed, $newContentType, $requestData);
+            do_action('fluent_community/feed/updating_content_type_old_' . $existingContentType, $existingFeed, $newContentType, $requestData);
         }
 
         if ($newContentType != 'text') {
@@ -1227,7 +1222,6 @@ class FeedsController extends Controller
                     },
                     'comments'  => function ($q) use ($currentUserModel) {
                         $q->byContentModerationAccessStatus($currentUserModel, null)
-                            ->where('is_sticky', 0)
                             ->with(['xprofile' => function ($q) {
                                 $q->select(ProfileHelper::getXProfilePublicFields());
                             }])

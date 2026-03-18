@@ -290,7 +290,7 @@ class BaseSpace extends Model
                 ->exists();
 
             if ($exist) {
-                throw new \Exception(esc_html__('Slug already exist. Please use a different slug', 'fluent-community'), 400);
+                throw new \Exception(esc_html__('Slug already exists. Please use a different slug', 'fluent-community'), 400);
             }
 
             $this->slug = $newSlug;

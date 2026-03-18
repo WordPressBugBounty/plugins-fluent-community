@@ -156,10 +156,13 @@ class InvitationController extends Controller
     public function resend(Request $request, $invitationId)
     {
         $invitation = Invitation::findOrFail($invitationId);
+        $user = $this->getUser(true);
+        $space = Space::findOrFail($invitation->post_id);
+        $space->verifyUserPermisson($user, 'community_moderator');
 
         if ($invitation->reactions_count > 5) {
             return $this->sendError([
-                'message' => __('You can not resend this invitation', 'fluent-community')
+                'message' => __('You cannot resend this invitation', 'fluent-community')
             ]);
         }
 

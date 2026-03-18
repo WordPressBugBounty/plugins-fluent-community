@@ -11,6 +11,7 @@
             <form method="post" id="fcom_user_accept_form">
                 <input type="hidden" name="action" value="fcom_user_accept_invitation" />
                 <input type="hidden" name="invitation_token" value="<?php echo esc_attr($invitation_token); ?>" />
+                <input type="hidden" name="_fcom_accept_invitation_nonce" value="<?php echo esc_attr(wp_create_nonce('fcom_accept_invitation')); ?>" />
                 <div style="text-align: center;" class="fcom_form-group">
                     <div class="fcom_form_input">
                         <button type="submit" class="fcom_btn fcom_btn_submit fcom_btn_success"><?php esc_html_e('Accept invitation & continue', 'fluent-community'); ?></button>

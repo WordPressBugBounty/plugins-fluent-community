@@ -192,7 +192,7 @@ class Feed extends Model
                 foreach ($fields as $field) {
                     $query->orWhere($field, 'LIKE', "%$search%");
                 }
-                
+
                 $query->orWhere(function ($q) use ($search) {
                     $q->where('content_type', 'document')
                         ->where('meta', 'LIKE', '%document_lists%title%' . $search . '%');
@@ -227,10 +227,12 @@ class Feed extends Model
                 });
         }
 
-        return $query->whereNull('space_id')
-            ->orWhereHas('space', function ($q) {
-                $q->where('privacy', 'public');
-            });
+        return $query->where(function ($q) {
+            $q->whereNull('space_id')
+                ->orWhereHas('space', function ($q) {
+                    $q->where('privacy', 'public');
+                });
+        });
     }
 
     public function scopeByContentModerationAccessStatus($query, $user, $space = null)
@@ -354,6 +356,8 @@ class Feed extends Model
 
     public function scopeByFollowing($query, $userId = null)
     {
+        $query->orderBy('updated_at', 'DESC');
+
         if (!Helper::isFeatureEnabled('followers_module')) {
             return $query;
         }

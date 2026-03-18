@@ -3,17 +3,19 @@
 namespace FluentCommunity\Modules\Integrations\FluentCart;
 
 use FluentCart\App\Modules\Templating\AssetLoader;
-use FluentCommunity\App\App;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Theming\TemplateLoader;
-use function Avifinfo\read;
 
 class CartCheckout
 {
-
     public function register()
     {
+        add_filter('fluent_community/app_route_paths', function ($paths) {
+            $paths[] = 'checkout';
+            return $paths;
+        });
+
         add_action('fluent_community/rendering_path_ssr_checkout', [$this, 'renderNativeCheckout'], 10);
 
         add_action('fluent_cart/checkout/prepare_other_data', function ($event) {

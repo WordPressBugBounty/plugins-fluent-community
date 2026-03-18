@@ -455,6 +455,13 @@ class PortalHandler
 
         $isAbsoluteUrl = defined('FLUENT_COMMUNITY_PORTAL_SLUG') && FLUENT_COMMUNITY_PORTAL_SLUG == '';
 
+
+        $editorFrameUrl = site_url('?fluent_community_block_editor=1');
+
+        if (current_user_can('edit_posts')) {
+            $editorFrameUrl = admin_url('edit.php?fluent_community_block_editor=1');
+        }
+        
         $portalVars = apply_filters('fluent_community/portal_vars', [
             'portal_notices'             => apply_filters('fluent_community/portal_notices', []),
             'i18n'                       => TransStrings::getStrings(),
@@ -484,7 +491,7 @@ class PortalHandler
                     includes_url('css/dist/block-editor/content.min.css?ver=' . $wp_version),
                 ]
             ],
-            'features'                    => [
+            'features'                   => [
                 'disable_global_posts'    => Arr::get($settings, 'disable_global_posts', '') == 'yes',
                 'has_survey_poll'         => true,
                 'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
@@ -507,7 +514,7 @@ class PortalHandler
                 'has_analytics'           => Utility::hasAnalyticsEnabled(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
             ],
-            'route_classes'               => array_filter([
+            'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
                 'fcom_sticky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu')
@@ -721,7 +728,7 @@ class PortalHandler
             'course_sections_collapsed'  => apply_filters('fluent_community/course_section_collapse_default', 'no'),
             'course_lesson_fullscreen'   => apply_filters('fluent_community/course_lesson_fullscreen_default', 'no'),
             'default_profile_tab'        => apply_filters('fluent_community/default_profile_tab_route', ''),
-            'wp_lesson_editor_frame'     => site_url('?fluent_community_block_editor=1'),
+            'wp_lesson_editor_frame'     => $editorFrameUrl,
             'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
                 'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
@@ -784,13 +791,14 @@ class PortalHandler
         if (!$userId && !Helper::isPublicAccessible()) {
             $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $settings = Helper::generalSettings();
-            $authUrl = Arr::get($settings, 'auth_url', '');
+            $authUrl = Arr::get($settings, 'auth_url', '') ?: $this->getAuthUrl();
+            
             if ($authUrl) {
                 $authUrl = add_query_arg([
                     'redirect_to' => $url
                 ], $authUrl);
             } else {
-                $authUrl = $this->getAuthUrl();
+                $authUrl = wp_login_url($url);
             }
 
             do_action('fluent_community/portal/not_logged_in', $authUrl);
@@ -804,14 +812,14 @@ class PortalHandler
         if ($xprofile && $xprofile->status != 'active') {
 
             if ($xprofile->status == 'pending') {
-                $this->viewErrorPage(__('You request is on pending', 'fluent-community'), __('An admin need to approve your join request. Please contact with an admin to get approval', 'fluent-community'));
+                $this->viewErrorPage(__('Your request is pending', 'fluent-community'), __('An admin needs to approve your join request. Please contact an admin to get approval', 'fluent-community'));
             } else if ($xprofile->status == '') { // it's a self deactiavted account
                 $this->viewErrorPage(__('Your account is deactivated', 'fluent-community'), __('You have deactivated your community profile.', 'fluent-community'), true, [
                     'btn_url'  => Helper::baseUrl('?fcom_action=reactivate_account&__nonce=' . wp_create_nonce('fcom_reactivate_account')),
                     'btn_text' => __('Activate my account', 'fluent-community')
                 ]);
             } else {
-                $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, You can not access to this community', 'fluent-community'));
+                $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, you cannot access this community', 'fluent-community'));
             }
         }
 
@@ -896,8 +904,11 @@ class PortalHandler
         $generalSettings = Helper::generalSettings();
         $isDev = Utility::isDev();
 
+        $siteTitle = Arr::get($generalSettings, 'site_title');
+
         $dataVars = [
-            'title'           => Arr::get($generalSettings, 'site_title'),
+            'title'           => $siteTitle,
+            'og_title'        => $siteTitle,
             'description'     => get_bloginfo('description'),
             'featured_image'  => Arr::get($generalSettings, 'featured_image', ''),
             'header_js_files' => [],
@@ -910,7 +921,8 @@ class PortalHandler
             'contact'         => $appVars['auth'],
             'user'            => $userId ? get_user_by('ID', $userId) : null,
             'route_group'     => Helper::getRouteNameByRequestPath($this->currentPath),
-            'is_dev'          => $isDev
+            'is_dev'          => $isDev,
+            'theme_color'     => Utility::getThemeColor()
         ];
 
         if ($isDev) {
@@ -999,6 +1011,7 @@ class PortalHandler
                 $xProfile = XProfile::where('username', $userName)->first();
                 if ($xProfile) {
                     $data['title'] = 'User ' . esc_html($xProfile->display_name) . ' - ' . $data['title'];
+                    $data['og_title'] = esc_html($xProfile->display_name) . ' - ' . $data['og_title'];
                     if ($xProfile->short_description) {
                         $data['description'] = Helper::getHumanExcerpt($xProfile->short_description, 100);
                     }
@@ -1020,9 +1033,11 @@ class PortalHandler
                     if ($dynamicRoute == 'course_view') {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
+                        $data['og_title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title));
                     } else {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Join %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
+                        $data['og_title'] = sprintf(__('Join %s', 'fluent-community'), esc_html($space->title));
                     }
 
                     if ($space->description) {
@@ -1053,7 +1068,9 @@ class PortalHandler
                         },
                         'space'
                     ])
-                    ->byUserAccess(get_current_user_id())
+                    ->whereDoesntHave('space', function ($q) {
+                        $q->whereIn('privacy', ['secret', 'private']);
+                    })
                     ->first();
 
                 if (!$feed) {
@@ -1062,8 +1079,11 @@ class PortalHandler
 
                 if ($feed->title) {
                     $data['title'] = esc_html($feed->title) . ' - ' . $data['title'];
+                    $data['og_title'] = esc_html($feed->title);
                 } else {
-                    $data['title'] = esc_html($feed->xprofile ? $feed->xprofile->display_name : 'Someone') . ' posted at ' . $data['title'];
+                    $authorName = esc_html($feed->xprofile ? $feed->xprofile->display_name : 'Someone');
+                    $data['title'] = $authorName . ' posted at ' . $data['title'];
+                    $data['og_title'] = $authorName . ' posted at ' . $data['og_title'];
                 }
 
                 $feedUrl = $feed->getPermalink();
@@ -1075,6 +1095,8 @@ class PortalHandler
 
                 if ($mediaPreview = Arr::get($feed->meta, 'media_preview.image')) {
                     $data['featured_image'] = esc_url($mediaPreview);
+                } else if ($firstImage = Arr::get($feed->meta, 'media_items.0.url')) {
+                    $data['featured_image'] = esc_url($firstImage);
                 } else if ($feed->space) {
                     $space = $feed->space;
                     if ($ogImage = Arr::get($space->settings, 'og_image')) {
@@ -1104,6 +1126,7 @@ class PortalHandler
             }
 
             $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
+            $data['og_title'] = esc_html($lesson->title);
             $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
 
             return $data;

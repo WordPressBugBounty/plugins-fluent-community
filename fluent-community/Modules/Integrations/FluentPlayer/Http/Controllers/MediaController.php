@@ -204,6 +204,23 @@ class MediaController extends Controller
                 }
             ";
         }
+        $brandingColor = Arr::get($settings, 'brandColor', '');
+        $controlBarColor = Arr::get($settings, 'controlBarColor', '');
+        if ($brandingColor || $controlBarColor) {
+            $customCss .= "
+                #fluent_player_" . esc_attr($mediaId) . " {";
+            if ($brandingColor) {
+                $customCss .= "
+                    --media-brand: " . esc_attr($brandingColor) . ";";
+            }
+            if ($controlBarColor) {
+                $customCss .= "
+                    --fp-control-bar-bg: " . esc_attr($controlBarColor) . ";";
+            }
+            $customCss .= "
+                }
+            ";
+        }
         if (!empty(Arr::get($settings, 'posterSrc', ''))) {
             $customCss .= "
                 #fluent_player_" . esc_attr($mediaId) . " .fluent-player-container {
@@ -251,7 +268,6 @@ class MediaController extends Controller
             'title' => '',
             'posterSrc' => '',
             'viewType' => 'video',
-            'loadStrategy' => 'idle',
             'brandColor' => '#4a90e2',
             'aspectRatio' => 'original',
             'playerWidth' => '',
@@ -261,7 +277,19 @@ class MediaController extends Controller
 		    $mediaSettings['autoplay'] = true;
 		    $mediaSettings['muted'] = true;
 	    }
+        $settings['loadStrategy'] = 'idle'; // for SPA context this needs to be set to 'idle' 
         $settings = array_merge($settings, $mediaSettings);
+
+        // Apply iOS Safari compatibility settings (playsinline, preload)
+        // The standalone player gets these via MediaService::getIOSSafariSettings(),
+        // but the community API path bypasses that — apply them here too.
+        if (class_exists('\FluentPlayer\App\Services\MediaService')) {
+            [$isIosSafari, $iosSafariSettings] = \FluentPlayer\App\Services\MediaService::getIOSSafariSettings();
+            if ($isIosSafari) {
+                $settings = array_merge($settings, $iosSafariSettings);
+            }
+        }
+
         return apply_filters('fluent_community/fluentplayer_defaults_settings', $settings);
     }
 }

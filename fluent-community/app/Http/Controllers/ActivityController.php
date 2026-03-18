@@ -8,6 +8,7 @@ use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\ProfileHelper;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Http\Request\Request;
 
 class ActivityController extends Controller
@@ -16,15 +17,22 @@ class ActivityController extends Controller
     {
         $context = $request->get('context', []);
 
+        $spaceId = !empty($context['space_id']) ? (int)$context['space_id'] : null;
+        $userId = !empty($context['user_id']) ? (int)$context['user_id'] : null;
+
         $latestActivityIds = Activity::where(function ($q) {
-            $userId = get_current_user_id();
+            if (Helper::isModerator()) {
+                return $q;
+            }
+            
+            $currentUserId = get_current_user_id();
             $q->where('is_public', 1);
-            if (!$userId) {
+            if (!$currentUserId) {
                 return $q;
             }
 
-            $q->orWhere(function ($query) use ($userId) {
-                $spaceIds = get_user_meta($userId, '_fcom_space_ids', true);
+            $q->orWhere(function ($query) use ($currentUserId) {
+                $spaceIds = get_user_meta($currentUserId, '_fcom_space_ids', true);
                 if ($spaceIds) {
                     $query->whereIn('space_id', $spaceIds);
                     return $query;
@@ -32,6 +40,12 @@ class ActivityController extends Controller
             });
         })
             ->whereIn('action_name', ['feed_published', 'comment_added'])
+            ->when($spaceId, function ($q) use ($spaceId) {
+                $q->where('space_id', $spaceId);
+            })
+            ->when((!$spaceId && $userId), function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
             ->selectRaw('MAX(id) as id')
             ->groupBy('feed_id', 'action_name')
             ->pluck('id');
@@ -40,26 +54,16 @@ class ActivityController extends Controller
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }, 'feed', 'space'])
+            ->whereHas('feed', function ($q) {
+                $q->where('status', 'published');
+            })
             ->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
             })
             ->orderBy('id', 'DESC')
             ->limit($request->get('per_page', 5) + 1)
-            ->offset(($request->get('page', 1) - 1) * $request->get('per_page', 5));
-
-        $spaceId = null;
-        $userId = null;
-
-        if ($context && !empty($context['space_id'])) {
-            $spaceId = (int)$context['space_id'];
-            $activities->where('space_id', $context['space_id']);
-        } else if ($context && !empty($context['user_id'])) {
-            $userId = (int)$context['user_id'];
-            $activities->where('user_ID', $context['user_id']);
-        }
-
-
-        $activities = $activities->get();
+            ->offset(($request->get('page', 1) - 1) * $request->get('per_page', 5))
+            ->get();
 
         $formattedActivities = [];
 
@@ -104,7 +108,6 @@ class ActivityController extends Controller
         if ($hasMore) {
             array_pop($formattedActivities);
         }
-
 
         $returnData = [
             'activities'      => [

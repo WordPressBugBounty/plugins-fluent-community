@@ -85,34 +85,40 @@ class CourseHelper
             return 0;
         }
 
-        $lessonIds = self::getCoursePublishedLessonIds($courseId);
+        $progressMap = self::getBulkCourseProgress($courseId, [$userId]);
 
-        if (!$lessonIds) {
-            return 0;
+        return $progressMap[$userId] ?? 0;
+    }
+
+    public static function getBulkCourseProgress($courseId, $userIds = [])
+    {
+        if (empty($userIds)) {
+            return [];
         }
 
-        $completedLessons = Reaction::where('user_id', $userId)
+        $progressMap = array_fill_keys($userIds, 0);
+
+        $lessonIds = self::getCoursePublishedLessonIds($courseId);
+        $totalLessons = count($lessonIds);
+
+        if (!$totalLessons) {
+            return $progressMap;
+        }
+
+        $completionCounts = Reaction::whereIn('user_id', $userIds)
             ->whereIn('object_id', $lessonIds)
             ->where('object_type', 'lesson_completed')
             ->where('type', 'completed')
-            ->count();
+            ->groupBy('user_id')
+            ->selectRaw('user_id, COUNT(*) as completed_count')
+            ->pluck('completed_count', 'user_id');
 
-        if (!$completedLessons) {
-            return 0;
+        foreach ($completionCounts as $userId => $completed) {
+            $result = floor(($completed / $totalLessons) * 100);
+            $progressMap[$userId] = min($result, 100);
         }
 
-        $result = floor(($completedLessons / count($lessonIds)) * 100);
-
-        if (!$result) {
-            return 0;
-        }
-
-        if ($result > 100) {
-            return 100;
-        }
-
-        return $result;
-
+        return $progressMap;
     }
 
     public static function getCompletedLessonIds($courseId, $userId = null)

@@ -56,7 +56,12 @@ class FluentBlockEditorHandler
             add_filter('should_load_separate_core_block_assets', '__return_false', 20);
             $this->renderCustomEditor($_REQUEST); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-            add_action('template_redirect', function () {
+            $actionHook = 'template_redirect';
+            if(is_admin()) {
+                $actionHook = 'admin_init';
+            }
+
+            add_action($actionHook, function () {
                 $this->renderPage();
                 exit(200);
             }, -1000);
@@ -126,7 +131,13 @@ class FluentBlockEditorHandler
             $post->post_content = $lesson->message ?: '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         }
 
-        add_action('wp_enqueue_scripts', function () use ($post) {
+        $enqueueHook = 'wp_enqueue_scripts';
+
+        if(is_admin()) {
+            $enqueueHook = 'admin_enqueue_scripts';
+        }
+
+        add_action($enqueueHook, function () use ($post) {
             wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array('jquery-ui-sortable'), FLUENT_COMMUNITY_PLUGIN_VERSION, true);
             wp_enqueue_style('dashicons');
             wp_enqueue_style('media');
@@ -349,6 +360,9 @@ class FluentBlockEditorHandler
 
     protected function renderPage()
     {
+
+        remove_action( 'wp_print_styles', 'print_emoji_styles' );
+
         add_action('fluent_community/block_editor_footer', function () {
             wp_underscore_playlist_templates();
             wp_print_footer_scripts();
@@ -372,8 +386,7 @@ class FluentBlockEditorHandler
         <head>
             <title>FluentCommunity Block Editor</title>
             <meta charset='utf-8'>
-            <meta name="viewport"
-                  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover"/>
+            <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover"/>
             <meta name="mobile-web-app-capable" content="yes">
             <meta name="robots" content="noindex">
             <?php do_action('fluent_block_editor/head'); ?>

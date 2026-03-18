@@ -78,6 +78,7 @@ class Bootstrap
             'enable_fluent_player' => 'no',
             'skin'                 => 'modern',
             'brandColor'           => '#4a90e2',
+            'controlBarColor'      => '',
             'controls'             => [
                 'play'            => true,
                 'volume'          => true,
@@ -96,7 +97,8 @@ class Bootstrap
                 'save_play_position'   => false,
                 'hide_top_controls'    => false,
                 'hide_center_controls' => false,
-                'hide_bottom_controls' => false
+                'hide_bottom_controls' => false,
+                'load_strategy'        => 'visible'
             ],
             'video_upload'         => 'no',
             'video_upload_role'    => 'admin',
@@ -105,6 +107,7 @@ class Bootstrap
 
         $settings = Utility::getOption('_fluent_player_settings', $defaults);
         $settings = wp_parse_args($settings, $defaults);
+        $settings['behaviors'] = wp_parse_args($settings['behaviors'], $defaults['behaviors']);
 
         return $settings;
     }
@@ -115,6 +118,7 @@ class Bootstrap
             'enable_fluent_player' => 'sanitize_text_field',
             'skin'                 => 'sanitize_text_field',
             'brandColor'           => 'sanitize_text_field',
+            'controlBarColor'      => 'sanitize_text_field',
             'controls.*'           => 'rest_sanitize_boolean',
             'behaviors.*'          => 'rest_sanitize_boolean',
             'video_upload'         => 'sanitize_text_field',
@@ -123,9 +127,13 @@ class Bootstrap
         ];
 
         $prevSettings = self::getSettings();
+        $loadStrategy = sanitize_text_field(Arr::get($settings, 'behaviors.load_strategy', 'visible'));
         $settings = Arr::only($settings, array_keys($prevSettings));
         $settings = wp_parse_args($settings, $prevSettings);
         $settings = Sanitizer::sanitize($settings, $sanitizerRules);
+
+        $allowedStrategies = ['eager', 'visible', 'idle', 'play'];
+        $settings['behaviors']['load_strategy'] = in_array($loadStrategy, $allowedStrategies) ? $loadStrategy : 'visible';
 
         Utility::updateOption('_fluent_player_settings', $settings);
 

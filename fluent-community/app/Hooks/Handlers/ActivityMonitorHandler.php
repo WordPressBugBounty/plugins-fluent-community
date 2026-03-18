@@ -24,7 +24,7 @@ class ActivityMonitorHandler
 
             $user = get_user_by('ID', $userId);
             $xprofile = XProfile::where('user_id', $userId)->first();
-            if (!$xprofile) {
+            if (!$user || !$xprofile) {
                 return;
             }
             $firstName = $user->first_name;
@@ -60,9 +60,10 @@ class ActivityMonitorHandler
     public function handleNewCommentEvent($comment, $feed)
     {
         $isPublic = 1;
+        $space = $feed->space_id ? $feed->space : null;
 
-        if ($feed->space_id) {
-            $isPublic = $feed->space->privacy == 'public';
+        if ($space) {
+            $isPublic = $space->privacy == 'public';
         }
 
         $data = [
@@ -82,9 +83,10 @@ class ActivityMonitorHandler
     public function handleFeedCreated($feed)
     {
         $isPublic = 1;
+        $space = $feed->space_id ? $feed->space : null;
 
-        if ($feed->space_id) {
-            $isPublic = $feed->space->privacy == 'public';
+        if ($space) {
+            $isPublic = $space->privacy == 'public';
         }
 
         $data = [

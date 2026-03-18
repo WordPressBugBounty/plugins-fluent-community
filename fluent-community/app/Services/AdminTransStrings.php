@@ -40,7 +40,7 @@ class AdminTransStrings
             'Failed to change URL'                                                   => __('Failed to change URL', 'fluent-community'),
             'Fetching License Information Please wait.'                              => __('Fetching License Information Please wait.', 'fluent-community'),
             'Finishing up...'                                                        => __('Finishing up...', 'fluent-community'),
-            'Get Feature Update via email'                                           => __('Get Feature Update via email', 'fluent-community'),
+            'Get Feature Updates via email'                                          => __('Get Feature Updates via email', 'fluent-community'),
             'Go Back'                                                                => __('Go Back', 'fluent-community'),
             'Go to Permalink Settings'                                               => __('Go to Permalink Settings', 'fluent-community'),
             'Go to the portal'                                                       => __('Go to the portal', 'fluent-community'),

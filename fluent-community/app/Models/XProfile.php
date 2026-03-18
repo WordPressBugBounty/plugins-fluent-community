@@ -47,6 +47,7 @@ class XProfile extends Model
         'short_description',
         'last_activity',
         'meta',
+        'custom_fields',
         'created_at'
     ];
 
@@ -266,6 +267,22 @@ class XProfile extends Model
         }
 
         $this->attributes['meta'] = maybe_serialize($value);
+    }
+
+    public function getCustomFieldsAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+
+        $data = json_decode($value, true);
+
+        return is_array($data) ? $data : [];
+    }
+
+    public function setCustomFieldsAttribute($value)
+    {
+        $this->attributes['custom_fields'] = is_array($value) ? json_encode($value) : $value;
     }
 
     public function getFirstName()

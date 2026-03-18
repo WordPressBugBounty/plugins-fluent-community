@@ -193,6 +193,7 @@ class AuthModdule
 
         $pageVars = [
             'title'          => $frameData['title'],
+            'og_title'       => $frameData['title'],
             'description'    => $frameData['description'],
             'url'            => $currentUrl,
             'featured_image' => '',
@@ -271,7 +272,7 @@ class AuthModdule
                 $frameData['hiddenFields'] = [
                     'register'          => 'yes',
                     'action'            => 'fcom_user_signup',
-                    '_fls_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce')
+                    '_fcom_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce')
                 ];
 
                 $frameData['loginUrl'] = add_query_arg('form', 'login', $currentUrl);
@@ -317,6 +318,13 @@ class AuthModdule
             wp_send_json([
                 'message' => esc_html__('Registration is disabled for this community', 'fluent-community')
             ], 422);
+        }
+
+        $signupNonce = isset($_POST['_fcom_signup_nonce']) ? sanitize_text_field(wp_unslash($_POST['_fcom_signup_nonce'])) : '';
+        if (!$signupNonce || !wp_verify_nonce($signupNonce, 'fluent_auth_signup_nonce')) {
+            wp_send_json([
+                'message' => esc_html__('Invalid request. Please refresh the page and try again.', 'fluent-community')
+            ], 403);
         }
 
         $app = App::make('app');
@@ -514,6 +522,10 @@ class AuthModdule
 
         $redirectUrl = Helper::baseUrl();
 
+        if (!empty($_REQUEST['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        }
+
         $redirectUrl = apply_filters('fluent_community/auth/after_signup_redirect_url', $redirectUrl, $user, $_REQUEST); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $btnText = __('Continue to the community', 'fluent-community');
 
@@ -544,6 +556,13 @@ class AuthModdule
             wp_send_json([
                 'message' => __('This form cannot be used to log in. Please reload the page and try again.', 'fluent-community')
             ], 422);
+        }
+
+        $loginNonce = isset($_POST['_fcom_login_nonce']) ? sanitize_text_field(wp_unslash($_POST['_fcom_login_nonce'])) : '';
+        if (!$loginNonce || !wp_verify_nonce($loginNonce, 'fcom_user_login_nonce')) {
+            wp_send_json([
+                'message' => esc_html__('Invalid request. Please refresh the page and try again.', 'fluent-community')
+            ], 403);
         }
 
         $app = App::make('app');
@@ -727,6 +746,7 @@ class AuthModdule
 
         $frameData['hiddenFields'] = [
             'action'           => 'fcom_user_login_form',
+            '_fcom_login_nonce' => wp_create_nonce('fcom_user_login_nonce'),
         ];
         if ($invitation) {
             $frameData['button_label'] = __('Log In & Accept Invitation', 'fluent-community');
@@ -742,7 +762,6 @@ class AuthModdule
 
         if (AuthHelper::isRegistrationEnabled()) {
             $frameData['signupUrl'] = $signupUrl;
-            // $frameData['signupUrl'] = add_query_arg('form', 'register', $currentUrl);
         }
 
         $frameData['settings'] = $formSettings;
@@ -778,7 +797,7 @@ class AuthModdule
             $frameData['hiddenFields'] = [
                 'invitation_token'  => $invitation->message_rendered,
                 'action'            => 'fcom_user_registration',
-                '_fls_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce')
+                '_fcom_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce')
             ];
 
             $invitationBy = $invitation->xprofile ? $invitation->xprofile->display_name : __('Someone', 'fluent-community');
@@ -798,8 +817,12 @@ class AuthModdule
             $frameData['hiddenFields'] = [
                 'register'          => 'yes',
                 'action'            => 'fcom_user_registration',
-                '_fls_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce'),
+                '_fcom_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce'),
             ];
+
+            if (!empty($_GET['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $frameData['hiddenFields']['redirect_to'] = sanitize_url(wp_unslash($_GET['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            }
         }
 
         add_action('fluent_community/before_registration_form', function ($frameData) {

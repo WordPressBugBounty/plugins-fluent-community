@@ -49,8 +49,9 @@ class InvitationHandler
                         $invitation->reactions_count = $invitation->reactions_count + 1;
                         $invitation->save();
                     }
+
+                    $redirecctUrl = $space->getPermalink();
                 }
-                $redirecctUrl = $space->getPermalink();
             }
 
             if ($invitation->message) {
@@ -91,7 +92,13 @@ class InvitationHandler
 
     public function acceptInvitationAjax()
     {
-        $token = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if (!check_ajax_referer('fcom_accept_invitation', '_fcom_accept_invitation_nonce', false)) {
+            wp_send_json([
+                'message' => __('Invalid request', 'fluent-community')
+            ], 403);
+        }
+
+        $token = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : '';
         $user = Helper::getCurrentUser();
 
         $redirectUrl = $this->handleInvitationLogin(null, $user, $token);

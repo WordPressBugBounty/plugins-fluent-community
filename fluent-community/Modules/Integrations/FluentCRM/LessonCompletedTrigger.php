@@ -52,7 +52,7 @@ class LessonCompletedTrigger extends BaseTrigger
                 ],
                 'subscription_status_info' => [
                     'type' => 'html',
-                    'info' => '<b>'.__('An Automated double-optin email will be sent for new subscribers', 'fluent-community').'</b>',
+                    'info' => '<b>'.__('An Automated double-opt-in email will be sent for new subscribers', 'fluent-community').'</b>',
                     'dependency'  => [
                         'depends_on'    => 'subscription_status',
                         'operator' => '=',
@@ -76,23 +76,23 @@ class LessonCompletedTrigger extends BaseTrigger
         return [
             'update_type'   => [
                 'type'    => 'radio',
-                'label'   => __('If Contact Already Exist?', 'fluent-community'),
-                'help'    => __('Please specify what will happen if the subscriber already exist in the database', 'fluent-community'),
+                'label'   => __('If Contact Already Exists?', 'fluent-community'),
+                'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
                 'options' => FunnelHelper::getUpdateOptions()
             ],
             'lesson_ids'    => [
                 'type'        => 'grouped-select',
                 'label'       => __('Target Lessons', 'fluent-community'),
-                'help'        => __('Select for which Lessons this automation will run', 'fluent-community'),
+                'help'        => __('Select which lessons this automation will run for', 'fluent-community'),
                 'options'     => $this->getLessonsByCourseGroup(),
                 'is_multiple' => true,
-                'inline_help' => __('Keep it blank to run to any Lesson', 'fluent-community')
+                'inline_help' => __('Keep it blank to run on any lesson', 'fluent-community')
             ],
             'run_multiple'       => [
                 'type'        => 'yes_no_check',
                 'label'       => '',
                 'check_label' => __('Restart the Automation Multiple times for a contact for this event. (Only enable if you want to restart automation for the same contact)', 'fluent-community'),
-                'inline_help' => __('If you enable, then it will restart the automation for a contact if the contact already in the automation. Otherwise, It will just skip if already exist', 'fluent-community')
+                'inline_help' => __('If you enable, it will restart the automation for a contact if the contact is already in the automation. Otherwise, it will skip if it already exists.', 'fluent-community')
             ]
         ];
     }

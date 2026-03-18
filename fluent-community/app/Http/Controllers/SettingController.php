@@ -31,15 +31,16 @@ class SettingController extends Controller
         $data = $request->get('features', []);
 
         $data = Sanitizer::sanitize($data, [
-            'leader_board_module' => 'sanitize_text_field',
-            'course_module'       => 'sanitize_text_field',
-            'giphy_module'        => 'sanitize_text_field',
-            'giphy_api_key'       => 'sanitize_text_field',
-            'cloud_storage'       => 'sanitize_text_field',
-            'emoji_module'        => 'sanitize_text_field',
-            'user_badge'          => 'sanitize_text_field',
-            'has_crm_sync'        => 'sanitize_text_field',
-            'followers_module'    => 'sanitize_text_field',
+            'leader_board_module'   => 'sanitize_text_field',
+            'course_module'         => 'sanitize_text_field',
+            'giphy_module'          => 'sanitize_text_field',
+            'giphy_api_key'         => 'sanitize_text_field',
+            'cloud_storage'         => 'sanitize_text_field',
+            'emoji_module'          => 'sanitize_text_field',
+            'user_badge'            => 'sanitize_text_field',
+            'has_crm_sync'          => 'sanitize_text_field',
+            'followers_module'      => 'sanitize_text_field',
+            'custom_profile_fields' => 'sanitize_text_field',
         ]);
 
         $prevConfig = Utility::getFeaturesConfig();
@@ -213,7 +214,7 @@ class SettingController extends Controller
                 'is_installed'   => defined('FLUENTFORM'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluentform/',
                 'settings_url'   => defined('FLUENTFORM') ? admin_url('admin.php?page=fluent_forms') : '',
-                'action_text'    => $this->isPluginInstalled('fluent-form/fluent-form.php') ? __('Active Fluent Forms', 'fluent-community') : __('Install Fluent Forms', 'fluent-community'),
+                'action_text'    => $this->isPluginInstalled('fluentform/fluentform.php') ? __('Active Fluent Forms', 'fluent-community') : __('Install Fluent Forms', 'fluent-community'),
                 'description'    => __('Collect leads and build any type of forms, accept payments, connect with your CRM with the Fastest Contact Form Builder Plugin for WordPress', 'fluent-community')
             ],
             'fluent-smtp'      => [
@@ -293,7 +294,7 @@ class SettingController extends Controller
             } else if ($pluginSlug == 'fluent-player') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError(__('FluentMessaging is required pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community'));
+                    return $this->sendError(__('FluentPlayer is required pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community'));
                 }
 
                 do_action('fluent_community/install_fluent_player_plugin');
@@ -413,6 +414,7 @@ class SettingController extends Controller
                         throw new \Exception($result->get_error_message());
                     }
                 } catch (\Exception $e) {
+                    throw new \Exception($e->getMessage());
                 }
             }
         }

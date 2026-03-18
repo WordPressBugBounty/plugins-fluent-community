@@ -27,22 +27,9 @@ class CommentsController extends Controller
             ];
         }
 
-        $stickyComment = Comment::where('post_id', $feed->id)
-            ->where('is_sticky', 1)
-            ->with([
-                'xprofile' => function ($q) {
-                    $q->select(ProfileHelper::getXProfilePublicFields());
-                }
-            ])
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->first();
-
         $comments = Comment::where('post_id', $feed->id)
             ->byContentModerationAccessStatus($this->getUser())
             ->orderBy('created_at', 'asc')
-            ->where('is_sticky', 0)
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
@@ -59,25 +46,17 @@ class CommentsController extends Controller
 
         if ($userId) {
             $likedIds = FeedsHelper::getLikedIdsByUserFeedId($feed->id, get_current_user_id());
-
             if ($likedIds) {
                 $comments->each(function ($comment) use ($likedIds) {
                     if (in_array($comment->id, $likedIds)) {
                         $comment->liked = 1;
                     }
                 });
-
-                if ($stickyComment) {
-                    if (in_array($stickyComment->id, $likedIds)) {
-                        $stickyComment->liked = 1;
-                    }
-                }
             }
         }
 
         $data = [
-            'comments'       => $comments,
-            'sticky_comment' => $stickyComment
+            'comments'       => $comments
         ];
 
         return apply_filters('fluent_community/comments_api_response', $data, $request->all());
@@ -495,7 +474,8 @@ class CommentsController extends Controller
 
     public function addOrRemovePostReact(Request $request, $feed_id)
     {
-        $feed = Feed::withoutGlobalScopes()->findOrFail($feed_id);
+        $userId = get_current_user_id();
+        $feed = Feed::withoutGlobalScopes()->byUserAccess($userId)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
         $willRemove = $request->get('remove');
 
@@ -505,7 +485,6 @@ class CommentsController extends Controller
             ]);
         }
 
-        $userId = get_current_user_id();
         if ($userId === $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
                 'message' => __('You cannot react to your own post', 'fluent-community')

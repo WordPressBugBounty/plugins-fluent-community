@@ -839,23 +839,6 @@ class FeedsHelper
         $userId = Arr::get($config, 'user_id', 0);
         $commentLikeIds = $userId ? Arr::get($config, 'comment_like_ids', []) : [];
 
-        $stickyComment = Comment::where('post_id', $feed->id)
-            ->where('is_sticky', 1)
-            ->with(['xprofile' => function ($q) {
-                $q->select(ProfileHelper::getXProfilePublicFields());
-            }])
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })->first();
-
-        if ($stickyComment) {
-            self::setCurrentRelatedUserId($stickyComment->user_id);
-            if ($commentLikeIds && in_array($stickyComment->id, $commentLikeIds)) {
-                $stickyComment->liked = 1;
-            }
-            $feed->sticky_comment = $stickyComment;
-        }
-
         $feed->comments->each(function ($comment) use ($commentLikeIds) {
             self::setCurrentRelatedUserId($comment->user_id);
             if ($commentLikeIds && in_array($comment->id, $commentLikeIds)) {

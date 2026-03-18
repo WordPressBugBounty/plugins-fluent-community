@@ -51,10 +51,9 @@ class EmailNotificationHandler
 
         $types = ['np_by_member_mail'];
         $spaceRole = $feed->user->getSpaceRole($feed->space);
-        if (!in_array($spaceRole, ['admin', 'moderator'])) {
+        if (in_array($spaceRole, ['admin', 'moderator'])) {
             $types[] = 'np_by_admin_mail';
         }
-
 
         $hasSubscribers = User::query()->where(function ($query) use ($types, $space, $feed) {
             $query->whereHas('notificationSubscriptions', function ($query) use ($types, $space) {

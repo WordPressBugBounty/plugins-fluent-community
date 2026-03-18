@@ -385,7 +385,7 @@ class Helper
             'disable_global_posts'    => 'yes',
             'auth_content'            => 'Please login first to access this page',
             'auth_redirect'           => '',
-            'restricted_role_content' => 'Sorry, you can not access to this page. Only authorized users can access this page.',
+            'restricted_role_content' => 'Sorry, you cannot access this page. Only authorized users can access this page.',
             'auth_url'                => '',
             'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth'),
             'use_custom_signup_page'  => 'no',
@@ -479,7 +479,6 @@ class Helper
             'members',
             'bookmarks',
             'chat',
-            'courses',
             'dashboard',
             'leaderboards',
             'notifications',
@@ -1254,7 +1253,7 @@ class Helper
 
         static $userSpacesIds = null;
         if ($userSpacesIds === null) {
-            $userSpacesIds = $currentUser->getSpaceIds();
+            $userSpacesIds = $currentUser->getJoinedSpaceIds();
         }
 
         return $userSpacesIds && !!array_intersect($userSpacesIds, $membershipIds);
@@ -1833,7 +1832,10 @@ class Helper
             if (isset($_SERVER["HTTP_CLIENT_IP"])) {
                 $ipAddress = sanitize_text_field(wp_unslash($_SERVER["HTTP_CLIENT_IP"]));
             } else if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $ipAddress = (string)rest_is_ip_address(trim(current(preg_split('/,/', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']))))));
+                $forwardedIp = trim(current(preg_split('/,/', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])))));
+                if (rest_is_ip_address($forwardedIp)) {
+                    $ipAddress = $forwardedIp;
+                }
             }
         }
 
@@ -1958,8 +1960,8 @@ class Helper
     {
         $portalSlug = self::getPortalSlug();
 
-        // If portal is mounted at site root, ignore unrelated query args like page builders / previews.
-        if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && (!isset($_GET['fcom_route']) && !isset($_GET['fcom_action']))) {
+        // If portal is mounted at site root with empty requestUri, ignore query-only requests that do not relate to the community portal.
+        if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && !self::hasSupportedQueryParam()) {
             return false;
         }
 
@@ -1987,6 +1989,30 @@ class Helper
 
         if (in_array($start, $routeStats)) {
             return $requestUri;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the current request has any supported query parameter.
+     *
+     * @return bool
+     */
+    private static function hasSupportedQueryParam()
+    {
+        $supportedParams = (array) apply_filters('fluent_community/portal_supported_query_params', [
+            'customizer_panel'
+        ]);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        foreach (array_keys($_GET) as $key) {
+            if (strpos($key, 'fcom_') === 0) {
+                return true;
+            }
+            if (in_array($key, $supportedParams, true)) {
+                return true;
+            }
         }
         return false;
     }

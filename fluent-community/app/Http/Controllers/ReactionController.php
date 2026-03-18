@@ -76,11 +76,12 @@ class ReactionController extends Controller
 
     public function addOrRemovePostReact(Request $request, $feed_id)
     {
-        $feed = Feed::withoutGlobalScopes()->findOrFail($feed_id);
+        $currentUser = $this->getUser(true);
+        $feed = Feed::withoutGlobalScopes()->byUserAccess($currentUser->ID)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
         $willRemove = $request->get('remove');
 
-        $react = Reaction::where('user_id', get_current_user_id())
+        $react = Reaction::where('user_id', $currentUser->ID)
             ->where('object_id', $feed->id)
             ->where('type', $type)
             ->objectType('feed')
@@ -110,7 +111,7 @@ class ReactionController extends Controller
         }
 
         $react = Reaction::create([
-            'user_id'     => get_current_user_id(),
+            'user_id'     => $currentUser->ID,
             'object_id'   => $feed->id,
             'type'        => $type,
             'object_type' => 'feed'
@@ -134,8 +135,8 @@ class ReactionController extends Controller
     {
         $userId = $this->getUserId();
 
-        $feed = Feed::where('id', $feed_id)
-            ->byUserAccess($this->getUserId())
+        $feed = Feed::byUserAccess($userId)
+            ->where('id', $feed_id)
             ->first();
 
         if (!$feed || $feed->content_type != 'survey' || !$userId) {
@@ -144,7 +145,13 @@ class ReactionController extends Controller
             ]);
         }
 
-        $surveyConfig = $feed->meta['survey_config'];
+        $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
+        if (empty($surveyConfig['options'])) {
+            return $this->sendError([
+                'message' => __('Sorry! This survey configuration is invalid', 'fluent-community')
+            ]);
+        }
+
         $endDate = Arr::get($surveyConfig, 'end_date');
         if ($endDate && strtotime($endDate) < current_time('timestamp')) {
             return $this->sendError([
@@ -152,14 +159,21 @@ class ReactionController extends Controller
             ]);
         }
 
-        $voteIndexes = $request->get('vote_indexes', []);
+        $voteIndexes = (array) $request->get('vote_indexes', []);
+
+        $voteIndexes = array_values(array_map('sanitize_text_field', $voteIndexes));
+
         $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $userId);
-        $surveyConfig = $feed->meta['survey_config'];
+        $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
+        $options = Arr::get($surveyConfig, 'options', []);
+        if (empty($options) || !is_array($options)) {
+            $options = [];
+        }
 
         $votedOptions = $feed->getSurveyCastsByUserId($userId);
 
-        foreach ($surveyConfig['options'] as $index => $option) {
-            if (in_array($option['slug'], $votedOptions)) {
+        foreach ($options as $index => $option) {
+            if (in_array(Arr::get($option, 'slug'), $votedOptions, true)) {
                 $surveyConfig['options'][$index]['voted'] = true;
             }
         }

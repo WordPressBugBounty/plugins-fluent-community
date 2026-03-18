@@ -87,7 +87,7 @@ class MembersController extends Controller
         if ($shortBy == 'last_activity') {
             $members = $members->orderBy('last_activity', 'DESC');
         } else {
-            $members = $members->orderBy($shortBy, 'ASC');
+            $members = $members->orderBy($shortBy, 'ASC')->orderBy('id', 'ASC');
         }
 
         $members = $members
@@ -128,7 +128,7 @@ class MembersController extends Controller
 
         if ($wpUser->isCommunityAdmin() && $newStatus != 'active') {
             return $this->sendError([
-                'message' => __('Sorry, you can not change status of another admin. Remove the user from moderators', 'fluent-community')
+                'message' => __('Sorry, you cannot change the status of another admin. Remove the user from moderators', 'fluent-community')
             ]);
         }
 
@@ -143,7 +143,7 @@ class MembersController extends Controller
         }
 
         return [
-            'message' => __('Member status have been updated', 'fluent-community'),
+            'message' => __('Member status has been updated', 'fluent-community'),
             'member'  => $xProfile
         ];
     }

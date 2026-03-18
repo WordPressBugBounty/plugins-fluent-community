@@ -28,6 +28,7 @@
         <meta property="og:type" content="website">
         <meta property="og:url" content="<?php echo esc_url($url); ?>">
         <meta property="og:site_name" content="<?php bloginfo('name'); ?>">
+        <meta property="og:title" content="<?php echo esc_attr($og_title); ?>">
         <meta property="og:description" content="<?php echo esc_attr($description); ?>">
     <?php endif; ?>
 

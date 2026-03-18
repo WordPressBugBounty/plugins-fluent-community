@@ -219,13 +219,13 @@ class AdminController extends Controller
     {
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             return $this->sendError([
-                'message' => __('Sorry, you can not update this config. Please activate pro', 'fluent-community')
+                'message' => __('Sorry, you cannot update this config. Please activate pro', 'fluent-community')
             ]);
         }
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
             return $this->sendError([
-                'message' => __('You can not update the storage settings as it is defined in the config file', 'fluent-community')
+                'message' => __('You cannot update the storage settings as it is defined in the config file', 'fluent-community')
             ]);
         }
 
@@ -286,8 +286,9 @@ class AdminController extends Controller
 
             $test = $driver->testConnection();
             if (!$test || is_wp_error($test)) {
+                $errorMessage = is_wp_error($test) ? $test->get_error_message() : 'Unknown Error';
                 return $this->sendError([
-                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . is_wp_error($test) ? $test->get_error_message() : 'Unknown Error'
+                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . $errorMessage
                 ]);
             }
         }
@@ -484,13 +485,13 @@ class AdminController extends Controller
 
         if (!$newSlug) {
             return $this->sendError([
-                'message' => __('Slug can not be empty', 'fluent-community')
+                'message' => __('Slug cannot be empty', 'fluent-community')
             ]);
         }
 
         if (defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
             return $this->sendError([
-                'message' => __('You can not change the slug as it is defined in the config file', 'fluent-community')
+                'message' => __('You cannot change the slug as it is defined in the config file', 'fluent-community')
             ]);
         }
 

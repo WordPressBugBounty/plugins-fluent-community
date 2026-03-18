@@ -462,7 +462,7 @@ class CourseAdminController extends Controller
     {
         Course::findOrFail($courseId);
 
-        $search = $request->getSafe('search', 'sanitize_text_field');
+        $search = $request->getSafe('search');
 
         $students = XProfile::whereHas('space_pivot', function ($q) use ($courseId) {
             return $q->where('space_id', $courseId)
@@ -478,8 +478,12 @@ class CourseAdminController extends Controller
             ->select(ProfileHelper::getXProfilePublicFields())
             ->paginate();
 
+        $studentUserIds = $students->pluck('user_id')->toArray();
+
+        $progressMap = CourseHelper::getBulkCourseProgress($courseId, $studentUserIds);
+
         foreach ($students as $student) {
-            $student->progress = CourseHelper::getCourseProgress($courseId, $student->user_id);
+            $student->progress = $progressMap[$student->user_id] ?? 0;
         }
 
         $data = [
@@ -1114,5 +1118,4 @@ class CourseAdminController extends Controller
 
         return apply_filters('fluent_community/admin_course_other_instructors_api_response', $data, $request->all());
     }
-
 }

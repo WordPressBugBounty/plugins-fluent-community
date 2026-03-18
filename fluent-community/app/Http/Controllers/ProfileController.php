@@ -152,7 +152,7 @@ class ProfileController extends Controller
 
             $xprofile->status = '';
             $xprofile->save();
-            update_user_meta($userName, '_fcom_deactivated_at', current_time('mysql'));
+            update_user_meta($xprofile->user_id, '_fcom_deactivated_at', current_time('mysql'));
             do_action('fluent_community/profile_deactivated', $xprofile);
 
             return [
@@ -360,7 +360,6 @@ class ProfileController extends Controller
         $xProfile->fill($updateData);
         $xProfile->save();
 
-
         // Let's update the user's details
         $xProfile->user->updateCustomData($updateData);
         $xProfile->compilation_score = $xProfile->getCompletionScore();
@@ -379,7 +378,7 @@ class ProfileController extends Controller
             $emailAddress = Arr::get($data, 'email');
 
             if ($emailAddress && is_email($emailAddress) && $emailAddress != $xProfile->user->user_email) {
-                $owner_id = email_exists($xProfile->user->user_email);
+                $owner_id = email_exists($emailAddress);
                 if ($owner_id != $xProfile->user_id) {
                     return $this->sendError([
                         'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community')

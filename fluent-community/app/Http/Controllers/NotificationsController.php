@@ -15,7 +15,7 @@ class NotificationsController extends Controller
     {
         $user = $this->getUser(true);
 
-        $notifcations = Notification::whereHas('subscribers', function ($query) use ($user) {
+        $notifications = Notification::whereHas('subscribers', function ($query) use ($user) {
             return $query->where('user_id', $user->ID);
         })
             ->with([
@@ -32,7 +32,7 @@ class NotificationsController extends Controller
             ->paginate();
 
         $data = [
-            'notifications' => $notifcations
+            'notifications' => $notifications
         ];
         return apply_filters('fluent_community/notifications_api_response', $data, $request->all());
     }
@@ -70,7 +70,7 @@ class NotificationsController extends Controller
 
     public function markAsRead(Request $request, $notification_id)
     {
-        $notification = Notification::find($notification_id);
+        $notification = Notification::findOrFail($notification_id);
 
         NotificationSubscriber::whereHas('notification', function ($query) use ($notification) {
             return $query->where('id', $notification->id)
@@ -82,8 +82,6 @@ class NotificationsController extends Controller
         return [
             'unread_count' => Notification::byStatus('unread', get_current_user_id())->count()
         ];
-
-        return $this->getUnreadNotifications($request);
     }
 
     public function markAsReadByFeedId(Request $request, $feedId)

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.3
-Stable tag: 2.2.07
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -249,6 +249,32 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.3.0 (Date: Mar 18, 2026) =
+- Introduced: Custom Profile Fields
+- Added: CSV Export for Course Members and Quiz Result
+- Added: Search and Filter for Followers/Following
+- Added: Send Message Action in FluentCRM
+- Added: Missing Translation Strings
+- Improved: Content Reporting and Review
+- Fixed: Issue with User Recent Activities
+- Fixed: Issue with Single Feed Delete
+- Fixed: Issue with Fluentform Activation
+- Fixed: Space HTML Description Render Issue
+- Fixed: Cart Checkout Not Working with Root Portal
+- Fixed: Link Visibility Issue with Public Space Access
+- Fixed: Different Space Layout View Issue
+- Fixed: Redirect Issue After Login/Registration
+- Fixed: Issue with BuddyBoss Follower Migration
+- Fixed: Excluded Course from Sitemap When Disabled
+- Fixed: Customizer Panel Not Working with Root Portal
+- Fixed: Lesson Content Verse Block's Text Contrast in Dark Mode
+- Fixed: Social Media Link Preview for Twitter
+- Fixed: Join Button on Spaces Card Redirects to Broken/Empty Page
+- Fixed: Restore Space View Preference when Navigating between Spaces
+- Fixed: Issue with FluentPlayer Disabling
+- Fixed: FluentPlayer Issue with Youtube Short Video
+- Fixed: Vimeo URLs with Query Params Unrecognized by FluentPlayer
 
 = 2.2.07 (Date: Feb 20, 2026) =
 - Fixed: Issue with Notification System

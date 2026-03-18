@@ -33,7 +33,7 @@ class SpaceJoinTrigger extends BaseTrigger
     {
         return [
             'title'     => __('Joined in a Space', 'fluent-community'),
-            'sub_title' => __('This automation will be initiated when a user join in a Space', 'fluent-community'),
+            'sub_title' => __('This automation will be initiated when a user joins a space', 'fluent-community'),
             'fields'    => [
                 'subscription_status'      => [
                     'type'        => 'option_selectors',
@@ -44,7 +44,7 @@ class SpaceJoinTrigger extends BaseTrigger
                 ],
                 'subscription_status_info' => [
                     'type'       => 'html',
-                    'info'       => '<b>' . __('An Automated double-optin email will be sent for new subscribers', 'fluent-community') . '</b>',
+                    'info'       => '<b>' . __('An Automated double-opt-in email will be sent for new subscribers', 'fluent-community') . '</b>',
                     'dependency' => [
                         'depends_on' => 'subscription_status',
                         'operator'   => '=',
@@ -69,7 +69,7 @@ class SpaceJoinTrigger extends BaseTrigger
         return [
             'update_type'   => [
                 'type'    => 'radio',
-                'label'   => __('If Contact Already Exist?', 'fluent-community'),
+                'label'   => __('If Contact Already Exists?', 'fluent-community'),
                 'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
                 'options' => FunnelHelper::getUpdateOptions()
             ],

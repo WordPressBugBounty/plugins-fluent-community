@@ -40,13 +40,13 @@ class SpaceController extends Controller
 
         $data = $request->get('space', []);
 
-        $slug = $data['slug'] ?: $data['title'];
+        $slug = Arr::get($data, 'slug') ?: Arr::get($data, 'title');
 
         $slug = preg_replace('/[^a-zA-Z0-9-_]/', '', $slug);
 
         $data['slug'] = sanitize_title($slug, '');
-        $data['title'] = sanitize_text_field($data['title']);
-        $data['privacy'] = sanitize_text_field($data['privacy']);
+        $data['title'] = sanitize_text_field(Arr::get($data, 'title'));
+        $data['privacy'] = sanitize_text_field(Arr::get($data, 'privacy'));
 
         $this->validate($data, [
             'title'   => 'required',
@@ -74,7 +74,7 @@ class SpaceController extends Controller
             'title'       => sanitize_text_field($data['title']),
             'slug'        => $data['slug'],
             'privacy'     => $data['privacy'],
-            'description' => sanitize_textarea_field($data['description']),
+            'description' => sanitize_textarea_field(Arr::get($data, 'description', '')),
             'settings'    => $settings,
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
             'serial'      => $serial ?: 1
@@ -177,6 +177,8 @@ class SpaceController extends Controller
             })
             ->paginate();
 
+        $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
+
         foreach ($spaces as $space) {
             $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
@@ -186,12 +188,8 @@ class SpaceController extends Controller
                 continue;
             }
 
-            $space->members_count = SpaceUserPivot::where('space_id', $space->id)->where('status', 'active')
-                ->whereHas('xprofile', function ($q) {
-                    $q->where('status', 'active');
-                })
-                ->whereHas('user')
-                ->count();
+            $space->members_count = (int)Arr::get($memberCounts, $space->id, 0);
+            $space->description_rendered = wpautop($space->description);
         }
 
         $data = [
@@ -207,6 +205,7 @@ class SpaceController extends Controller
         $spaces = Space::paginate();
 
         $currentUser = $this->getUser();
+        $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
             $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
@@ -217,12 +216,7 @@ class SpaceController extends Controller
                 continue;
             }
 
-            $space->members_count = SpaceUserPivot::where('space_id', $space->id)->where('status', 'active')
-                ->whereHas('xprofile', function ($q) {
-                    $q->where('status', 'active');
-                })
-                ->whereHas('user')
-                ->count();
+            $space->members_count = (int)Arr::get($memberCounts, $space->id, 0);
 
             $space->formatSpaceData($currentUser);
             do_action_ref_array('fluent_community/space', [&$space]);
@@ -240,7 +234,7 @@ class SpaceController extends Controller
             ->firstOrFail();
 
         $userId = $user ? $user->ID : null;
-        if ($space->privacy == 'secret' && !$space->getMembership($userId)) {
+        if ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true)) {
             return $this->sendError([
                 'message'    => __('You are not allowed to view this space', 'fluent-community'),
                 'error_type' => 'restricted'
@@ -779,7 +773,7 @@ class SpaceController extends Controller
             'groups'          => $groups,
             'orphaned_spaces' => $orphanedSpaces
         ];
-        return apply_filters('fluent_community/space_groups_api_response', $data, $request->all);
+        return apply_filters('fluent_community/space_groups_api_response', $data, $request->all());
     }
 
     public function createSpaceGroup(Request $request)
@@ -855,7 +849,7 @@ class SpaceController extends Controller
 
         if (!$group->spaces->isEmpty()) {
             return $this->sendError([
-                'message' => __('You can not delete this group. It has spaces', 'fluent-community')
+                'message' => __('You cannot delete this group. It has spaces', 'fluent-community')
             ]);
         }
 
@@ -942,5 +936,23 @@ class SpaceController extends Controller
         return [
             'meta_settings' => $metaSettings
         ];
+    }
+
+    private function getActiveMemberCounts($spaceIds)
+    {
+        if (!$spaceIds) {
+            return [];
+        }
+
+        return SpaceUserPivot::whereIn('space_id', $spaceIds)
+            ->where('status', 'active')
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->whereHas('user')
+            ->selectRaw('space_id, COUNT(*) as total')
+            ->groupBy('space_id')
+            ->pluck('total', 'space_id')
+            ->toArray();
     }
 }

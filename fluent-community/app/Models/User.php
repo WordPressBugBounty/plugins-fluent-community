@@ -340,6 +340,20 @@ class User extends Model
         return get_user_meta($this->ID, '_fcom_space_ids', true);
     }
 
+    public function getJoinedSpaceIds()
+    {
+        $globalRoles = $this->getCommunityRoles();
+
+        if (array_intersect($globalRoles, ['admin', 'moderator'])) {
+            return BaseSpace::onlyMain()->pluck('id')->toArray();
+        }
+
+        return BaseSpace::onlyMain()->whereHas('members', function ($query) {
+            $query->where('user_id', $this->ID)
+                ->where('status', 'active');
+        })->pluck('id')->toArray();
+    }
+
     public function getCommunityRoles()
     {
         if (Helper::isSuperAdmin($this->ID)) {

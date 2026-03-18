@@ -70,7 +70,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
         return [
             'update_type'  => [
                 'type'    => 'radio',
-                'label'   => __('If Contact Already Exist?', 'fluent-community'),
+                'label'   => __('If Contact Already Exists?', 'fluent-community'),
                 'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
                 'options' => FunnelHelper::getUpdateOptions()
             ],

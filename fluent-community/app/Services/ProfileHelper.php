@@ -417,7 +417,15 @@ class ProfileHelper
         $hash = $hashParts[0];
 
         $validHash = array_filter($hashes, function ($hashData) use ($hash) {
-            return $hashData['hash'] == $hash;
+            if (!is_array($hashData) || empty($hashData['hash']) || empty($hashData['valid_til'])) {
+                return false;
+            }
+
+            if ((int)$hashData['valid_til'] <= time()) {
+                return false;
+            }
+
+            return hash_equals((string)$hashData['hash'], (string)$hash);
         });
 
         if (!$validHash) {

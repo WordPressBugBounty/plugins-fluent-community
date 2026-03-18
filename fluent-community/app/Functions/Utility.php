@@ -105,17 +105,18 @@ class Utility
         $features = self::getOption('fluent_community_features', []);
 
         $defaults = [
-            'leader_board_module'  => 'yes',
-            'course_module'        => 'yes',
-            'giphy_module'         => 'no',
-            'giphy_api_key'        => '',
-            'emoji_module'         => 'yes',
-            'cloud_storage'        => 'no',
-            'invitation'           => 'yes',
-            'user_badge'           => 'yes',
-            'has_crm_sync'         => 'no',
-            'content_moderation'   => 'no',
-            'followers_module'     => 'no',
+            'leader_board_module'   => 'yes',
+            'course_module'         => 'yes',
+            'giphy_module'          => 'no',
+            'giphy_api_key'         => '',
+            'emoji_module'          => 'yes',
+            'cloud_storage'         => 'no',
+            'invitation'            => 'yes',
+            'user_badge'            => 'yes',
+            'has_crm_sync'          => 'no',
+            'content_moderation'    => 'no',
+            'followers_module'      => 'no',
+            'custom_profile_fields' => 'no',
         ];
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
@@ -125,6 +126,7 @@ class Utility
         $features = wp_parse_args($features, $defaults);
 
         $hasPro = defined('FLUENT_COMMUNITY_PRO') && FLUENT_COMMUNITY_PRO;
+
         if (!$hasPro) {
             $features['leader_board_module'] = 'no';
             $features['giphy_module'] = 'no';
@@ -132,6 +134,7 @@ class Utility
             $features['cloud_storage'] = 'no';
             $features['user_badge'] = 'no';
             $features['followers_module'] = 'no';
+            $features['custom_profile_fields'] = 'no';
         }
 
         return $features;
@@ -1067,6 +1070,14 @@ class Utility
         $lightCss = self::generateCss(Arr::get($schemas, "lightSkins.$lightName.selectors"));
         $darkCss = self::generateCss(Arr::get($schemas, "darkSkins.$darkName.selectors"), 'html.dark');
         return $lightCss . $darkCss;
+    }
+
+    public static function getThemeColor()
+    {
+        $schemas = self::getColorSchemas();
+        $lightName = Arr::get(self::getColorConfig('view'), 'light_schema', 'default');
+
+        return Arr::get($schemas, "lightSkins.$lightName.selectors.body.primary_button", '#2B2E33');
     }
 
     public static function getColorSchemaConfig()

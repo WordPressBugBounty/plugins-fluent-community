@@ -43,7 +43,7 @@ class SpaceGroup extends Model
             }
 
             if (empty($model->slug)) {
-                $slug = sanitize_title($model->tilte, time());
+                $slug = sanitize_title($model->title, time());
                 $model->slug = $slug;
             }
 
