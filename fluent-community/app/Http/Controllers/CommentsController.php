@@ -82,15 +82,18 @@ class CommentsController extends Controller
 
         // Check for duplicate (only for comments with text)
         if ($text) {
-            $exist = Comment::where('user_id', get_current_user_id())
-                ->where('message', $text)
-                ->where('post_id', $feed->id)
-                ->first();
+            $skipDuplicateCheck = apply_filters('fluent_community/disable_duplicate_comment_check', false, get_current_user_id(), $feed->id);
+            if (!$skipDuplicateCheck) {
+                $exist = Comment::where('user_id', get_current_user_id())
+                    ->where('message', $text)
+                    ->where('post_id', $feed->id)
+                    ->first();
 
-            if ($exist) {
-                return $this->sendError([
-                    'message' => __('No duplicate comment please!', 'fluent-community')
-                ]);
+                if ($exist) {
+                    return $this->sendError([
+                        'message' => __('No duplicate comment please!', 'fluent-community')
+                    ]);
+                }
             }
         }
 

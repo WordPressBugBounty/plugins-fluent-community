@@ -37,6 +37,9 @@ class BaseSpace extends Model
         'description'
     ];
 
+    public $_preloadedMembershipUserId = null;
+    public $_preloadedMembership = null;
+
     public static function boot()
     {
         parent::boot();
@@ -171,7 +174,39 @@ class BaseSpace extends Model
             return null;
         }
 
+        if ($this->_preloadedMembershipUserId == $userId) {
+            return $this->_preloadedMembership;
+        }
+
         return $this->members()->where('user_id', $userId)->first();
+    }
+
+    public static function preloadMemberships($spaces, $userId)
+    {
+        if (!$userId || $spaces->isEmpty()) {
+            return;
+        }
+
+        $spaceIds = $spaces->pluck('id')->toArray();
+
+        $pivots = SpaceUserPivot::where('user_id', $userId)
+            ->whereIn('space_id', $spaceIds)
+            ->get()
+            ->keyBy('space_id');
+
+        foreach ($spaces as $space) {
+            $space->_preloadedMembershipUserId = $userId;
+            $pivot = $pivots->get($space->id);
+            $space->_preloadedMembership = $pivot ? static::pivotToMembership($pivot) : null;
+        }
+    }
+
+    private static function pivotToMembership($pivot)
+    {
+        $membership = new \stdClass();
+        $membership->pivot = (object) $pivot->toArray();
+        $membership->ID = $pivot->user_id;
+        return $membership;
     }
 
     public function isCourseSpace()
@@ -401,7 +436,8 @@ class BaseSpace extends Model
         }
 
         if ($viewStatus === 'members_only') {
-            return Helper::isUserInSpace($user->ID, $this->id);
+            $membership = $this->getMembership($user->ID);
+            return $membership && isset($membership->pivot) && $membership->pivot->status === 'active';
         }
 
         return $this->isAdmin($user->ID, true);

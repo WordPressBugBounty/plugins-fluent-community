@@ -82,13 +82,15 @@ class MembersController extends Controller
             ]);
         }
 
-        $shortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'last_activity');
+        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'last_activity');
 
-        if ($shortBy == 'last_activity') {
-            $members = $members->orderBy('last_activity', 'DESC');
-        } else {
-            $members = $members->orderBy($shortBy, 'ASC')->orderBy('id', 'ASC');
-        }
+        $validSortFields = ['last_activity', 'display_name', 'created_at'];
+
+        $sortColumn = in_array($sortBy, $validSortFields, true) ? $sortBy : 'last_activity';
+
+        $sortDirection = ($sortColumn === 'last_activity') ? 'DESC' : 'ASC';
+
+        $members = $members->orderBy($sortColumn, $sortDirection);
 
         $members = $members
             ->searchBy($request->getSafe('search', 'sanitize_text_field'));

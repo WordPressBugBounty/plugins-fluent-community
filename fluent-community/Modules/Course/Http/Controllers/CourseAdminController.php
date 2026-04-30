@@ -166,6 +166,7 @@ class CourseAdminController extends Controller
         do_action('fluent_community/course/created', $course);
 
         return [
+            'message' => __('Course has been created successfully', 'fluent-community'),
             'course' => $course
         ];
     }
@@ -764,6 +765,14 @@ class CourseAdminController extends Controller
     {
         $sectionId = $request->getSafe('section_id', 'intval');
         $fromCourseId = $request->getSafe('from_course_id', 'intval');
+
+        $fromCourse = Course::findOrFail($fromCourseId);
+
+        if (!$fromCourse->isCourseAdmin()) {
+            return $this->sendError([
+                'message' => __('You do not have permission to access this course', 'fluent-community')
+            ]);
+        }
 
         $originalSection = CourseTopic::where('id', $sectionId)
             ->where('space_id', $fromCourseId)

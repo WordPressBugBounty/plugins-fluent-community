@@ -53,6 +53,8 @@ class OptionController extends Controller
                     ->get();
             }
 
+            BaseSpace::preloadMemberships($userSpaces, $userModel->ID);
+
             $userSpaces->each(function ($space) use ($userModel) {
                 $space->permissions = $userModel->getSpacePermissions($space);
                 $space->membership = $space->getMembership($userModel->ID);

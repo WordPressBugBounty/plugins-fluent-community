@@ -355,6 +355,8 @@ class ProfileController extends Controller
             $meta['social_links'] = $formattedSocialLinkes;
         }
 
+        $meta['short_description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($updateData['short_description']));
+
         $updateData['meta'] = $meta;
 
         $xProfile->fill($updateData);
@@ -379,7 +381,7 @@ class ProfileController extends Controller
 
             if ($emailAddress && is_email($emailAddress) && $emailAddress != $xProfile->user->user_email) {
                 $owner_id = email_exists($emailAddress);
-                if ($owner_id != $xProfile->user_id) {
+                if ($owner_id && $owner_id != $xProfile->user_id) {
                     return $this->sendError([
                         'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community')
                     ]);

@@ -85,11 +85,11 @@ class Activity extends Model
         switch ($this->action_name) {
             case 'feed_published':
                 /* translators: %1$s is the person name and %2$s is the feed excerpt */
-            $message = sprintf(__('%1$s published a new status %2$s', 'fluent-community'), '<span class="fcom_user_name">' . $this->xprofile->display_name . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
+            $message = sprintf(__('%1$s published a new status %2$s', 'fluent-community'), '<span class="fcom_user_name">' . esc_html($this->xprofile->display_name) . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
                 break;
             case 'comment_added':
                 /* translators: %1$s is the person name and %2$s is the feed excerpt */
-                $message = sprintf(__('%1$s added a comment on %2$s', 'fluent-community'), '<span class="fcom_user_name">' . $this->xprofile->display_name . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
+                $message = sprintf(__('%1$s added a comment on %2$s', 'fluent-community'), '<span class="fcom_user_name">' . esc_html($this->xprofile->display_name) . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
                 break;
         }
 

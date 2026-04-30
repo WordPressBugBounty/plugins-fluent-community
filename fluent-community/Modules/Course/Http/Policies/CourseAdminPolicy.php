@@ -22,7 +22,15 @@ class CourseAdminPolicy extends BasePolicy
             return false;
         }
 
-        return $user->hasCourseCreatorAccess();
+        if (!$user->hasCourseCreatorAccess()) {
+            return false;
+        }
+
+        if ($request->get('course_id')) {
+            return $this->canManageCourse($request);
+        }
+
+        return true;
     }
 
     public function findCourse(Request $request)
@@ -51,6 +59,21 @@ class CourseAdminPolicy extends BasePolicy
     }
 
     public function removeStudent(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
+    public function bulkAddStudents(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
+    public function bulkImportStudents(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
+    public function resolveCrmTagCourse(Request $request)
     {
         return $this->canManageCourse($request);
     }

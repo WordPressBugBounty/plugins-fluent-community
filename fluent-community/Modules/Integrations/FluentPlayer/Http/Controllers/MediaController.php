@@ -133,16 +133,22 @@ class MediaController extends Controller
             ];
         }
         $mediaId = intval($request->get('media_id'));
+        $instanceKey = sanitize_key($request->get('player_instance_key'));
+        $shareUrl = esc_url_raw($request->get('share_url'));
         $media = Media::find($mediaId);
         if (!$media) {
             $media = (object) $request->all();
+        } else if ($shareUrl) {
+            $media->share_url = $shareUrl;
         }
-        return $this->generateFluentPlayerHtml($mediaId, $media);
+        return $this->generateFluentPlayerHtml($mediaId, $media, $instanceKey);
     }
 
-    private function generateFluentPlayerHtml($mediaId, $media)
+    private function generateFluentPlayerHtml($mediaId, $media, $instanceKey = '')
     {
         $mediaVarName = 'fluentPlayerMedia_' . $mediaId . '_' . wp_rand(1000, 9999);
+        $playerKey = 'fcom_' . $mediaId;
+        $instanceId = $playerKey . ($instanceKey ? '_' . $instanceKey : '');
         $mediaSettings = [];
         $formattedMedia = [
             'ID' => $mediaId
@@ -156,12 +162,26 @@ class MediaController extends Controller
         if (empty($mediaSettings['title']) && !empty($media->title)) {
             $mediaSettings['title'] = $media->title;
         }
-		if (empty($mediaSettings['posterSrc']) && !empty($media->image)) {
+        if (empty($mediaSettings['posterSrc']) && !empty($media->image)) {
             $mediaSettings['posterSrc'] = $media->image;
         }
-		
+        if (empty($mediaSettings['share_url']) && !empty($media->share_url)) {
+            $mediaSettings['share_url'] = esc_url_raw($media->share_url);
+        }
+		$src = Arr::get($mediaSettings, 'src', '');
+		// Normalize YouTube /live/ URLs to /watch?v= so Vidstack can resolve them
+		if ($src && strpos($src, 'youtube.com/live/') !== false) {
+		    $src = preg_replace('/youtube\.com\/live\/([^?&#]+)\??/', 'youtube.com/watch?v=$1&', $src);
+		    $src = rtrim($src, '&');
+		    $mediaSettings['src'] = $src;
+		}
+		if ($src && preg_match('#youtube\.com/shorts/#i', $src)) {
+            $mediaSettings['is_short'] = true;
+        }
+
         $mediaSettings = wp_parse_args($mediaSettings, $this->getFluentplayerDefaultsSettings());
         $formattedMedia['settings'] = $mediaSettings;
+        $formattedMedia['deep_link_ref'] = $playerKey;
 
         // Generate the HTML using fluent-player's view system
         ob_start();
@@ -171,7 +191,9 @@ class MediaController extends Controller
                 if ($fluentPlayerApp) {
                     $fluentPlayerApp->view->render('player', [
                         'media_id' => $mediaId,
+                        'instance_id' => $instanceId,
                         'media_var_name' => $mediaVarName,
+                        'player_ref' => $playerKey,
                         'settings' => $mediaSettings
                     ]);
                 }
@@ -180,18 +202,18 @@ class MediaController extends Controller
         }
         $html = ob_get_clean();
         return [
-            'html' => $html ? $html . $this->generateFluentPlayerCustomStyle($mediaId, $mediaSettings) : '',
+            'html' => $html ? $html . $this->generateFluentPlayerCustomStyle($instanceId, $mediaSettings) : '',
             'media' => $formattedMedia
         ];
     }
 
-    private function generateFluentPlayerCustomStyle($mediaId, $settings)
+    private function generateFluentPlayerCustomStyle($instanceId, $settings)
     {
         $customCss = '';
         $playerWidth = Arr::get($settings, 'playerWidth');
         if ($playerWidth) {
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " .fluent-player-container {
+                #fluent_player_" . esc_attr($instanceId) . " .fluent-player-container {
                     width: " . esc_attr($playerWidth) . 'px' . ";
                 }
             ";
@@ -199,7 +221,7 @@ class MediaController extends Controller
         $brandingColor = Arr::get($settings, 'brandColor', '');
         if ($brandingColor) {
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " {
+                #fluent_player_" . esc_attr($instanceId) . " {
                     --media-brand: " . esc_attr($brandingColor) . ";
                 }
             ";
@@ -208,7 +230,7 @@ class MediaController extends Controller
         $controlBarColor = Arr::get($settings, 'controlBarColor', '');
         if ($brandingColor || $controlBarColor) {
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " {";
+                #fluent_player_" . esc_attr($instanceId) . " {";
             if ($brandingColor) {
                 $customCss .= "
                     --media-brand: " . esc_attr($brandingColor) . ";";
@@ -223,7 +245,7 @@ class MediaController extends Controller
         }
         if (!empty(Arr::get($settings, 'posterSrc', ''))) {
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " .fluent-player-container {
+                #fluent_player_" . esc_attr($instanceId) . " .fluent-player-container {
                     background-image: url('" . esc_url(Arr::get($settings, 'posterSrc', '')) . "');
                     background-size: cover;
                     background-position: center;
@@ -235,21 +257,21 @@ class MediaController extends Controller
         if ($aspectRatio && $aspectRatio != 'original') {
             $cssAspectRatio = preg_replace('/^(\d+):(\d+)$/', '$1/$2', $aspectRatio);
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " {
+                #fluent_player_" . esc_attr($instanceId) . " {
                     aspect-ratio: " . esc_attr($cssAspectRatio) . ";
                 }
-                #fluent_player_" . esc_attr($mediaId) . " media-player[data-view-type='video'] {
+                #fluent_player_" . esc_attr($instanceId) . " media-player[data-view-type='video'] {
                     aspect-ratio: " . esc_attr($cssAspectRatio) . ";
                 }
             ";
         } else {
             $customCss .= "
-                #fluent_player_" . esc_attr($mediaId) . " {
+                #fluent_player_" . esc_attr($instanceId) . " {
                     min-height: 300px;
                 }
 
                 @media (max-width: 768px) {
-                    #fluent_player_" . esc_attr($mediaId) . " {
+                    #fluent_player_" . esc_attr($instanceId) . " {
                         min-height: 200px;
                     }
                 }

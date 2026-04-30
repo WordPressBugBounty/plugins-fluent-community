@@ -3,6 +3,7 @@
 namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Support\Arr;
@@ -417,20 +418,21 @@ class User extends Model
         }
 
         if ($space) {
-            $spacePivot = SpaceUserPivot::where('space_id', $space->id)
-                ->where('user_id', $this->ID)
-                ->first();
+            $membership = $space->getMembership($this->ID);
 
-            if ($spacePivot) {
-                if ($spacePivot->role != 'member') {
-                    return $spacePivot->role;
+            if ($membership) {
+                $role = $membership->pivot->role;
+                $status = $membership->pivot->status;
+
+                if ($role != 'member') {
+                    return $role;
                 }
 
                 if (!in_array('moderator', $globalRoles)) {
-                    if ($spacePivot->status == 'pending') {
+                    if ($status == 'pending') {
                         return 'pending';
                     }
-                    return $spacePivot->role;
+                    return $role;
                 }
             }
         }
@@ -716,8 +718,9 @@ class User extends Model
             'is_verified'       => $this->isVerified() ? 1 : 0,
             'short_description' => get_user_meta($this->ID, 'description', true),
             'meta'              => [
-                'website'     => $this->user_url,
-                'cover_photo' => get_user_meta($this->ID, '_fluent_cover_photo', true)
+                'website'                    => $this->user_url,
+                'cover_photo'                => get_user_meta($this->ID, '_fluent_cover_photo', true),
+                'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml(get_user_meta($this->ID, 'description', true)))
             ]
         ];
 
@@ -743,6 +746,7 @@ class User extends Model
         }
 
         $data['username'] = $initialUserName;
+        $data['status']   = 'active';
         if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
             $data['created_at'] = get_date_from_gmt($this->user_registered, 'Y-m-d H:i:s');
         }

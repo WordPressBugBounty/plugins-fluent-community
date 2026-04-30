@@ -299,6 +299,43 @@ class ProfileHelper
         return $userName;
     }
 
+    public static function createWpUser(array $userData)
+    {
+        $email    = sanitize_email((string) ($userData['email'] ?? ''));
+        $fullName = trim((string) ($userData['full_name'] ?? ''));
+        $password = trim((string) ($userData['password'] ?? ''));
+        $username = sanitize_user((string) ($userData['username'] ?? ''), true);
+
+        if (!is_email($email)) {
+            return new \WP_Error('invalid_email', __('Invalid email address', 'fluent-community'));
+        }
+
+        if (!$password) {
+            $password = wp_generate_password(12);
+        }
+
+        $nameParts = explode(' ', $fullName);
+        $firstName = array_shift($nameParts);
+        $lastName  = implode(' ', $nameParts);
+
+        if ($username && self::isUsernameAvailable($username)) {
+            $userLogin = $username;
+        } else {
+            $userLogin = self::createUserNameFromStrings($email, array_filter([$firstName, $lastName]));
+        }
+
+        $role = apply_filters('fluent_community/created_user_role', 'subscriber', $userData);
+
+        return wp_insert_user([
+            'role'       => $role,
+            'user_email' => $email,
+            'user_login' => $userLogin,
+            'user_pass'  => $password,
+            'first_name' => sanitize_text_field($firstName),
+            'last_name'  => sanitize_text_field($lastName),
+        ]);
+    }
+
     public static function getUserAuthHash($userId = null)
     {
         if (!$userId) {
@@ -333,7 +370,7 @@ class ProfileHelper
                 $lastHash = end($validHashes);
                 return $lastHash['hash'] . '__' . $exist->id;
             }
-            $newHash = md5(wp_generate_uuid4() . '_' . $userId . '_' . '_' . time() . '__' . $userId);
+            $newHash = bin2hex(random_bytes(32));
 
             $hashes[] = [
                 'hash'      => $newHash,
@@ -353,7 +390,7 @@ class ProfileHelper
             return $cached[$userId];
         }
 
-        $newHash = md5(wp_generate_uuid4() . '_' . $userId . '_' . '_' . time() . '__' . $userId);
+        $newHash = bin2hex(random_bytes(32));
 
         $meta = Meta::create([
             'object_type' => 'user',
@@ -429,6 +466,16 @@ class ProfileHelper
         });
 
         if (!$validHash) {
+            return null;
+        }
+
+        // Consume the hash (single-use) to prevent replay attacks
+        $remainingHashes = array_filter($hashes, function ($hashData) use ($hash) {
+            return !is_array($hashData) || empty($hashData['hash']) || !hash_equals((string)$hashData['hash'], (string)$hash);
+        });
+        $meta->value = array_values($remainingHashes);
+
+        if (!$meta->save()) {
             return null;
         }
 

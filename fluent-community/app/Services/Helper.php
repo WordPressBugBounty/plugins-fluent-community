@@ -1573,7 +1573,7 @@ class Helper
      * @param string $by The source of the action.
      * @return bool True if the user was added, false otherwise.
      */
-    public static function addToSpace($space, $userId, $role = 'member', $by = 'self')
+    public static function addToSpace($space, $userId, $role = 'member', $by = 'self', $skipSync = false)
     {
         if (is_numeric($space)) {
             $space = BaseSpace::onlyMain()->find($space);
@@ -1583,13 +1583,15 @@ class Helper
             return false;
         }
 
-        $user = User::find($userId);
+        if (!$skipSync) {
+            $user = User::find($userId);
 
-        if (!$user) {
-            return false;
+            if (!$user) {
+                return false;
+            }
+
+            $user->syncXProfile();
         }
-
-        $user->syncXProfile();
 
         if ($role == 'member' && $space->type == 'course') {
             $role = 'student';
@@ -2002,7 +2004,8 @@ class Helper
     private static function hasSupportedQueryParam()
     {
         $supportedParams = (array) apply_filters('fluent_community/portal_supported_query_params', [
-            'customizer_panel'
+            'customizer_panel',
+            'create_space'
         ]);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended

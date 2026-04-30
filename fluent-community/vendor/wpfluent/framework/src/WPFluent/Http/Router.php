@@ -58,6 +58,12 @@ class Router
     ];
 
     /**
+     * Whether routes created by this router should override existing ones.
+     * @var bool
+     */
+    protected $shouldOverride = false;
+
+    /**
      * Keep the track of number of group calls
      * @var integer
      */
@@ -179,13 +185,6 @@ class Router
      */
     public function namespace($ns)
     {
-        /**
-         * @todo: remove this ltrim in future versions after deprecating
-         * the leading slash usage in namespace declaration.
-         */
-        // remove the leading slash if exists
-        $ns = ltrim($ns, '\\');
-
         $this->namespace[] = $ns;
 
         return $this;
@@ -408,7 +407,11 @@ class Router
             $route->after($this->middleware['after']);
         }
 
-        return $route;
+        if ($this->shouldOverride) {
+            $route->override();
+        }
+
+        return $route->preparefrontendHandlers();
     }
 
     /**
@@ -447,8 +450,20 @@ class Router
     }
 
     /**
+     * Mark all routes created by this router to override existing ones.
+     *
+     * @return $this
+     */
+    public function overrideExisting()
+    {
+        $this->shouldOverride = true;
+
+        return $this;
+    }
+
+    /**
      * Register all the routse in WordPress Rest Engine
-     * 
+     *
      * @return null
      */
     public function registerRoutes()

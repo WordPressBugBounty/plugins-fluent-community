@@ -15,6 +15,7 @@ class Request
         InteractsWithHeadersTrait,
         InputHelperMethodsTrait,
         InteractsWithFilesTrait,
+        InteractsWithIPTrait,
         MacroableTrait {
             __call as macroCall;
         }
@@ -269,6 +270,14 @@ class Request
             }
         }
 
+        if (!$isJson) {
+            $requestBody = file_get_contents('php://input');
+            if (!empty($requestBody)) {
+                json_decode($requestBody);
+                $isJson = json_last_error() === JSON_ERROR_NONE;
+            }
+        }
+
         return $isJson;
     }
 
@@ -345,12 +354,23 @@ class Request
      */
     public function json($key = null, $default = null)
     {
-        if (!$this->isJson()) return;
-        
-        if (!isset($this->json)) {
+        if (!$this->isJson()) {
+            return [];
+        }
+
+        if (empty($this->json)) {
             $json = $this->get_json_params() ?: $this->getContent();
             
-            $this->json = (array) json_decode($json, true);
+            if (!is_array($json)) {
+                $decoded = json_decode($json, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $this->json = [];
+                } else {
+                    $this->json = (array) $decoded;
+                }
+            } else {
+                $this->json = $json;
+            }
         }
 
         if (is_null($key)) {
@@ -372,18 +392,47 @@ class Request
     }
 
     /**
-     * Retrieve an item from the cookie
-     * @param  string $key
-     * @param  mixed $default
+     * Retrieve an item from the cookie jar.
+     *
+     * Returns the raw cookie value, with one exception: if the value is a
+     * valid strict-base64 string AND the decoded bytes parse as JSON, the
+     * decoded value is returned instead. This keeps backwards compatibility
+     * with callers that stored base64(json(...)) payloads, while normal
+     * cookies (utm_*, UUIDs, hex hashes, JWTs, plain strings) pass through
+     * unchanged because they fail one of the two gates.
+     *
+     * @param  string|null $key      Cookie name, or null for the full array
+     * @param  mixed       $default  Returned when $key is set but absent
      * @return mixed
      */
     public function cookie($key = null, $default = null)
     {
-        $cookie = $key ? Arr::get(
-            $this->cookie, $key, $default
-        ) : $this->cookie;
+        if ($key === null) {
+            return $this->cookie;
+        }
 
-        return json_decode(base64_decode($cookie, true));
+        $raw = Arr::get($this->cookie, $key, $default);
+
+        // Pass through defaults, non-strings, and empty strings unchanged
+        if ($raw === $default || !is_string($raw) || $raw === '') {
+            return $raw;
+        }
+
+        // Auto-detect base64(json(...)) payloads. Both gates must pass;
+        // otherwise return the raw cookie. Strict mode rejects values
+        // containing characters outside the base64 alphabet (e.g. '-'),
+        // and most plain values fail the JSON parse on the decoded bytes.
+        $decoded = base64_decode($raw, true);
+        if ($decoded === false) {
+            return $raw;
+        }
+
+        $parsed = json_decode($decoded, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return $raw;
+        }
+
+        return $parsed;
     }
 
     /**
@@ -483,7 +532,7 @@ class Request
      */
     public function getContent()
     {
-        if (null === $this->content || false === $this->content) {
+        if (!$this->content) {
             $this->content = file_get_contents('php://input');
         }
 
@@ -580,6 +629,11 @@ class Request
             }
         }
 
+        if (empty($this->json) && $json = $this->json()) {
+            $this->post = array_merge($this->post, $json);
+            $this->request = array_merge($this->request, $json);
+        }
+
         return $this->safe === true ? $this->validated : $this->request;
     }
 
@@ -595,23 +649,6 @@ class Request
         $clone->safe = true;
 
         return $clone;
-    }
-
-    /**
-     * Get user ip address
-     * @return string
-     */
-    public function getIp()
-    {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $this->server('HTTP_CLIENT_IP');
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = $this->server('HTTP_X_FORWARDED_FOR');
-        } else {
-            $ip = $this->server('REMOTE_ADDR');
-        }
-
-        return $ip;
     }
 
     /**
@@ -709,10 +746,12 @@ class Request
             $status = 403;
         }
 
-        $message = $message ?: 'Request has benn aborted.';
+        $message = $message ?: "{$status} Request has been aborted.";
 
         return new \WP_REST_Response(
-            is_array($message) ? $message : ['message' => (string) $message], $status
+            is_array($message) ? $message : [
+                'message' => (string) $message
+            ], $status
         );
     }
 

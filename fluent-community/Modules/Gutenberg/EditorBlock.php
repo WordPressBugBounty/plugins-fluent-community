@@ -187,6 +187,11 @@ class EditorBlock
             </div>
         </div>
         <?php
+        
+        add_action('wp_footer', function () {
+            do_action('fluent_community/template_footer');
+        }, 99);
+
         return ob_get_clean();
     }
 

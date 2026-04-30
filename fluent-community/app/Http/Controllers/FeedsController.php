@@ -637,6 +637,17 @@ class FeedsController extends Controller
 
             \FluentCommunity\App\Models\Activity::where('feed_id', $existingFeed->id)
                 ->update(['space_id' => $newSpaceId]);
+        } else if ($request->get('move_to_profile')) {
+            if (!$user->hasPermissionOrInCurrentSpace('community_admin', $existingFeed->space)) {
+                return $this->sendError([
+                    'message' => __('Sorry, you do not have permission to move this post to a profile', 'fluent-community')
+                ]);
+            }
+
+            $data['space_id'] = null;
+
+            \FluentCommunity\App\Models\Activity::where('feed_id', $existingFeed->id)
+                ->update(['space_id' => null]);
         }
 
         $data = apply_filters('fluent_community/feed/update_data', $data, $existingFeed);
@@ -839,6 +850,10 @@ class FeedsController extends Controller
 
     private function checkForDuplicatePost($userId, $message, $spaceId = null)
     {
+        if (apply_filters('fluent_community/disable_duplicate_post_check', false, $userId, $spaceId)) {
+            return false;
+        }
+
         $message = trim($message);
 
         $exist = Feed::where('user_id', $userId)
@@ -922,18 +937,33 @@ class FeedsController extends Controller
 
         do_action('fluent_community/check_rate_limit/media_upload', $user);
 
-        $allowedTypes = implode(
-            ',',
-            apply_filters('fluent_community/support_attachment_types', [
-                'image/jpeg',
-                'image/pjpeg',
-                'image/jpeg',
-                'image/pjpeg',
-                'image/png',
-                'image/gif',
-                'image/webp'
-            ])
-        );
+        $allowedMimeTypesArray = apply_filters('fluent_community/support_attachment_types', [
+            'image/jpeg',
+            'image/pjpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/heic',
+        ]);
+
+        $allowedTypes = implode(',', $allowedMimeTypesArray);
+
+        // Extensions eligible for WebP conversion (from allowed MIME types, excluding webp)
+        $convertibleExtensions = [];
+        foreach ($allowedMimeTypesArray as $mime) {
+            $element = explode('/', $mime);
+            $ext = end($element);
+            if ($ext === 'pjpeg') {
+                $ext = 'jpeg';
+            }
+            if ($ext && $ext !== 'webp' && !in_array($ext, $convertibleExtensions)) {
+                $convertibleExtensions[] = $ext;
+            }
+        }
+        // jpg is a common alias for jpeg — add only if jpeg is allowed
+        if (in_array('jpeg', $convertibleExtensions)) {
+            $convertibleExtensions[] = 'jpg';
+        }
 
         $maxFileUnit = apply_filters('fluent_community/media_upload_max_file_unit', 'MB');
         $maxFileSize = apply_filters('fluent_community/media_upload_max_file_size', 100);
@@ -952,6 +982,14 @@ class FeedsController extends Controller
             /* translators: %$1s is replaced by the maximum allowed file size, %2$s is replaced by the file size unit (e.g. MB) */
             'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
         ]);
+
+        if (Arr::get($files, 'file.type') === 'image/heic'
+            && (!extension_loaded('imagick') || !class_exists('Imagick') || !in_array('HEIC', \Imagick::queryFormats('HEIC')))
+        ) {
+            return $this->sendError([
+                'message' => __('HEIC image format is not supported on this system.', 'fluent-community')
+            ]);
+        }
 
         add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
         $uploadedFiles = FileSystem::put($files);
@@ -987,17 +1025,16 @@ class FeedsController extends Controller
             if (!is_wp_error($editor) && $editor->get_size()['width'] > $maxWidth) {
                 // Current file extension
                 $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
-                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $willConvert = in_array($ext, $imageExtensions) && $willWebPConvert;
+                $willConvert = in_array($ext, $convertibleExtensions) && $willWebPConvert;
 
                 if ($willConvert) {
-                    $imageExtensions = array_map(function ($ext) {
+                    $dottedExtensions = array_map(function ($ext) {
                         return '.' . $ext;
-                    }, $imageExtensions);
+                    }, $convertibleExtensions);
 
-                    $fileUrl = str_replace($imageExtensions, '.webp', $fileUrl);
-                    $file['file'] = str_replace($imageExtensions, '.webp', $file['file']);
-                    $file['url'] = str_replace($imageExtensions, '.webp', $file['url']);
+                    $fileUrl = str_replace($dottedExtensions, '.webp', $fileUrl);
+                    $file['file'] = str_replace($dottedExtensions, '.webp', $file['file']);
+                    $file['url'] = str_replace($dottedExtensions, '.webp', $file['url']);
                     $file['type'] = 'image/webp';
                 }
 
@@ -1036,8 +1073,7 @@ class FeedsController extends Controller
             $path = $file['path'];
             $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-            $convertFromExtensions = ['png', 'jpg', 'jpeg', 'gif'];
-            if ($extension != 'webp' && in_array($extension, $convertFromExtensions)) {
+            if ($extension != 'webp' && in_array($extension, $convertibleExtensions)) {
                 // Let's convert to webp
                 $editor = wp_get_image_editor($file['path']);
                 if (!is_wp_error($editor)) {

@@ -216,7 +216,8 @@ class Utility
             'post_title_pref'      => 'optional',
             'max_media_per_post'   => 4,
             'disable_feed_sort_by' => 'no',
-            'default_feed_sort_by' => ''
+            'default_feed_sort_by' => '',
+            'collapse_sidebar_groups' => 'no'
         ];
         $settings = self::getOption('customization_settings', $defaults);
 

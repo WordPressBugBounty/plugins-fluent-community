@@ -46,9 +46,34 @@ class RemoteUrlParser
             'provider'     => strtolower(Arr::get($data, 'provider_name')),
             'content_type' => Arr::get($data, 'type'),
             'url'          => $url,
-            'html'         => Arr::get($data, 'html'),
+            'html'         => self::sanitizeOembedHtml(Arr::get($data, 'html')),
             'image'        => Arr::get($data, 'thumbnail_url'),
         ]);
+    }
+
+    private static function sanitizeOembedHtml($html)
+    {
+        if (empty($html)) {
+            return $html;
+        }
+
+        static $allowed = null;
+        if ($allowed === null) {
+            $allowed = wp_kses_allowed_html('post');
+            $allowed['iframe'] = [
+                'src'             => true,
+                'width'           => true,
+                'height'          => true,
+                'frameborder'     => true,
+                'allowfullscreen' => true,
+                'title'           => true,
+                'loading'         => true,
+                'referrerpolicy'  => true,
+                'sandbox'         => true,
+            ];
+        }
+
+        return wp_kses($html, $allowed, ['https']);
     }
 
     public function getInfoFromRemoteUrl($url)

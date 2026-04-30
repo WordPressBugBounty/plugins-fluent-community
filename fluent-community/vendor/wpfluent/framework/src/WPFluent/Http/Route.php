@@ -45,6 +45,12 @@ class Route
     protected $restNamespace = null;
 
     /**
+     * Whether this route should override existing routes at the same URI.
+     * @var bool
+     */
+    protected $shouldOverride = false;
+
+    /**
      * Full URI
      * @var string
      */
@@ -171,6 +177,13 @@ class Route
     protected $endpointSignature = [];
 
     /**
+     * Response instance
+     * 
+     * @var \WP_REST_Response
+     */
+    protected $response = null;
+
+    /**
      * Construct the route instance
      *
      * @param \FluentCommunity\Framework\Foundation\Application $app
@@ -186,18 +199,18 @@ class Route
         $this->uri = $uri;
         $this->handler = $handler;
         $this->method = $method;
-
-        $this->preparefrontendHandlers($handler);
     }
 
     /**
      * Map the route to be used in front-end.
      *
      * @param mixed $handler
-     * @return null
+     * @return self
      */
-    protected function preparefrontendHandlers($handler)
+    public function preparefrontendHandlers()
     {
+        $handler = $this->handler;
+
         $endpointsUrl = $this->app->config->get('app.slug') . '/__endpoints';
 
         if (get_option('permalink_structure')) {
@@ -210,16 +223,10 @@ class Route
             !str_contains($url ?? '', $endpointsUrl)
             || $handler instanceof Closure
         ) {
-            return;
+            return $this;
         }
 
-        $action = trim($this->app->parseRestHandler($handler), '\\');
-
-        if (!str_contains($action, '@')) {
-            $action .= '@__invoke';
-        }
-
-        [$controller, $cb] = Str::parseCallback($action);
+        [$controller, $cb] = Str::parseCallback($this->parseAction($handler));
 
         $this->endpointSignature = [$controller, "_{$cb}"];
 
@@ -230,11 +237,56 @@ class Route
 
         $endpoints[$controller]["_{$cb}"] = [
             'uri' => $this->uri,
-            'methods' => explode(',', $this->method)
+            'methods' => explode(',', $this->method),
+            'policy' => $this->getPolicyName()
         ];
 
         // @phpstan-ignore-next-line
         $this->app->endpoints = $endpoints;
+
+        return $this;
+    }
+
+    /**
+     * Get a display name for the route's policy handler.
+     *
+     * @return string|null
+     */
+    protected function getPolicyName()
+    {
+        if (!$this->policyHandler) {
+            return null;
+        }
+
+        if ($this->policyHandler instanceof Closure) {
+            return 'Closure';
+        }
+
+        $name = $this->policyHandler;
+
+        if (is_string($name) && !$this->app->hasNamespace($name)) {
+            $name = $this->app->__namespace__ . '\\App\\Http\\Policies\\' . $name;
+        }
+
+        return $name;
+    }
+
+    /**
+     * Parse the action from the handler.
+     * 
+     * @param  mixed $handler
+     * @return string
+     */
+    protected function parseAction($handler)
+    {
+        $action = $this->app->parseRestHandler($handler, $this->namespace);
+        $action = trim($action, '\\');
+
+        if (!str_contains($action, '@')) {
+            $action .= '@__invoke';
+        }
+
+        return $action;
     }
 
     /**
@@ -532,6 +584,10 @@ class Route
      */
     public function injectProp($key, $value)
     {
+        if (!$this->endpointSignature) {
+            return;
+        }
+
         [$controller, $cbKey] = $this->endpointSignature;
 
         $controllerKey = str_replace('\\', '.', $controller);
@@ -600,13 +656,18 @@ class Route
     }
 
     /**
-     * Set the namespace for controller/action
+     * Set the namespace for controller/action.
+     * 
      * @param string $ns
      * @return null
      */
     public function withNamespace($ns)
     {
-        $this->namespace = implode('\\', $ns);
+        if (is_array($ns)) {
+            $this->namespace = implode('\\', $ns);
+        } else {
+            $this->namespace = trim($ns, '\\');
+        }
     }
 
     /**
@@ -688,7 +749,7 @@ class Route
             $this->restNamespace,
             $this->getRouteUri(),
             $this->getOptions(),
-            $this->override()
+            $this->shouldOverride
         );
     }
 
@@ -713,13 +774,15 @@ class Route
     }
 
     /**
-     * Allow route override if we are testing.
-     * 
-     * @return bool
+     * Mark this route to override any existing route at the same URI.
+     *
+     * @return $this
      */
-    protected function override()
+    public function override()
     {
-        return str_starts_with($this->app->env(), 'testing');
+        $this->shouldOverride = true;
+
+        return $this;
     }
 
     /**
@@ -828,14 +891,17 @@ class Route
     /**
      * Route handler
      *
-     * @return mixed
+     * @return \WP_REST_Response
      */
     public function callback()
     {
         try {
-            return $this->handleAfterMiddleware(
+            $this->response = $this->handleAfterMiddleware(
                 $this->dispatchRouteAction()
             );
+
+            return $this->handleResponse($this->response);
+
         } catch (ValidationException $e) {
             return $this->app->response->sendError(
                 $e->errors(), $e->getCode()
@@ -845,17 +911,108 @@ class Route
                 'message' => $e->getMessage()
             ], 404);
         } catch (Throwable $e) {
-            $this->fireExceptionEvent($e);
-            return $this->app->response->sendError([
-                'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            return $this->handleUnknownException(
+                $e, $this->response ? $this->response->get_headers() : []
+            );
         }
+    }
+
+    /**
+     * Handle response from route.
+     * 
+     * @param  \WP_REST_Response $response
+     * @return \WP_REST_Response
+     */
+    protected function handleResponse($response)
+    {
+        if ($response->get_status() >= 400) {
+            $this->fireExceptionEvent(
+                new Exception(
+                    $this->extractErrorMessage($response),
+                    $response->get_status()
+                )
+            );
+        }
+
+        return $response;
+    }
+
+    /**
+     * Extract error message from response data.
+     *
+     * @param  \WP_REST_Response $response
+     * @return string
+     */
+    protected function extractErrorMessage($response)
+    {
+        $data = $response->get_data();
+
+        if (is_string($data)) {
+            return $data;
+        }
+
+        if (is_array($data) && isset($data['message'])) {
+            return $data['message'];
+        }
+
+        if ($data instanceof WP_Error) {
+            return $data->get_error_message();
+        }
+
+        return 'Unknown error';
+    }
+
+    /**
+     * Throw an exception based on the status code.
+     * 
+     * @param  string $message
+     * @param  int $status
+     * @return null
+     * @throws \Exception
+     */
+    protected function throwException($message, $status)
+    {
+        $class = sprintf(
+            'WpOrg\Requests\Exception\Http\Status%d', $status
+        );
+        
+        if (!class_exists($class)) {
+            $class = 'WpOrg\Requests\Exception\Http';
+        }
+
+        throw new $class($message, $status);
+    }
+
+    /**
+     * Handle exception and send error response.
+     * 
+     * @param  Throwable $e
+     * @return \WP_REST_Response
+     */
+    protected function handleUnknownException(Throwable $e, $headers = [])
+    {
+        $data = [];
+
+        $this->fireExceptionEvent($e);
+
+        if ($this->app->isDebugOn()) {
+            $data = [
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ];
+        }
+
+        return $this->app->response->sendError([
+            'code'    => 'plugin_exception',
+            'data'    => $data,
+            'message' => $e->getMessage(),
+        ], $e->getCode() ?: 500, $headers);
     }
 
     /**
      * Dispatch the route action.
      *
-     * @return mixed
+     * @return \WP_REST_Response
      */
     protected function dispatchRouteAction()
     {
@@ -925,8 +1082,18 @@ class Route
      */
     protected function fireExceptionEvent($exception)
     {
-        if ($this->app->isDebugOn()) {
-            $this->app->doCustomAction('exception', $exception);
+        if ($this->app->isDebugOn() || defined('FLUENT_BRIDGE_SECRET')) {
+            $message = sprintf(
+                "%s in %s:%d\nStack trace:\n%s\n",
+                $exception->getMessage(),
+                $exception->getFile(),
+                $exception->getLine(),
+                $exception->getTraceAsString()
+            );
+            
+            error_log($message);
+            
+            $this->app->doAction('fluent_exception', $exception);
         }
     }
 
@@ -938,6 +1105,8 @@ class Route
     public function permissionCallback($wpRestRequest)
     {
         try {
+            $this->parameters = null;
+            $this->substitutedParameters = null;
             $this->app->instance('route', $this);
             $this->app->instance('wprestrequest', $wpRestRequest);
             $this->app->request->mergeInputsFromRestRequest($wpRestRequest);

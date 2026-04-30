@@ -28,8 +28,13 @@ class CourseController extends Controller
         $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
 
         $courses = Course::searchBy($search)
-            ->when(!$isCourseCreator || $isEnrolled, function ($q) {
-                $q->where('status', 'published');
+            ->where(function ($q) use ($isCourseCreator, $isEnrolled, $user) {
+                if ($isCourseCreator && !$isEnrolled) {
+                    $q->where('status', 'published')
+                      ->orWhere('created_by', $user->ID);
+                } else {
+                    $q->where('status', 'published');
+                }
             })
             ->byPostTopic($topicSlug)
             ->where(function ($q) use ($enrolledIds) {
@@ -80,13 +85,12 @@ class CourseController extends Controller
     public function getCourse(Request $request, $courseId)
     {
         $user = $this->getUser();
-        $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
-        $course = Course::when(!$isCourseCreator, function ($q) {
-            $q->where('status', 'published');
-        })->find($courseId);
+        $course = Course::findOrFail($courseId);
 
-        if (!$course) {
+        $isCourseCreator = $course->isCourseAdmin($user);
+
+        if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
                 'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
             ]);
@@ -102,15 +106,12 @@ class CourseController extends Controller
     public function getCourseBySlug(Request $request, $slug)
     {
         $user = $this->getUser();
-        $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
-        $course = Course::when(!$isCourseCreator, function ($q) {
-                $q->where('status', 'published');
-            })
-            ->where('slug', $slug)
-            ->firstOrFail();
+        $course = Course::where('slug', $slug)->firstOrFail();
 
-        if (!$course) {
+        $isCourseCreator = $course->isCourseAdmin($user);
+
+        if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
                 'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
             ]);
@@ -142,13 +143,12 @@ class CourseController extends Controller
     public function getLessonBySlug(Request $request, $courseSlug, $lessonSlug)
     {
         $user = $this->getUser();
-        $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
-        $course = Course::when(!$isCourseCreator, function ($q) {
-            $q->where('status', 'published');
-        })->where('slug', $courseSlug)->firstOrFail();
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
 
-        if (!$course) {
+        $isCourseCreator = $course->isCourseAdmin($user);
+
+        if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
                 'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
             ]);
@@ -232,6 +232,8 @@ class CourseController extends Controller
             ]);
         }
 
+        $course->is_course_admin = $isCourseCreator;
+
         $courseSettings = $course->settings;
         if (Arr::get($courseSettings, 'course_details')) {
             $courseSettings['course_details_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($courseSettings['course_details']));
@@ -314,11 +316,15 @@ class CourseController extends Controller
             ]);
         }
 
-        $isCourseCreator = $user->hasCourseCreatorAccess();
-        $course = Course::when(!$isCourseCreator, function ($q) {
-            $q->where('status', 'published');
-        })->findOrFail($courseId);
+        $course = Course::findOrFail($courseId);
 
+        $isCourseCreator = $course->isCourseAdmin($user);
+
+        if ($course->status !== 'published' && !$isCourseCreator) {
+            return $this->sendError([
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+            ]);
+        }
 
         if (!$isCourseCreator && $course->privacy != 'public') {
             return $this->sendError([
@@ -405,8 +411,13 @@ class CourseController extends Controller
         $user = $this->getUser();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
-        $courses = Course::when(!$isCourseCreator, function ($q) {
-                $q->where('status', 'published');
+        $courses = Course::where(function ($q) use ($isCourseCreator, $user) {
+                if ($isCourseCreator) {
+                    $q->where('status', 'published')
+                      ->orWhere('created_by', $user->ID);
+                } else {
+                    $q->where('status', 'published');
+                }
             })
             ->with(['creator'])
             ->paginate();
@@ -437,7 +448,7 @@ class CourseController extends Controller
                 }
             }
 
-            $formattedCourses[] = $this->processCourse($course, $isCourseCreator);
+            $formattedCourses[] = $this->processCourse($course, $course->isCourseAdmin($user));
         }
 
         return apply_filters('fluent_community/all_courses_api_response', [

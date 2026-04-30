@@ -367,19 +367,36 @@ class AuthHelper
 
     public static function validateVerificationCode($code, $verificationToken, $formData)
     {
+        if (!is_string($verificationToken) || strpos($verificationToken, '.') === false) {
+            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
+        }
+
         list($data, $signature) = explode('.', $verificationToken, 2);
+        if (!$data || !$signature) {
+            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
+        }
+
         $expectedSignature = hash_hmac('sha256', $data, SECURE_AUTH_KEY);
 
         if (!hash_equals($expectedSignature, $signature)) {
             return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
         }
 
-        $data = json_decode(base64_decode($data), true);
-        if ($data['expires'] < time()) {
+        $decodedData = base64_decode($data, true); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+        if ($decodedData === false) {
+            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
+        }
+
+        $data = json_decode($decodedData, true);
+        if (!is_array($data) || empty($data['expires']) || empty($data['email']) || empty($data['code_hash'])) {
+            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
+        }
+
+        if ((int)$data['expires'] < time()) {
             return new \WP_Error('expired_token', __('Verification token has expired. Please try again.', 'fluent-community'));
         }
 
-        if ($data['email'] !== $formData['email']) {
+        if (!isset($formData['email']) || $data['email'] !== $formData['email']) {
             return new \WP_Error('invalid_email', __('Invalid email address. Please try again', 'fluent-community'));
         }
 

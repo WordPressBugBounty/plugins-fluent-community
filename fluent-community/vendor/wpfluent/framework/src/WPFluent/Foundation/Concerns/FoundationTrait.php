@@ -509,4 +509,12 @@ trait FoundationTrait
             ? ($userModel::find($wpUser->ID) ?? new WPUserProxy($wpUser))
             : new WPUserProxy($wpUser);
     }
+
+    public function enableApplicationPassword()
+    {
+        add_filter(
+            'wp_is_application_passwords_available',
+            fn() => !str_starts_with($this->env(), 'prod')
+        );
+    }
 }

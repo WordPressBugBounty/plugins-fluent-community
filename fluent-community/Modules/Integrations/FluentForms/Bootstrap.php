@@ -323,42 +323,11 @@ class Bootstrap extends IntegrationManagerController
      */
     protected function registerUser($userData)
     {
-        $email = Arr::get($userData, 'email');
-        if (!is_email($email)) {
-            return new \WP_Error('invalid_email', 'Invalid email address');
-        }
-
-        $password = trim((string)Arr::get($userData, 'password',''));
-        if (!$password) {
-            $password = wp_generate_password(8);
-        }
-
-        $nameArray = explode(' ', (string)Arr::get($userData, 'full_name'));
-
-        $firstName = array_shift($nameArray);
-        $lastName = implode(' ', $nameArray);
-
-        $userName = ProfileHelper::createUserNameFromStrings($email, array_filter([
-            $firstName,
-            $lastName
-        ]));
-
-        $userData = [
-            'role'       => get_option('default_role', 'subscriber'),
-            'user_email' => $email,
-            'user_login' => $userName,
-            'user_pass'  => $password,
-            'first_name' => $firstName,
-            'last_name'  => $lastName
-        ];
-
-        $userId = wp_insert_user($userData);
-
-        if (is_wp_error($userId)) {
-            return $userId;
-        }
-
-        return $userId;
+        return ProfileHelper::createWpUser([
+            'email'     => Arr::get($userData, 'email', ''),
+            'full_name' => Arr::get($userData, 'full_name', ''),
+            'password'  => Arr::get($userData, 'password', ''),
+        ]);
     }
 
     protected function addLog($title, $status, $description, $formId, $entryId, $integrationKey)

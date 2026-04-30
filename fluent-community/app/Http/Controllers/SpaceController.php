@@ -562,7 +562,9 @@ class SpaceController extends Controller
             ->byUser($userId)
             ->first();
 
-        $role = $request->get('role', 'member');
+        $allowedRoles = ['member', 'moderator', 'admin'];
+        $requestedRole = $request->get('role', 'member');
+        $role = in_array($requestedRole, $allowedRoles, true) ? $requestedRole : 'member';
 
         if ($pivot) {
             if ($pivot->status == 'active') {

@@ -48,24 +48,24 @@
         },
         {
             "name": "wpfluent/framework",
-            "version": "2.11.9",
-            "version_normalized": "2.11.9.0",
+            "version": "2.11.17",
+            "version_normalized": "2.11.17.0",
             "source": {
                 "type": "git",
                 "url": "git@github.com:wpfluent/framework2x.git",
-                "reference": "ebf5bb58e32d635e84143bc536e5c2147d792538"
+                "reference": "d3117998519c0b65afd90811848da43f69821513"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpfluent/framework2x/zipball/ebf5bb58e32d635e84143bc536e5c2147d792538",
-                "reference": "ebf5bb58e32d635e84143bc536e5c2147d792538",
+                "url": "https://api.github.com/repos/wpfluent/framework2x/zipball/d3117998519c0b65afd90811848da43f69821513",
+                "reference": "d3117998519c0b65afd90811848da43f69821513",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "php": "^7.3|^8.0"
             },
-            "time": "2025-10-06T15:36:35+00:00",
+            "time": "2026-04-20T20:51:03+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -89,7 +89,7 @@
             ],
             "description": "A lightweight rest api based framework to build WordPress plugins.",
             "support": {
-                "source": "https://github.com/wpfluent/framework2x/tree/2.11.9",
+                "source": "https://github.com/wpfluent/framework2x/tree/2.11.17",
                 "issues": "https://github.com/wpfluent/framework2x/issues"
             },
             "install-path": "../wpfluent/framework"

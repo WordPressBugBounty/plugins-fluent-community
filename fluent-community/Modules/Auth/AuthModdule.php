@@ -35,10 +35,7 @@ class AuthModdule
             }
 
             // validate the url
-            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['fcom_redirect'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            if (!filter_var($redirectUrl, FILTER_VALIDATE_URL)) {
-                $redirectUrl = Helper::baseUrl();
-            }
+            $redirectUrl = wp_validate_redirect(sanitize_url(wp_unslash($_REQUEST['fcom_redirect'])), Helper::baseUrl()); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
             $redirectUrl = apply_filters('fluent_community/auth/after_login_redirect_url', $redirectUrl, $user);
             return $redirectUrl;
@@ -52,9 +49,12 @@ class AuthModdule
             $tagetUser = ProfileHelper::getUserByUrlHash($urlHash);
             if ($tagetUser) {
                 $willAtoLogin = apply_filters('fluent_community/allow_auto_login_by_url', !user_can($tagetUser, 'delete_pages'), $tagetUser);
-                // $willAtoLogin = true;
                 if ($willAtoLogin) {
-                    InvitationService::makeLogin($tagetUser);
+                    try {
+                        InvitationService::makeLogin($tagetUser);
+                    } catch (\Throwable $e) {
+                        error_log('FluentCommunity: Auto-login failed for user #' . $tagetUser->ID . ': ' . $e->getMessage());
+                    }
                 }
             }
         }
@@ -62,7 +62,7 @@ class AuthModdule
         // Remove fcom_action and fcom_url_hash from the current url
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $url = remove_query_arg(['fcom_action', 'fcom_url_hash'], $currentUrl);
-        wp_safe_redirect($url);
+        wp_redirect($url, 302); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
         exit();
     }
 
@@ -531,7 +531,7 @@ class AuthModdule
 
         $html = '<div class="fcom_completed"><div class="fcom_complted_header"><h2>' . __('Congratulations!', 'fluent-community') . '</h2>';
         $html .= '<p>' . __('You have successfully registered to the community', 'fluent-community') . '</p></div>';
-        $html .= '<a href="' . $redirectUrl . '" class="fcom_btn fcom_btn_success">' . $btnText . '</a>';
+        $html .= '<a href="' . esc_url($redirectUrl) . '" class="fcom_btn fcom_btn_success">' . $btnText . '</a>';
         $html .= '</div>';
 
         if (!get_current_user_id()) {
@@ -604,7 +604,7 @@ class AuthModdule
 
         $redirectUrl = null;
         if (!empty($_REQUEST['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $redirectUrl = wp_validate_redirect(sanitize_url(wp_unslash($_REQUEST['redirect_to'])), Helper::baseUrl()); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
 
         if (!$redirectUrl) {
@@ -632,7 +632,7 @@ class AuthModdule
 
         $html = '<div class="fcom_completed"><div class="fcom_complted_header"><h2>' . __('Welcome back!', 'fluent-community') . '</h2>';
         $html .= '<p>' . __('You have successfully logged in to the community', 'fluent-community') . '</p></div>';
-        $html .= '<a href="' . $redirectUrl . '" class="fcom_btn fcom_btn_success">' . $btnText . '</a>';
+        $html .= '<a href="' . esc_url($redirectUrl) . '" class="fcom_btn fcom_btn_success">' . $btnText . '</a>';
         $html .= '</div>';
 
         wp_send_json([
@@ -828,13 +828,15 @@ class AuthModdule
         add_action('fluent_community/before_registration_form', function ($frameData) {
             if (AuthHelper::isFluentAuthAvailable()) {
                 $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
                 ob_start();
                 $titlePrefix = __('Signup with', 'fluent-community');
                 do_shortcode('[fs_auth_buttons redirect="' . $currentUrl . '" title_prefix="' . $titlePrefix . ' " title=""]');
                 $html = ob_get_clean();
+
                 if ($html) {
                     echo '<div class="fcom_social_auth_wrap">';
-                    echo wp_kses_post($html);
+                    echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     echo '</div>';
                 }
             }

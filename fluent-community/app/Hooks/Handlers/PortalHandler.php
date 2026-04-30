@@ -408,6 +408,8 @@ class PortalHandler
                     ->get();
             }
 
+            BaseSpace::preloadMemberships($userSpaces, $userModel->ID);
+
             $userSpaces->each(function ($space) use ($userModel) {
                 $space = $space->formatSpaceData($userModel);
                 do_action_ref_array('fluent_community/space', [&$space]);
@@ -729,6 +731,7 @@ class PortalHandler
             'course_lesson_fullscreen'   => apply_filters('fluent_community/course_lesson_fullscreen_default', 'no'),
             'default_profile_tab'        => apply_filters('fluent_community/default_profile_tab_route', ''),
             'wp_lesson_editor_frame'     => $editorFrameUrl,
+            'has_fluentcrm'              => defined('FLUENTCRM'),
             'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
                 'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
@@ -754,6 +757,7 @@ class PortalHandler
             'default_color'            => 'light',
             'color_switch_cookie_name' => '',
             'has_color_scheme'         => Helper::hasColorScheme(),
+            'collapse_sidebar_groups'  => Utility::isCustomizationEnabled('collapse_sidebar_groups'),
         ]);
     }
 
@@ -790,15 +794,20 @@ class PortalHandler
 
         if (!$userId && !Helper::isPublicAccessible()) {
             $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $parsedUrl    = wp_parse_url($url);
+            $redirectPath = $parsedUrl['path'] ?? '/';
+            if (!empty($parsedUrl['query'])) {
+                $redirectPath .= '?' . $parsedUrl['query'];
+            }
             $settings = Helper::generalSettings();
             $authUrl = Arr::get($settings, 'auth_url', '') ?: $this->getAuthUrl();
-            
+
             if ($authUrl) {
                 $authUrl = add_query_arg([
-                    'redirect_to' => $url
+                    'redirect_to' => $redirectPath
                 ], $authUrl);
             } else {
-                $authUrl = wp_login_url($url);
+                $authUrl = wp_login_url($redirectPath);
             }
 
             do_action('fluent_community/portal/not_logged_in', $authUrl);

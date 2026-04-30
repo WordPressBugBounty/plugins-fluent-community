@@ -1,4 +1,13 @@
 <?php
+/**
+ * @package WPFluent
+ * @author  Sheikh Heera <heera.sheikh77@gmail.com> (https://heera.it)
+ * @author  Sheikh Heera <mail@heera.it>
+ * @author  Sheikh Heera <heera@authlab.io>
+ * @link    https://github.com/wpfluent/framework2x
+ * @license MIT https://opensource.org/licenses/MIT
+ * @license GPL-2.0-or-later https://www.gnu.org/licenses/gpl-2.0.html
+ */
 
 namespace FluentCommunity\Framework\Foundation;
 
@@ -12,10 +21,29 @@ use FluentCommunity\Framework\Foundation\ComponentBinder;
 use FluentCommunity\Framework\Foundation\Concerns\FoundationTrait;
 
 /**
- * @property \FluentCommunity\Framework\Foundation\Config $config
- * @property \FluentCommunity\Framework\Http\Router\Router $router
- * @property \FluentCommunity\Framework\Http\Request\Request $request
- * @property \FluentCommunity\Framework\Http\Response\Response $response
+ * Application — service container with magic property access via __get.
+ *
+ * Properties below are bound in {@see ComponentBinder::bindComponents()} and
+ * {@see Application::init()}/{@see Application::setAppLevelNamespace()}. Each
+ * `@property` declaration teaches PHPStan about a runtime container binding so
+ * `$app->view->render(...)` and similar access can be type-checked.
+ *
+ * @property \FluentCommunity\Framework\Foundation\Config        $config
+ * @property \FluentCommunity\Framework\View\View                $view
+ * @property \FluentCommunity\Framework\Cache\Cache              $cache
+ * @property \FluentCommunity\Framework\Http\Router\Router       $router
+ * @property \FluentCommunity\Framework\Http\Request\Request     $request
+ * @property \FluentCommunity\Framework\Http\Response\Response   $response
+ * @property \FluentCommunity\Framework\Validator\Validator      $validator
+ * @property \FluentCommunity\Framework\Events\Dispatcher        $events
+ * @property \FluentCommunity\Framework\Encryption\Encrypter     $encrypter
+ * @property \FluentCommunity\Framework\Encryption\Encrypter     $crypt
+ * @property \FluentCommunity\Framework\Database\DatabaseManager $db
+ * @property \FluentCommunity\Framework\Http\URL                 $url
+ * @property \FluentCommunity\Framework\Support\Mail             $mail
+ * @property \FluentCommunity\Framework\Support\Pipeline         $pipeline
+ * @property string                             $__pluginfile__
+ * @property string                             $__namespace__
  */
 class Application extends Container
 {
@@ -331,9 +359,9 @@ class Application extends Container
 
         require_once $this->basePath . 'app/Hooks/actions.php';
         require_once $this->basePath . 'app/Hooks/filters.php';
-
-        if (file_exists($includes = $this->basePath . 'app/Hooks/includes.php')) {
-            require_once $includes;
+        
+        if (file_exists($f = $this->basePath . 'app/Hooks/includes.php')) {
+            require_once $f;
         }
     }
 
@@ -523,8 +551,10 @@ class Application extends Container
      */
     protected function callPluginReadyCallbacks()
     {
-        while ($callback = array_pop($this->onReady)) {
-            $callback($this);
-        }
+        $this->addAction('init', function() {
+            while ($callback = array_pop($this->onReady)) {
+                $callback($this);
+            }
+        });
     }
 }

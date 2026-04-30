@@ -174,7 +174,7 @@ class EmailComposer
             }
 
             $text = $matches[2];
-            return '<a target="_blank" rel="noopenner" href="' . $url . '">' . $text . '</a>';
+            return '<a target="_blank" rel="noopener noreferrer" href="' . $url . '">' . $text . '</a>';
         }, $footerTextHtml);
 
         $this->addFooterLine('paragraph', $footerTextHtml);

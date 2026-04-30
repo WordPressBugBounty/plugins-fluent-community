@@ -274,9 +274,9 @@ class CourseHelper
         return true;
     }
 
-    public static function enrollCourse($course, $userId = null, $by = 'self')
+    public static function enrollCourse($course, $userId = null, $by = 'self', $skipSync = false)
     {
-        return Helper::addToSpace($course, $userId, 'student', $by);
+        return Helper::addToSpace($course, $userId, 'student', $by, $skipSync);
     }
 
     public static function enrollCourses($courseIds, $userId = null, $by = 'self')

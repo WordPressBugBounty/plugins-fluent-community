@@ -67,26 +67,28 @@ class SettingController extends Controller
             }
         }
 
+        $afterCommunityLinkGroups = Arr::get($formattedGroups, 'afterCommunityLinkGroups', []);
+        $formattedAfterCommunityGroups = [];
 
-        if (empty($formattedGroups['afterCommunityLinkGroups']) || !is_array($formattedGroups['afterCommunityLinkGroups'])) {
-            $formattedGroups['afterCommunityLinkGroups'] = [
-                [
-                    'title' => __('Links', 'fluent-community'),
-                    'slug'  => 'custom_footer_links',
-                    'items' => []
-                ]
-            ];
-        } else {
-            foreach ($formattedGroups['afterCommunityLinkGroups'] as &$group) {
-                if (is_array($group) && !empty($group['items'])) {
-                    $group['items'] = array_values($group['items']);
-                } else {
-                    $group = [
-                        'items' => []
-                    ];
-                }
+        if (is_array($afterCommunityLinkGroups)) {
+            foreach ($afterCommunityLinkGroups as $group) {
+                if (!is_array($group)) continue;
+
+                $title = Arr::get($group, 'title', '');
+                if (empty($title)) continue;
+
+                $items = Arr::get($group, 'items', []);
+                $items = is_array($items) ? array_values($items) : [];
+
+                $formattedAfterCommunityGroups[] = [
+                    'title' => $title,
+                    'slug'  => Arr::get($group, 'slug', ''),
+                    'items' => $items,
+                ];
             }
         }
+
+        $formattedGroups['afterCommunityLinkGroups'] = $formattedAfterCommunityGroups;
 
         $data = [
             'menuSettings' => $formattedGroups
@@ -111,9 +113,7 @@ class SettingController extends Controller
 
         $formattedAfterCommunityGroups = [];
         foreach ($afterCommunityLinkGroups as $afterCommunityLinkGroup) {
-            if (empty($afterCommunityLinkGroup['items']) || empty($afterCommunityLinkGroup['title'])) {
-                continue;
-            }
+            if (empty($afterCommunityLinkGroup['title'])) continue;
 
             $formattedAfterCommunityGroups[] = [
                 'title' => sanitize_text_field($afterCommunityLinkGroup['title']),
@@ -442,7 +442,7 @@ class SettingController extends Controller
         $settings = $request->get('settings', []);
 
         $yesNoFields = [
-            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout'
+            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout', 'collapse_sidebar_groups'
         ];
 
         foreach ($settings as $key => $value) {
