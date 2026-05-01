@@ -925,15 +925,6 @@ class Route
      */
     protected function handleResponse($response)
     {
-        if ($response->get_status() >= 400) {
-            $this->fireExceptionEvent(
-                new Exception(
-                    $this->extractErrorMessage($response),
-                    $response->get_status()
-                )
-            );
-        }
-
         return $response;
     }
 

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.3
-Stable tag: 2.4.0
+Stable tag: 2.4.01
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -250,6 +250,11 @@ OR
 
 == Changelog ==
 
+= 2.4.01 (Date: May 01, 2026) =
+- Fixed: Issue with Custom CSS Sanitization
+- Fixed: Checkbox Checkmark Not Centered Inside the Box
+- Fixed: Icon Selector Hidden for System Menu Items in Menu Group Settings
+
 = 2.4.0 (Date: Apr 30, 2026) =
 - Introduced: Bulk Add Members and Students from Multiple Sources
 - Added: Default-Collapse Sidebar Groups Option in Settings
@@ -259,6 +264,7 @@ OR
 - Added: Confirmation Modal Before Removing Post Preview Image
 - Added: Filter Hooks for Duplicate Post and Comment Check
 - Improved: Active Sidebar Group Auto-Expands on Navigation
+- Improved: UI and UX with more Smoother Page Transitions
 - Security: Hardened Webhook Key Generation and Rate Limiting
 - Security: Improved CSS and Input Sanitization Checks
 - Fixed: Approve Post Fails with Invalid Status Value Error
