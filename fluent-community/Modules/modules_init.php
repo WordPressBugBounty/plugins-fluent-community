@@ -1,5 +1,7 @@
 <?php
 
+defined('ABSPATH') || exit;
+
 add_action('fluent_community/portal_loaded', function ($app) {
     (new \FluentCommunity\Modules\FeaturesHandler())->register($app);
 

@@ -86,6 +86,10 @@
             img {
                 max-width: 100%;
             }
+
+            img.wp-smiley {
+                vertical-align: middle;
+            }
         }
 
         .footer p {

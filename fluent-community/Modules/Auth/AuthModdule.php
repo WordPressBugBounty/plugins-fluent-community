@@ -53,7 +53,9 @@ class AuthModdule
                     try {
                         InvitationService::makeLogin($tagetUser);
                     } catch (\Throwable $e) {
-                        error_log('FluentCommunity: Auto-login failed for user #' . $tagetUser->ID . ': ' . $e->getMessage());
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log('FluentCommunity: Auto-login failed for user #' . $tagetUser->ID . ': ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                        }
                     }
                 }
             }
@@ -126,14 +128,17 @@ class AuthModdule
 
         $acceptedForms = ['login', 'register', 'reset_password'];
         $targetForm = Arr::get($_GET, 'form'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if (!in_array($targetForm, $acceptedForms)) {
+        $explicitForm = in_array($targetForm, $acceptedForms, true);
+        if (!$explicitForm) {
             $targetForm = 'login';
         }
 
-        if ($inviation && $targetForm != 'reset_password') {
+        if ($inviation && !$explicitForm) {
             if ($inviation->message) {
                 $isUserAvailable = get_user_by('email', $inviation->message);
                 $targetForm = $isUserAvailable ? 'login' : 'register';
+            } else {
+                $targetForm = 'register';
             }
         }
 
@@ -595,8 +600,14 @@ class AuthModdule
         $user = wp_authenticate($data['log'], $data['pwd']);
 
         if (is_wp_error($user)) {
+            $enumerationCodes = ['invalid_username', 'invalid_email', 'incorrect_password'];
+            if (in_array($user->get_error_code(), $enumerationCodes, true)) {
+                $message = __('Email or password is incorrect.', 'fluent-community');
+            } else {
+                $message = $user->get_error_message();
+            }
             wp_send_json([
-                'message' => $user->get_error_message()
+                'message' => $message
             ], 422);
         }
 

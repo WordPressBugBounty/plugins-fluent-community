@@ -39,16 +39,19 @@ class FluentBlockEditorHandler
             remove_action('enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets');
             add_action('fluent_community/block_editor_head', function () {
                 $url = FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.css';
+                $contentStylingUrl = FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css';
+                // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- emitted into a custom non-wp_head action hook, wp_enqueue_style not applicable
                 ?>
                 <link rel="stylesheet"
                       href="<?php echo esc_url($url); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-                      media="screen"/> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
+                      media="screen"/>
                 <link rel="stylesheet"
-                      href="<?php echo FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css'; ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
-                      media="screen"/> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
+                      href="<?php echo esc_url($contentStylingUrl); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
+                      media="screen"/>
+                <?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
 
                 <style>
-                    <?php echo $this->getColorSchemaCss(); ?>
+                    <?php echo wp_strip_all_tags($this->getColorSchemaCss()); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- generated CSS, no user input ?>
                 </style>
 
                 <?php

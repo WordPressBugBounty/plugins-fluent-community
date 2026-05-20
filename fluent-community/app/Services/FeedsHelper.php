@@ -547,7 +547,8 @@ class FeedsHelper
 
         $maxlen = apply_filters('fluent_community/max_post_length', 15000);
         if (\strlen($message) > $maxlen) {
-            throw new \Exception(esc_html__('Post message is too long', 'fluent-community'));
+            /* translators: %s is the maximum allowed character count */
+            throw new \Exception(esc_html(sprintf(__('The post is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxlen))));
         }
 
         $titlePref = Utility::postTitlePref();

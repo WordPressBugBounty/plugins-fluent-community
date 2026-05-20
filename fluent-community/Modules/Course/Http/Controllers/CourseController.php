@@ -190,14 +190,22 @@ class CourseController extends Controller
             }
         }
 
-        $canViewLesson = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
-        $canViewLesson = apply_filters('fluent_community/course/can_view_lesson', $canViewLesson, $lesson, $course, $this->getUser());
+        $initialCanView = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
+        $accessInfo     = CourseHelper::resolveLessonAccess($initialCanView, $lesson, $course, $this->getUser(), [
+            'enrollment'         => $enrollment,
+            'is_admin'           => $isCourseCreator,
+            'has_section_access' => $hasAcessSectionAcess,
+            'has_public_access'  => $hasPublicViewAccess,
+        ]);
+        $canViewLesson  = $accessInfo['can_view'];
+        $lockType       = $accessInfo['lock_type'];
 
         $formattedLesson = CourseHelper::formatLessonData($course, $lesson, $user, [
             'can_view'      => $canViewLesson,
             'parse_content' => $canViewLesson,
-            'is_locked'     => !$hasAcessSectionAcess && !$isCourseCreator,
-            'unclock_date'  => $unlockDate
+            'is_locked'     => !$canViewLesson && !$isCourseCreator,
+            'unclock_date'  => $unlockDate,
+            'lock_type'     => $lockType
         ]);
 
         $data = [
@@ -263,22 +271,32 @@ class CourseController extends Controller
                 }
             }
 
+            $sectionCtx = [
+                'enrollment'         => $enrollment,
+                'is_admin'           => $isCourseCreator,
+                'has_section_access' => $hasAcessSectionAcess,
+                'has_public_access'  => $hasPublicViewAccess,
+            ];
+
             $formattedLessons = [];
             foreach ($section->lessons as $lesson) {
-                $canViewLesson = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
-                $canViewLesson = apply_filters('fluent_community/course/can_view_lesson', $canViewLesson, $lesson, $course, $this->getUser());
+                $initialCanView = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
+                $accessInfo     = CourseHelper::resolveLessonAccess($initialCanView, $lesson, $course, $this->getUser(), $sectionCtx);
+                $canViewLesson  = $accessInfo['can_view'];
+                $lockType       = $accessInfo['lock_type'];
 
                 $parseContent = $intendtedLessonSlug === $lesson->slug && $canViewLesson;
 
                 $formattedLesson = CourseHelper::formatLessonData($course, $lesson, $currentUser, [
                     'can_view'      => $canViewLesson,
                     'parse_content' => $parseContent,
-                    'is_locked'     => !$hasAcessSectionAcess && !$isCourseCreator,
-                    'unclock_date'  => $unlockDate
+                    'is_locked'     => !$canViewLesson && !$isCourseCreator,
+                    'unclock_date'  => $unlockDate,
+                    'lock_type'     => $lockType
                 ]);
 
                 $isLazyLoad = !$parseContent;
-                if(!$canViewLesson) {
+                if(!$canViewLesson && $lockType !== 'sequential') {
                     $isLazyLoad = false;
                 }
 

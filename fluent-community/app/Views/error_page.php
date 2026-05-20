@@ -17,6 +17,11 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="description" content="<?php echo esc_attr($description); ?>">
     <link rel="icon" type="image/x-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
+    <?php
+    $fluent_community_custom_css = apply_filters('fluent_community/error_page_custom_css', '');
+    if ($fluent_community_custom_css): ?>
+    <style><?php echo wp_strip_all_tags($fluent_community_custom_css); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- intentional CSS output, tags stripped ?></style>
+    <?php endif; ?>
 </head>
 <body style='font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'>
 <div style="display: block; width: 100%;" class="fluent_com">

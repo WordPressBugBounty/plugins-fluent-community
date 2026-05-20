@@ -12,7 +12,7 @@
                     <td style="font-family: Arial, sans-serif; font-size: 16px;color: #333; padding-left: 5px; vertical-align: middle;">
                         <span style="font-weight: bold;"><?php echo esc_html($user_name); ?></span>
                         <span><?php esc_html_e('commented on:', 'fluent-community'); ?></span>
-                        <a target="_blank" href="<?php echo esc_url($permalink); ?>">
+                        <a target="_blank" style="color: <?php echo esc_attr($linkColor); ?>; text-decoration: underline;" href="<?php echo esc_url($permalink); ?>">
                             <?php echo wp_kses_post($post_content); ?>
                         </a>
                     </td>

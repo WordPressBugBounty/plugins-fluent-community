@@ -119,12 +119,13 @@ class Feed extends Model
             // Remove the emojis
             $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
             // get the first 40 char from the title
-            $title = substr($title, 0, 40);
+            $title = mb_substr($title, 0, 40, 'UTF-8');
         } else {
             // get the first 25 char from the message
-            $title = substr($newModel->message, 0, 40);
+            $title = mb_substr($newModel->message, 0, 40, 'UTF-8');
         }
 
+        $title = Helper::normalizeToAscii($title);
         $title = remove_accents($title);
 
         $title = strtolower($title);

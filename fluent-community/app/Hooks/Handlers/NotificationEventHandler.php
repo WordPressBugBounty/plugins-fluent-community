@@ -16,6 +16,7 @@ class NotificationEventHandler
         add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 2);
         add_action('fluent_community/space_feed/created', [$this, 'handleNewSpaceFeed'], 10);
         add_action('fluent_community/feed/react_added', [$this, 'handleNewFeedReact'], 10, 2);
+        add_action('fluent_community/comment/react_added', [$this, 'handleNewCommentReact'], 10, 3);
 
         add_action('fluent_community/space/member/role_updated', [$this, 'handleSpaceMemberRoleUpdated'], 10, 2);
 
@@ -86,7 +87,7 @@ class NotificationEventHandler
             return;
         }
 
-        $feedTitle = $feed->getHumanExcerpt(60);
+        $feedTitle = $feed->getHumanExcerpt(40);
         $user = $react->user;
 
         if ($feed->reactions_count > 1) {
@@ -98,7 +99,7 @@ class NotificationEventHandler
             if ($existingNotification) {
                 $notificationContent = \sprintf(
                 /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
-                    __('%1$s and %2$s other people reacted to %3$s', 'fluent-community'),
+                    __('%1$s and %2$s other people reacted to your post %3$s', 'fluent-community'),
                     '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
                     '<b class="fcom_nrc">' . ($feed->reactions_count - 1) . '</b>',
                     '<span class="fcom_nft">' . $feedTitle . '</span>'
@@ -119,7 +120,7 @@ class NotificationEventHandler
 
         $notificationContent = \sprintf(
         /* translators: %1$s is the user name, %2$s is the feed title */
-            __('%1$s reacted to %2$s', 'fluent-community'),
+            __('%1$s reacted to your post %2$s', 'fluent-community'),
             '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
             '<span class="fcom_nft">' . $feedTitle . '</span>'
         );
@@ -138,6 +139,60 @@ class NotificationEventHandler
         $notification = Notification::create($notification);
 
         $notification->subscribe([$feed->user_id]);
+    }
+
+    public function handleNewCommentReact($react, $comment, $feed)
+    {
+        if ($react->user_id == $comment->user_id) {
+            return;
+        }
+
+        $commentExcerpt = $comment->getHumanExcerpt(40);
+        $user           = $react->user;
+
+        if ($comment->reactions_count > 1) {
+            $notificationContent = \sprintf(
+            /* translators: %1$s is the user name, %2$s is the like count & %3$s is the comment excerpt */
+                __('%1$s and %2$s other people reacted to your comment %3$s', 'fluent-community'),
+                '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+                '<b class="fcom_nrc">' . ($comment->reactions_count - 1) . '</b>',
+                '<span class="fcom_nft">' . $commentExcerpt . '</span>'
+            );
+        } else {
+            $notificationContent = \sprintf(
+            /* translators: %1$s is the user name, %2$s is the comment excerpt */
+                __('%1$s reacted to your comment %2$s', 'fluent-community'),
+                '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+                '<span class="fcom_nft">' . $commentExcerpt . '</span>'
+            );
+        }
+
+        $existingNotification = Notification::where('feed_id', $feed->id)
+            ->where('object_id', $comment->id)
+            ->where('action', 'comment/react_added')
+            ->first();
+
+        if ($existingNotification) {
+            $existingNotification->content    = $notificationContent;
+            $existingNotification->src_user_id = $user->ID;
+            $existingNotification->save();
+            NotificationSubscriber::where('object_id', $existingNotification->id)
+                ->where('user_id', $comment->user_id)
+                ->update(['is_read' => 0, 'updated_at' => current_time('mysql')]);
+            return;
+        }
+
+        $notification = Notification::create([
+            'feed_id'         => $feed->id,
+            'object_id'       => $comment->id,
+            'src_user_id'     => $user->ID,
+            'src_object_type' => 'comment',
+            'action'          => 'comment/react_added',
+            'content'         => $notificationContent,
+            'route'           => $feed->getJsRoute(),
+        ]);
+
+        $notification->subscribe([$comment->user_id]);
     }
 
     public function handleSpaceMemberRoleUpdated($space, $pivot)

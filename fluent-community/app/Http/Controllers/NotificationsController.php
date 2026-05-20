@@ -32,7 +32,8 @@ class NotificationsController extends Controller
             ->paginate();
 
         $data = [
-            'notifications' => $notifications
+            'notifications' => $notifications,
+            'unread_count'  => Notification::byStatus('unread', $user->ID)->count()
         ];
         return apply_filters('fluent_community/notifications_api_response', $data, $request->all());
     }
@@ -73,8 +74,10 @@ class NotificationsController extends Controller
         $notification = Notification::findOrFail($notification_id);
 
         NotificationSubscriber::whereHas('notification', function ($query) use ($notification) {
-            return $query->where('id', $notification->id)
-                ->orWhere('feed_id', $notification->feed_id);
+            $query->where('id', $notification->id);
+            if ($notification->feed_id) {
+                $query->orWhere('feed_id', $notification->feed_id);
+            }
         })
             ->where('user_id', get_current_user_id())
             ->update(['is_read' => 1]);

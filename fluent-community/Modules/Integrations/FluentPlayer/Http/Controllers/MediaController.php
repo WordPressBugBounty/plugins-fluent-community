@@ -66,6 +66,7 @@ class MediaController extends Controller
             'file' => 'mimetypes:' . $allowedTypesString . '|max:' . $allowedFileSize,
         ], [
             'file.mimetypes' => __('The file must be a valid video type (MP4, M3U8, MPD, WebM, MOV).', 'fluent-community'),
+            /* translators: %1$s is the maximum file size value, %2$s is the size unit (KB, MB, etc.) */
             'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
         ]);
         // File size check
@@ -302,11 +303,9 @@ class MediaController extends Controller
         $settings['loadStrategy'] = 'idle'; // for SPA context this needs to be set to 'idle' 
         $settings = array_merge($settings, $mediaSettings);
 
-        // Apply iOS Safari compatibility settings (playsinline, preload)
-        // The standalone player gets these via MediaService::getIOSSafariSettings(),
-        // but the community API path bypasses that — apply them here too.
+        // Apply iOS Safari compatibility (playsinline, preload; muted only when autoplay is on)
         if (class_exists('\FluentPlayer\App\Services\MediaService')) {
-            [$isIosSafari, $iosSafariSettings] = \FluentPlayer\App\Services\MediaService::getIOSSafariSettings();
+            [$isIosSafari, $iosSafariSettings] = \FluentPlayer\App\Services\MediaService::getIOSSafariSettings($settings);
             if ($isIosSafari) {
                 $settings = array_merge($settings, $iosSafariSettings);
             }

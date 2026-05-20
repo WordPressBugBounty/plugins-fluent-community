@@ -80,18 +80,23 @@ class PushNotificationModule
 
         switch ($key):
             case 'notifed_to_author':
+                /* translators: %1$s is the commenter name, %2$s is the post title */
                 $title = \sprintf(__('💬 by %1$s: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             case 'notifed_to_mentions':
+                /* translators: %1$s is the commenter name, %2$s is the post title */
                 $title = \sprintf(__('%1$s mentioned you on: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             case 'notifed_to_other_users':
+                /* translators: %1$s is the commenter name, %2$s is the post title */
                 $title = \sprintf(__('New comment by %1$s on: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             case 'notifed_to_thread_commetenter':
+                /* translators: %1$s is the commenter name, %2$s is the post title */
                 $title = \sprintf(__('%1$s replied to a comment on: %2$s', 'fluent-community'), $commenter, $feedTitle);
                 break;
             default:
+                /* translators: %1$s is the commenter name, %2$s is the post title */
                 $content = \sprintf(__('Comment by %1$s on %2$s', 'fluent-community'), $commenter, $feedTitle);
         endswitch;
 

@@ -730,6 +730,7 @@ class PortalHandler
             'course_sections_collapsed'  => apply_filters('fluent_community/course_section_collapse_default', 'no'),
             'course_lesson_fullscreen'   => apply_filters('fluent_community/course_lesson_fullscreen_default', 'no'),
             'default_profile_tab'        => apply_filters('fluent_community/default_profile_tab_route', ''),
+            'default_post_space'         => apply_filters('fluent_community/create_post_default_space', ''),
             'wp_lesson_editor_frame'     => $editorFrameUrl,
             'has_fluentcrm'              => defined('FLUENTCRM'),
             'lazy_styles'                => [
@@ -758,6 +759,7 @@ class PortalHandler
             'color_switch_cookie_name' => '',
             'has_color_scheme'         => Helper::hasColorScheme(),
             'collapse_sidebar_groups'  => Utility::isCustomizationEnabled('collapse_sidebar_groups'),
+            'hide_header_on_scroll'    => Utility::isCustomizationEnabled('hide_header_on_scroll'),
         ]);
     }
 
@@ -1042,10 +1044,12 @@ class PortalHandler
                     if ($dynamicRoute == 'course_view') {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
+                        /* translators: %s is replaced by the title of the space */
                         $data['og_title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title));
                     } else {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Join %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
+                        /* translators: %s is replaced by the title of the space */
                         $data['og_title'] = sprintf(__('Join %s', 'fluent-community'), esc_html($space->title));
                     }
 

@@ -36,6 +36,17 @@ class EmailNotificationHandler
 
         add_action('fluent_community_send_daily_digest', [$this, 'maybeSendDailyDigest'], 10);
         add_action('fluent_community/space/join_requested', [$this, 'handleCommunityJoinRequest'], 10, 2);
+
+        add_action('fluent_community/send_new_user_notification', [$this, 'sendNewUserNotificationAsync'], 10, 1);
+    }
+
+    public function sendNewUserNotificationAsync($userId)
+    {
+        $userId = (int) $userId;
+        if (!$userId || !get_userdata($userId)) {
+            return;
+        }
+        wp_new_user_notification($userId, null, 'user');
     }
 
     public function handleSpaceFeedCreated($feed)
@@ -674,10 +685,11 @@ class EmailNotificationHandler
         $unreadMessages = apply_filters('fluent_messaging/get_unread_message_count', 0, $userId);
 
         $html = '';
+        $linkColor = Utility::getThemeColor();
         if ($unreadCount) {
             $notificationUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications'), $userId);
             /* translators: %d is replaced by the number of unread notifications */
-            $html = '<a style="text-decoration: none;" href="' . $notificationUrl . '">' . sprintf(__('🔔 %d Unread Notifications.', 'fluent-community'), $unreadCount) . '</a>';
+            $html = '<a style="text-decoration: none; color: ' . esc_attr($linkColor) . ';" href="' . $notificationUrl . '">' . sprintf(__('🔔 %d Unread Notifications', 'fluent-community'), $unreadCount) . '</a>';
             if ($unreadMessages) {
                 $html .= '<span style="margin: 0 10px;"> | </span>';
             }
@@ -686,7 +698,7 @@ class EmailNotificationHandler
         if ($unreadMessages) {
             $chatUrl = ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('chat'), $userId);
             /* translators: %d is replaced by the number of unread messages */
-            $html .= '<a style="text-decoration: none;" href="' . $chatUrl . '">' . sprintf(__('✉️ %d Unread Messages', 'fluent-community'), $unreadMessages) . '</a>';
+            $html .= '<a style="text-decoration: none; color: ' . esc_attr($linkColor) . ';" href="' . $chatUrl . '">' . sprintf(__('✉️ %d Unread Messages', 'fluent-community'), $unreadMessages) . '</a>';
         }
 
         return $html;

@@ -1,12 +1,12 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-
 /**
  * @var string $permalink
  * @var string $user_avatar
  * @var string $user_name
  * @var string $community_name
  * @var string $content
+ * @var string $linkColor
  */
 
 ?>
@@ -44,13 +44,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
                 <tr>
                     <td style="padding: 0; line-height: 1.4;font-family: Helvetica, sans-serif;">
                         <?php if($title): ?>
-                        <a href="<?php echo esc_url($permalink); ?>" style="color: #1f3349; display: block; overflow: hidden; margin: 0; line-height: 1.2; padding: 0; text-decoration: none;">
-                            <h2 style="color: #1f3349; display: block; font-size: 20px; overflow: hidden; margin: 0 0 10px 0; padding: 0; text-decoration: none;"><?php echo esc_html($title); ?></h2>
+                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($linkColor); ?>; display: block; overflow: hidden; margin: 0; line-height: 1.2; padding: 0; text-decoration: none;">
+                            <h2 style="color: <?php echo esc_attr($linkColor); ?>; display: block; font-size: 20px; overflow: hidden; margin: 0 0 10px 0; padding: 0; text-decoration: none;"><?php echo esc_html($title); ?></h2>
                         </a>
                         <?php endif; ?>
                         <?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($content, true); ?>
                         <?php if(!empty($show_read_more)): ?>
-                        <a href="<?php echo esc_url($permalink); ?>" style="color: #1f3349;text-decoration: none;font-weight: bold;font-size: 14px;">
+                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($linkColor); ?>; text-decoration: none; font-weight: bold; font-size: 14px;">
                             <?php echo esc_html__('...read more', 'fluent-community'); ?>
                         </a>
                         <?php endif; ?>

@@ -566,11 +566,12 @@ class BaseSpace extends Model
             // Remove the emojis
             $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $newModel->title);
             // get the first 30 char from the title
-            $title = substr($title, 0, 30);
+            $title = mb_substr($title, 0, 30, 'UTF-8');
         } else {
             $title = static::$type . '-' . time();
         }
 
+        $title = Helper::normalizeToAscii($title);
         $title = remove_accents($title);
 
         $title = strtolower($title);

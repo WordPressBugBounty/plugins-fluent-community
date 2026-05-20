@@ -187,6 +187,10 @@ class ProfileHelper
             } else {
                 $links[$key]['enabled'] = 'no';
             }
+
+            if (!empty($provider['icon_svg'])) {
+                $links[$key]['icon_svg'] = CustomSanitizer::sanitizeSvg($provider['icon_svg']);
+            }
         }
 
         if ($enabledOnly) {

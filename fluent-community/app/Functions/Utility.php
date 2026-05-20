@@ -217,7 +217,8 @@ class Utility
             'max_media_per_post'   => 4,
             'disable_feed_sort_by' => 'no',
             'default_feed_sort_by' => '',
-            'collapse_sidebar_groups' => 'no'
+            'collapse_sidebar_groups' => 'no',
+            'hide_header_on_scroll'   => 'no'
         ];
         $settings = self::getOption('customization_settings', $defaults);
 
@@ -1073,12 +1074,26 @@ class Utility
         return $lightCss . $darkCss;
     }
 
-    public static function getThemeColor()
+    public static function getThemeColor($scope = 'theme')
     {
+        static $cache = [];
+        if (isset($cache[$scope])) {
+            return $cache[$scope];
+        }
+
+        $map = [
+            'theme'             => ['key' => 'primary_button', 'default' => '#2B2E33'],
+            'theme_button_text' => ['key' => 'primary_button_text', 'default' => '#ffffff'],
+        ];
+        $entry = Arr::get($map, $scope, ['key' => $scope, 'default' => '']);
+
         $schemas = self::getColorSchemas();
         $lightName = Arr::get(self::getColorConfig('view'), 'light_schema', 'default');
+        $color = Arr::get($schemas, "lightSkins.$lightName.selectors.body.{$entry['key']}", $entry['default']);
 
-        return Arr::get($schemas, "lightSkins.$lightName.selectors.body.primary_button", '#2B2E33');
+        $cache[$scope] = apply_filters('fluent_community/' . $scope . '_color', $color);
+
+        return $cache[$scope];
     }
 
     public static function getColorSchemaConfig()
@@ -1136,6 +1151,9 @@ class Utility
     public static function slugify($text, $fallback = '')
     {
         $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $text);
+
+        $title = Helper::normalizeToAscii($title);
+
         $title = remove_accents($title);
 
         $title = strtolower($title);

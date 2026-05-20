@@ -7,6 +7,7 @@ use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
+use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\CustomSanitizer;
@@ -16,6 +17,9 @@ use FluentCommunity\App\Services\NotificationPref;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Modules\Course\Model\CourseLesson;
+use FluentCommunity\Modules\Course\Model\CourseTopic;
+use FluentCommunity\Modules\Course\Services\CourseHelper;
 
 class ProfileController extends Controller
 {
@@ -41,6 +45,7 @@ class ProfileController extends Controller
             'display_name'      => $xprofile->display_name,
             'username'          => $xprofile->username,
             'avatar'            => $xprofile->avatar,
+            'has_custom_avatar' => $xprofile->hasCustomAvatar(),
             'cover_photo'       => Arr::get($xprofile->meta, 'cover_photo'),
             'total_points'      => $xprofile->total_points,
             'badge_slugs'       => (array)Arr::get($xprofile->meta, 'badge_slug', []),
@@ -114,6 +119,18 @@ class ProfileController extends Controller
                     'name' => 'user_spaces'
                 ]
             ];
+
+            if (Helper::isFeatureEnabled('course_module')) {
+                $profile['profile_navs'][] = [
+                    'slug'          => 'user_courses',
+                    'wrapper_class' => 'fcom_profile_courses',
+                    'title'         => __('Courses', 'fluent-community'),
+                    'url'           => $profileBaseUrl . 'courses',
+                    'route'         => [
+                        'name' => 'user_courses'
+                    ]
+                ];
+            }
         }
 
         $profile['profile_navs'][] = [
@@ -183,9 +200,11 @@ class ProfileController extends Controller
 
         $deletedMedias = [];
 
-        if (!empty($updateData['avatar'])) {
+        if (isset($updateData['avatar'])) {
 
-            $deletedMedias[] = $xprofile->avatar;
+            if ($xprofile->hasCustomAvatar()) {
+                $deletedMedias[] = $xprofile->attributes['avatar'];
+            }
 
             $xprofile->avatar = $updateData['avatar'];
 
@@ -194,11 +213,14 @@ class ProfileController extends Controller
 
                 if ($contact) {
                     $contact->update([
-                        'avatar' => $updateData['avatar']
+                        'avatar' => $updateData['avatar'] ?: null
                     ]);
                 }
             }
 
+            if (empty($updateData['avatar'])) {
+                Utility::forgetCache('user_avatar_' . $xprofile->user_id);
+            }
         }
 
         if (isset($updateData['cover_photo'])) {
@@ -469,8 +491,62 @@ class ProfileController extends Controller
             $data = [
                 'spaces' => $spaces
             ];
-            
+
             return apply_filters('fluent_community/profile_spaces_api_response', $data, $request->all());
+    }
+
+    public function getCourses(Request $request, $userName)
+    {
+        if (!Helper::isFeatureEnabled('course_module')) {
+            return $this->sendError([
+                'message' => __('Course module is disabled.', 'fluent-community')
+            ]);
+        }
+
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+        $currentUser = $this->getUser();
+
+        if (!ProfileHelper::canViewUserSpaces($xProfile->user_id, $currentUser)) {
+            return $this->sendError([
+                'message'           => __('You are not allowed to view this profile\'s courses.', 'fluent-community'),
+                'permission_failed' => true
+            ]);
+        }
+
+        $hasAllAccess = $xProfile->user_id == get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
+
+        $courses = $xProfile->courses()
+            ->wherePivot('status', 'active')
+            ->where('fcom_spaces.status', 'published')
+            ->when(!$hasAllAccess, function ($q) {
+                $q->whereIn('fcom_spaces.privacy', ['public', 'private']);
+            })
+            ->get();
+
+        foreach ($courses as $course) {
+            $course->isEnrolled = CourseHelper::isEnrolled($course->id, $xProfile->user_id);
+            if ($course->isEnrolled) {
+                $course->progress = CourseHelper::getCourseProgress($course->id, $xProfile->user_id);
+            }
+
+            if (!$course->cover_photo) {
+                $course->cover_photo = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/course-placeholder.jpg';
+            }
+
+            $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
+            $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
+            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
+                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+            } else {
+                $course->studentsCount = 0;
+            }
+        }
+
+        $data = [
+            'courses' => $courses
+        ];
+
+        return apply_filters('fluent_community/profile_courses_api_response', $data, $request->all());
     }
 
     public function getComments(Request $request, $userName)

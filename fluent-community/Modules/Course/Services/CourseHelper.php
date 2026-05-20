@@ -28,19 +28,24 @@ class CourseHelper
         ];
     }
 
+    public static function resolveLessonAccess($initialCanView, $lesson, $course, $user, $ctx = [])
+    {
+        $canView = apply_filters('fluent_community/course/can_view_lesson', $initialCanView, $lesson, $course, $user);
+        $access  = apply_filters('fluent_community/course/lesson_access_info', [
+            'can_view'  => $canView,
+            'lock_type' => '',
+        ], $lesson, $course, $user, $ctx);
+
+        if (!empty($access['can_view'])) {
+            $access['lock_type'] = '';
+        }
+
+        return $access;
+    }
+
     public static function isEnrolled($courseId, $userId = null)
     {
-        if (!$userId) {
-            $userId = get_current_user_id();
-        }
-
-        if (!$userId) {
-            return false;
-        }
-
-        return SpaceUserPivot::where('space_id', $courseId)
-            ->where('user_id', $userId)
-            ->exists();
+        return (bool) self::getCourseEnrollment($courseId, $userId);
     }
 
     public static function getCourseEnrollment($courseId, $userId = null)
@@ -53,10 +58,15 @@ class CourseHelper
             return null;
         }
 
-        return SpaceUserPivot::where('space_id', $courseId)
+        static $enrollmentCache = [];
+        $key = $courseId . '_' . $userId;
+        if (array_key_exists($key, $enrollmentCache)) {
+            return $enrollmentCache[$key];
+        }
+
+        return $enrollmentCache[$key] = SpaceUserPivot::where('space_id', $courseId)
             ->where('user_id', $userId)
             ->first();
-
     }
 
     public static function getCoursePublishedLessonIds($courseId)
@@ -131,7 +141,13 @@ class CourseHelper
             return [];
         }
 
-        return Reaction::where('user_id', $userId)
+        static $completedLessonsCache = [];
+        $key = $courseId . '_' . $userId;
+        if (isset($completedLessonsCache[$key])) {
+            return $completedLessonsCache[$key];
+        }
+
+        return $completedLessonsCache[$key] = Reaction::where('user_id', $userId)
             ->where('parent_id', $courseId)
             ->where('object_type', 'lesson_completed')
             ->where('type', 'completed')
@@ -513,6 +529,7 @@ class CourseHelper
             'comments_count' => $lesson->comments_count,
             'is_locked'      => Arr::get($config, 'is_locked', false),
             'unclock_date'   => Arr::get($config, 'unclock_date', ''),
+            'lock_type'      => Arr::get($config, 'lock_type', ''),
             'can_view'       => $canViewLesson,
             'inline_css'     => $inlineCss
         ];
@@ -557,7 +574,10 @@ class CourseHelper
         $bodyMessage = __('Please enroll in this course to access this lesson', 'fluent-community');
         $backToCourseText = __('Back to Course', 'fluent-community');
 
-        if ($isLocked && $unlockDate) {
+        if ($isLocked && Arr::get($config, 'lock_type') === 'sequential') {
+            $headerMessage = __('Complete the previous lesson first', 'fluent-community');
+            $bodyMessage = __('You need to complete the previous lesson before unlocking this one.', 'fluent-community');
+        } elseif ($isLocked && $unlockDate) {
             $headerMessage = __('This lesson is not published for you yet', 'fluent-community');
             /* translators: %s is replaced by the date */
             $bodyMessage = sprintf(__('It will be available to you on %s', 'fluent-community'),

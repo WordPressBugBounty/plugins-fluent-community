@@ -97,8 +97,10 @@ class MembersController extends Controller
 
         if($isMod) {
             $statuses = $request->getSafe('status', 'sanitize_text_field', 'active');
-            if ($statuses == 'in_active') {
-                $statuses = ['pending', 'blocked'];
+            if ($statuses == 'pending') {
+                $statuses = ['pending'];
+            } else if ($statuses == 'blocked') {
+                $statuses = ['blocked'];
             } else if($statuses == 'deactivated') {
                 $statuses = [''];
             } else {

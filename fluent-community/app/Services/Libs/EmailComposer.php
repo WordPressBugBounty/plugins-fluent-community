@@ -75,8 +75,10 @@ class EmailComposer
 
         if ($block['type'] == 'button') {
             return (string)App::make('view')->make('email.Default._button', [
-                'link'    => Arr::get($block['options'], 'link'),
-                'btnText' => $block['content']
+                'link'         => Arr::get($block['options'], 'link'),
+                'btnText'      => $block['content'],
+                'linkColor'    => Utility::getThemeColor(),
+                'btnTextColor' => Utility::getThemeColor('theme_button_text')
             ]);
         }
 
@@ -86,7 +88,8 @@ class EmailComposer
                 'user_avatar'  => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
                 'content'      => $block['content'],
                 'permalink'    => $block['options']['permalink'],
-                'post_content' => $block['options']['post_content']
+                'post_content' => $block['options']['post_content'],
+                'linkColor'    => Utility::getThemeColor()
             ]);
         }
 
@@ -97,7 +100,8 @@ class EmailComposer
                 'content'     => $block['content'],
                 'title'       => Arr::get($block['options'], 'title'),
                 'permalink'   => $block['options']['permalink'],
-                'space_name'  => $block['options']['space_name']
+                'space_name'  => $block['options']['space_name'],
+                'linkColor'   => Utility::getThemeColor()
             ]);
         }
 
@@ -153,15 +157,17 @@ class EmailComposer
 
         $generalSettings = Helper::generalSettings();
 
+        $themeColor = Utility::getThemeColor();
+
         $replaces = [
-            '{{site_name_with_url}}' => '<a target="_blank" href="' . Helper::baseUrl('/') . '">' . Arr::get($generalSettings, 'site_title') . '</a>',
+            '{{site_name_with_url}}' => '<a target="_blank" href="' . Helper::baseUrl('/') . '" style="color: ' . esc_attr($themeColor) . '; text-decoration: none;">' . Arr::get($generalSettings, 'site_title') . '</a>',
             '{{site_name}}'          => Arr::get($generalSettings, 'site_title')
         ];
 
         $footerTextHtml = str_replace(array_keys($replaces), array_values($replaces), $footerTextHtml);
 
         // find pattern like this: {{manage_email_notification_url|Manage Your Email Notifications Preference}}
-        $footerTextHtml = preg_replace_callback('/{{(.*?)\|(.*?)}}/', function ($matches) use ($withPlaceHolder) {
+        $footerTextHtml = preg_replace_callback('/{{(.*?)\|(.*?)}}/', function ($matches) use ($withPlaceHolder, $themeColor) {
             $match1 = $matches[1];
             if ($match1 != 'manage_email_notification_url') {
                 return $matches[0];
@@ -174,7 +180,7 @@ class EmailComposer
             }
 
             $text = $matches[2];
-            return '<a target="_blank" rel="noopener noreferrer" href="' . $url . '">' . $text . '</a>';
+            return '<a target="_blank" rel="noopener noreferrer" style="color: ' . esc_attr($themeColor) . '; text-decoration: underline;" href="' . $url . '">' . $text . '</a>';
         }, $footerTextHtml);
 
         $this->addFooterLine('paragraph', $footerTextHtml);

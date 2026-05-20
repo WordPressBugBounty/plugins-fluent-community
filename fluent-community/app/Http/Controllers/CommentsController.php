@@ -421,7 +421,8 @@ class CommentsController extends Controller
 
         $maxCommentLength = apply_filters('fluent_community/max_comment_char_length', 10000);
         if ($text && strlen($text) > $maxCommentLength) {
-            throw new \Exception(esc_html__('Comment text is too long', 'fluent-community'), 422);
+            /* translators: %s is the maximum allowed character count */
+            throw new \Exception(esc_html(sprintf(__('The comment is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxCommentLength))), 422);
         }
 
         return $text;

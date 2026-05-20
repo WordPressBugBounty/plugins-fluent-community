@@ -85,6 +85,7 @@ $router->prefix('profile')->withPolicy('PortalPolicy')->group(function ($router)
     $router->post('/{username}', 'ProfileController@updateProfile')->alphaNumDash('username');
     $router->put('/{username}', 'ProfileController@patchProfile')->alphaNumDash('username');
     $router->get('/{username}/spaces', 'ProfileController@getSpaces')->alphaNumDash('username');
+    $router->get('/{username}/courses', 'ProfileController@getCourses')->alphaNumDash('username');
     $router->get('/{username}/memberships', 'ProfileController@getAllMemberships')->alphaNumDash('username');
     $router->get('/{username}/comments', 'ProfileController@getComments')->alphaNumDash('username');
 

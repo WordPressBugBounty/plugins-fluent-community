@@ -35,7 +35,7 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
                             <span class="fcom_shape">
                                 <i class="el-icon">
                                     <?php if (!empty($primaryItems['all_feeds'])): ?>
-                                        <?php echo Helper::printLinkIcon($primaryItems['all_feeds']); ?>
+                                        <?php Helper::printLinkIcon($primaryItems['all_feeds']); // prints directly with internal escaping ?>
                                     <?php else: ?>
                                         <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
                                             <path fill-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"/>

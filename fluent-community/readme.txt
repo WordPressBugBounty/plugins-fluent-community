@@ -2,9 +2,9 @@
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
-Tested up to: 6.9
-Requires PHP: 7.3
-Stable tag: 2.4.01
+Tested up to: 7.0
+Requires PHP: 7.4
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -250,8 +250,46 @@ OR
 
 == Changelog ==
 
+= 2.5.0 (Date: May 20, 2026) =
+- Introduced: Sequential Lesson Lock for Courses (pro)
+- Added: Courses Tab on User Profile
+- Added: Bulk Import Welcome Email Opt-In
+- Added: Scroll To Top Button in Feeds
+- Added: In-app Notification for Comment Reaction
+- Added: Hide Mobile Header and Footer on Scroll Option
+- Added: Unread Notifications Tab and Recent Notifications Popover
+- Added: Copy Code Button for Code Blocks in Posts and Comments
+- Added: Profile and Cover Photo Removal Options
+- Added: Post Scheduling by Space Admins
+- Added: Email Invite From Add Members Form
+- Added: See More/Less Toggle for Long Comments
+- Added: Duplicate Action for Custom Profile Fields
+- Added: Theme Color Support in Email Templates
+- Added: Filter Hook for Default Post Space Selection
+- Improved: Admin Manage Courses Page
+- Improved: Settings Drawer with Dirty-State Save Confirmation
+- Improved: Confirm Modal for Space Image Remove Actions
+- Improved: Error Page CSS Customization Hook
+- Improved: Pending and Blocked Members Tabs
+- Improved: Character Limit Error Messages for Posts and Comments
+- Improved: Slug Generation for Non-Latin Titles via ICU Transliteration
+- Improved: Enrollment Cache and Course Thread Context Performance
+- Security: Hide User Existence in Login Error
+- Fixed: Search Modal Context, Persistence, and Clear Button Behavior
+- Fixed: Sticky Pin Persistence Across Navigation and Layouts
+- Fixed: Edit Post Mobile Responsiveness
+- Fixed: HTML Entities in Course/Space Member Lists
+- Fixed: Missing Reaction Avatars on Bookmarks Page
+- Fixed: Drawer Width in Custom Profile Fields
+- Fixed: Status Action Buttons Race Condition
+- Fixed: Invitation Link Lands New Users on Login Instead of Register
+- Fixed: Comment Reaction List Not Refreshing After React/Unreact
+- Fixed: Avatar Upload Accessibility for Touch and Keyboard Users
+- Fixed: iOS Safari Forced Muted When Autoplay Is Disabled in FluentPlayer
+
 = 2.4.01 (Date: May 01, 2026) =
 - Fixed: Issue with Custom CSS Sanitization
+- Fixed: Issue with FluentPlayer Video Upload
 - Fixed: Checkbox Checkmark Not Centered Inside the Box
 - Fixed: Icon Selector Hidden for System Menu Items in Menu Group Settings
 

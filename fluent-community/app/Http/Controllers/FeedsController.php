@@ -300,7 +300,16 @@ class FeedsController extends Controller
                                 $q->where('status', 'active');
                             });
                     },
-                    'space'
+                    'space',
+                    'reactions' => function ($q) {
+                        $q->with([
+                            'xprofile' => function ($query) {
+                                $query->select(['user_id', 'avatar', 'display_name']);
+                            }
+                        ])
+                            ->where('type', 'like')
+                            ->limit(3);
+                    },
                 ]
             )
             ->byBookMarked($userId)
@@ -1234,11 +1243,11 @@ class FeedsController extends Controller
         // Support both old and new format
         $since = $request->get('since');
         if (!$since) {
-            $since = date('Y-m-d H:i:s', current_time('timestamp') - 60);
+            $since = date('Y-m-d H:i:s', current_time('timestamp') - 60); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
         } else {
             $timestamp = strtotime($since);
             if (current_time('timestamp') - $timestamp > 300) {
-                $since = date('Y-m-d H:i:s', current_time('timestamp') - 60);
+                $since = date('Y-m-d H:i:s', current_time('timestamp') - 60); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
             }
         }
 

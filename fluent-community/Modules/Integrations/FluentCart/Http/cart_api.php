@@ -1,5 +1,7 @@
 <?php
 
+defined('ABSPATH') || exit;
+
 /**
  * @var $router FluentCommunity\Framework\Http\Router
  */

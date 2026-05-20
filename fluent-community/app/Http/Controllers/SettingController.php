@@ -414,7 +414,7 @@ class SettingController extends Controller
                         throw new \Exception($result->get_error_message());
                     }
                 } catch (\Exception $e) {
-                    throw new \Exception($e->getMessage());
+                    throw new \Exception(esc_html($e->getMessage()));
                 }
             }
         }
@@ -442,7 +442,7 @@ class SettingController extends Controller
         $settings = $request->get('settings', []);
 
         $yesNoFields = [
-            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout', 'collapse_sidebar_groups'
+            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout', 'collapse_sidebar_groups', 'hide_header_on_scroll'
         ];
 
         foreach ($settings as $key => $value) {

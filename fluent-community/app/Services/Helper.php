@@ -39,6 +39,7 @@ class Helper
         $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
         $postMaxSize = wp_convert_hr_to_bytes(ini_get('post_max_size'));
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- read-only existence check on superglobals, no state mutation
         if ($contentLength > 0 && ($contentLength > $postMaxSize || (empty($_FILES) && empty($_POST)))) {
             return [
                 'message' => sprintf(
@@ -1007,7 +1008,7 @@ class Helper
             return $menuGroups;
         }
 
-        $menuGroups = Utility::getOption('fluent_community_menu_groups', []);
+        $menuGroups = (array) Utility::getOption('fluent_community_menu_groups', []);
 
         $membersPageStatus = Utility::canViewMembersPage() ? 'yes' : 'no';
 
@@ -1963,6 +1964,7 @@ class Helper
         $portalSlug = self::getPortalSlug();
 
         // If portal is mounted at site root with empty requestUri, ignore query-only requests that do not relate to the community portal.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only routing check on $_GET, no state mutation
         if ($portalSlug === '' && $requestUri === '' && !empty($_GET) && !self::hasSupportedQueryParam()) {
             return false;
         }
@@ -2235,5 +2237,24 @@ class Helper
         }
 
         return $format;
+    }
+
+    public static function normalizeToAscii($text)
+    {
+        if (function_exists('transliterator_transliterate')) {
+            $result = transliterator_transliterate('Any-Latin; Latin-ASCII', $text);
+            if ($result !== false) {
+                return $result;
+            }
+        }
+
+        if (function_exists('iconv')) {
+            $result = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+            if ($result !== false) {
+                return $result;
+            }
+        }
+
+        return $text;
     }
 }

@@ -29,11 +29,25 @@ class CourseAdminController extends Controller
     {
         $user = $this->getUser();
 
-        $courses = Course::searchBy($request->getSafe('search'))
+        $status    = $request->getSafe('status');
+        $sortBy    = $request->getSafe('sort_by', 'sanitize_text_field', 'latest');
+        $topicSlug = $request->getSafe('topic_slug');
+
+        $query = Course::searchBy($request->getSafe('search'))
             ->byAdminAccess($user->ID)
-            ->orderBy('id', 'DESC')
-            ->with(['owner'])
-            ->paginate();
+            ->byPostTopic($topicSlug);
+
+        if ($status && in_array($status, ['published', 'draft'])) {
+            $query->where('status', $status);
+        }
+
+        if ($sortBy === 'alphabetical') {
+            $query->orderBy('title', 'ASC');
+        } else {
+            $query->orderBy('created_at', 'DESC');
+        }
+
+        $courses = $query->with(['owner'])->paginate();
 
         foreach ($courses as $course) {
             $course->students_count = $course->students()->count();
@@ -45,7 +59,8 @@ class CourseAdminController extends Controller
         }
 
         $data = [
-            'courses' => $courses
+            'courses'          => $courses,
+            'course_categories' => $request->get('with_categories') ? CourseHelper::getCourseCategories() : []
         ];
 
         return apply_filters('fluent_community/admin_courses_api_response', $data, $request->all());
@@ -82,7 +97,8 @@ class CourseAdminController extends Controller
                 'course_layout'                  => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
                 'course_details'                 => CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details'))),
                 'hide_instructor_view'           => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
-                'show_instructor_students_count' => $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no'
+                'show_instructor_students_count' => $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no',
+                'sequential_lesson_order'        => $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no',
             ],
             'serial'      => $serial
         ];
@@ -287,6 +303,7 @@ class CourseAdminController extends Controller
         $existingSettings['show_paywalls'] = $request->get('settings.show_paywalls') === 'yes' ? 'yes' : 'no';
         $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
         $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details')));
+        $existingSettings['sequential_lesson_order'] = $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no';
 
         if ($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
             $existingSettings['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
