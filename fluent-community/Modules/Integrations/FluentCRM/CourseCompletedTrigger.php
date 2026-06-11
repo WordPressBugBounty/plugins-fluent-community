@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\Modules\Integrations\FluentCRM;
 
-use FluentCommunity\App\Models\Space;
 use FluentCommunity\Modules\Course\Model\Course;
 use FluentCrm\App\Services\Funnel\BaseTrigger;
 use FluentCrm\App\Services\Funnel\FunnelHelper;

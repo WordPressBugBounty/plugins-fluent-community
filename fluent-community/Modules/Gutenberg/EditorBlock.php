@@ -52,6 +52,7 @@ class EditorBlock
             \register_block_type(
                 'fluent-community/page-layout',
                 array(
+                    'api_version'     => 3,
                     'editor_script'   => 'custom-layout-block-editor',
                     'editor_style'    => 'custom-layout-block-editor-style',
                     'style'           => 'fluent_community_global',
@@ -112,7 +113,7 @@ class EditorBlock
     {
         static $isLoaded;
         if ($isLoaded) {
-            return 'Layout is already loaded before';
+            return esc_html__('Layout is already loaded before', 'fluent-community');
         }
 
         if (!$isLoaded) {

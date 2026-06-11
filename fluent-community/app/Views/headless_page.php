@@ -62,7 +62,7 @@
                 <?php if (!empty($portal['logo'])): ?>
                     <div class="fcom_logo">
                         <a href="<?php echo esc_url(\FluentCommunity\App\Services\Helper::baseUrl()); ?>">
-                            <img src="<?php echo esc_url($portal['logo']); ?>" alt="Site logo">
+                            <img src="<?php echo esc_url($portal['logo']); ?>" alt="<?php echo esc_attr__('Site logo', 'fluent-community'); ?>">
                         </a>
                     </div>
                 <?php endif; ?>

@@ -6,7 +6,6 @@ use FluentCommunity\App\Functions\Utility;
 use \FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
-use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
@@ -408,7 +407,7 @@ class FeedsHelper
     public static function createFeed($allData)
     {
         if (!is_array($allData)) {
-            return new \WP_Error('invalid_data', 'Invalid data. The data need to be array', ['status' => 400]);
+            return new \WP_Error('invalid_data', __('Invalid data. The data need to be array', 'fluent-community'), ['status' => 400]);
         }
 
         $acceptedKeys = ['message', 'title', 'user_id', 'space_id', 'type'];
@@ -423,7 +422,7 @@ class FeedsHelper
         ]);
 
         if ($validation->fails()) {
-            return new \WP_Error('validation_failed', 'Validation failed', $validation->errors());
+            return new \WP_Error('validation_failed', __('Validation failed', 'fluent-community'), $validation->errors());
         }
 
         $sanitizedData = self::sanitizeAndValidateData($feedData);
@@ -433,11 +432,11 @@ class FeedsHelper
         $user = User::find($feedData['user_id']);
 
         if (!$user) {
-            return new \WP_Error('user_not_found', 'User not found', ['status' => 400]);
+            return new \WP_Error('user_not_found', __('User not found', 'fluent-community'), ['status' => 400]);
         }
         $user->syncXProfile();
         if ($user->xprofile->status != 'active') {
-            return new \WP_Error('user_inactive', 'User status is not active', $validation->errors());
+            return new \WP_Error('user_inactive', __('User status is not active', 'fluent-community'), $validation->errors());
         }
 
         $markdown = $feedData['message'];
@@ -446,7 +445,7 @@ class FeedsHelper
         // Extra Validaton for space_id
         if (!empty($feedData['space_id'])) {
             if (!Helper::isUserInSpace($feedData['user_id'], $feedData['space_id'])) {
-                return new \WP_Error('invalid_space', 'User is not in the space', ['status' => 400]);
+                return new \WP_Error('invalid_space', __('User is not in the space', 'fluent-community'), ['status' => 400]);
             }
             $mentions = FeedsHelper::getMentions($markdown, Arr::get($feedData, 'space_id'), true);
             if ($mentions) {
@@ -525,7 +524,7 @@ class FeedsHelper
 
                 $formattedOptions[] = [
                     'label' => sanitize_text_field($option['label']),
-                    'slug'  => 'opt_' . ($index + 1)
+                    'slug'  => Arr::get($option, 'slug') ?: 'opt_' . ($index + 1)
                 ];
             }
 
@@ -565,6 +564,34 @@ class FeedsHelper
         }
 
         return $processedData;
+    }
+
+    public static function getSurveyOptionsUpdateError($existingSurveyOptions, $submittedSurvey)
+    {
+        if (empty($existingSurveyOptions) || empty($submittedSurvey)) {
+            return null;
+        }
+
+        $submittedLabelsBySlug = [];
+        foreach (Arr::get($submittedSurvey, 'options', []) as $option) {
+            $slug = Arr::get($option, 'slug', '');
+            if ($slug !== '') {
+                $submittedLabelsBySlug[$slug] = trim((string)Arr::get($option, 'label', ''));
+            }
+        }
+
+        foreach ($existingSurveyOptions as $existingOption) {
+            $slug = Arr::get($existingOption, 'slug', '');
+            if ($slug === '') {
+                continue;
+            }
+
+            if (!isset($submittedLabelsBySlug[$slug]) || $submittedLabelsBySlug[$slug] === '') {
+                return __('Existing poll options cannot be removed or left empty.', 'fluent-community');
+            }
+        }
+
+        return null;
     }
 
     public static function transformForEdit($feed)
@@ -717,7 +744,16 @@ class FeedsHelper
 		    )
 	    ) {
             if (Arr::get($requestData, 'media.type') == 'iframe_html') {
-                $data['meta']['media_preview'] = array_filter(Arr::get($requestData, 'media', []));
+                $mediaPreview = array_filter(Arr::get($requestData, 'media', []));
+
+                if (empty($mediaPreview['image']) && !empty($mediaPreview['html'])) {
+                    $thumb = RemoteUrlParser::extractIframeThumbnail($mediaPreview['html']);
+                    if ($thumb) {
+                        $mediaPreview['image'] = $thumb;
+                    }
+                }
+
+                $data['meta']['media_preview'] = $mediaPreview;
                 return [$data, $uplaodedDocs];
             }
 

@@ -340,16 +340,6 @@ class AdminController extends Controller
     {
         $settings = $request->get('settings', []);
 
-        if (!empty($settings['login']['description'])) {
-            $description = wp_unslash($settings['login']['description']);
-            $settings['login']['description'] = CustomSanitizer::unslashMarkdown($description);
-        }
-
-        if (!empty($settings['logout']['description'])) {
-            $description = wp_unslash($settings['logout']['description']);
-            $settings['logout']['description'] = CustomSanitizer::unslashMarkdown($description);
-        }
-
         $settings = CustomSanitizer::sanitizeWelcomeBannerSettings($settings);
 
         if (Arr::get($settings, 'login.enabled') == 'yes') {

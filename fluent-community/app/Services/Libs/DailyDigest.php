@@ -9,6 +9,7 @@ use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\Framework\Support\Arr;
 
 class DailyDigest
@@ -263,6 +264,7 @@ class DailyDigest
                 'space_name'     => $post->space ? $post->space->title : '',
                 'hide_publish'   => 'yes',
                 'show_read_more' => 'yes',
+                'linkColor'      => Utility::getThemeColor(),
                 'timestamp'      => human_time_diff(strtotime($post->created_at), current_time('timestamp'))
             ]);
 

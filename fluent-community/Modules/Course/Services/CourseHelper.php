@@ -615,4 +615,5 @@ class CourseHelper
 
         return $emailComposer->getHtml();
     }
+
 }

@@ -53,5 +53,6 @@ $router->prefix('admin/courses')->namespace('FluentCommunity\Modules\Course\Http
     $router->put('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@updateLesson')->int('course_id')->int('lesson_id');
     $router->patch('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@patchLesson')->int('course_id')->int('lesson_id');
     $router->delete('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@deleteLesson')->int('course_id')->int('lesson_id');
+    $router->post('/{course_id}/lessons/{lesson_id}/duplicate', 'CourseAdminController@duplicateLesson')->int('course_id')->int('lesson_id');
 });
 

@@ -107,7 +107,7 @@ class CartCheckout
                 <div class="no_bg_layout fhr_content_layout">
                     <div style="max-width: 1080px;padding: 0 2rem 2rem; margin: 2rem auto;"
                          class="fhr_content_layout_body">
-                        <h2 class="fcom_checkout_title">Checkout</h2>
+                        <h2 class="fcom_checkout_title"><?php echo esc_html__('Checkout', 'fluent-community'); ?></h2>
                         <div class="fcom_checkout_body">
                             <?php echo do_shortcode('[fluent_cart_checkout]'); ?>
                         </div>

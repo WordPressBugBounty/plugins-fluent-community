@@ -169,8 +169,10 @@ class CustomSanitizer
         return '';
     }
 
-    public static function sanitizeWelcomeBannerSettings($settings)
+    public static function sanitizeWelcomeBannerSettings($settings, $views = ['login', 'logout'])
     {
+        $views = array_intersect($views, ['login', 'logout', 'enrolled', 'not_enrolled']);
+
         $rules = [
             'title'       => 'sanitize_text_field',
             'description' => 'wp_kses_post',
@@ -180,7 +182,7 @@ class CustomSanitizer
         ];
 
         $sanitizedSettings = [];
-        foreach (['login', 'logout'] as $type) {
+        foreach ($views as $type) {
             $typeSettings = Arr::get($settings, $type, []);
             if (empty($typeSettings)) {
                 continue;
@@ -193,10 +195,15 @@ class CustomSanitizer
             $sanitizedSettings[$type]['bannerVideo'] = self::sanitizeBannerVideo($bannerVideo);
             $sanitizedSettings[$type]['bannerImage'] = self::sanitizeBannerImage($bannerImage);
             $sanitizedSettings[$type]['ctaButtons'] = self::sanitizeCtaButtons($ctaButtons);
-            $sanitizedSettings[$type]['description'] = Arr::get($typeSettings, 'description');
+
+            $description = Arr::get($typeSettings, 'description');
+            if (!empty($description)) {
+                $description = wp_kses_post(self::unslashMarkdown(wp_unslash($description)));
+            }
+            $sanitizedSettings[$type]['description'] = $description;
 
             foreach ($typeSettings as $key => $value) {
-                if (isset($rules[$key]) && !in_array($key, ['bannerVideo', 'bannerImage', 'ctaButtons'])) {
+                if (isset($rules[$key]) && !in_array($key, ['bannerVideo', 'bannerImage', 'ctaButtons', 'description'])) {
                     $sanitizedSettings[$type][$key] = call_user_func($rules[$key], $value);
                 }
             }
@@ -215,10 +222,11 @@ class CustomSanitizer
             'type'         => sanitize_text_field(Arr::get($video, 'type', '')),
             'url'          => sanitize_url(Arr::get($video, 'url', '')),
             'content_type' => sanitize_text_field(Arr::get($video, 'content_type', '')),
-            'provider'     => sanitize_url(Arr::get($video, 'provider', '')),
+            'provider'     => sanitize_text_field(Arr::get($video, 'provider', '')),
             'title'        => sanitize_text_field(Arr::get($video, 'title', '')),
             'author_name'  => sanitize_text_field(Arr::get($video, 'author_name', '')),
             'html'         => self::sanitizeRichText(Arr::get($video, 'html', '')),
+            'image'        => sanitize_url(Arr::get($video, 'image', '')),
         ]);
     }
 
@@ -249,7 +257,9 @@ class CustomSanitizer
 
         $sanitizerMap = [
             'label'  => 'sanitize_text_field',
-            'link'   => 'sanitize_url',
+            'link'   => function ($url) {
+                return esc_url_raw($url, ['http', 'https', 'mailto']);
+            },
             'type'   => 'sanitize_text_field',
             'newTab' => 'sanitize_text_field'
         ];

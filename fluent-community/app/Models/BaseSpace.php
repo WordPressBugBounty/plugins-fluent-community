@@ -266,7 +266,7 @@ class BaseSpace extends Model
             if (!empty($data['parent_id'])) {
                 $group = SpaceGroup::find($data['parent_id']);
                 if (!$group) {
-                    throw new \Exception('Invalid group id', 400);
+                    throw new \Exception(esc_html__('Invalid group id', 'fluent-community'), 400);
                 }
                 $this->parent_id = $group->id;
             } else {
@@ -450,7 +450,8 @@ class BaseSpace extends Model
         $hasPermission = $permissions[$permission] ?? false;
 
         if (!$hasPermission && $exception) {
-            throw new \Exception('Sorry you do not have permission ' . esc_html($permission), 403);
+            /* translators: %s is the permission name */
+            throw new \Exception(esc_html(sprintf(__('Sorry you do not have permission %s', 'fluent-community'), $permission)), 403);
         }
 
         return $hasPermission;

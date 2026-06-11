@@ -3,7 +3,6 @@
 namespace FluentCommunity\Modules\Auth\Classes;
 
 use FluentCommunity\App\Http\Controllers\Controller;
-use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\Helper;

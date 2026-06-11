@@ -244,6 +244,9 @@ class NotificationEventHandler
             // check if we have existing notification for this feed and user
             $exist = Notification::where('feed_id', $feed->id)
                 ->where('action', 'comment_added')
+                ->whereHas('subscribers', function ($q) use ($feed) {
+                    $q->where('user_id', $feed->user_id);
+                })
                 ->first();
 
             $totalUsers = $feed->comments
@@ -566,6 +569,9 @@ class NotificationEventHandler
 
         $existingNotification = Notification::where('object_id', $comment->parent_id)
             ->where('action', 'child_comment_added')
+            ->whereHas('subscribers', function ($q) use ($childCommentUserIds) {
+                $q->whereIn('user_id', $childCommentUserIds);
+            })
             ->first();
 
         if ($existingNotification) {

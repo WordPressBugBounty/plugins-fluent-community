@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.0
+Stable tag: 2.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -249,6 +249,40 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.6.0 (Date: Jun 10, 2026) =
+- Introduced: Course Welcome Banners
+- Added: First Comment Approval Moderation Option
+- Added: Page Indicator in Image Carousel
+- Added: Duplicate Actions for Lessons and Quizzes
+- Added: Server-Side Thumbnails for Embedded Videos in Feeds
+- Added: Glow Highlight for New Posts and Comments
+- Added: German (de_DE) Translation Files (pro)
+- Improved: WordPress 7 Compatibility
+- Improved: Course Quiz Setup Editor UX
+- Improved: Comment Reply Thread Stay-Open Behavior
+- Improved: Theme-Aware Status Colors on Course Card Buttons
+- Improved: Paywall-Aware Default Lock Screen Description
+- Improved: Clickable Full Layout Dropdown Row in Feeds View
+- Improved: Validation for Space Topic and Title Fields
+- Improved: Translation Coverage Across Portal UI Strings
+- Fixed: Poll Vote Misattribution on Option Reorder
+- Fixed: Poll Options Deleted When Input Cleared
+- Fixed: Verification Badge Removed on Space Join via Invitation Link
+- Fixed: Course Creator Bypass on Private Space Approval
+- Fixed: Comment Notification Content Leak Across Subscribers
+- Fixed: Space Membership Data Bleed in FluentCRM Profile View
+- Fixed: Lesson Video Missing Until Hard Refresh
+- Fixed: Lesson Media Preview with FluentPlayer
+- Fixed: iPad Safari Full-Screen Lesson Trap
+- Fixed: Block Editor Not Rendering for Contributors
+- Fixed: Bunny Stream Embed Layout in Composer and Feed Views
+- Fixed: Stale Recent Activities Sidebar Widget
+- Fixed: Notification Popover Scroll and Overflow
+- Fixed: Scroll-to-Top Button Positioning Issues
+- Fixed: Comment Scroll Behavior Inside Feed Modal
+- Fixed: Section URL Placeholder Breaks in Hyperlinks
+- Fixed: Undefined Variable Warning in Digest Email
 
 = 2.5.0 (Date: May 20, 2026) =
 - Introduced: Sequential Lesson Lock for Courses (pro)

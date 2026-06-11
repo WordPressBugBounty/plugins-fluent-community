@@ -301,6 +301,7 @@ class CourseAdminController extends Controller
         $existingSettings['hide_instructor_view'] = $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no';
         $existingSettings['show_instructor_students_count'] = $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no';
         $existingSettings['show_paywalls'] = $request->get('settings.show_paywalls') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_welcome_banner'] = $request->get('settings.show_welcome_banner') === 'yes' ? 'yes' : 'no';
         $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
         $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details')));
         $existingSettings['sequential_lesson_order'] = $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no';
@@ -1046,6 +1047,63 @@ class CourseAdminController extends Controller
 
         return [
             'message' => __('Lesson has been deleted successfully.', 'fluent-community')
+        ];
+    }
+
+    public function duplicateLesson(Request $request, $courseId, $lessonId)
+    {
+        Course::findOrFail($courseId);
+
+        $lesson = CourseLesson::where('id', $lessonId)
+            ->where('space_id', $courseId)
+            ->firstOrFail();
+
+        $siblings = CourseLesson::where('parent_id', $lesson->parent_id)
+            ->where('space_id', $courseId)
+            ->orderBy('priority', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get();
+
+        $sourceIndex = $siblings->search(function ($sibling) use ($lesson) {
+            return (int)$sibling->id === (int)$lesson->id;
+        });
+
+        if ($sourceIndex === false) {
+            $sourceIndex = $siblings->count() - 1;
+        }
+
+        $existingTitles = $siblings->pluck('title')->toArray();
+        $duplicateTitle = $lesson->title . ' (Copy)';
+        if (in_array($duplicateTitle, $existingTitles, true)) {
+            $counter = 2;
+            while (in_array($lesson->title . ' (Copy ' . $counter . ')', $existingTitles, true)) {
+                $counter++;
+            }
+            $duplicateTitle = $lesson->title . ' (Copy ' . $counter . ')';
+        }
+
+        $newLesson = $lesson->replicate();
+        $newLesson->title = $duplicateTitle;
+        $newLesson->slug = null;
+        $newLesson->priority = $sourceIndex + 1;
+        $newLesson->save();
+
+        $orderedIds = $siblings->pluck('id')->toArray();
+        array_splice($orderedIds, $sourceIndex + 1, 0, [$newLesson->id]);
+
+        foreach ($orderedIds as $index => $siblingId) {
+            CourseLesson::where('id', $siblingId)->update(['priority' => $index]);
+        }
+
+        $newLesson = CourseLesson::findOrFail($newLesson->id);
+
+        CourseHelper::copyLessonDocuments($lesson, $newLesson);
+
+        do_action('fluent_community/lesson/duplicated', $newLesson, $lesson);
+
+        return [
+            'message' => __('Lesson has been duplicated successfully.', 'fluent-community'),
+            'lesson'  => $newLesson
         ];
     }
 

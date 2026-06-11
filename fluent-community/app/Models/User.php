@@ -627,7 +627,7 @@ class User extends Model
     public function verifyCommunityPermission($permission)
     {
         if (!$this->hasCommunityPermission($permission)) {
-            throw new \Exception('You do not have permission to do this action');
+            throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
         }
 
         return true;
@@ -636,7 +636,7 @@ class User extends Model
     public function verifySpacePermission($permission, $space)
     {
         if (!$space || !$this->hasSpacePermission($permission, $space)) {
-            throw new \Exception('You do not have permission to do this action');
+            throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
         }
 
         return true;
@@ -647,7 +647,7 @@ class User extends Model
         $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('edit_any_feed') || $this->hasSpacePermission('edit_any_feed', $feed->space);
 
         if (!$result && $throwException) {
-            throw new \Exception('You do not have permission to do this action');
+            throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
         }
 
         return $result;
@@ -658,7 +658,7 @@ class User extends Model
         $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('delete_any_feed') || $this->hasSpacePermission('delete_any_feed', $feed->space);
 
         if (!$result && $throwException) {
-            throw new \Exception('You do not have permission to do this action');
+            throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
         }
         return $result;
     }
@@ -700,7 +700,11 @@ class User extends Model
 
     public function isVerified()
     {
-        return get_user_meta($this->ID, '_fcom_is_verified', true) == 'yes';
+        if ($this->xprofile) {
+            return (bool) $this->xprofile->is_verified;
+        }
+
+        return false;
     }
 
     public function syncXProfile($force = false, $useUserName = false)

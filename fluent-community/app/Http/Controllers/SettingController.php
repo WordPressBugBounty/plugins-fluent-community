@@ -273,7 +273,7 @@ class SettingController extends Controller
         $addons = $this->getAddons();
 
         if (!isset($addons[$pluginSlug])) {
-            return $this->sendError('Invalid Plugin');
+            return $this->sendError(__('Invalid Plugin', 'fluent-community'));
         }
 
         $details = $addons[$pluginSlug];

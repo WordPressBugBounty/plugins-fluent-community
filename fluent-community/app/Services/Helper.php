@@ -2043,6 +2043,7 @@ class Helper
             'flag_after_threshold'      => 0,
             'flag_all_new_posts'        => 'no',
             'first_post_approval'       => 'no',
+            'first_comment_approval'    => 'no',
             'flag_all_new_posts_spaces' => [],
         ];
 

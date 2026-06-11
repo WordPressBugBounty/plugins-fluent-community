@@ -19,13 +19,13 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
 
 <div id="fcom_sidebar_wrap" class="fcom_sidebar_wrap">
     <?php if (apply_filters('fluent_community/will_render_default_sidebar_items', true)) : ?>
-        <nav aria-label="Main Sidebar Home menu">
+        <nav aria-label="<?php echo esc_attr__('Main Sidebar Home menu', 'fluent-community'); ?>">
             <ul class="fcom_sm_only fcom_general_menu fcom_home_link">
                 <?php Helper::renderMenuItems($primaryItems, 'fcom_menu_link', '<span class="fcom_no_avatar"></span>', true); ?>
             </ul>
         </nav>
         <?php if($fluentCommunityShowFeedLink || $topInlineLinks): ?>
-        <nav aria-label="Main Sidebar Mobile Menu">
+        <nav aria-label="<?php echo esc_attr__('Main Sidebar Mobile Menu', 'fluent-community'); ?>">
             <ul class="fcom_general_menu">
                 <?php if ($fluentCommunityShowFeedLink): ?>
                     <li class="fcom_menu_item_all_feeds fcom_desktop_only">
@@ -96,7 +96,7 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
                 <?php foreach ($bottomLinkGroups as $fluentCommunityBottomLink): ?>
                     <div class="fcom_communities_menu">
                         <div class="fcom_space_group_header fcom_group_title">
-                            <h4 role="region" aria-label="Link Groups" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>"
+                            <h4 role="region" aria-label="<?php echo esc_attr__('Link Groups', 'fluent-community'); ?>" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>"
                                 class="space_section_title">
                                 <span><?php echo esc_html($fluentCommunityBottomLink['title']); ?></span>
                                 <i class="el-icon fcom_space_down">

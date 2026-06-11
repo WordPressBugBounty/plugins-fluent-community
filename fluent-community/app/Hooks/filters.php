@@ -13,13 +13,21 @@ $app->addFilter('fluent_community/auth/signup_fields', function ($fields) {
 }, 10, 1);
 
 $app->addFilter('fluent_community/lockscreen_fields', function ($fields) {
+    $unavailableFields = [];
+
     if (!defined('FLUENTCART_VERSION')) {
-        $existingNames = array_column($fields, 'name');
-        if (in_array('paywall', $existingNames)) {
-            $fields = array_values(array_filter($fields, function($field) {
-                return $field['name'] != 'paywall';
-            }));
-        }
+        $unavailableFields[] = 'paywall';
     }
-    return $fields;
+
+    if (!defined('FLUENT_COMMUNITY_PRO_VERSION')) {
+        $unavailableFields[] = 'welcome_banner';
+    }
+
+    if (!$unavailableFields) {
+        return $fields;
+    }
+
+    return array_values(array_filter($fields, function ($field) use ($unavailableFields) {
+        return !in_array($field['name'] ?? '', $unavailableFields);
+    }));
 }, 10, 1);

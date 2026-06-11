@@ -242,6 +242,10 @@ class CourseController extends Controller
 
         $course->is_course_admin = $isCourseCreator;
 
+        $course = apply_filters('fluent_community/course/processed', $course, [
+            'is_enrolled' => !!$enrollment,
+        ]);
+
         $courseSettings = $course->settings;
         if (Arr::get($courseSettings, 'course_details')) {
             $courseSettings['course_details_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($courseSettings['course_details']));

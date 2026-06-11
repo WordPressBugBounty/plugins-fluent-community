@@ -1,4 +1,4 @@
-import{u as Q,ax as rt,s as st,A as ot,x as je,$ as ct,l as Y,y as qe,t as ae,c as N,d as it,r as at}from"./vue.js?ver=2.5.0";/*!
+import{u as Q,ax as rt,s as st,A as ot,x as je,$ as ct,l as Y,y as qe,t as ae,c as N,d as it,r as at}from"./vue.js?ver=2.6.0";/*!
   * vue-router v4.4.4
   * (c) 2024 Eduardo San Martin Morote
   * @license MIT

@@ -88,6 +88,21 @@ class CourseAdminPolicy extends BasePolicy
         return $this->canManageCourse($request);
     }
 
+    public function getCourseWelcomeBannerSettings(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
+    public function updateCourseWelcomeBannerSettings(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
+    public function duplicateLesson(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
     protected function canManageCourse(Request $request)
     {
         if (current_user_can('manage_options')) {

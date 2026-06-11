@@ -54,6 +54,12 @@ class SpaceController extends Controller
             'privacy' => 'required|in:public,private,secret'
         ]);
 
+        if (Arr::get($data, 'settings.topic_required') === 'yes' && !array_filter((array)Arr::get($data, 'topic_ids', []))) {
+            return $this->sendError([
+                'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community')
+            ]);
+        }
+
         $spaceGroup = null;
         if (!empty($data['parent_id'])) {
             $spaceGroup = SpaceGroup::findOrFail($data['parent_id']);
@@ -265,6 +271,12 @@ class SpaceController extends Controller
 
         $data = $request->get('data', []);
 
+        if (Arr::has($data, 'title') && !trim(sanitize_text_field(Arr::get($data, 'title', '')))) {
+            return $this->sendError([
+                'message' => __('Space title is required.', 'fluent-community')
+            ]);
+        }
+
         if (!empty($data['slug'])) {
             $taken = Space::where('slug', $data['slug'])
                 ->where('id', '!=', $space->id)
@@ -273,6 +285,22 @@ class SpaceController extends Controller
             if ($taken) {
                 return $this->sendError([
                     'message' => __('Slug is already taken. Please use a different slug', 'fluent-community')
+                ]);
+            }
+        }
+
+        $topicRequired = Arr::has($data, 'settings.topic_required')
+            ? Arr::get($data, 'settings.topic_required')
+            : Arr::get($space->settings, 'topic_required');
+
+        if ($topicRequired === 'yes') {
+            $topicIds = Arr::has($data, 'topic_ids')
+                ? (array)Arr::get($data, 'topic_ids', [])
+                : array_column(Utility::getTopicsBySpaceId($space->id), 'id');
+
+            if (!array_filter($topicIds)) {
+                return $this->sendError([
+                    'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community')
                 ]);
             }
         }
@@ -423,15 +451,16 @@ class SpaceController extends Controller
         }
 
         $roles = $user->getCommunityRoles();
+        $isPrivileged = !!array_intersect($roles, ['admin', 'moderator']);
 
-        if (!$roles && $space->privacy == 'secret') {
+        if (!$isPrivileged && $space->privacy == 'secret') {
             return $this->sendError([
                 'message' => __('You are not allowed to join this space', 'fluent-community')
             ]);
         }
 
         $status = 'active';
-        if (!$roles) {
+        if (!$isPrivileged) {
             if ($space->privacy != 'public') {
                 $status = apply_filters('fluent_community/space/join_status_for_private', 'pending', $space, $user);
 

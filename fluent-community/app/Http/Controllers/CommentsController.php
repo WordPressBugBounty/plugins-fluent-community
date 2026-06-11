@@ -161,10 +161,11 @@ class CommentsController extends Controller
             do_action('fluent_community/comment/new_comment_' . $comment->status, $comment, $feed);
             /* translators: %$s is replaced by the status of the comment */
             $message = sprintf(__('Your comment has been marked as %s', 'fluent-community'), $comment->status);
-            return [
+            $response = [
                 'comment' => $comment,
                 'message' => $message
             ];
+            return apply_filters('fluent_community/comment/new_comment_response', $response, $comment);
         }
 
         do_action('fluent_community/comment_added_' . $feed->type, $comment, $feed);

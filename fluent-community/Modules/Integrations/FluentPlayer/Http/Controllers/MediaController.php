@@ -250,6 +250,7 @@ class MediaController extends Controller
                     background-image: url('" . esc_url(Arr::get($settings, 'posterSrc', '')) . "');
                     background-size: cover;
                     background-position: center;
+                    min-height: 100%;
                 }
             ";
         }
@@ -268,6 +269,7 @@ class MediaController extends Controller
         } else {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
+                    max-width: 100%;
                     min-height: 300px;
                 }
 

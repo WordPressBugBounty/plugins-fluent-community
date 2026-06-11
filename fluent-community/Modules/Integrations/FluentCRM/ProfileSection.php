@@ -47,21 +47,23 @@ class ProfileSection
         $xprofile = XProfile::where('user_id', $userId)->first();
 
         if ($xprofile) {
-            $content .= '<a href="' . $xprofile->getPermalink() . '" target="_blank" rel="noopener">' . __('View Community Profile', 'fluent-community') . '</a>';
+            $content .= '<p style="padding: 0 20px;"><a href="' . $xprofile->getPermalink() . '" target="_blank" rel="noopener">' . __('View Community Profile', 'fluent-community') . '</a></p>';
         }
 
         $courseEnabled = Helper::isFeatureEnabled('course_module');
 
         $dateFormat = get_option('date_format') . ' ' . get_option('time_format');
 
-        $userSpaces = Space::with('space_pivot')
+        $userSpaces = Space::with(['space_pivot' => function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            }])
             ->whereHas('space_pivot', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
             ->orderBy('title', 'ASC')
             ->get();
 
-        $content .= '<h3>' . __('Spaces', 'fluent-community') . '</h3>';
+        $content .= '<h3 style="padding: 0 20px;">' . __('Spaces', 'fluent-community') . '</h3>';
 
         if ($userSpaces && !$userSpaces->isEmpty()) {
             $tableBuilder = new TableBuilder();
@@ -83,13 +85,13 @@ class ProfileSection
             ]);
             $content .= $tableBuilder->getHtml();
         } else {
-            $content .= '<p>' . __('No spaces found for this contact.', 'fluent-community') . '</p>';
+            $content .= '<p style="padding: 0 20px;">' . __('No spaces found for this contact.', 'fluent-community') . '</p>';
         }
 
         if ($courseEnabled) {
             $tableBuilder = new TableBuilder();
             $userCourses = \FluentCommunity\Modules\Course\Services\CourseHelper::getUserCourses($userId); // this will return Collection of Course objects
-            $content .= '<h3>' . __('Enrolled Courses', 'fluent-community') . '</h3>';
+            $content .= '<h3 style="padding: 0 20px;">' . __('Enrolled Courses', 'fluent-community') . '</h3>';
             if ($userCourses && !$userCourses->isEmpty()) {
                 foreach ($userCourses as $course) {
                     $tableBuilder->addRow([
@@ -109,7 +111,7 @@ class ProfileSection
                 ]);
                 $content .= $tableBuilder->getHtml();
             } else {
-                $content .= '<p>' . __('No courses found for this contact.', 'fluent-community') . '</p>';
+                $content .= '<p style="padding: 0 20px;">' . __('No courses found for this contact.', 'fluent-community') . '</p>';
             }
         }
 
@@ -127,9 +129,9 @@ class ProfileSection
         foreach ($spaceCourses as $spaceCourse) {
             $type = $spaceCourse->type;
             if ($type == 'course') {
-                $type = 'Course';
+                $type = __('Course', 'fluent-community');
             } else if ($type == 'community') {
-                $type = 'Space';
+                $type = __('Space', 'fluent-community');
             }
 
             $options[] = [
@@ -151,9 +153,9 @@ class ProfileSection
         foreach ($removeSpaceCourses as $spaceCourse) {
             $type = $spaceCourse->type;
             if ($type == 'course') {
-                $type = 'Course';
+                $type = __('Course', 'fluent-community');
             } else if ($type == 'community') {
-                $type = 'Space';
+                $type = __('Space', 'fluent-community');
             }
 
             $removeOptions[] = [

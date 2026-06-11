@@ -552,6 +552,15 @@ class FeedsController extends Controller
 
         $user->canEditFeed($existingFeed, true);
 
+        if ($surveyOptionError = FeedsHelper::getSurveyOptionsUpdateError(
+            Arr::get($existingFeed->meta, 'survey_config.options', []),
+            Arr::get($requestData, 'survey', [])
+        )) {
+            return $this->sendError([
+                'message' => $surveyOptionError
+            ]);
+        }
+
         if ($status = Arr::get($requestData, 'status')) {
             if (in_array($status, $editableStatuses)) {
                 $data['status'] = $status;
@@ -913,7 +922,7 @@ class FeedsController extends Controller
         do_action('fluent_community/feed/deleted', $feed_id);
 
         return [
-            'message' => 'Feed has been deleted successfully'
+            'message' => __('Feed has been deleted successfully', 'fluent-community')
         ];
     }
 
@@ -1232,7 +1241,7 @@ class FeedsController extends Controller
             return [
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
-                'error'       => 'User not authenticated',
+                'error'       => __('User not authenticated', 'fluent-community'),
                 'feeds'       => []
             ];
         }
@@ -1345,7 +1354,7 @@ class FeedsController extends Controller
         if (empty($feedIds) || !is_array($feedIds)) {
             return [
                 'feeds' => [],
-                'error' => 'No feed IDs provided'
+                'error' => __('No feed IDs provided', 'fluent-community')
             ];
         }
 
@@ -1414,7 +1423,7 @@ class FeedsController extends Controller
                 'updates'     => [],
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
-                'error'       => 'User not authenticated'
+                'error'       => __('User not authenticated', 'fluent-community')
             ];
         }
 
@@ -1426,7 +1435,7 @@ class FeedsController extends Controller
                 'updates'     => [],
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
-                'error'       => 'Invalid timestamp format'
+                'error'       => __('Invalid timestamp format', 'fluent-community')
             ];
         }
 
@@ -1435,13 +1444,13 @@ class FeedsController extends Controller
 
         if ($context === 'global') {
             $query->where('type', 'feed');
-        } elseif (str_starts_with($context, 'space-')) {
+        } elseif (strpos($context, 'space-') === 0) {
             $spaceSlug = str_replace('space-', '', $context);
             $space = Space::where('slug', $spaceSlug)->first();
             if ($space) {
                 $query->where('space_id', $space->id);
             }
-        } elseif (str_starts_with($context, 'user-')) {
+        } elseif (strpos($context, 'user-') === 0) {
             $targetUserId = str_replace('user-', '', $context);
             $query->where('user_id', $targetUserId);
         }

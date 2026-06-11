@@ -101,7 +101,7 @@ class FluentBlockEditorHandler
         }
 
         if (!$hasAccess) {
-            echo '<h3 style="padding: 100px; text-align: center;">Sorry, you do not have access to this page.</h3>';
+            echo '<h3 style="padding: 100px; text-align: center;">' . esc_html__('Sorry, you do not have access to this page.', 'fluent-community') . '</h3>';
             exit(200);
         }
 
@@ -134,13 +134,12 @@ class FluentBlockEditorHandler
             $post->post_content = $lesson->message ?: '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         }
 
-        $enqueueHook = 'wp_enqueue_scripts';
-
-        if(is_admin()) {
-            $enqueueHook = 'admin_enqueue_scripts';
-        }
-
-        add_action($enqueueHook, function () use ($post) {
+        // renderPage() exits during admin_init and manually fires wp_enqueue_scripts in
+        // both the admin and frontend branches. admin_enqueue_scripts never runs here, so
+        // the apiFetch preload must ride wp_enqueue_scripts or the editor falls back to a
+        // live GET /wp/v2/fcom-dummy/{id}?context=edit — which 403s for users without
+        // edit_others_posts (e.g. contributors) on the shared, admin-authored dummy post.
+        add_action('wp_enqueue_scripts', function () use ($post) {
             wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array('jquery-ui-sortable'), FLUENT_COMMUNITY_PLUGIN_VERSION, true);
             wp_enqueue_style('dashicons');
             wp_enqueue_style('media');

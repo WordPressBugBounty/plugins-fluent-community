@@ -20,7 +20,7 @@
 <div class="fcom_top_menu">
     <div class="top_menu_left">
         <div class="space_opener">
-            <button aria-label="Open Menu" class="fcom_space_opener_btn" aria-disabled="false" type="button">
+            <button aria-label="<?php echo esc_attr__('Open Menu', 'fluent-community'); ?>" class="fcom_space_opener_btn" aria-disabled="false" type="button">
                 <span>
                     <i class="el-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="20" height="20" fill="currentColor">
@@ -47,7 +47,7 @@
     <div class="top_menu_center fcom_desktop_only fcom_general_menu">
         <?php if ($menuItems): ?>
             <nav>
-                <ul aria-label="Main menu" class="fcom_header_menu top_menu_items">
+                <ul aria-label="<?php echo esc_attr__('Main menu', 'fluent-community'); ?>" class="fcom_header_menu top_menu_items">
                     <?php \FluentCommunity\App\Services\Helper::renderMenuItems($menuItems, 'fcom_menu_link'); ?>
                 </ul>
             </nav>

@@ -27,6 +27,39 @@ class RemoteUrlParser
         return self::$instance->getInfoFromRemoteUrl($url);
     }
 
+    public static function extractIframeThumbnail(&$html)
+    {
+        if (!is_string($html)) {
+            return '';
+        }
+        $html = self::sanitizeOembedHtml($html);
+        if (!preg_match('/<iframe\s[^>]*\bsrc\s*=\s*([\'"])(.*?)\1/i', $html, $matches)) {
+            return '';
+        }
+
+        $src = sanitize_url(html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if (!$src) {
+            return '';
+        }
+
+        $providers = [
+            '#^https?://(?:[\w-]+\.)?youtube\.com/embed/([^?/]+).*$#i'                                   => 'https://img.youtube.com/vi/$1/hqdefault.jpg',
+            '#^https?://player\.vimeo\.com/video/([^?/]+).*$#i'                                          => 'https://vumbnail.com/$1.jpg',
+            '#^https?://fast\.wistia\.net/embed/iframe/([^?/]+).*$#i'                                    => 'https://fast.wistia.net/embed/medias/$1/swatch',
+            '#^https?://(?:www\.)?dailymotion\.com/(?:embed/video|player\.html\?video=)/?([^?/&]+).*$#i' => 'https://www.dailymotion.com/thumbnail/video/$1',
+        ];
+
+        foreach ($providers as $pattern => $template) {
+            $thumb = preg_replace($pattern, $template, $src, 1, $count);
+            if ($count) {
+                return $thumb;
+            }
+        }
+
+        $parsed = self::parse($src);
+        return (!is_wp_error($parsed) && !empty($parsed['image'])) ? $parsed['image'] : '';
+    }
+
     public function getOembed($url)
     {
         $data = (new \WP_oEmbed())->get_data($url, [
@@ -51,7 +84,7 @@ class RemoteUrlParser
         ]);
     }
 
-    private static function sanitizeOembedHtml($html)
+    public static function sanitizeOembedHtml($html)
     {
         if (empty($html)) {
             return $html;

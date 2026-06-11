@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @var string $linkColor
  */
 
+$linkColor = !empty($linkColor) ? $linkColor : '#1f3349'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template-scoped variable injected by the view renderer
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>

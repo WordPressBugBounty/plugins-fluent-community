@@ -219,7 +219,7 @@ class PortalHandler
 
                 $nonce = Arr::get($data, '__nonce', '');
                 if (!wp_verify_nonce($nonce, 'fcom_reactivate_account')) {
-                    $this->viewErrorPage('Invalid request', 'Security check failed. Please try again.');
+                    $this->viewErrorPage(__('Invalid request', 'fluent-community'), __('Security check failed. Please try again.', 'fluent-community'));
                 }
 
                 // we need to reactivate the account
@@ -801,8 +801,19 @@ class PortalHandler
             if (!empty($parsedUrl['query'])) {
                 $redirectPath .= '?' . $parsedUrl['query'];
             }
-            $settings = Helper::generalSettings();
-            $authUrl = Arr::get($settings, 'auth_url', '') ?: $this->getAuthUrl();
+            $settings     = Helper::generalSettings();
+            $adminAuthUrl = Arr::get($settings, 'auth_url', '');
+
+            // Drop admin's URL if it points back into the portal (would infinite loop)
+            if ($adminAuthUrl) {
+                $authPath   = wp_parse_url($adminAuthUrl, PHP_URL_PATH) ?: '';
+                $portalPath = wp_parse_url(Helper::baseUrl(), PHP_URL_PATH) ?: '';
+                if ($authPath && $portalPath && strpos(trim($authPath, '/'), trim($portalPath, '/')) === 0) {
+                    $adminAuthUrl = '';
+                }
+            }
+
+            $authUrl = $adminAuthUrl ?: $this->getAuthUrl();
 
             if ($authUrl) {
                 $authUrl = add_query_arg([

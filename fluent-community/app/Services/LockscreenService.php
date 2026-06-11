@@ -143,11 +143,12 @@ class LockscreenService
         }
 
         return [
-            'showCustom'     => $showCustom,
-            'showPaywalls'   => $showPaywalls,
-            'canSendRequest' => $canSendRequest,
-            'lockScreen'     => $showCustom ? self::getLockscreenSettings($space, $viewOnly) : null,
-            'redirect_url'   => $redirectUrl
+            'showCustom'        => $showCustom,
+            'showPaywalls'      => $showPaywalls,
+            'showWelcomeBanner' => Arr::get($space->settings, 'show_welcome_banner', 'no') === 'yes',
+            'canSendRequest'    => $canSendRequest,
+            'lockScreen'        => $showCustom ? self::getLockscreenSettings($space, $viewOnly) : null,
+            'redirect_url'      => $redirectUrl
         ];
     }
 

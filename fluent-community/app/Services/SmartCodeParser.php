@@ -52,14 +52,35 @@ class SmartCodeParser
 
     public function parseShortcode($string)
     {
-        // check if the string contains any smartcode
         if (strpos($string, '{{') === false && strpos($string, '##') === false) {
             return $string;
+        }
+
+        if (static::$isHtml) {
+            $string = $this->resolveHrefPlaceholders($string);
         }
 
         return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) {
             return $this->replace($matches);
         }, $string);
+    }
+
+    /**
+     * Resolve placeholders inside href="..." attributes to raw URLs.
+     * Prevents nested anchors when URL smartcodes auto-wrap in HTML mode.
+     */
+    protected function resolveHrefPlaceholders($string)
+    {
+        return preg_replace_callback(
+            '/(?<![a-zA-Z-])href\s*=\s*(["\'])([^"\']*(?:\{\{|##)[^"\']*)\1/i',
+            function ($m) {
+                static::$isHtml = false;
+                $resolved = $this->parseShortcode($m[2]);
+                static::$isHtml = true;
+                return 'href=' . $m[1] . esc_url($resolved) . $m[1];
+            },
+            $string
+        );
     }
 
     protected function replace($matches)
