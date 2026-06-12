@@ -259,7 +259,10 @@ class AuthHelper
 
     public static function isTwoFactorEnabled()
     {
-        return apply_filters('fluent_auth/verify_signup_email', true);
+        // fluent_auth/verify_signup_email is kept for backward compatibility with FluentAuth-targeted snippets
+        $enabled = apply_filters('fluent_auth/verify_signup_email', true);
+
+        return apply_filters('fluent_community/auth/two_factor_enabled', $enabled);
     }
 
     public static function get2FaRegistrationCodeForm($formData)

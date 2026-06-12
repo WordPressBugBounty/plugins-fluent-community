@@ -72,6 +72,8 @@ class CourseController extends Controller
             } else {
                 $course->studentsCount = 0;
             }
+
+            do_action_ref_array('fluent_community/course', [&$course]);
         }
 
         $data = [
@@ -241,6 +243,7 @@ class CourseController extends Controller
         }
 
         $course->is_course_admin = $isCourseCreator;
+        $course->can_self_enroll = $isCourseCreator || ($course->status === 'published' && $course->privacy === 'public');
 
         $course = apply_filters('fluent_community/course/processed', $course, [
             'is_enrolled' => !!$enrollment,
