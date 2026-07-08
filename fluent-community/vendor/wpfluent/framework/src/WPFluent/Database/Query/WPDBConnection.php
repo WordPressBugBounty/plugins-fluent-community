@@ -134,6 +134,68 @@ class WPDBConnection implements ConnectionInterface
         $this->wpdb->show_errors(
             $this->shouldShowErrors()
         );
+
+        $this->registerSqliteFunctions();
+    }
+
+    /**
+     * Register PHP-backed SOUNDEX() and LEVENSHTEIN() functions on the SQLite
+     * connection so phonetic ("sounds like") and fuzzy ("similar") queries
+     * work, mirroring MySQL's native/stored equivalents.
+     *
+     * SQLite ships neither function; PHP provides both natively, so we bind
+     * them as UDFs. Using PHP's soundex() here matches the term that
+     * SQLiteGrammar encodes with the same soundex() on the binding side.
+     *
+     * No-ops on MySQL and silently skips if the underlying PDO is unreachable,
+     * so a missing SQLite layer never breaks booting.
+     *
+     * @return void
+     */
+    protected function registerSqliteFunctions()
+    {
+        if (! $this->isSqlite()) {
+            return;
+        }
+
+        if (! ($pdo = $this->resolveSqlitePdo())) {
+            return;
+        }
+
+        try {
+            $pdo->sqliteCreateFunction('soundex', 'soundex', 1);
+            $pdo->sqliteCreateFunction('levenshtein', 'levenshtein', 2);
+        } catch (\Throwable $e) {
+            // Leave the functions unregistered rather than break booting;
+            // whereSoundsLike()/whereSimilar() will only surface a SQL error
+            // if they are actually used on this connection.
+        }
+    }
+
+    /**
+     * Resolve the real PDO handle behind the WordPress SQLite layer.
+     *
+     * Supports the official "SQLite Database Integration" plugin
+     * (WP_SQLite_Translator::get_pdo()), a dbh that is itself a PDO
+     * (WP-SQLite-DB's PDOEngine), and the shared $GLOBALS['@pdo'] cache.
+     *
+     * @return \PDO|null
+     */
+    protected function resolveSqlitePdo()
+    {
+        $dbh = $this->wpdb->dbh ?? null;
+
+        if ($dbh && method_exists($dbh, 'get_pdo')) {
+            $pdo = $dbh->get_pdo();
+        } elseif ($dbh instanceof \PDO) {
+            $pdo = $dbh;
+        } elseif (isset($GLOBALS['@pdo'])) {
+            $pdo = $GLOBALS['@pdo'];
+        } else {
+            $pdo = null;
+        }
+
+        return $pdo instanceof \PDO ? $pdo : null;
     }
 
     /**
@@ -337,6 +399,8 @@ class WPDBConnection implements ConnectionInterface
      * @param  array   $bindings
      * @param  string  $placeholder  '%s' for wpdb->prepare path, '?' for mysqli native prepare
      * @return array{0:string,1:array}
+     *
+     * @phpstan-ignore-next-line
      */
     protected function spliceNullBindings(string $query, array $bindings, string $placeholder): array
     {
@@ -782,6 +846,8 @@ class WPDBConnection implements ConnectionInterface
      * Get the server version for the connection.
      *
      * @return string
+     *
+     * @phpstan-ignore-next-line
      */
     public function getServerVersion(): string
     {

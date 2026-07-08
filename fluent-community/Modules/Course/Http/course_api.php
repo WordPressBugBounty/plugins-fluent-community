@@ -13,6 +13,8 @@ $router->prefix('courses')->namespace('FluentCommunity\Modules\Course\Http\Contr
     $router->get('/{course_slug}/lessons/{lesson_slug}/by-slug', 'CourseController@getLessonBySlug')->alphaNumDash('course_slug')->alphaNumDash('lesson_slug');
     $router->post('/{course_id}/enroll', 'CourseController@enrollCourse')->int('course_id');
     $router->put('/{course_id}/lessons/{lesson_id}/completion', 'CourseController@updateCompletionLesson')->int('course_id')->int('lesson_id');
+    $router->post('/{course_id}/lessons/{lesson_id}/video-watched', 'CourseController@markLessonVideoWatched')->int('course_id')->int('lesson_id');
+    $router->delete('/{course_id}/progress', 'CourseController@resetMyProgress')->int('course_id');
     $router->get('/all-courses', 'CourseController@getAllCourses');
 });
 
@@ -27,6 +29,8 @@ $router->prefix('admin/courses')->namespace('FluentCommunity\Modules\Course\Http
     $router->get('/{course_id}/students', 'CourseAdminController@getCourseStudents')->int('course_id');
     $router->post('/{course_id}/students', 'CourseAdminController@addStudent')->int('course_id');
     $router->delete('/{course_id}/students/{student_id}', 'CourseAdminController@removeStudent')->int('course_id')->int('student_id');
+    $router->delete('/{course_id}/students/{student_id}/progress', 'CourseAdminController@resetStudentProgress')
+        ->int('course_id')->int('student_id');
 
     $router->get('/{course_id}/users/search', 'CourseAdminController@getOtherUsers')->int('course_id');
 

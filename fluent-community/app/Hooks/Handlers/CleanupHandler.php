@@ -57,7 +57,10 @@ class CleanupHandler
 
     public function handleFeedDeleted($feed)
     {
-        $feed->comments()->delete();
+        foreach ($feed->comments as $comment) {
+            $comment->delete();
+        }
+
         $feed->reactions()->delete();
         $feed->activities()->delete();
         $this->queueMediaDelete($feed->media);

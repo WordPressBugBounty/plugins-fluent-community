@@ -23,6 +23,12 @@ use FluentCommunity\Framework\Database\Orm\Relations\Concerns\AsPivot;
 use FluentCommunity\Framework\Database\Orm\Collection as OrmCollection;
 use FluentCommunity\Framework\Database\ConnectionResolverInterface as Resolver;
 
+/**
+ * Model forwards unknown instance/static calls to a new Orm Builder
+ * (see __call/__callStatic), which itself proxies to the Query Builder.
+ *
+ * @mixin \FluentCommunity\Framework\Database\Orm\Builder
+ */
 abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhenCastToString, JsonableInterface, JsonSerializable, UrlRoutable
 {
     use HelperFunctionsTrait;

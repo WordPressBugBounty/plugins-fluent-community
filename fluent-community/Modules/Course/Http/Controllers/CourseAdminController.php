@@ -564,6 +564,28 @@ class CourseAdminController extends Controller
         ];
     }
 
+    public function resetStudentProgress(Request $request, $courseId, $studentId)
+    {
+        Course::findOrFail($courseId);
+
+        $pivot = SpaceUserPivot::where('space_id', $courseId)
+            ->where('user_id', $studentId)
+            ->where('role', 'student')
+            ->first();
+
+        if (!$pivot) {
+            return $this->sendError([
+                'message' => __('This student is not enrolled in this course.', 'fluent-community')
+            ]);
+        }
+
+        CourseHelper::resetCourseProgress($courseId, (int) $studentId);
+
+        return [
+            'message' => __("Student's progress has been reset.", 'fluent-community')
+        ];
+    }
+
     public function getSections(Request $request, $courseId)
     {
         $course = Course::findOrFail($courseId);
@@ -689,7 +711,7 @@ class CourseAdminController extends Controller
 
         $latestPriority = CourseTopic::where('type', 'course_section')->where('space_id', $courseId)->max('priority');
 
-        $sectionData['priority'] = $latestPriority ? $latestPriority + 1 : 0;
+        $sectionData['priority'] = (int) $latestPriority + 1;
 
         $section = CourseTopic::create($sectionData);
 
@@ -802,7 +824,7 @@ class CourseAdminController extends Controller
 
         $newSection = $originalSection->replicate();
         $newSection->space_id = $toCourse->id;
-        $newSection->priority = $latestPriority ? $latestPriority + 1 : 0;
+        $newSection->priority = (int) $latestPriority + 1;
         $newSection->save();
 
         $originalLessons = CourseLesson::where('parent_id', $originalSection->id)->get();
@@ -853,7 +875,8 @@ class CourseAdminController extends Controller
         Course::findOrFail($courseId);
 
         $lessons = CourseLesson::where('space_id', $courseId)
-            ->orderBy('priority', 'ASC');
+            ->orderBy('priority', 'ASC')
+            ->orderBy('id', 'ASC');
 
         $topicId = (int)$request->get('topic_id');
 
@@ -913,7 +936,7 @@ class CourseAdminController extends Controller
             ->where('space_id', $courseId)
             ->max('priority');
             
-        $lessonData['priority'] = $latestPriority ? $latestPriority + 1 : 0;
+        $lessonData['priority'] = (int) $latestPriority + 1;
 
         $lessonData = apply_filters('fluent_community/lesson/create_data', $lessonData, $request);
 
@@ -977,11 +1000,15 @@ class CourseAdminController extends Controller
         }
 
         $updateData = array_filter([
-            'title'   => sanitize_text_field(Arr::get($lessonData, 'title')),
-            'message' => CourseHelper::santizeLessonBody(Arr::get($lessonData, 'message')),
-            'status'  => Arr::get($lessonData, 'status'),
-            'meta'    => wp_parse_args($updatedMeta, $lesson->meta)
+            'title'  => sanitize_text_field(Arr::get($lessonData, 'title')),
+            'status' => Arr::get($lessonData, 'status'),
+            'meta'   => wp_parse_args($updatedMeta, $lesson->meta)
         ]);
+
+        // message bypasses array_filter so an emptied lesson body still saves
+        if (array_key_exists('message', $lessonData)) {
+            $updateData['message'] = CourseHelper::santizeLessonBody((string) Arr::get($lessonData, 'message'));
+        }
 
         $updateData = apply_filters('fluent_community/lesson/update_data', $updateData, $lesson);
 
@@ -1012,7 +1039,10 @@ class CourseAdminController extends Controller
 
         $acceptedFields = ['title', 'status', 'slug'];
 
-        $lessonData = array_filter($request->only($acceptedFields));
+        // empty title/slug/status must not overwrite, but a literal "0" is a valid value
+        $lessonData = array_filter($request->only($acceptedFields), function ($value) {
+            return $value !== null && $value !== '';
+        });
 
         if (Arr::get($lessonData, 'status') === 'published' && $lesson->status !== 'published') {
             if (empty($lesson->scheduled_at)) {
@@ -1191,7 +1221,16 @@ class CourseAdminController extends Controller
 
         Course::findOrFail($courseId);
 
-        $instructors = User::select(['ID', 'display_name', 'user_email'])
+        $selects = [
+            'ID',
+            'display_name'
+        ];
+
+        if (current_user_can('list_users')) {
+            $selects[] = 'user_email';
+        }
+
+        $instructors = User::select($selects)
             ->limit(100)
             ->searchBy($search)
             ->get();

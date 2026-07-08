@@ -34,6 +34,11 @@ class PortalPolicy extends BasePolicy
         return is_user_logged_in() && $this->verifyRequest($request);
     }
 
+    public function markLessonVideoWatched(Request $request)
+    {
+        return is_user_logged_in() && $this->verifyRequest($request);
+    }
+
     public function updateLinks(Request $request)
     {
         return !!Helper::isSiteAdmin();

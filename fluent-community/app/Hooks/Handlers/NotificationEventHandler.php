@@ -7,6 +7,7 @@ use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\SpaceUserPivot;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Framework\Support\Arr;
 
 class NotificationEventHandler
@@ -227,12 +228,14 @@ class NotificationEventHandler
 
     protected function commentNotificationToAuthorFeed(Comment $comment, Feed $feed)
     {
-        if ($comment->user_id == $feed->user_id) {
+        $authorId = FeedsHelper::getNotificationAuthorId($feed);
+
+        if ($comment->user_id == $authorId) {
             return;
         }
 
         $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
-        if (in_array($feed->user_id, $mentionedUserIds)) {
+        if (in_array($authorId, $mentionedUserIds)) {
             return;
         }
 
@@ -244,13 +247,13 @@ class NotificationEventHandler
             // check if we have existing notification for this feed and user
             $exist = Notification::where('feed_id', $feed->id)
                 ->where('action', 'comment_added')
-                ->whereHas('subscribers', function ($q) use ($feed) {
-                    $q->where('user_id', $feed->user_id);
+                ->whereHas('subscribers', function ($q) use ($authorId) {
+                    $q->where('user_id', $authorId);
                 })
                 ->first();
 
             $totalUsers = $feed->comments
-                ->where('user_id', '!=', $feed->user_id)
+                ->where('user_id', '!=', $authorId)
                 ->pluck('user_id')
                 ->unique()
                 ->count();
@@ -322,14 +325,14 @@ class NotificationEventHandler
             $exist->save();
 
             NotificationSubscriber::where('object_id', $exist->id)
-                ->where('user_id', $feed->user_id)
+                ->where('user_id', $authorId)
                 ->update([
                     'is_read'    => 0,
                     'updated_at' => current_time('mysql')
                 ]);
 
             do_action('fluent_community/notification/comment/notifed_to_author', [
-                'user_ids'     => [$feed->user_id],
+                'user_ids'     => [$authorId],
                 'notification' => $exist,
                 'key'          => 'notifed_to_author',
                 'comment'      => $comment,
@@ -352,10 +355,10 @@ class NotificationEventHandler
 
         $notification = Notification::create($notification);
 
-        $notification->subscribe([$feed->user_id]);
+        $notification->subscribe([$authorId]);
 
         do_action('fluent_community/notification/comment/notifed_to_author', [
-            'user_ids'     => [$feed->user_id],
+            'user_ids'     => [$authorId],
             'notification' => $notification,
             'comment'      => $comment,
             'key'          => 'notifed_to_author',

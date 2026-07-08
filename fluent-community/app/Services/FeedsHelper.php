@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Services;
 
 use FluentCommunity\App\Functions\Utility;
 use \FluentCommunity\App\Models\Space;
+use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Reaction;
@@ -25,6 +26,23 @@ class FeedsHelper
     public static function getCurrentRelatedUserIds()
     {
         return array_values(array_unique(self::$currentRelatedUserIds));
+    }
+
+    /**
+     * Resolve who should receive the "post author" notification for a feed.
+     * Course lessons notify the COURSE creator (whoever created the course),
+     * not the user who uploaded the individual lesson.
+     */
+    public static function getNotificationAuthorId($feed)
+    {
+        if ($feed->type === 'course_lesson' && $feed->space_id) {
+            $course = BaseSpace::withoutGlobalScopes()->find($feed->space_id);
+            if ($course && $course->created_by) {
+                return (int) $course->created_by;
+            }
+        }
+
+        return (int) $feed->user_id;
     }
 
     public static function getSpaceSlugsByUserId($userId)
@@ -216,13 +234,17 @@ class FeedsHelper
 
     public static function findFirstUrl($html)
     {
-        // use regular expression to find the first URL in a href tag
-        // do not take the url which contains /u/ in it
-        $pattern = '/<a\s+(?:[^>]*?\s+)?href=([\'"])(?!.*\/u\/)(.*?)\1/';
-        preg_match($pattern, $html, $matches);
+        if (!preg_match_all('/<a\s+(?:[^>]*?\s+)?href=([\'"])(.*?)\1/i', $html, $matches)) {
+            return '';
+        }
 
-        if (isset($matches[2])) {
-            return $matches[2];
+        $profileUrlPrefix = Helper::baseUrl('u/');
+
+        foreach ($matches[2] as $href) {
+            if (strpos($href, $profileUrlPrefix) === 0) {
+                continue;
+            }
+            return $href;
         }
 
         return '';
@@ -557,9 +579,9 @@ class FeedsHelper
             if ($titlePref == 'required' && empty($processedData['title'])) {
                 throw new \Exception(esc_html__('Title is required. Please provide a title', 'fluent-community'));
             }
-            // trim the title if it's too long to 150 char
-            if (\strlen($processedData['title']) > 192) {
-                $processedData['title'] = substr($processedData['title'], 0, 192);
+            // trim the title if it's too long to 192 chars (multibyte-safe; column is VARCHAR(192) characters)
+            if (mb_strlen($processedData['title']) > 192) {
+                $processedData['title'] = mb_substr($processedData['title'], 0, 192, 'UTF-8');
             }
         }
 

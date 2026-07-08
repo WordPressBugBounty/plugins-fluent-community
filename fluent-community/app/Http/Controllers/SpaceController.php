@@ -186,6 +186,8 @@ class SpaceController extends Controller
         $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
+            $space->description_rendered = wpautop($space->description);
+            
             $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
 
@@ -195,7 +197,6 @@ class SpaceController extends Controller
             }
 
             $space->members_count = (int)Arr::get($memberCounts, $space->id, 0);
-            $space->description_rendered = wpautop($space->description);
         }
 
         $data = [
@@ -236,15 +237,16 @@ class SpaceController extends Controller
     public function getBySlug(Request $request, $spaceSlug)
     {
         $user = $this->getUser();
-        $space = Space::where('slug', $spaceSlug)
-            ->firstOrFail();
+        $space = Space::where('slug', $spaceSlug)->first();
 
         $userId = $user ? $user->ID : null;
-        if ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true)) {
+
+        // A hidden secret space must be indistinguishable from a non-existent one, so its
+        // existence cannot be enumerated by slug. Both return an identical 404.
+        if (!$space || ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true))) {
             return $this->sendError([
-                'message'    => __('You are not allowed to view this space', 'fluent-community'),
-                'error_type' => 'restricted'
-            ]);
+                'message' => __('Space not found', 'fluent-community')
+            ], 404);
         }
 
         $space = $space->formatSpaceData($user);

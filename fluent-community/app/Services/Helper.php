@@ -29,6 +29,28 @@ class Helper
     }
 
     /**
+     * Run a callback inside a database transaction.
+     *
+     * @param callable $callback
+     * @return mixed
+     * @throws \Exception
+     */
+    public static function dbTransaction($callback)
+    {
+        $db = App::make('db');
+        $db->beginTransaction();
+
+        try {
+            $result = $callback();
+            $db->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Check if POST content length exceeds PHP limits
      *
      * @return array|false Error array if limit exceeded, false otherwise
@@ -422,7 +444,7 @@ class Helper
      * @param int|null $userId The user ID. If null, uses the current user.
      * @return bool True if the user can access the portal, false otherwise.
      */
-    public static function canAccessPortal($userId = null)
+    public static function canAccessPortal($userId = null, $requireActiveProfile = true)
     {
         $settings = self::generalSettings();
         $accessLevel = Arr::get($settings, 'access.acess_level');
@@ -459,6 +481,10 @@ class Helper
 
         if (!$result) {
             return apply_filters('fluent_community/can_access_portal', false);
+        }
+
+        if (!$requireActiveProfile) {
+            return apply_filters('fluent_community/can_access_portal', true);
         }
 
         $xProfile = Helper::getCurrentProfile();
@@ -1719,6 +1745,7 @@ class Helper
 
         ?>
         <a aria-label="Go to <?php echo esc_attr(Arr::get($link, 'title')); ?> page"
+           data-fcom-tip="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
            href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
             echo esc_attr($key) . '="' . esc_attr($value) . '"';
         } ?>>
@@ -2038,13 +2065,15 @@ class Helper
         $config = Utility::getOption('moderation_config', []);
 
         $default = [
-            'is_enabled'                => 'no',
-            'profanity_filter'          => "",
-            'flag_after_threshold'      => 0,
-            'flag_all_new_posts'        => 'no',
-            'first_post_approval'       => 'no',
-            'first_comment_approval'    => 'no',
-            'flag_all_new_posts_spaces' => [],
+            'is_enabled'                       => 'no',
+            'profanity_filter'                 => "",
+            'flag_after_threshold'             => 0,
+            'flag_all_new_posts'               => 'no',
+            'first_post_approval'              => 'no',
+            'first_comment_approval'           => 'no',
+            'flag_all_new_posts_spaces'        => [],
+            'auto_flag_user_reject_threshold'  => 0,
+            'auto_flag_user_report_threshold'  => 0,
         ];
 
         return wp_parse_args($config, $default);
@@ -2257,5 +2286,89 @@ class Helper
         }
 
         return $text;
+    }
+
+    public static function getPathFromUrl($url)
+    {
+        return rtrim((string) wp_parse_url($url, PHP_URL_PATH), '/');
+    }
+
+    // Return the ID of the group that contains the current page
+    public static function getActiveSidebarGroupId($groups)
+    {
+        if (empty($_SERVER['REQUEST_URI'])) {
+            return '';
+        }
+        $url=esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+        $currentPath = self::getPathFromUrl($url);
+        if ($currentPath === '') {
+            return '';
+        }
+
+        foreach ($groups as $group) {
+            $items = isset($group['children']) ? $group['children'] : ($group['items'] ?? []);
+            foreach ($items as $item) {
+                $item_path = isset($item['permalink']) ? self::getPathFromUrl($item['permalink']) : '';
+
+                if (is_array($item) && !empty($item['permalink']) && $item_path === $currentPath) {
+                    return sanitize_key((string) ($group['id'] ?? $group['slug'] ?? ''));
+                }
+            }
+        }
+
+        return '';
+    }
+
+    // Explicit per-user choices from the cookie. Format: "c:1,2|e:3,4" (c = collapsed, e = expanded).
+    public static function getSidebarGroupStates()
+    {
+        $collapsed = [];
+        $expanded = [];
+        $cookie = isset($_COOKIE['fcom_sidebar_group_states']) ? sanitize_text_field(wp_unslash($_COOKIE['fcom_sidebar_group_states'])) : '';
+        foreach (explode('|', $cookie) as $section) {
+            list($flag, $ids) = array_pad(explode(':', $section, 2), 2, '');
+            $list = array_filter(array_map('sanitize_key', explode(',', $ids)));
+            
+            if ($flag === 'c') {
+                $collapsed = $list;
+            } elseif ($flag === 'e') {
+                $expanded = $list;
+            }
+        }
+
+        return [$collapsed, $expanded];
+    }
+
+    public static function getCollapsedSidebarGroups($groups = [])
+    {
+        $isDefaultCollapse = Utility::isCustomizationEnabled('collapse_sidebar_groups');
+        list($collapsedByUser, $expandedByUser) = self::getSidebarGroupStates();
+        $activeGroupId = self::getActiveSidebarGroupId($groups);
+
+        /**
+         * Precendence. 
+         * 1. No group id or slug => Fallback to expanded
+         * 2. Has Active Link => Always expanded
+         * 3. Explicitly expanded by user => Always expanded
+         * 4. Explicitly collapsed by user => Collapsed
+         * 5. Default Collapse by setting => Collapsed
+         * 6. Otherwise => Expanded
+         */
+
+        $collapsed = [];
+        foreach ($groups as $group) {
+            $id = sanitize_key((string) ($group['id'] ?? $group['slug'] ?? ''));
+            // Matching expanded condition (1,2,3)
+            if ($id === '' || $id === $activeGroupId || in_array($id, $expandedByUser, true)) {
+                continue;
+            }
+            // Matching collapsed condition (4,5)
+            if ($isDefaultCollapse || in_array($id, $collapsedByUser, true)) {
+                $collapsed[] = $id;
+            }
+            // else (6) => expanded, do nothing
+        }
+
+        return $collapsed;
     }
 }

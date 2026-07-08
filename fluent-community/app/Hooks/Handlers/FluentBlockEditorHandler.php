@@ -296,6 +296,9 @@ class FluentBlockEditorHandler
 
         wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', ['react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins'], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
         wp_localize_script('fcom_editor_custom', 'fcomEditorI18n', $this->getEditorI18nStrings());
+        wp_localize_script('fcom_editor_custom', 'fcomEditorVars', [
+            'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold()
+        ]);
     }
 
     private function getEditorI18nStrings()
@@ -324,6 +327,18 @@ class FluentBlockEditorHandler
             'Embed'                                                                 => __('Embed', 'fluent-community'),
             'Paste a URL to embed'                                                  => __('Paste a URL to embed', 'fluent-community'),
             'Embed from Vimeo, YouTube, Wistia and more'                            => __('Embed from Vimeo, YouTube, Wistia and more', 'fluent-community'),
+            'FluentPlayer'                                                          => __('FluentPlayer', 'fluent-community'),
+            'Select Player Block'                                                   => __('Select Player Block', 'fluent-community'),
+            'Use FluentPlayer Block'                                                => __('Use FluentPlayer Block', 'fluent-community'),
+            'The feature video is managed by the FluentPlayer block in the editor.' => __('The feature video is managed by the FluentPlayer block in the editor.', 'fluent-community'),
+            'A FluentPlayer block will be added at the top of the lesson content. Add or edit the video directly from that block in the editor.' => __('A FluentPlayer block will be added at the top of the lesson content. Add or edit the video directly from that block in the editor.', 'fluent-community'),
+            'Video Completion'                                                      => __('Video Completion', 'fluent-community'),
+            'Require video watch to complete'                                       => __('Require video watch to complete', 'fluent-community'),
+            'Students must watch the video before they can mark this lesson as completed.' => __('Students must watch the video before they can mark this lesson as completed.', 'fluent-community'),
+            'Auto-complete lesson when the video ends'                              => __('Auto-complete lesson when the video ends', 'fluent-community'),
+            'Marks the lesson complete a few seconds after the student watches the video to the end.' => __('Marks the lesson complete a few seconds after the student watches the video to the end.', 'fluent-community'),
+            'Required watch percentage'                                             => __('Required watch percentage', 'fluent-community'),
+            '100% means the video must be watched to the end.'                      => __('100% means the video must be watched to the end.', 'fluent-community'),
             'Lesson Duration'                                                       => __('Lesson Duration', 'fluent-community'),
             'Minutes'                                                               => __('Minutes', 'fluent-community'),
             'Seconds'                                                               => __('Seconds', 'fluent-community'),

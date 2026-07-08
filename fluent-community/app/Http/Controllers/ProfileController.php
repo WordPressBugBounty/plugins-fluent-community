@@ -47,6 +47,7 @@ class ProfileController extends Controller
             'avatar'            => $xprofile->avatar,
             'has_custom_avatar' => $xprofile->hasCustomAvatar(),
             'cover_photo'       => Arr::get($xprofile->meta, 'cover_photo'),
+            'headline'          => Arr::get($xprofile->meta, 'headline', ''),
             'total_points'      => $xprofile->total_points,
             'badge_slugs'       => (array)Arr::get($xprofile->meta, 'badge_slug', []),
             'status'            => $xprofile->status,
@@ -75,8 +76,8 @@ class ProfileController extends Controller
         if ($isOwn || $isAdmin) {
             $enableUserSync = Utility::getPrivacySetting('enable_user_sync') === 'yes';
             $nameArray = explode(' ', trim($xprofile->display_name));
-            $xprofileLastName = array_pop($nameArray);
-            $xprofileFirstName = implode(' ', $nameArray);
+            $xprofileFirstName = array_shift($nameArray);
+            $xprofileLastName = implode(' ', $nameArray);
 
             $profile['email'] = $user->user_email;
             $profile['first_name'] = $enableUserSync ? $user->first_name : $xprofileFirstName;
@@ -145,7 +146,7 @@ class ProfileController extends Controller
 
         $profile['profile_nav_actions'] = [];
 
-        $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile);
+        $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile, $isAdmin);
 
         return [
             'profile' => $profile
@@ -265,9 +266,8 @@ class ProfileController extends Controller
 
         $updateData = Arr::only($data, ['first_name', 'last_name', 'short_description', 'website']);
 
-        $updateData = apply_filters('fluent_community/update_profile_data', $updateData, $data, $xProfile);
+        $updateData = apply_filters('fluent_community/update_profile_data', $updateData, $data, $xProfile, $currentUser);
 
-        $currentUser = User::findOrFail(get_current_user_id());
         $meta = $xProfile->meta;
 
         $userNameChanged = false;
@@ -352,6 +352,7 @@ class ProfileController extends Controller
 
         $updateData['short_description'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim(Arr::get($data, 'short_description'))));
         $meta['website'] = sanitize_url(Arr::get($data, 'website'));
+        $meta['headline'] = sanitize_text_field(trim(Arr::get($data, 'headline', '')));
         $socialLinks = Arr::get($data, 'social_links', []);
 
         $maxDescriptionLength = apply_filters('fluent_community/max_profile_description_length', 5000);
@@ -361,6 +362,17 @@ class ProfileController extends Controller
                     /* translators: %d: Maximum number of characters allowed in the profile bio. */
                     __('Profile bio should not exceed %d characters.', 'fluent-community'),
                     $maxDescriptionLength
+                )
+            ]);
+        }
+
+        $maxHeadlineLength = apply_filters('fluent_community/max_profile_headline_length', 60);
+        if ($meta['headline'] && mb_strlen($meta['headline']) > $maxHeadlineLength) {
+            return $this->sendError([
+                'message' => sprintf(
+                    /* translators: %d: Maximum number of characters allowed in the profile headline. */
+                    __('Headline should not exceed %d characters.', 'fluent-community'),
+                    $maxHeadlineLength
                 )
             ]);
         }
@@ -540,6 +552,8 @@ class ProfileController extends Controller
             } else {
                 $course->studentsCount = 0;
             }
+
+            do_action_ref_array('fluent_community/course', [&$course]);
         }
 
         $data = [
@@ -644,9 +658,10 @@ class ProfileController extends Controller
 
         $userGlobalPrefs = wp_parse_args($userGlobalPrefs, $userGlobalPrefsDefaults);
 
-        $spaceGroups = SpaceGroup::with(['spaces' => function ($query) {
-            $query->whereHas('members', function ($q) {
-                $q->where('user_id', get_current_user_id())
+        $profileUserId = $xProfile->user_id;
+        $spaceGroups = SpaceGroup::with(['spaces' => function ($query) use ($profileUserId) {
+            $query->whereHas('members', function ($q) use ($profileUserId) {
+                $q->where('user_id', $profileUserId)
                   ->where('status', 'active');
             })
                 ->where('type', 'community');

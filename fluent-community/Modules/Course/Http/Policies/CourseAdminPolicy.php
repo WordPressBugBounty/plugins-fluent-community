@@ -63,6 +63,11 @@ class CourseAdminPolicy extends BasePolicy
         return $this->canManageCourse($request);
     }
 
+    public function resetStudentProgress(Request $request)
+    {
+        return $this->canManageCourse($request);
+    }
+
     public function bulkAddStudents(Request $request)
     {
         return $this->canManageCourse($request);

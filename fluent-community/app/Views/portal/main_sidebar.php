@@ -14,6 +14,7 @@
 use FluentCommunity\App\Services\Helper;
 
 $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomizationEnabled('feed_link_on_sidebar');
+$fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge((array) $spaceGroups, (array) $bottomLinkGroups));
 
 ?>
 
@@ -65,9 +66,14 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
         <div class="fcom_sidebar_contents">
             <?php foreach ($spaceGroups as $fluentCommunitySpaceGroup): ?>
                 <?php if($fluentCommunitySpaceGroup['children']): ?>
-                <div class="fcom_communities_menu">
+                <?php
+                $fluentCommunityGroupCollapsedClass = in_array(sanitize_key((string) $fluentCommunitySpaceGroup['id']), $fluentCommunityCollapsedGroups, true)
+                    ? ' fcom_group_collapsed'
+                    : '';
+                ?>
+                <div class="<?php echo esc_attr('fcom_communities_menu' . $fluentCommunityGroupCollapsedClass); ?>">
                     <div class="fcom_space_group_header fcom_group_title">
-                        <h4 data-group_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" class="space_section_title">
+                        <h4 data-group_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" class="space_section_title" tabindex="0" role="button" aria-label="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" aria-expanded="<?php echo $fluentCommunityGroupCollapsedClass ? 'false' : 'true'; ?>">
                             <span><?php echo esc_html($fluentCommunitySpaceGroup['title']); ?></span>
                             <i class="el-icon fcom_space_down">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z"></path></svg>
@@ -94,9 +100,16 @@ $fluentCommunityShowFeedLink = \FluentCommunity\App\Functions\Utility::isCustomi
 
             <?php if ($bottomLinkGroups): ?>
                 <?php foreach ($bottomLinkGroups as $fluentCommunityBottomLink): ?>
-                    <div class="fcom_communities_menu">
+                    <?php
+                    $fluentCommunityBottomItems = isset($fluentCommunityBottomLink['items']) ? $fluentCommunityBottomLink['items'] : [];
+                    
+                    $fluentCommunityBottomCollapsedClass = in_array(sanitize_key((string) $fluentCommunityBottomLink['slug']), $fluentCommunityCollapsedGroups, true)
+                        ? ' fcom_group_collapsed'
+                        : '';
+                    ?>
+                    <div class="<?php echo esc_attr('fcom_communities_menu' . $fluentCommunityBottomCollapsedClass); ?>">
                         <div class="fcom_space_group_header fcom_group_title">
-                            <h4 role="region" aria-label="<?php echo esc_attr__('Link Groups', 'fluent-community'); ?>" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>"
+                            <h4 role="button" tabindex="0" aria-expanded="<?php echo $fluentCommunityBottomCollapsedClass ? 'false' : 'true'; ?>" aria-label="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>"
                                 class="space_section_title">
                                 <span><?php echo esc_html($fluentCommunityBottomLink['title']); ?></span>
                                 <i class="el-icon fcom_space_down">

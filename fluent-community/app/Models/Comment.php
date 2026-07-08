@@ -61,6 +61,8 @@ class Comment extends Model
                     'is_active' => 0
                 ]);
 
+            $comment->reactions()->delete();
+
             Activity::where('feed_id', $comment->post_id)
                 ->where('action_name', 'comment_added')
                 ->where('related_id', $comment->id)

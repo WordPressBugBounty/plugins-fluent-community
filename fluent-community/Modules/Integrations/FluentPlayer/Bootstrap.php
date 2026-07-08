@@ -158,7 +158,14 @@ class Bootstrap
                 'enable'               => Arr::get($playerSettings, 'enable_fluent_player') === 'yes',
                 'has_video_upload'     => Arr::get($playerSettings, 'video_upload') === 'yes',
                 'video_upload_role'    => Arr::get($playerSettings, 'video_upload_role', 'admin'),
-                'play_embedded_videos' => Arr::get($playerSettings, 'play_embedded_videos', 'no') === 'yes'
+                'play_embedded_videos' => Arr::get($playerSettings, 'play_embedded_videos', 'no') === 'yes',
+                'fallback'             => apply_filters('fluent_community/fluent_player/fallback_timings', [
+                    'content_timeout_ms'  => 10000,
+                    'script_timeout_ms'   => 12000,
+                    'script_grace_ms'     => 2000,
+                    'init_timeout_ms'     => 3000,
+                    'stall_timeout_ms'    => 12000
+                ])
             ];
         }
         return $data;

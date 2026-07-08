@@ -124,6 +124,12 @@ class RemoteUrlParser
             return $cachedReponse;
         }
 
+        $preempted = apply_filters('fluent_community/preview_metadata_pre_fetch', null, $url);
+        if ($preempted && is_array($preempted)) {
+            wp_cache_set($cacheKey, $preempted, 'fluent-community', apply_filters('rest_url_details_cache_expiration', HOUR_IN_SECONDS)); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+            return $preempted;
+        }
+
         $remote_url_response = $this->getRemoteBody($url);
         if (is_wp_error($remote_url_response) || empty($remote_url_response)) {
             return $remote_url_response;

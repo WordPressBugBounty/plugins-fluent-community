@@ -480,6 +480,7 @@ class CustomSanitizer
             'show_sidebar',
             'hide_members_count',
             'document_library',
+            'media_gallery',
             'disable_post_sort_by',
             'disable_layout_style'
         ];
@@ -519,6 +520,17 @@ class CustomSanitizer
         $validCommentOrderOptions = array_keys(Helper::getCommentOrderOptions());
         $defaultCommentOrder = Arr::get($settings, 'default_comment_sort_by', '');
         $settings['default_comment_sort_by'] = in_array($defaultCommentOrder, $validCommentOrderOptions) ? $defaultCommentOrder : '';
+
+        $accessOptions = ['members_only', 'logged_in', 'everybody'];
+        $mediaAccess = Arr::get($settings, 'media_access');
+        $settings['media_access'] = in_array($mediaAccess, $accessOptions, true) ? $mediaAccess : 'members_only';
+
+        $documentAccess = Arr::get($settings, 'document_access');
+        $settings['document_access'] = in_array($documentAccess, $accessOptions, true) ? $documentAccess : 'members_only';
+
+        $documentUploadOptions = ['admin_only', 'members_only'];
+        $documentUpload = Arr::get($settings, 'document_upload');
+        $settings['document_upload'] = in_array($documentUpload, $documentUploadOptions, true) ? $documentUpload : 'admin_only';
 
         return $settings;
     }

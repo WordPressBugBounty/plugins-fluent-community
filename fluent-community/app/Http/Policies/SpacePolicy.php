@@ -44,14 +44,34 @@ class SpacePolicy extends BasePolicy
         return !!get_current_user_id();
     }
 
-    public function deleteBySlug(Request $request)
+    public function create(Request $request)
     {
-        return $this->canManageCommunity($request);
+        return $this->canManageCommunity($request, null);
     }
 
-    public function deleteById(Request $request)
+    public function patchBySlug(Request $request, $slug)
     {
-        return $this->canManageCommunity($request);
+        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+    }
+
+    public function patchById(Request $request, $id)
+    {
+        return $this->canManageCommunity($request, Space::find($id));
+    }
+
+    public function updateLinks(Request $request, $slug)
+    {
+        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+    }
+
+    public function deleteBySlug(Request $request, $slug)
+    {
+        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+    }
+
+    public function deleteById(Request $request, $id)
+    {
+        return $this->canManageCommunity($request, Space::find($id));
     }
 
     public function addMember(Request $request, $slug)
@@ -78,30 +98,45 @@ class SpacePolicy extends BasePolicy
             return true;
         }
 
-        return $this->canManageSpace($request);
+        return $this->canManageSpace($request, null);
     }
 
     public function createSpaceGroup(Request $request)
     {
-        return $this->canManageSpace($request);
+        return $this->canManageSpace($request, null);
     }
 
     public function updateSpaceGroup(Request $request)
     {
-        return $this->canManageSpace($request);
+        return $this->canManageSpace($request, null);
     }
 
     public function deleteSpaceGroup(Request $request)
     {
-        return $this->canManageSpace($request);
+        return $this->canManageSpace($request, null);
     }
 
-    public function getMetaSettings(Request $request)
+    public function updateSpaceGroupIndexes(Request $request)
     {
-        return $this->canManageSpace($request);
+        return $this->canManageSpace($request, null);
     }
 
-    protected function canManageCommunity(Request $request)
+    public function updateSpaceIndexes(Request $request)
+    {
+        return $this->canManageSpace($request, null);
+    }
+
+    public function moveSpace(Request $request)
+    {
+        return $this->canManageCommunity($request);
+    }
+
+    public function getMetaSettings(Request $request, $spaceSlug)
+    {
+        return $this->canManageSpace($request, Space::where('slug', $spaceSlug)->first());
+    }
+
+    protected function canManageCommunity(Request $request, $space = false)
     {
         $user = User::find(get_current_user_id());
 
@@ -113,12 +148,14 @@ class SpacePolicy extends BasePolicy
             return true;
         }
 
-        $space = Space::find($request->get('space_id'));
+        if ($space === false) {
+            $space = Space::find($request->get('space_id'));
+        }
 
         return $space && $user->getSpaceRole($space) === 'admin';
     }
 
-    protected function canManageSpace(Request $request)
+    protected function canManageSpace(Request $request, $space = false)
     {
         $user = User::find(get_current_user_id());
 
@@ -130,7 +167,9 @@ class SpacePolicy extends BasePolicy
             return true;
         }
 
-        $space = Space::find($request->get('space_id'));
+        if ($space === false) {
+            $space = Space::find($request->get('space_id'));
+        }
 
         return $space && $user->getSpaceRole($space) === 'admin';
     }

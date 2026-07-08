@@ -364,7 +364,14 @@ class BaseSpace extends Model
             $settings = [];
         }
 
-        return wp_parse_args($settings, $this->defaultSettings());
+        $settings = wp_parse_args($settings, $this->defaultSettings());
+
+        if (!defined('FLUENT_COMMUNITY_PRO')) {
+            $settings['document_library'] = 'no';
+            $settings['media_gallery']    = 'no';
+        }
+
+        return $settings;
     }
 
     public function defaultSettings()
@@ -394,14 +401,16 @@ class BaseSpace extends Model
     {
         if ($this->privacy == 'public') {
 
-            $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') == 'yes';
+            $hasDocuments     = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') == 'yes';
+            $hasMediaGallery  = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'media_gallery') == 'yes';
 
             return [
                 'can_view_info'      => true,
                 'can_view_posts'     => true,
                 'can_view_members'   => $this->canViewMembers(null),
                 'can_create_post'    => false,
-                'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody'
+                'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody',
+                'can_view_media'     => $hasMediaGallery && Arr::get($this->settings, 'media_access') == 'everybody'
             ];
         }
 

@@ -451,10 +451,12 @@ class User extends Model
         if (array_intersect($globalRoles, ['admin', 'moderator'])) {
             $spaces = BaseSpace::onlyMain()->get();
         } else {
-            $spaces = BaseSpace::onlyMain()->whereHas('members', function ($query) {
-                $query->where('user_id', $this->ID)
-                    ->where('status', 'active');
-            })->orWhere('privacy', 'public')->get();
+            $spaces = BaseSpace::onlyMain()->where(function ($spaceQuery) {
+                $spaceQuery->whereHas('members', function ($memberQuery) {
+                    $memberQuery->where('user_id', $this->ID)
+                        ->where('status', 'active');
+                })->orWhere('privacy', 'public');
+            })->get();
         }
 
         $spaceIds = $spaces->pluck('id')->toArray();
@@ -521,10 +523,12 @@ class User extends Model
         $role = $this->getSpaceRole($space);
 
         $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'document_library') == 'yes';
+        $hasMediaGallery = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'media_gallery') == 'yes';
 
         $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') == 'yes';
 
         $documentAccess = Arr::get($space->settings, 'document_access');
+        $mediaAccess    = Arr::get($space->settings, 'media_access');
 
         if (!$role) {
             $permissions = [
@@ -536,13 +540,15 @@ class User extends Model
                 'is_pending'         => false,
                 'is_non_member'      => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in'])
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in']),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, ['everybody', 'logged_in'])
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
                 $permissions['can_view_posts'] = false;
                 $permissions['can_view_members'] = false;
                 $permissions['can_view_documents'] = false;
+                $permissions['can_view_media'] = false;
             }
         } else if ($role == 'pending') {
             $permissions = [
@@ -553,13 +559,15 @@ class User extends Model
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in'])
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in']),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, ['everybody', 'logged_in'])
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
                 $permissions['can_view_posts'] = false;
                 $permissions['can_view_members'] = false;
                 $permissions['can_view_documents'] = false;
+                $permissions['can_view_media'] = false;
             }
         } else if ($role == 'member' || $role == 'student') {
             $permissions = [
@@ -570,7 +578,8 @@ class User extends Model
                 'can_comment'          => true,
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
-                'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') == 'members_only'
+                'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') == 'members_only',
+                'can_view_media'       => $hasMediaGallery
             ];
         } else {
             $isMod = in_array($role, ['admin', 'moderator']);
@@ -593,7 +602,8 @@ class User extends Model
                 'can_comment'          => $isMod,
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
-                'can_upload_documents' => $hasDocuments && $isMod
+                'can_upload_documents' => $hasDocuments && $isMod,
+                'can_view_media'       => $hasMediaGallery
             ];
         }
 

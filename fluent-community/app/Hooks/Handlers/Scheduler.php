@@ -66,7 +66,7 @@ class Scheduler
     {
         global $wpdb;
 
-        // Get the timestamp for 7 days ago
+        // Get the timestamp for $days_old days ago
         $cutoff_date = gmdate('Y-m-d H:i:s', strtotime("-{$days_old} days"));
 
         // Get the group ID
@@ -80,17 +80,43 @@ class Scheduler
             return false; // Group not found
         }
 
-        // Delete old actions and their associated logs
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $deleted = $wpdb->query($wpdb->prepare("
-        DELETE a, l
-        FROM {$wpdb->prefix}actionscheduler_actions a
-        LEFT JOIN {$wpdb->prefix}actionscheduler_logs l ON a.action_id = l.action_id
-        WHERE a.group_id = %d
-        AND a.status IN ('complete', 'failed')
-        AND a.scheduled_date_gmt < %s", $group_id, $cutoff_date));
+        // Delete old actions and their associated logs in bounded batches. Action
+        // Scheduler tables are read/written constantly by the queue runner, so a
+        // single unbounded multi-table DELETE could hold a large lock and bloat the
+        // transaction on busy sites. We loop while batches stay full and we are still
+        // within a safe time budget (mirrors the other cleanup jobs in this plugin).
+        $batchSize = 500;
+        $totalDeleted = 0;
 
-        // Clean up orphaned claims
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $actionIds = $wpdb->get_col($wpdb->prepare(
+                "SELECT action_id
+                 FROM {$wpdb->prefix}actionscheduler_actions
+                 WHERE group_id = %d
+                 AND status IN ('complete', 'failed')
+                 AND scheduled_date_gmt < %s
+                 LIMIT %d",
+                $group_id, $cutoff_date, $batchSize
+            ));
+
+            if (!$actionIds) {
+                break;
+            }
+
+            // Safe to interpolate: every id is cast to an integer.
+            $ids = implode(',', array_map('intval', $actionIds));
+
+            // Remove the associated logs first, then the actions themselves.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query("DELETE FROM {$wpdb->prefix}actionscheduler_logs WHERE action_id IN ({$ids})");
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+            $totalDeleted += (int) $wpdb->query("DELETE FROM {$wpdb->prefix}actionscheduler_actions WHERE action_id IN ({$ids})");
+
+            $isFullBatch = count($actionIds) === $batchSize;
+        } while ($isFullBatch && (microtime(true) - FLUENT_COMMUNITY_START_TIME) < 30);
+
+        // Clean up orphaned claims (claims whose actions no longer exist)
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query("
         DELETE c
@@ -98,7 +124,7 @@ class Scheduler
         LEFT JOIN {$wpdb->prefix}actionscheduler_actions a ON c.claim_id = a.claim_id
         WHERE a.action_id IS NULL");
 
-        return $deleted;
+        return $totalDeleted;
     }
 
     private function getNextOccurrenceTimestamp($dayname, $time)

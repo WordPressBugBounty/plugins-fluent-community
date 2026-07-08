@@ -457,13 +457,12 @@ class PortalHandler
 
         $isAbsoluteUrl = defined('FLUENT_COMMUNITY_PORTAL_SLUG') && FLUENT_COMMUNITY_PORTAL_SLUG == '';
 
-
         $editorFrameUrl = site_url('?fluent_community_block_editor=1');
 
         if (current_user_can('edit_posts')) {
             $editorFrameUrl = admin_url('edit.php?fluent_community_block_editor=1');
         }
-        
+
         $portalVars = apply_filters('fluent_community/portal_vars', [
             'portal_notices'             => apply_filters('fluent_community/portal_notices', []),
             'i18n'                       => TransStrings::getStrings(),
@@ -515,6 +514,7 @@ class PortalHandler
                 'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
                 'has_analytics'           => Utility::hasAnalyticsEnabled(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
+                'enable_sidebar_toggle' => Utility::isCustomizationEnabled('enable_sidebar_toggle'),
             ],
             'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
@@ -753,13 +753,13 @@ class PortalHandler
     public function getGlobalScriptVars($scope = 'wp')
     {
         return apply_filters('fluent_community/general_portal_vars', [
-            'scope'                    => $scope,
-            'theme'                    => get_option('template'),
-            'default_color'            => 'light',
-            'color_switch_cookie_name' => '',
-            'has_color_scheme'         => Helper::hasColorScheme(),
-            'collapse_sidebar_groups'  => Utility::isCustomizationEnabled('collapse_sidebar_groups'),
-            'hide_header_on_scroll'    => Utility::isCustomizationEnabled('hide_header_on_scroll'),
+            'scope'                           => $scope,
+            'theme'                           => get_option('template'),
+            'default_color'                   => 'light',
+            'color_switch_cookie_name'        => '',
+            'has_color_scheme'                => Helper::hasColorScheme(),
+            'collapse_sidebar_groups'         => Utility::isCustomizationEnabled('collapse_sidebar_groups'),
+            'hide_header_on_scroll'           => Utility::isCustomizationEnabled('hide_header_on_scroll'),
         ]);
     }
 
@@ -795,36 +795,26 @@ class PortalHandler
         $userId = get_current_user_id();
 
         if (!$userId && !Helper::isPublicAccessible()) {
-            $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $parsedUrl    = wp_parse_url($url);
-            $redirectPath = $parsedUrl['path'] ?? '/';
-            if (!empty($parsedUrl['query'])) {
-                $redirectPath .= '?' . $parsedUrl['query'];
-            }
-            $settings     = Helper::generalSettings();
-            $adminAuthUrl = Arr::get($settings, 'auth_url', '');
+            $adminAuthUrl = Arr::get(Helper::generalSettings(), 'auth_url', '');
+            $authPath     = wp_parse_url($adminAuthUrl, PHP_URL_PATH) ?: '';
+            $portalPath   = wp_parse_url(Helper::baseUrl(), PHP_URL_PATH) ?: '';
 
             // Drop admin's URL if it points back into the portal (would infinite loop)
-            if ($adminAuthUrl) {
-                $authPath   = wp_parse_url($adminAuthUrl, PHP_URL_PATH) ?: '';
-                $portalPath = wp_parse_url(Helper::baseUrl(), PHP_URL_PATH) ?: '';
-                if ($authPath && $portalPath && strpos(trim($authPath, '/'), trim($portalPath, '/')) === 0) {
-                    $adminAuthUrl = '';
-                }
-            }
+            $isPortalLoop = $authPath && $portalPath && strpos(trim($authPath, '/'), trim($portalPath, '/')) === 0;
 
-            $authUrl = $adminAuthUrl ?: $this->getAuthUrl();
-
-            if ($authUrl) {
-                $authUrl = add_query_arg([
-                    'redirect_to' => $redirectPath
-                ], $authUrl);
+            if ($adminAuthUrl && !$isPortalLoop) {
+                $authUrl = $adminAuthUrl;
             } else {
-                $authUrl = wp_login_url($redirectPath);
+                $adminAuthUrl = '';
+                $parsedUrl    = wp_parse_url(home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $redirectPath = ($parsedUrl['path'] ?? '/') . (!empty($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
+                $internalUrl  = $this->getAuthUrl();
+                $authUrl      = $internalUrl ? add_query_arg(['redirect_to' => $redirectPath], $internalUrl) : wp_login_url($redirectPath);
             }
 
             do_action('fluent_community/portal/not_logged_in', $authUrl);
-            wp_safe_redirect($authUrl);
+            // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional external admin auth redirect, followed by exit()
+            $adminAuthUrl ? wp_redirect($authUrl) : wp_safe_redirect($authUrl);
             exit();
         }
 
@@ -845,11 +835,15 @@ class PortalHandler
             }
         }
 
+        // Gate by role before render: appVars() creates the profile lazily, so checking it
+        // afterward let an unauthorized user see the portal once (and get a profile) before
+        // being denied. Pass false to authorize by role without requiring a profile yet.
+        if (!Helper::canAccessPortal($userId, false)) {
+            $generalSettings = Helper::generalSettings();
+            $this->viewErrorPage(__('Access Denied', 'fluent-community'), Arr::get($generalSettings, 'restricted_role_content'));
+        }
+
         if ($xprofile) {
-            if (!Helper::canAccessPortal()) {
-                $generalSettings = Helper::generalSettings();
-                $this->viewErrorPage(__('Access Denied', 'fluent-community'), Arr::get($generalSettings, 'restricted_role_content'));
-            }
             if ($xprofile->user) {
                 $xprofile->user->cacheAccessSpaces();
             }
@@ -874,6 +868,11 @@ class PortalHandler
             $this->loadClassicPortalAssets($data);
         } else {
             do_action('fluent_community/rendering_headless_portal', $data);
+        }
+
+        $data['html_class'] = '';
+        if (Utility::isCustomizationEnabled('enable_sidebar_toggle') && isset($_COOKIE['fcom_sidebar_collapsed']) && $_COOKIE['fcom_sidebar_collapsed'] === 'true') {
+            $data['html_class'] = 'fcom_sidebar_collapsed_desktop';
         }
 
         do_action('fluent_community/before_portal_rendered', $data);
@@ -1174,7 +1173,7 @@ class PortalHandler
         $userId = get_current_user_id();
 
         $xprofile = null;
-        if ($userId) {
+        if ($userId && Helper::canAccessPortal($userId, false)) {
             $userModel = Helper::getCurrentUser();
             if ($userModel) {
                 $xprofile = $userModel->syncXProfile(false);

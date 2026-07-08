@@ -186,6 +186,13 @@ class CommentsController extends Controller
 
         $requestData = $request->all();
         $comment = Comment::findOrFail($commentId);
+
+        if ($comment->post_id != $feed->id) {
+            return $this->sendError([
+                'message' => __('Invalid comment', 'fluent-community')
+            ]);
+        }
+
         $user = $this->getUser(true);
 
         $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);

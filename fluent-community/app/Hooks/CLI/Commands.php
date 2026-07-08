@@ -105,7 +105,9 @@ class Commands
             ],
             [
                 'key'   => 'Total Reactions',
-                'count' => \FluentCommunity\App\Models\Reaction::count()
+                'count' => \FluentCommunity\App\Models\Reaction::whereIn('object_type', ['feed', 'comment'])
+                    ->where('type', 'like')
+                    ->count()
             ]
         ];
 

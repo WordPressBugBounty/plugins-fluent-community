@@ -17,6 +17,8 @@ use FluentCommunity\Modules\Course\Model\CourseTopic;
 
 class CourseHelper
 {
+    protected static $completedLessonsCache = [];
+
     public static function getCourseProgressTrack($courseId, $userId = null)
     {
         $isEnrolled = self::isEnrolled($courseId, $userId);
@@ -141,13 +143,12 @@ class CourseHelper
             return [];
         }
 
-        static $completedLessonsCache = [];
         $key = $courseId . '_' . $userId;
-        if (isset($completedLessonsCache[$key])) {
-            return $completedLessonsCache[$key];
+        if (isset(self::$completedLessonsCache[$key])) {
+            return self::$completedLessonsCache[$key];
         }
 
-        return $completedLessonsCache[$key] = Reaction::where('user_id', $userId)
+        return self::$completedLessonsCache[$key] = Reaction::where('user_id', $userId)
             ->where('parent_id', $courseId)
             ->where('object_type', 'lesson_completed')
             ->where('type', 'completed')
@@ -191,6 +192,7 @@ class CourseHelper
             if ($state != 'completed') {
                 $reaction->type = 'incomplete';
                 $reaction->save();
+                do_action('fluent_community/course/lesson_marked_incomplete', $lesson, $userId);
             } else {
                 $reaction->type = 'completed';
                 $reaction->save();
@@ -286,6 +288,39 @@ class CourseHelper
         ]);
 
         do_action('fluent_community/course/completed', $course, $userId);
+
+        return true;
+    }
+
+    public static function resetCourseProgress($courseId, $userId)
+    {
+        $course = Course::find($courseId);
+        if (!$course || !$userId) {
+            return false;
+        }
+
+        do_action('fluent_community/course/before_progress_reset', $course, $userId);
+
+        try {
+            Helper::dbTransaction(function () use ($userId, $courseId) {
+                // Wipe completion state entirely (both 'completed' and 'incomplete' types) so the student starts pristine.
+                Reaction::where('user_id', $userId)
+                    ->where('parent_id', $courseId)
+                    ->where('object_type', 'lesson_completed')
+                    ->delete();
+
+                Activity::where('user_id', $userId)
+                    ->where('feed_id', $courseId)
+                    ->where('action_name', 'course_completed')
+                    ->delete();
+            });
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        unset(self::$completedLessonsCache[$courseId . '_' . $userId]);
+
+        do_action('fluent_community/course/progress_reset', $course, $userId);
 
         return true;
     }
@@ -394,7 +429,10 @@ class CourseHelper
             'media',
             'video_length',
             'featured_image_id',
-            'free_preview_lesson'
+            'free_preview_lesson',
+            'require_video_completion',
+            'video_completion_threshold',
+            'auto_complete_on_video_end'
         ];
 
         if ($lesson->isQuizType()) {
@@ -404,7 +442,7 @@ class CourseHelper
 
         $meta = Arr::only($meta, $validFields);
 
-        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
+        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'require_video_completion', 'auto_complete_on_video_end', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
 
         foreach ($yesNoFields as $field) {
             $meta[$field] = Arr::get($meta, $field, 'no') == 'yes' ? 'yes' : 'no';
@@ -420,10 +458,15 @@ class CourseHelper
             ];
         }
 
-        $numericFields = ['video_length', 'passing_score'];
+        $numericFields = ['video_length', 'passing_score', 'video_completion_threshold'];
 
         foreach ($numericFields as $field) {
             $meta[$field] = absint(Arr::get($meta, $field, 0));
+        }
+
+        // 0 means "not set" — the gate falls back to its default threshold
+        if ($meta['video_completion_threshold']) {
+            $meta['video_completion_threshold'] = min(100, max(1, $meta['video_completion_threshold']));
         }
 
         return apply_filters('fluent_community/lesson/sanitize_meta', $meta, $lesson);
@@ -528,7 +571,7 @@ class CourseHelper
             'meta'           => $lesson->getPublicLessonMeta($canViewLesson),
             'comments_count' => $lesson->comments_count,
             'is_locked'      => Arr::get($config, 'is_locked', false),
-            'unclock_date'   => Arr::get($config, 'unclock_date', ''),
+            'unlock_date'    => Arr::get($config, 'unlock_date', ''),
             'lock_type'      => Arr::get($config, 'lock_type', ''),
             'can_view'       => $canViewLesson,
             'inline_css'     => $inlineCss
@@ -567,7 +610,7 @@ class CourseHelper
     public static function getAccessMessage($course, $lesson, $config)
     {
         $isLocked = Arr::get($config, 'is_locked', false);
-        $unlockDate = Arr::get($config, 'unclock_date', '');
+        $unlockDate = Arr::get($config, 'unlock_date', '');
         $courseLessonsUrl = Helper::baseUrl('/course/' . $course->slug . '/lessons');
 
         $headerMessage = __('This lesson is currently locked', 'fluent-community');

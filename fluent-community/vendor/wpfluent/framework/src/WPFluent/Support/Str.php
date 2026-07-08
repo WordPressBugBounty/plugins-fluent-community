@@ -585,7 +585,7 @@ class Str
             return static::isUpper($str[0]);
         }
 
-        if ($words = mb_split('\s', $str)) {
+        if ($words = preg_split('/\s/u', $str)) {
             foreach ($words as $word) {
                 $isCap[] = static::isUpper($word[0]) && static::isLower(mb_substr($word, 1));
             }
@@ -783,17 +783,17 @@ class Str
         $value, $limit = 100, $end = '...', $preserveWords = false
     )
     {
-        if (mb_strwidth($value, 'UTF-8') <= $limit) {
+        if (mb_strlen($value, 'UTF-8') <= $limit) {
             return $value;
         }
 
         if (! $preserveWords) {
-            return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
+            return rtrim(mb_substr($value, 0, $limit, 'UTF-8')).$end;
         }
 
         $value = trim(preg_replace('/[\n\r]+/', ' ', strip_tags($value)));
 
-        $trimmed = rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8'));
+        $trimmed = rtrim(mb_substr($value, 0, $limit, 'UTF-8'));
 
         if (mb_substr($value, $limit, 1, 'UTF-8') === ' ') {
             return $trimmed.$end;
@@ -1104,6 +1104,23 @@ class Str
     public static function repeat(string $string, int $times)
     {
         return str_repeat($string, $times);
+    }
+
+    /**
+     * Escape SQL LIKE wildcards (% and _) in a user-supplied search term.
+     *
+     * Pairs with `where('col', 'LIKE', '%'.Str::likeEscape($term).'%')` or
+     * `whereLike($col, $term)`. Uses `\` as the escape character — works as
+     * a no-op for MySQL/MariaDB (default LIKE escape is `\`); on SQLite or
+     * PostgreSQL, also append `ESCAPE '\\'` to the LIKE clause so the
+     * escapes take effect.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public static function likeEscape($value)
+    {
+        return addcslashes((string) $value, '%_\\');
     }
 
     /**

@@ -13,6 +13,7 @@ use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\DailyDigest;
 use FluentCommunity\App\Services\Libs\Mailer;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\NotificationPref;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Support\Arr;
@@ -237,8 +238,10 @@ class EmailNotificationHandler
             $globalCommentStatus = $this->isEnabled('com_my_post_mail');
         }
 
+        $authorId = FeedsHelper::getNotificationAuthorId($feed);
+
         $notificationUserIds = [];
-        if ($comment->user_id != $feed->user_id && NotificationPref::willGetCommentEmail($feed->user_id, $globalCommentStatus)) {
+        if ($comment->user_id != $authorId && NotificationPref::willGetCommentEmail($authorId, $globalCommentStatus)) {
             as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
             return true;
         }
@@ -285,9 +288,10 @@ class EmailNotificationHandler
         });
 
         $notificationUserIds = array_diff($notificationUserIds, [$comment->user_id]);
-        if ($comment->user_id != $feed->user_id && NotificationPref::willGetCommentEmail($feed->user_id, $globalCommentStatus)) {
+        $authorId = FeedsHelper::getNotificationAuthorId($feed);
+        if ($comment->user_id != $authorId && NotificationPref::willGetCommentEmail($authorId, $globalCommentStatus)) {
             // Add at the first
-            $notificationUserIds[] = $feed->user_id;
+            $notificationUserIds[] = $authorId;
         }
 
         // the mentioned user ids

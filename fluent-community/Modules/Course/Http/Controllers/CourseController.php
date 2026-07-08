@@ -13,6 +13,7 @@ use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
+use FluentCommunity\Modules\Course\Services\LessonVideoGateService;
 
 class CourseController extends Controller
 {
@@ -206,7 +207,7 @@ class CourseController extends Controller
             'can_view'      => $canViewLesson,
             'parse_content' => $canViewLesson,
             'is_locked'     => !$canViewLesson && !$isCourseCreator,
-            'unclock_date'  => $unlockDate,
+            'unlock_date'   => $unlockDate,
             'lock_type'     => $lockType
         ]);
 
@@ -221,6 +222,7 @@ class CourseController extends Controller
     {
         $sections = CourseTopic::where('space_id', $course->id)
             ->orderBy('priority', 'ASC')
+            ->orderBy('id', 'ASC')
             ->with(['lessons' => function ($query) use ($isCourseCreator) {
                 if (!$isCourseCreator) {
                     $query->where('status', 'published');
@@ -298,7 +300,7 @@ class CourseController extends Controller
                     'can_view'      => $canViewLesson,
                     'parse_content' => $parseContent,
                     'is_locked'     => !$canViewLesson && !$isCourseCreator,
-                    'unclock_date'  => $unlockDate,
+                    'unlock_date'   => $unlockDate,
                     'lock_type'     => $lockType
                 ]);
 
@@ -408,12 +410,19 @@ class CourseController extends Controller
             ]);
         }
 
-        $isAllowed = apply_filters('fluent_community/is_allowed_to_complete_lesson', true, $lesson);
+        $isAllowed = apply_filters('fluent_community/is_allowed_to_complete_lesson', true, $lesson, $state);
 
         if (!$isAllowed) {
-            return $this->sendError([
+            $errorData = [
                 'message' => __('You are not allowed to complete this lesson.', 'fluent-community')
-            ]);
+            ];
+
+            if (LessonVideoGateService::isCompletionBlockedFor($lesson, Helper::getCurrentUser())) {
+                $errorData['code'] = 'video_watch_required';
+                $errorData['threshold'] = LessonVideoGateService::getThreshold($lesson);
+            }
+
+            return $this->sendError($errorData);
         }
 
         CourseHelper::updateLessonCompletion($lesson, get_current_user_id(), $state);
@@ -428,6 +437,88 @@ class CourseController extends Controller
             'message'      => __('Lesson completion state updated.', 'fluent-community'),
             'track'        => $track,
             'is_completed' => $isCompleted
+        ];
+    }
+
+    public function markLessonVideoWatched(Request $request, $courseId, $lessonId)
+    {
+        $course = Course::findOrFail($courseId);
+
+        if ($course->status != 'published') {
+            return $this->sendError([
+                'message' => __('Course is not in published state.', 'fluent-community')
+            ]);
+        }
+
+        if (!CourseHelper::isEnrolled($courseId)) {
+            return $this->sendError([
+                'message' => __('Please enroll this course first', 'fluent-community')
+            ]);
+        }
+
+        $lesson = CourseLesson::where('space_id', $courseId)
+            ->where('status', 'published')
+            ->where('id', $lessonId)
+            ->first();
+
+        if (!$lesson) {
+            return $this->sendError([
+                'message' => __('Lesson is not on published state.', 'fluent-community')
+            ]);
+        }
+
+        if (!LessonVideoGateService::isGatedLesson($lesson)) {
+            return [
+                'message'  => __('This lesson does not require video completion.', 'fluent-community'),
+                'is_gated' => false,
+                'watched'  => false
+            ];
+        }
+
+        $watchedPercent = min(100, absint($request->get('watched_percent')));
+        $threshold = LessonVideoGateService::getThreshold($lesson);
+
+        if ($watchedPercent < $threshold) {
+            return $this->sendError([
+                /* translators: %d is the watched percentage required to complete the lesson */
+                'message' => sprintf(__('Please watch at least %d%% of the video.', 'fluent-community'), $threshold)
+            ]);
+        }
+
+        LessonVideoGateService::markWatched($lesson, get_current_user_id());
+
+        return [
+            'message'  => __('Video watch progress has been recorded.', 'fluent-community'),
+            'is_gated' => true,
+            'watched'  => true
+        ];
+    }
+
+    public function resetMyProgress(Request $request, $courseId)
+    {
+        $course = Course::findOrFail($courseId);
+
+        if ($course->status !== 'published') {
+            return $this->sendError([
+                'message' => __('Course is not in published state.', 'fluent-community')
+            ]);
+        }
+
+        if (!CourseHelper::isEnrolled($courseId)) {
+            return $this->sendError([
+                'message' => __('Please enroll this course first', 'fluent-community')
+            ]);
+        }
+
+        CourseHelper::resetCourseProgress($courseId, get_current_user_id());
+
+        return [
+            'message' => __('Your course progress has been reset.', 'fluent-community'),
+            'track'   => [
+                'completed_lessons' => [],
+                'isEnrolled'        => true,
+                'progress'          => 0
+            ]
         ];
     }
 

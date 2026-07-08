@@ -31,6 +31,8 @@ class Space extends BaseSpace
             'links'                   => [],
             'document_library'        => 'no',
             'document_access'         => 'members_only',
+            'media_gallery'           => 'no',
+            'media_access'            => 'members_only',
             'disable_post_sort_by'    => 'no',
             'default_post_sort_by'    => '',
             'default_comment_sort_by' => '',

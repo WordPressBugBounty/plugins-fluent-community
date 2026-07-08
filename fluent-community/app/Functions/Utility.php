@@ -218,7 +218,8 @@ class Utility
             'disable_feed_sort_by' => 'no',
             'default_feed_sort_by' => '',
             'collapse_sidebar_groups' => 'no',
-            'hide_header_on_scroll'   => 'no'
+            'hide_header_on_scroll'   => 'no',
+            'enable_sidebar_toggle' => 'no'
         ];
         $settings = self::getOption('customization_settings', $defaults);
 
@@ -229,6 +230,7 @@ class Utility
             $settings['affiliate_id'] = '';
             $settings['rich_post_layout'] = 'classic';
             $settings['member_list_layout'] = 'classic';
+            $settings['enable_sidebar_toggle'] = 'no';
         }
         return $settings;
     }

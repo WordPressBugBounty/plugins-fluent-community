@@ -221,7 +221,18 @@ class EmailComposer
             $data['headingContent'] = $this->complileHeadingBlocks();
         }
 
-        return (string)App::make('view')->make('email.template', $data);
+        $html = (string)App::make('view')->make('email.template', $data);
+
+        // Inline the <head><style> rules onto each element so they survive clients and
+        // log viewers that strip the document head (Outlook, FluentSMTP's DOMPurify
+        // preview). @media/:hover rules can't be inlined and are kept in a <style> tag.
+        try {
+            $html = (new Emogrifier\Emogrifier($html))->emogrify();
+        } catch (\Throwable $e) {
+            // Fall back to the un-inlined HTML; the <head><style> still covers Gmail.
+        }
+
+        return $html;
     }
 
 }

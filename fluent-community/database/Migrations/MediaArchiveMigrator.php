@@ -37,9 +37,18 @@ class MediaArchiveMigrator
                  INDEX `{$indexPrefix}_mt_is_active` (`is_active`),
                  INDEX `{$indexPrefix}_mto_user_id` (`user_id`),
                  INDEX `{$indexPrefix}_mto_media_key` (`media_key`),
-                 INDEX `{$indexPrefix}_mto_feed_id` (`feed_id` )
+                 INDEX `{$indexPrefix}_mto_feed_id` (`feed_id`),
+                 INDEX `{$indexPrefix}obj_src_active` (`object_source`, `is_active`, `id`)
             ) $charsetCollate;";
             dbDelta($sql);
+        } else {
+            $galleryIndexName = $indexPrefix . 'obj_src_active';
+            $galleryIndexExists = $wpdb->get_var(
+                $wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $galleryIndexName) // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            );
+            if (!$galleryIndexExists) {
+                $wpdb->query("ALTER TABLE {$table} ADD INDEX `{$galleryIndexName}` (`object_source`, `is_active`, `id`)"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            }
         }
     }
 }

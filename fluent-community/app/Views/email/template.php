@@ -83,13 +83,14 @@
                 line-height: inherit;
             }
 
-            img {
-                max-width: 100%;
-            }
-
             img.wp-smiley {
                 vertical-align: middle;
             }
+        }
+        
+        img {
+            max-width: 100%;
+            height: auto;
         }
 
         .footer p {

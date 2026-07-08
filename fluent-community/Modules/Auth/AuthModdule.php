@@ -268,8 +268,8 @@ class AuthModdule
             } else if ($targetForm == 'accept_invitation') {
                 do_action('fluent_community/auth/show_invitation_for_user', $inviation, $frameData);
             } else {
-                //check if the registration is disabled
-                if (!AuthHelper::isRegistrationEnabled()) {
+                //check if the registration is disabled (a valid invitation still allows signup)
+                if (!$inviation && !AuthHelper::isRegistrationEnabled()) {
                     echo '<div class="fcom_completed"><div class="fcom_complted_header"><h4>' . esc_html__('Registration is disabled for this community', 'fluent-community') . '</h4>';
                     return;
                 }
@@ -319,17 +319,25 @@ class AuthModdule
             return $this->handleSignupCompleted(get_current_user_id());
         }
 
-        if (!AuthHelper::isRegistrationEnabled()) {
-            wp_send_json([
-                'message' => esc_html__('Registration is disabled for this community', 'fluent-community')
-            ], 422);
-        }
-
         $signupNonce = isset($_POST['_fcom_signup_nonce']) ? sanitize_text_field(wp_unslash($_POST['_fcom_signup_nonce'])) : '';
         if (!$signupNonce || !wp_verify_nonce($signupNonce, 'fluent_auth_signup_nonce')) {
             wp_send_json([
                 'message' => esc_html__('Invalid request. Please refresh the page and try again.', 'fluent-community')
             ], 403);
+        }
+
+        $invitationToken = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : '';
+        $hasValidInvitation = false;
+        if ($invitationToken) {
+            $pendingInvitation = Invitation::where('message_rendered', $invitationToken)->first();
+            $hasValidInvitation = $pendingInvitation && $pendingInvitation->isValid();
+        }
+
+        // A valid invitation must still allow signup even when public registration is disabled.
+        if (!$hasValidInvitation && !AuthHelper::isRegistrationEnabled()) {
+            wp_send_json([
+                'message' => esc_html__('Registration is disabled for this community', 'fluent-community')
+            ], 422);
         }
 
         $app = App::make('app');
@@ -732,7 +740,7 @@ class AuthModdule
                     <div class="fcom_onboard_form">
                         <?php echo do_shortcode('[fluent_auth_login redirect_to="' . esc_url($currentUrl) . '"]'); ?>
                         <div class="fcom_spaced_divider">
-                            <?php if (AuthHelper::isRegistrationEnabled()): ?>
+                            <?php if ($invitation || AuthHelper::isRegistrationEnabled()): ?>
                                 <div class="fcom_alt_auth_text">
                                     <?php esc_html_e('Don\'t have an account?', 'fluent-community'); ?>
                                     <a href="<?php echo esc_url($signupUrl); ?>">
@@ -771,7 +779,7 @@ class AuthModdule
             'email' => $invitation ? $invitation->message : ''
         ];
 
-        if (AuthHelper::isRegistrationEnabled()) {
+        if ($invitation || AuthHelper::isRegistrationEnabled()) {
             $frameData['signupUrl'] = $signupUrl;
         }
 
@@ -787,6 +795,12 @@ class AuthModdule
     public function renderRegistrationForm($frameData, $invitation = null)
     {
         $formFields = AuthHelper::getFormFields($invitation);
+
+        // Prefill the name from the invitation link's query param when present.
+        $inviteName = isset($_GET['invite_name']) ? sanitize_text_field(wp_unslash($_GET['invite_name'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ($inviteName && isset($formFields['full_name']) && empty($formFields['full_name']['value'])) {
+            $formFields['full_name']['value'] = $inviteName;
+        }
 
         $authSettings = AuthenticationService::getAuthSettings();
 

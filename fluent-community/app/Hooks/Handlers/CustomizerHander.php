@@ -28,12 +28,13 @@ class CustomizerHander
                     <?php
                 });
             } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $isRtl = Helper::isRtl();
                 $vars['css_files'] = array_merge($vars['css_files'], [
                     'customizer'     => [
-                        'url' => Vite::getStaticSrcUrl('customizer.css')
+                        'url' => Vite::getStaticSrcUrl('customizer.css', $isRtl)
                     ],
                     'customizer_app' => [
-                        'url' => Vite::getStaticSrcUrl('customizer_app.css')
+                        'url' => Vite::getStaticSrcUrl('customizer_app.css', $isRtl)
                     ],
                 ]);
 

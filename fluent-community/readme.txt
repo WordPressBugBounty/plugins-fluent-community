@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.6.01
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -250,7 +250,57 @@ OR
 
 == Changelog ==
 
-= 2.6.01 (Date: Jun 11, 2026) =
+= 2.7.0 (Date: Jul 8, 2026) =
+- Introduced: Space Media Gallery
+- Added: Sidebar Collapse Toggle with Persistence
+- Added: Invite Members by Email and Name
+- Added: Auto-Flag User Threshold Moderation
+- Added: Per-User Moderation Flag in Admin Actions
+- Added: FluentPlayer Block as Lesson Feature Media
+- Added: Required Video Completion to Complete Lesson
+- Added: Auto-Complete Lesson When the Feature Video Ends
+- Added: Profile Headline Field on Members Listing
+- Added: Upload Progress for Inline Images
+- Added: Missing Translation Strings
+- Improved: Email CSS Inlining for Better Rendering
+- Improved: Feed Cache Refresh and Memory Cap
+- Improved: Link Preview Detection and Pre-Fetch Hook
+- Improved: Notification and CRM Tag Mapping List UI
+- Improved: Site Time Format Across Schedule and Time UI
+- Improved: Auto-Scroll After Settings and Profile Updates
+- Improved: Comment and Reaction Cleanup on Feed Delete
+- Improved: Custom Lockscreen Background to Match Page
+- Security: Hardened Space, Feed, and Comment Access Authorization
+- Security: Gated Portal Access Before Profile Provisioning
+- Fixed: Sidebar First-Paint Layout Shifts
+- Fixed: Document Upload Crash on Invalid File Type
+- Fixed: External Redirect URL for Portal Access Restriction
+- Fixed: Feed and Cross-Space Scroll Restore on Back Navigation
+- Fixed: All Spaces Infinite Loading Without Access
+- Fixed: Private Space Description Visibility
+- Fixed: Notification Settings Space Scope on Other Profiles
+- Fixed: Notification Auto-Marked Read on Feed Visit
+- Fixed: Clearing a Single-Select Custom Profile Field
+- Fixed: Profile First Name Saved to Last Name
+- Fixed: Leaderboard Permission Message for Unauthorized Users
+- Fixed: Feed Video Fallback When FluentPlayer Stalls
+- Fixed: Lesson Video Block Shifting Left
+- Fixed: Lesson Body Cannot Be Cleared in Editor
+- Fixed: New Section and Lesson Priority Stuck at Zero
+- Fixed: Course Creator Not Notified on Lesson Comments
+- Fixed: Sequential Lessons Not Unlocking in Order
+- Fixed: Scheduled Documents Showing in Documents List
+- Fixed: Scheduled Post with Documents Publishing Immediately
+- Fixed: Multibyte Title Truncation in Posts
+- Fixed: Checklist Bullets Missing in Custom Lockscreen
+- Fixed: Show More Always Expanding Inline
+- Fixed: Follow/Unfollow Toast Ignoring API Message
+- Fixed: RTL Customizer Overlap and Reversed Lightbox Arrows
+- Fixed: Search Input Background in Search Dialog
+- Fixed: Divider Not Using Theme Color
+- Fixed: User Name Included in Access URL
+
+= 2.6.1 (Date: Jun 11, 2026) =
 - Added: Community-Scoped Filter for Signup Email Verification
 - Hotfix: Mobile Horizontal Overflow on Feed
 - Hotfix: Enroll Button Shown for Non-Enrollable Courses

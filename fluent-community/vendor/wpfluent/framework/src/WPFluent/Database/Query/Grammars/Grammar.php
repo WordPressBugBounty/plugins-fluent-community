@@ -328,6 +328,45 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Compile the SQL for a phonetic "sounds like" (SOUNDEX) comparison.
+     *
+     * Both the column and the bound search term are encoded with the
+     * database engine's native SOUNDEX() function.
+     *
+     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
+     * @return string
+     */
+    public function compileSoundsLike($column)
+    {
+        return 'soundex('.$this->wrap($column).') = soundex(?)';
+    }
+
+    /**
+     * Prepare the bound value for a "sounds like" comparison.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function prepareSoundsLikeBinding($value)
+    {
+        return $value;
+    }
+
+    /**
+     * Compile the SQL for a fuzzy "similar to" (Levenshtein) comparison.
+     *
+     * Requires a LEVENSHTEIN() function on the connection (a stored function
+     * on MySQL, a PHP-backed UDF on SQLite).
+     *
+     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
+     * @return string
+     */
+    public function compileSimilar($column)
+    {
+        return 'levenshtein(lower('.$this->wrap($column).'), lower(?)) <= ?';
+    }
+
+    /**
      * Compile a "where in" clause.
      *
      * @param  \FluentCommunity\Framework\Database\Query\Builder  $query
@@ -785,6 +824,22 @@ class Grammar extends BaseGrammar
     public function whereFullText(Builder $query, $where)
     {
         throw new RuntimeException('This database engine does not support fulltext search operations.');
+    }
+
+    /**
+     * Compile a full-text relevance score expression.
+     *
+     * Returns a [sql, bindings] tuple where the sql is a "MATCH ... AGAINST"
+     * expression with "?" placeholders and bindings are the values for them.
+     *
+     * @param  array  $columns
+     * @param  array  $options
+     * @param  string  $value
+     * @return array
+     */
+    public function compileRelevance($columns, array $options, $value)
+    {
+        throw new RuntimeException('This database engine does not support fulltext relevance ranking.');
     }
 
     /**

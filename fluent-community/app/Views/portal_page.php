@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 ?>
 <!DOCTYPE html>
-<html <?php language_attributes(); ?>>
+<html <?php language_attributes(); ?><?php echo !empty($html_class) ? ' class="' . esc_attr($html_class) . '"' : ''; ?>>
 <head>
     <title><?php echo esc_attr($title); ?></title>
     <meta charset='utf-8'>

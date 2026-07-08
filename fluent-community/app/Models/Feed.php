@@ -108,6 +108,10 @@ class Feed extends Model
                     'is_active' => 0
                 ]);
             Reaction::where('object_id', $feed->id)
+                ->where(function ($query) {
+                    $query->where('object_type', 'feed')
+                        ->orWhere('type', 'survey_vote');
+                })
                 ->delete();
         });
 
@@ -217,15 +221,17 @@ class Feed extends Model
     public function scopeByUserAccess($query, $userId)
     {
         if ($userId) {
-            return $query->where('user_id', $userId)->orWhereNull('space_id')
-                ->orWhereHas('space', function ($q) use ($userId) {
-                    $spaceIds = get_user_meta($userId, '_fcom_space_ids', true);
-                    if ($spaceIds) {
-                        $q->whereIn('id', $spaceIds);
-                        return $q;
-                    }
-                    return $q->where('privacy', 'public');
-                });
+            return $query->where(function ($subQuery) use ($userId) {
+                $subQuery->where('user_id', $userId)->orWhereNull('space_id')
+                    ->orWhereHas('space', function ($q) use ($userId) {
+                        $spaceIds = get_user_meta($userId, '_fcom_space_ids', true);
+                        if ($spaceIds) {
+                            $q->whereIn('id', $spaceIds);
+                            return $q;
+                        }
+                        return $q->where('privacy', 'public');
+                    });
+            });
         }
 
         return $query->where(function ($q) {
