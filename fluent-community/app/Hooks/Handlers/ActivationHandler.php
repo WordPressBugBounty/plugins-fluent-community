@@ -19,7 +19,7 @@ class ActivationHandler
     public function handle($network_wide = false)
     {
         DBMigrator::run($network_wide);
-        update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, 'no');
+        update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
 
         // We may need to register the action schedulers here
         if (!\as_next_scheduled_action('fluent_community_scheduled_hour_jobs')) {

@@ -180,18 +180,7 @@ class TemplateLoader
             </style>
 
             <?php if(Helper::hasColorScheme()): ?>
-            <script>
-                (function () {
-                    var globalStates = localStorage.getItem('fcom_global_storage');
-                    if (globalStates) {
-                        globalStates = JSON.parse(globalStates);
-                        if (globalStates && globalStates.fcom_color_mode == 'dark') {
-                            document.documentElement.classList.add('dark');
-                            document.documentElement.setAttribute('data-color-mode', 'dark');
-                        }
-                    }
-                })();
-            </script>
+                <?php Helper::renderColorSchemePrePaintScript(); ?>
             <?php endif; ?>
 
             <?php

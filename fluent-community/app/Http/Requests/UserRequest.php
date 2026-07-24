@@ -4,6 +4,9 @@ namespace FluentCommunity\App\Http\Requests;
 
 use FluentCommunity\Framework\Foundation\RequestGuard;
 
+/**
+ * @method array all(array $keys = [])
+ */
 class UserRequest extends RequestGuard
 {
     /**

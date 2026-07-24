@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * @var $router FluentCommunity\Framework\Http\Router
+ * @var FluentCommunity\Framework\Http\Router $router
  */
 
 $router->prefix('fluent-player')
@@ -12,4 +12,5 @@ $router->prefix('fluent-player')
     ->group(function ($router) {
         $router->post('/video-upload', 'MediaController@uploadVideo');
         $router->get('/video-content/{media_id}', 'MediaController@getFluentPlayerContent');
+        $router->post('/audio-media/{media_id}', 'MediaController@updateAudioMeta');
     });

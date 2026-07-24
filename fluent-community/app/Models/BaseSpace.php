@@ -9,13 +9,36 @@ use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
+/**
+ * @property int          $id
+ * @property int|null     $created_by
+ * @property int|null     $parent_id
+ * @property string       $title
+ * @property string       $slug
+ * @property string|null  $description
+ * @property string|null  $logo
+ * @property string|null  $cover_photo
+ * @property string|null  $type
+ * @property string|null  $privacy
+ * @property string|null  $status
+ * @property int|null     $serial
+ * @property array        $settings
+ * @property string|null  $created_at
+ * @property string|null  $updated_at
+ * @property array|null   $permissions
+ * @property string|null  $description_rendered
+ * @property mixed        $membership
+ * @property array|null   $topics
+ * @property array|null   $header_links
+ * @property array|null   $lockscreen_config
+ */
 class BaseSpace extends Model
 {
     protected $table = 'fcom_spaces';
 
     protected static $type = 'community';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'created_by',
@@ -29,12 +52,12 @@ class BaseSpace extends Model
         'privacy',
         'status',
         'serial',
-        'settings'
+        'settings',
     ];
 
     protected $searchable = [
         'title',
-        'description'
+        'description',
     ];
 
     public $_preloadedMembershipUserId = null;
@@ -66,9 +89,9 @@ class BaseSpace extends Model
 
         static::deleting(function ($space) {
             Media::where('sub_object_id', $space->id)
-                ->whereIn('object_source', ['space_logo', 'space_cover_photo'])
+                ->whereIn('object_source', [ 'space_logo', 'space_cover_photo' ])
                 ->update([
-                    'is_active' => 0
+                    'is_active' => 0,
                 ]);
         });
     }
@@ -109,7 +132,7 @@ class BaseSpace extends Model
 
     public function scopeOnlyMain($query)
     {
-        return $query->withoutGlobalScopes()->whereIn('type', ['community', 'course']);
+        return $query->withoutGlobalScopes()->whereIn('type', [ 'community', 'course' ]);
     }
 
     public function scopeFilterByUserId($query, $userId)
@@ -154,13 +177,13 @@ class BaseSpace extends Model
     public function members()
     {
         return $this->belongsToMany(User::class, 'fcom_space_user', 'space_id', 'user_id')
-            ->withPivot(['role', 'created_at', 'status']);
+            ->withPivot([ 'role', 'created_at', 'status' ]);
     }
 
     public function x_members()
     {
         return $this->belongsToMany(XProfile::class, 'fcom_space_user', 'space_id', 'user_id', 'id', 'user_id')
-            ->withPivot(['role', 'created_at', 'status']);
+            ->withPivot([ 'role', 'created_at', 'status' ]);
     }
 
     public function group()
@@ -197,7 +220,7 @@ class BaseSpace extends Model
         foreach ($spaces as $space) {
             $space->_preloadedMembershipUserId = $userId;
             $pivot = $pivots->get($space->id);
-            $space->_preloadedMembership = $pivot ? static::pivotToMembership($pivot) : null;
+            $space->_preloadedMembership = $pivot ? self::pivotToMembership($pivot) : null;
         }
     }
 
@@ -220,7 +243,7 @@ class BaseSpace extends Model
             return true;
         }
 
-        $roles = ['admin'];
+        $roles = [ 'admin' ];
 
         if ($checkModerator) {
             if (Helper::isModerator()) {
@@ -270,7 +293,7 @@ class BaseSpace extends Model
                 }
                 $this->parent_id = $group->id;
             } else {
-                $this->parent_id = NULL;
+                $this->parent_id = null;
             }
         }
 
@@ -291,12 +314,12 @@ class BaseSpace extends Model
                     $ogImageMedia = Helper::getMediaFromUrl($ogImageUrl);
                     if ($ogImageMedia && $ogImageMedia->is_active) {
                         unset($settings['og_image']);
-                    } else if ($ogImageMedia) {
+                    } elseif ($ogImageMedia) {
                         $ogImageMedia->update([
                             'is_active'     => true,
                             'user_id'       => get_current_user_id(),
                             'sub_object_id' => $this->id,
-                            'object_source' => 'space_og_media'
+                            'object_source' => 'space_og_media',
                         ]);
                         $settings['og_image'] = $ogImageMedia->public_url;
                     } else {
@@ -353,7 +376,7 @@ class BaseSpace extends Model
 
     public function isContentSpace()
     {
-        return in_array($this->type, ['community', 'course']);
+        return in_array($this->type, [ 'community', 'course' ]);
     }
 
     public function getSettingsAttribute($value)
@@ -410,7 +433,7 @@ class BaseSpace extends Model
                 'can_view_members'   => $this->canViewMembers(null),
                 'can_create_post'    => false,
                 'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody',
-                'can_view_media'     => $hasMediaGallery && Arr::get($this->settings, 'media_access') == 'everybody'
+                'can_view_media'     => $hasMediaGallery && Arr::get($this->settings, 'media_access') == 'everybody',
             ];
         }
 
@@ -521,11 +544,11 @@ class BaseSpace extends Model
             return '<img alt="" src="' . $this->logo . '"/>';
         }
 
-        if ($imoji = Arr::get($this->settings, 'emoji')) {
+        if ($imoji = Arr::get($this->settings, 'emoji')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
             return '<span class="fcom_emoji">' . $imoji . '</span>';
         }
 
-        if ($svg = Arr::get($this->settings, 'shape_svg')) {
+        if ($svg = Arr::get($this->settings, 'shape_svg')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
             return '<span class="fcom_shape"><i class="el-icon">' . $svg . '</i></span>';
         }
 
@@ -553,7 +576,7 @@ class BaseSpace extends Model
             $new = Meta::create([
                 'object_id'   => $topicId,
                 'meta_key'    => $this->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'object_type' => 'term_space_relation'
+                'object_type' => 'term_space_relation',
             ]);
 
             $existIds[] = $new->id;
@@ -599,8 +622,8 @@ class BaseSpace extends Model
             if ($count == 5) {
                 $count = time();
             }
-            $slug = $title . '-' . ++$slugNum;
-            $count++;
+            $slug = $title . '-' . (++$slugNum);
+            ++$count;
         }
 
         return $slug;
@@ -620,8 +643,8 @@ class BaseSpace extends Model
                 'title' => __('Posts', 'fluent-community'),
                 'route' => [
                     'name' => 'space_feeds',
-                ]
-            ]
+                ],
+            ],
         ];
 
         if (Arr::get($this->permissions, 'can_view_members')) {
@@ -629,7 +652,7 @@ class BaseSpace extends Model
                 'title' => __('Members', 'fluent-community'),
                 'route' => [
                     'name' => 'space_members',
-                ]
+                ],
             ];
         }
 

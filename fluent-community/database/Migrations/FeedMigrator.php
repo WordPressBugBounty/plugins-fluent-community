@@ -43,7 +43,8 @@ class FeedMigrator
                 INDEX `slug` (`slug`),
                 INDEX `created_at` (`created_at`),
                 INDEX `idx_space_id_status` (`space_id`, `status`),
-                INDEX `idx_space_id_status_privacy` (`space_id`, `status`, `privacy`)
+                INDEX `idx_space_id_status_privacy` (`space_id`, `status`, `privacy`),
+                INDEX `idx_status_updated_at` (`status`, `updated_at`)
             ) $charsetCollate;";
             dbDelta($sql);
         } else {
@@ -51,6 +52,12 @@ class FeedMigrator
             $isMigrated = $wpdb->get_col($wpdb->prepare("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='scheduled_at' AND TABLE_NAME=%s", $table));
             if(!$isMigrated) {
                 $wpdb->query("ALTER TABLE {$table} ADD COLUMN `scheduled_at` DATETIME NULL AFTER `expired_at`");
+            }
+
+            // check if the ticker index (status, updated_at) exists or not
+            $hasStatusUpdatedIndex = $wpdb->get_col($wpdb->prepare("SELECT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s AND INDEX_NAME='idx_status_updated_at'", $table));
+            if (!$hasStatusUpdatedIndex) {
+                $wpdb->query("ALTER TABLE {$table} ADD INDEX `idx_status_updated_at` (`status`, `updated_at`)");
             }
         }
     }

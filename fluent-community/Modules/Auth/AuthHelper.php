@@ -269,9 +269,9 @@ class AuthHelper
     {
         $generalSettings = Helper::generalSettings();
         try {
-            $verifcationCode = str_pad(random_int(100123, 900987), 6, 0, STR_PAD_LEFT);
+            $verifcationCode = str_pad((string) random_int(100123, 900987), 6, '0', STR_PAD_LEFT);
         } catch (\Exception $e) {
-            $verifcationCode = str_pad(wp_rand(100123, 900987), 6, 0, STR_PAD_LEFT);
+            $verifcationCode = str_pad((string) wp_rand(100123, 900987), 6, '0', STR_PAD_LEFT);
         }
 
         // Hash the code

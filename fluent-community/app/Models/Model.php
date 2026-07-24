@@ -4,6 +4,13 @@ namespace FluentCommunity\App\Models;
 
 use FluentCommunity\Framework\Database\Orm\Model as BaseModel;
 
+/**
+ * @method static static create(array $attributes = [])
+ * @method static static|null find(mixed $id, array $columns = ['*'])
+ * @method static static findOrFail(mixed $id, array $columns = ['*'])
+ * @method static static|null first(array $columns = ['*'])
+ * @method static static firstOrFail(array $columns = ['*'])
+ */
 class Model extends BaseModel
 {
     protected $guarded = ['id', 'ID'];

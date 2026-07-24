@@ -42,8 +42,11 @@ class RemoteUrlParser
             return '';
         }
 
+        if (preg_match('#^https?://(?:[\w-]+\.)?youtube\.com/embed/([^?/]+)#i', $src, $ytMatch)) {
+            return self::bestYoutubeThumbnail($ytMatch[1]);
+        }
+
         $providers = [
-            '#^https?://(?:[\w-]+\.)?youtube\.com/embed/([^?/]+).*$#i'                                   => 'https://img.youtube.com/vi/$1/hqdefault.jpg',
             '#^https?://player\.vimeo\.com/video/([^?/]+).*$#i'                                          => 'https://vumbnail.com/$1.jpg',
             '#^https?://fast\.wistia\.net/embed/iframe/([^?/]+).*$#i'                                    => 'https://fast.wistia.net/embed/medias/$1/swatch',
             '#^https?://(?:www\.)?dailymotion\.com/(?:embed/video|player\.html\?video=)/?([^?/&]+).*$#i' => 'https://www.dailymotion.com/thumbnail/video/$1',
@@ -60,6 +63,40 @@ class RemoteUrlParser
         return (!is_wp_error($parsed) && !empty($parsed['image'])) ? $parsed['image'] : '';
     }
 
+    /**
+     * Pick the best YouTube thumbnail for a feed preview.
+     *
+     * Runs on the feed-save path, so it stays cheap: a single HEAD probe for
+     * the HD WebP frame (~30-56% smaller than JPG, sharp 16:9), falling back
+     * to hqdefault.jpg — the one universally present rung (maxres/sd and even
+     * hqdefault.webp 404 for non-HD or legacy uploads). The result is stored
+     * on the feed and cached, so the probe is paid once per video.
+     */
+    protected static function bestYoutubeThumbnail($videoId)
+    {
+        $videoId = sanitize_text_field($videoId);
+        if (!$videoId) {
+            return '';
+        }
+
+        $fallback = 'https://img.youtube.com/vi/' . $videoId . '/hqdefault.jpg';
+
+        $cacheKey = 'fcom_yt_thumb_' . md5($videoId);
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $maxRes = 'https://i.ytimg.com/vi_webp/' . $videoId . '/maxresdefault.webp';
+        $response = wp_remote_head($maxRes, ['timeout' => 1.5, 'redirection' => 0]);
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            set_transient($cacheKey, $maxRes, WEEK_IN_SECONDS);
+            return $maxRes;
+        }
+
+        return $fallback;
+    }
+
     public function getOembed($url)
     {
         $data = (new \WP_oEmbed())->get_data($url, [
@@ -72,16 +109,32 @@ class RemoteUrlParser
 
         $data = (array)$data;
 
+        $provider = strtolower(Arr::get($data, 'provider_name'));
+
+        $image = Arr::get($data, 'thumbnail_url');
+        if ($provider === 'youtube') {
+            $image = self::bestYoutubeThumbnail(self::getYoutubeVideoId($url)) ?: $image;
+        }
+
         return array_filter([
             'title'        => Arr::get($data, 'title'),
             'author_name'  => Arr::get($data, 'author_name'),
             'type'         => 'oembed',
-            'provider'     => strtolower(Arr::get($data, 'provider_name')),
+            'provider'     => $provider,
             'content_type' => Arr::get($data, 'type'),
             'url'          => $url,
             'html'         => self::sanitizeOembedHtml(Arr::get($data, 'html')),
-            'image'        => Arr::get($data, 'thumbnail_url'),
+            'image'        => $image,
         ]);
+    }
+
+    protected static function getYoutubeVideoId($url)
+    {
+        if (preg_match('#(?:youtu\.be/|youtube\.com/(?:embed/|v/|live/|shorts/|watch\?v=))([a-zA-Z0-9_-]+)#i', (string)$url, $match)) {
+            return $match[1];
+        }
+
+        return '';
     }
 
     public static function sanitizeOembedHtml($html)

@@ -11,7 +11,7 @@ use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\FileSystem;
-use FluentCommunity\App\Services\ProfileHelper;
+use FluentCommunity\App\Services\UploadHelper;
 use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Feed;
@@ -32,7 +32,7 @@ class FeedsController extends Controller
             // just for validation
             $space = BaseSpace::where('slug', $bySpace)->first();
             if (!$space) {
-                return $this->sendError(__('Invalid space slug', 'fluent-community'));
+                return $this->sendError(['message' => __('Invalid space slug', 'fluent-community')]);
             }
         }
 
@@ -47,37 +47,7 @@ class FeedsController extends Controller
 
         $feedsQuery = Feed::byContentModerationAccessStatus($currentUserModel, $space)
             ->select(Feed::$publicColumns)
-            ->with([
-                    'xprofile'  => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
-                    },
-                    'comments'  => function ($q) use ($space, $currentUserModel) {
-                        $q->byContentModerationAccessStatus($currentUserModel, $space)
-                            ->with(['xprofile' => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
-                            }])
-                            ->whereHas('xprofile', function ($q) {
-                                $q->where('status', 'active');
-                            });
-                    },
-                    'space'     => function ($q) {
-                        $q->select(['id', 'title', 'slug', 'type']);
-                    },
-                    'reactions' => function ($q) {
-                        $q->with([
-                            'xprofile' => function ($query) {
-                                $query->select(['user_id', 'avatar', 'display_name']);
-                            }
-                        ])
-                            ->where('type', 'like')
-                            ->limit(3);
-                    },
-                    'terms'     => function ($q) {
-                        $q->select(['title', 'slug'])
-                            ->where('taxonomy_name', 'post_topic');
-                    }
-                ]
-            )
+            ->with(Feed::withPublicRelations($currentUserModel, $space))
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->getSafe('order_by_type'));
@@ -96,36 +66,7 @@ class FeedsController extends Controller
             if ($queryArgs['page'] === 1) {
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
-                    ->with([
-                            'xprofile'  => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
-                            },
-                            'comments'  => function ($q) use ($space) {
-                                $q->byContentModerationAccessStatus($this->getUser(), $space)
-                                    ->with(['xprofile' => function ($q) {
-                                        $q->select(ProfileHelper::getXProfilePublicFields());
-                                    }])
-                                    ->whereHas('xprofile', function ($q) {
-                                        $q->where('status', 'active');
-                                    });
-                            },
-                            'space'     => function ($q) {
-                                $q->select(['id', 'title', 'slug', 'type']);
-                            },
-                            'reactions' => function ($q) {
-                                $q->with([
-                                    'xprofile' => function ($query) {
-                                        $query->select(['user_id', 'avatar', 'display_name']);
-                                    }
-                                ])
-                                    ->where('type', 'like')
-                                    ->limit(3);
-                            },
-                            'terms'     => function ($q) {
-                                $q->select(['title', 'slug'])
-                                    ->where('taxonomy_name', 'post_topic');
-                            }
-                        ])
+                    ->with(Feed::withPublicRelations($this->getUser(), $space))
                     ->first();
             }
         }
@@ -218,36 +159,7 @@ class FeedsController extends Controller
 
         $feed = Feed::where('slug', $feed_slug)
             ->select(Feed::$publicColumns)
-            ->with([
-                'xprofile'  => function ($q) {
-                    $q->select(ProfileHelper::getXProfilePublicFields());
-                },
-                'space'     => function ($q) {
-                    $q->select(['id', 'title', 'slug', 'type']);
-                },
-                'comments'  => function ($q) {
-                    $q->byContentModerationAccessStatus($this->getUser())
-                        ->with(['xprofile' => function ($q) {
-                            $q->select(ProfileHelper::getXProfilePublicFields());
-                        }])
-                        ->whereHas('xprofile', function ($q) {
-                            $q->where('status', 'active');
-                        });
-                },
-                'reactions' => function ($q) {
-                    $q->with([
-                        'xprofile' => function ($query) {
-                            $query->select(['user_id', 'avatar', 'display_name']);
-                        }
-                    ])
-                        ->where('type', 'like')
-                        ->limit(3);
-                },
-                'terms'     => function ($q) {
-                    $q->select(['title', 'slug'])
-                        ->where('taxonomy_name', 'post_topic');
-                }
-            ])
+            ->with(Feed::withPublicRelations($this->getUser()))
             ->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
             })
@@ -287,31 +199,7 @@ class FeedsController extends Controller
 
         $feedsQuery = Feed::where('status', 'published')
             ->select(Feed::$publicColumns)
-            ->with([
-                    'xprofile' => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
-                    },
-                    'comments' => function ($q) {
-                        $q->byContentModerationAccessStatus($this->getUser())
-                            ->with(['xprofile' => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
-                            }])
-                            ->whereHas('xprofile', function ($q) {
-                                $q->where('status', 'active');
-                            });
-                    },
-                    'space',
-                    'reactions' => function ($q) {
-                        $q->with([
-                            'xprofile' => function ($query) {
-                                $query->select(['user_id', 'avatar', 'display_name']);
-                            }
-                        ])
-                            ->where('type', 'like')
-                            ->limit(3);
-                    },
-                ]
-            )
+            ->with(Feed::withPublicRelations($this->getUser()))
             ->byBookMarked($userId)
             ->byUserAccess($userId)
             ->byTopicSlug($request->getSafe('topic_slug'))
@@ -470,6 +358,7 @@ class FeedsController extends Controller
         $feed->save();
 
         $feed = Feed::find($feed->id); // just renewing the feed
+        /** @var Feed $feed */
 
         if ($mentions) {
             do_action('fluent_community/feed_mentioned', $feed, Arr::get($mentions, 'users'));
@@ -541,6 +430,7 @@ class FeedsController extends Controller
         $data = $this->sanitizeAndValidateData($requestData);
         $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
+        /** @var Feed $existingFeed */
 
         $editableStatuses = ['published', 'unlisted', 'scheduled', 'pending'];
 
@@ -1009,9 +899,9 @@ class FeedsController extends Controller
             ]);
         }
 
-        add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
+        add_filter('wp_handle_upload', [UploadHelper::class, 'fixImageOrientation']);
         $uploadedFiles = FileSystem::put($files);
-        remove_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
+        remove_filter('wp_handle_upload', [UploadHelper::class, 'fixImageOrientation']);
 
         $file = $uploadedFiles[0];
 
@@ -1159,79 +1049,6 @@ class FeedsController extends Controller
         ];
     }
 
-    public function fixImageOrientation($file)
-    {
-        // Only process JPEG images (since they typically have EXIF data)
-        $image_types = array('image/jpeg', 'image/jpg');
-        if (!in_array($file['type'], $image_types)) {
-            return $file;
-        }
-
-        // Check if the EXIF extension is available
-        if (!function_exists('exif_read_data')) {
-            return $file;
-        }
-
-        // Read EXIF data from the uploaded image
-        $exif = @exif_read_data($file['file']);
-
-        if (!$exif || !isset($exif['Orientation'])) {
-            return $file;
-        }
-
-        $orientation = $exif['Orientation'];
-
-        // Load the image based on the available library (Imagick or GD)
-        if (extension_loaded('imagick') && class_exists('Imagick')) {
-            // Use Imagick if available
-            try {
-                $image = new \Imagick($file['file']);
-                switch ($orientation) {
-                    case 3: // 180°
-                        $image->rotateImage(new \ImagickPixel(), 180);
-                        break;
-                    case 6: // 90° clockwise
-                        $image->rotateImage(new \ImagickPixel(), 90);
-                        break;
-                    case 8: // 90° counter-clockwise
-                        $image->rotateImage(new \ImagickPixel(), -90);
-                        break;
-                }
-                // Strip EXIF data to prevent further issues
-                $image->stripImage();
-                // Save the rotated image
-                $image->writeImage($file['file']);
-                $image->destroy();
-            } catch (\Exception $e) {
-
-            }
-        } elseif (function_exists('imagecreatefromjpeg')) {
-            // Use GD if Imagick is not available
-            $image = @imagecreatefromjpeg($file['file']);
-            if ($image === false) {
-                return $file;
-            }
-
-            switch ($orientation) {
-                case 3: // 180°
-                    $image = imagerotate($image, 180, 0);
-                    break;
-                case 6: // 90° clockwise
-                    $image = imagerotate($image, -90, 0);
-                    break;
-                case 8: // 90° counter-clockwise
-                    $image = imagerotate($image, 90, 0);
-                    break;
-            }
-
-            // Save the rotated image
-            imagejpeg($image, $file['file'], 100);
-            imagedestroy($image);
-        }
-
-        return $file;
-    }
-
     public function getTicker(Request $request)
     {
         $start = microtime(true);
@@ -1270,36 +1087,7 @@ class FeedsController extends Controller
             $updatedFeeds = Feed::where('updated_at', '>', $since)
                 ->where('status', 'published')
                 ->byUserAccess($userId)
-                ->with([
-                    'xprofile'  => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
-                    },
-                    'comments'  => function ($q) use ($currentUserModel) {
-                        $q->byContentModerationAccessStatus($currentUserModel, null)
-                            ->with(['xprofile' => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
-                            }])
-                            ->whereHas('xprofile', function ($q) {
-                                $q->where('status', 'active');
-                            });
-                    },
-                    'space'     => function ($q) {
-                        $q->select(['id', 'title', 'slug', 'type']);
-                    },
-                    'reactions' => function ($q) {
-                        $q->with([
-                            'xprofile' => function ($query) {
-                                $query->select(['user_id', 'avatar', 'display_name']);
-                            }
-                        ])
-                            ->where('type', 'like')
-                            ->limit(3);
-                    },
-                    'terms'     => function ($q) {
-                        $q->select(['title', 'slug'])
-                            ->where('taxonomy_name', 'post_topic');
-                    }
-                ])
+                ->with(Feed::withPublicRelations($currentUserModel, null))
                 ->orderBy('updated_at', 'desc')
                 ->limit(20) // Reduced limit since we're sending full data
                 ->get();
@@ -1371,37 +1159,7 @@ class FeedsController extends Controller
         $currentUserModel = $this->getUser();
 
         $feeds = $query
-            ->with([
-                    'xprofile'  => function ($q) {
-                        $q->select(ProfileHelper::getXProfilePublicFields());
-                    },
-                    'comments'  => function ($q) use ($currentUserModel) {
-                        $q->byContentModerationAccessStatus($currentUserModel)
-                            ->with(['xprofile' => function ($q) {
-                                $q->select(ProfileHelper::getXProfilePublicFields());
-                            }])
-                            ->whereHas('xprofile', function ($q) {
-                                $q->where('status', 'active');
-                            });
-                    },
-                    'space'     => function ($q) {
-                        $q->select(['id', 'title', 'slug', 'type']);
-                    },
-                    'reactions' => function ($q) {
-                        $q->with([
-                            'xprofile' => function ($query) {
-                                $query->select(['user_id', 'avatar', 'display_name']);
-                            }
-                        ])
-                            ->where('type', 'like')
-                            ->limit(3);
-                    },
-                    'terms'     => function ($q) {
-                        $q->select(['title', 'slug'])
-                            ->where('taxonomy_name', 'post_topic');
-                    }
-                ]
-            )
+            ->with(Feed::withPublicRelations($currentUserModel))
             ->get();
 
         $feeds = FeedsHelper::transformFeedsCollection($feeds);
@@ -1442,9 +1200,7 @@ class FeedsController extends Controller
         // Build query based on context
         $query = Feed::query();
 
-        if ($context === 'global') {
-            $query->where('type', 'feed');
-        } elseif (strpos($context, 'space-') === 0) {
+        if (strpos($context, 'space-') === 0) {
             $spaceSlug = str_replace('space-', '', $context);
             $space = Space::where('slug', $spaceSlug)->first();
             if ($space) {

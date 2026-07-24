@@ -6,6 +6,24 @@ namespace FluentCommunity\App\Models;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\Framework\Support\Arr;
 
+/**
+ * @property int          $id
+ * @property int|null     $created_by
+ * @property int|null     $parent_id
+ * @property string       $title
+ * @property string       $slug
+ * @property string|null  $description
+ * @property string|null  $logo
+ * @property string|null  $cover_photo
+ * @property string|null  $type
+ * @property string|null  $privacy
+ * @property string|null  $status
+ * @property int|null     $serial
+ * @property array        $settings
+ * @property string|null  $created_at
+ * @property string|null  $updated_at
+ * @property-read mixed  $spaces
+ */
 class SpaceGroup extends Model
 {
     protected $table = 'fcom_spaces';
@@ -43,7 +61,7 @@ class SpaceGroup extends Model
             }
 
             if (empty($model->slug)) {
-                $slug = sanitize_title($model->title, time());
+                $slug = sanitize_title($model->title, (string) time());
                 $model->slug = $slug;
             }
 

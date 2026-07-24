@@ -8,14 +8,34 @@ use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 
+/**
+ * @property int             $id
+ * @property int|null        $user_id
+ * @property int|null        $post_id
+ * @property int|null        $parent_id
+ * @property string|null     $message
+ * @property string|null     $message_rendered
+ * @property mixed           $meta
+ * @property string|null     $type
+ * @property string|null     $content_type
+ * @property string|null     $status
+ * @property int|null        $is_sticky
+ * @property int             $reactions_count
+ * @property string|null     $created_at
+ * @property string|null     $updated_at
+ * @property-read User|null     $user
+ * @property-read XProfile|null $xprofile
+ * @property-read Feed|null     $post
+ * @property-read mixed         $media
+ */
 class Comment extends Model
 {
     protected $table = 'fcom_post_comments';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $casts = [
-        'is_sticky' => 'int'
+        'is_sticky' => 'int',
     ];
 
     protected $fillable = [
@@ -31,11 +51,11 @@ class Comment extends Model
         'is_sticky',
         'reactions_count',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     protected $searchable = [
-        'message'
+        'message',
     ];
 
     public static function boot()
@@ -58,7 +78,7 @@ class Comment extends Model
             Media::where('sub_object_id', $comment->id)
                 ->where('object_source', 'comment')
                 ->update([
-                    'is_active' => 0
+                    'is_active' => 0,
                 ]);
 
             $comment->reactions()->delete();
@@ -153,7 +173,7 @@ class Comment extends Model
             $user->hasCommunityModeratorAccess() ||
             ($space && $user->hasSpacePermission('edit_any_comment', $space))
         ) {
-            return $query->whereIn('status', ['published', 'pending']);
+            return $query->whereIn('status', [ 'published', 'pending' ]);
         }
 
         // This is a normal User.
@@ -176,9 +196,9 @@ class Comment extends Model
             return [];
         }
 
-        $parentComment = Comment::select(['user_id'])->find($this->parent_id);
-        $allUserIds = Comment::where('parent_id', $this->parent_id)
-            ->select(['user_id'])
+        $parentComment = self::select([ 'user_id' ])->find($this->parent_id);
+        $allUserIds = self::where('parent_id', $this->parent_id)
+            ->select([ 'user_id' ])
             ->distinct('user_id')
             ->when($lastUserId, function ($query) use ($lastUserId) {
                 $query->where('user_id', '>', $lastUserId);
@@ -233,14 +253,12 @@ class Comment extends Model
                 /* translators: %1$s is the post title and %2$s is the comment author name */
                 $emailSubject = \sprintf(__('New reply of a comment in a post on %1$s - %2$s', 'fluent-community'), $this->post->getHumanExcerpt(40), $this->xprofile->display_name);
             }
-        } else {
-            if ($feed->title) {
+        } elseif ($feed->title) {
                 /* translators: %1$s is the feed title and %2$s is the comment author name */
                 $emailSubject = \sprintf(__('New comment on %1$s - %2$s', 'fluent-community'), $feed->title, $this->xprofile->display_name);
-            } else {
-                /* translators: %1$s is the post title and %2$s is the comment author name */
-                $emailSubject = \sprintf(__('New comment on a post on %1$s - %2$s', 'fluent-community'), $this->post->getHumanExcerpt(40), $this->xprofile->display_name);
-            }
+        } else {
+            /* translators: %1$s is the post title and %2$s is the comment author name */
+            $emailSubject = \sprintf(__('New comment on a post on %1$s - %2$s', 'fluent-community'), $this->post->getHumanExcerpt(40), $this->xprofile->display_name);
         }
 
         return $emailSubject;
@@ -268,16 +286,16 @@ class Comment extends Model
 
         $renderedMessage .= FeedsHelper::getMediaHtml($this->meta, $postPermalink);
 
-        $buttonText = $buttonText ?: __('View the comment', 'fluent-community');
+        $buttonText = $buttonText ? $buttonText : __('View the comment', 'fluent-community');
 
         $emailComposer->addBlock('boxed_content', $renderedMessage, [
             'user'         => $this->user,
             'permalink'    => $postPermalink,
-            'post_content' => $postTitle
+            'post_content' => $postTitle,
         ]);
 
         $emailComposer->addBlock('button', $buttonText, [
-            'link' => $postPermalink
+            'link' => $postPermalink,
         ]);
 
         $emailComposer->setDefaultLogo();

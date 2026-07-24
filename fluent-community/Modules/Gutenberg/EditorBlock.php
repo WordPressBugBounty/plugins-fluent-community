@@ -52,7 +52,7 @@ class EditorBlock
             \register_block_type(
                 'fluent-community/page-layout',
                 array(
-                    'api_version'     => 3,
+                    'api_version'     => '3', // WP core uses int but stub declares string
                     'editor_script'   => 'custom-layout-block-editor',
                     'editor_style'    => 'custom-layout-block-editor-style',
                     'style'           => 'fluent_community_global',
@@ -143,20 +143,7 @@ class EditorBlock
             });
         } else if (Helper::hasColorScheme()) {
             add_action('wp_head', function () {
-                ?>
-                <script>
-                    (function () {
-                        var globalStates = localStorage.getItem('fcom_global_storage');
-                        if (globalStates) {
-                            globalStates = JSON.parse(globalStates);
-                            if (globalStates && globalStates.fcom_color_mode == 'dark') {
-                                document.documentElement.classList.add('dark');
-                                document.documentElement.setAttribute('data-color-mode', 'dark');
-                            }
-                        }
-                    })();
-                </script>
-                <?php
+                Helper::renderColorSchemePrePaintScript();
             });
         }
 

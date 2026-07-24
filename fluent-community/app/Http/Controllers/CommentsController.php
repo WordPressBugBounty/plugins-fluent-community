@@ -18,7 +18,16 @@ class CommentsController extends Controller
 {
     public function getComments(Request $request, $feed_id)
     {
-        $feed = Feed::withoutGlobalScopes()->findOrFail($feed_id);
+        $feed = Feed::withoutGlobalScopes()
+            ->byUserAccess(get_current_user_id())
+            ->findOrFail($feed_id);
+
+        if ($feed->status != 'published' && !$feed->hasEditAccess($this->getUserId())) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
+            ], 404);
+        }
+
         $canViewComments = apply_filters('fluent_community/can_view_comments_' . $feed->type, true, $feed);
 
         if (!$canViewComments) {

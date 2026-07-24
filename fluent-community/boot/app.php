@@ -59,7 +59,7 @@ return function ($file) {
          */
         $currentDBVersion = get_option('fluent_community_db_version');
         if (!$currentDBVersion || version_compare($currentDBVersion, FLUENT_COMMUNITY_DB_VERSION, '<')) {
-            update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, 'no');
+            update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
             \FluentCommunity\Database\DBMigrator::run();
         }
 

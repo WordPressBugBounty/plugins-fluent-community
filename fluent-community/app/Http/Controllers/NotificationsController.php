@@ -55,6 +55,7 @@ class NotificationsController extends Controller
             'notifications' => $unreadNotifications,
             'unread_count'  => Notification::byStatus('unread', get_current_user_id())->count()
         ];
+
         return apply_filters('fluent_community/unread_notifications_api_response', $data, $request->all());
     }
 

@@ -66,13 +66,13 @@ class LockscreenService
         $settings = (array) $space->getCustomMeta('lockscreen_settings', $defaultSettings);
 
         foreach ($settings as &$setting) {
-            if ($viewOnly && $setting['type'] === 'block' && !empty($setting['content'])) {
+            if ($viewOnly && Arr::get($setting, 'type') === 'block' && !empty($setting['content'])) {
                 $user = Helper::getCurrentUser();
                 $content = apply_filters('the_content', $setting['content']); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                 $setting['content'] = (new SmartCodeParser())->parse($content, $user);
             }
 
-            if ($setting['type'] == 'image' && empty($setting['new_tab'])) {
+            if (Arr::get($setting, 'type') == 'image' && empty($setting['new_tab'])) {
                 $setting['new_tab'] = 'no';
             }
         }
@@ -97,7 +97,7 @@ class LockscreenService
 
             $formattedField['hidden'] = Arr::isTrue($value, 'hidden');
 
-            if ($value['type'] == 'block') {
+            if (Arr::get($value, 'type') == 'block') {
                 $formattedField['content'] = CustomSanitizer::santizeEditorBody(Arr::get($value, 'content'));
             }
 

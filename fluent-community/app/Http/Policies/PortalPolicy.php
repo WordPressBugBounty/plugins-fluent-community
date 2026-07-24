@@ -34,8 +34,19 @@ class PortalPolicy extends BasePolicy
         return is_user_logged_in() && $this->verifyRequest($request);
     }
 
+    public function uploadVideo(Request $request)
+    {
+        return is_user_logged_in() && $this->verifyRequest($request);
+    }
+
     public function markLessonVideoWatched(Request $request)
     {
+        return is_user_logged_in() && $this->verifyRequest($request);
+    }
+
+    public function updateAudioMeta(Request $request)
+    {
+        // Route-layer gate; resource ownership is enforced in MediaController::canEditAudioMedia.
         return is_user_logged_in() && $this->verifyRequest($request);
     }
 

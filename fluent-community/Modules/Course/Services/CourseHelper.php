@@ -543,10 +543,12 @@ class CourseHelper
             $content = $lesson->message_rendered;
             if (!$content && $lesson->message) {
                 $content = apply_filters('the_content', $lesson->message); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-                $core_styles_keys = array('block-supports');
-                // Adds comment if code is prettified to identify core styles sections in debugging.
-                foreach ($core_styles_keys as $style_key) {
-                    $inlineCss .= wp_style_engine_get_stylesheet_from_context($style_key, []);
+                if (function_exists('wp_style_engine_get_stylesheet_from_context')) {
+                    $core_styles_keys = array('block-supports');
+                    // Adds comment if code is prettified to identify core styles sections in debugging.
+                    foreach ($core_styles_keys as $style_key) {
+                        $inlineCss .= wp_style_engine_get_stylesheet_from_context($style_key, []);
+                    }
                 }
             }
 

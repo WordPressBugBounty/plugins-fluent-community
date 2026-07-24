@@ -83,12 +83,12 @@ class CourseAdminPolicy extends BasePolicy
         return $this->canManageCourse($request);
     }
 
-    public function updateLockscreenSettings(Request $request)
+    public function updateLinks(Request $request)
     {
         return $this->canManageCourse($request);
     }
 
-    public function updateLinks(Request $request)
+    public function updateCourseLockscreenSettings(Request $request)
     {
         return $this->canManageCourse($request);
     }

@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * @var $router FluentCommunity\Framework\Http\Router
+ * @var FluentCommunity\Framework\Http\Router $router
  */
 
 $router->prefix('courses')->namespace('FluentCommunity\Modules\Course\Http\Controllers')->withPolicy(\FluentCommunity\App\Http\Policies\PortalPolicy::class)->group(function ($router) {
@@ -59,4 +59,3 @@ $router->prefix('admin/courses')->namespace('FluentCommunity\Modules\Course\Http
     $router->delete('/{course_id}/lessons/{lesson_id}', 'CourseAdminController@deleteLesson')->int('course_id')->int('lesson_id');
     $router->post('/{course_id}/lessons/{lesson_id}/duplicate', 'CourseAdminController@duplicateLesson')->int('course_id')->int('lesson_id');
 });
-

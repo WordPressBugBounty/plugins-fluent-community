@@ -27,6 +27,7 @@ class FeedSpaceUserMigrator
                 `updated_at` TIMESTAMP NULL,
                 INDEX `status` (`status`),
                 INDEX `space_id_user_id` (`space_id`, `user_id`),
+                INDEX `user_id_status` (`user_id`, `status`),
                 INDEX `role` (`role`)
             ) $charsetCollate;";
             dbDelta($sql);
@@ -54,6 +55,10 @@ class FeedSpaceUserMigrator
             // now check index for role
             if (!in_array('role', $index_names)) {
                 $wpdb->query("ALTER TABLE $table ADD INDEX `role` (`role`)");
+            }
+
+            if (!in_array('user_id_status', $index_names)) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX `user_id_status` (`user_id`, `status`)");
             }
 
         }

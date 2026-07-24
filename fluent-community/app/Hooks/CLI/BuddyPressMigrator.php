@@ -18,7 +18,7 @@ class BuddyPressMigrator
         foreach ($stats as $key => $stat) {
             $formattedStats[] = [
                 'key'   => $key,
-                'count' => $stat
+                'count' => $stat,
             ];
         }
 
@@ -30,7 +30,8 @@ class BuddyPressMigrator
         $hasGroups = bp_is_active('groups');
 
         if (!$hasGroups) {
-            return \WP_CLI::line('BuddyPress Groups component is not active. Please activate it before running the migration.');
+            \WP_CLI::line('BuddyPress Groups component is not active. Please activate it before running the migration.');
+            return;
         }
 
         $groups = fluentCommunityApp('db')->table('bp_groups')->get();
@@ -62,7 +63,7 @@ class BuddyPressMigrator
         $posts = fluentCommunityApp('db')->table('bp_activity')
             ->where('type', 'activity_update')
             ->when($isBuddyBoss, function ($q) {
-                $q->whereNotIn('privacy', ['media', 'onlyme', 'document']);
+                $q->whereNotIn('privacy', [ 'media', 'onlyme', 'document' ]);
             })
             ->when($lastPostId, function ($q) use ($lastPostId) {
                 $q->where('id', '>', $lastPostId);
@@ -78,7 +79,7 @@ class BuddyPressMigrator
         $migrated = 0;
 
         foreach ($posts as $post) {
-            $migrated++;
+            ++$migrated;
             $lastPostId = $post->id;
 
             if (fluentCommunityApp('db')->table('bp_activity_meta')->where('activity_id', $post->id)->where('meta_key', '_fcom_feed_id')->exists()) {
@@ -95,7 +96,7 @@ class BuddyPressMigrator
                 ->insert([
                     'activity_id' => $post->id,
                     'meta_key'    => '_fcom_feed_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                    'meta_value'  => $feed->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                    'meta_value'  => $feed->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ]);
         }
 
@@ -121,7 +122,7 @@ class BuddyPressMigrator
 
         $usersIds = fluentCommunityApp('db')->table('bp_xprofile_data')
             ->groupBy('user_id')
-            ->select(['user_id'])
+            ->select([ 'user_id' ])
             ->when($lastUserId, function ($q) use ($lastUserId) {
                 $q->where('user_id', '>', $lastUserId);
             })
@@ -187,7 +188,7 @@ class BuddyPressMigrator
             $role = 'member';
             if ($entry->is_admin == 1) {
                 $role = 'admin';
-            } else if ($entry->is_mod == 1) {
+            } elseif ($entry->is_mod == 1) {
                 $role = 'moderator';
             }
 

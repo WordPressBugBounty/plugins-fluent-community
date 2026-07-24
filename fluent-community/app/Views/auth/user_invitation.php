@@ -1,13 +1,20 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
-
+<?php if ( ! defined( 'ABSPATH' ) ) { exit;} // Exit if accessed directly ?>
+<?php
+/** @var string $title @var string $description @var array $formFields @var array $hiddenFields @var string $button_label */
+$fluentCommunityTitle = $title ?? '';
+$fluentCommunityDescription = $description ?? '';
+$fluentCommunityFormFields = $formFields ?? [];
+$fluentCommunityHiddenFields = $hiddenFields ?? [];
+$fluentCommunityButtonLabel = $button_label ?? '';
+?>
 <div id="fcom_user_onboard_wrap" class="fcom_user_onboard">
     <?php do_action('fluent_community/before_auth_form_header', 'signup'); ?>
     <div class="fcom_onboard_header">
         <div class="fcom_onboard_header_title">
             <h2>
-                <?php echo esc_html($title); ?>
+                <?php echo esc_html($fluentCommunityTitle); ?>
             </h2>
-            <p><?php echo wp_kses_post($description); ?></p>
+            <p><?php echo wp_kses_post($fluentCommunityDescription); ?></p>
         </div>
     </div>
     <div class="fcom_onboard_body">
@@ -17,11 +24,11 @@
 
             <form method="post" id="fcom_user_registration_form">
                 <div class="fcom_form_main_fields">
-                    <?php (new \FluentCommunity\App\Services\FormBuilder($formFields))->render(); ?>
+                    <?php (new \FluentCommunity\App\Services\FormBuilder($fluentCommunityFormFields))->render(); ?>
                     <?php
-                        foreach ($hiddenFields as $fluentCommunityName => $fluentCommunityValue) {
-                            echo "<input type='hidden' name='".esc_attr($fluentCommunityName)."' value='".esc_attr($fluentCommunityValue)."'>";
-                        }
+                    foreach ($fluentCommunityHiddenFields as $fluentCommunityName => $fluentCommunityValue) {
+                        echo "<input type='hidden' name='".esc_attr($fluentCommunityName)."' value='".esc_attr($fluentCommunityValue)."'>";
+                    }
                     ?>
                     <div class="fcom_form-group">
                         <div class="fcom_form_input">
@@ -32,7 +39,7 @@
                                         </path>
                                     </svg>
                                 <span>
-                                    <?php echo esc_html($button_label); ?>
+                                    <?php echo esc_html($fluentCommunityButtonLabel); ?>
                                 </span>
                             </button>
                         </div>

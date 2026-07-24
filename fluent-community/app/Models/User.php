@@ -19,6 +19,20 @@ use FluentCrm\App\Models\Subscriber;
  * @package FluentCommunity\App\Models
  *
  * @version 1.0.0
+ *
+ * @property int    $ID
+ * @property string $user_login
+ * @property string $user_pass
+ * @property string $user_nicename
+ * @property string $user_email
+ * @property string $user_url
+ * @property string $user_registered
+ * @property string $user_activation_key
+ * @property int    $user_status
+ * @property string $display_name
+ * @property-read string        $photo
+ * @property-read XProfile|null $xprofile
+ * @property string|null        $username
  */
 class User extends Model
 {
@@ -26,15 +40,15 @@ class User extends Model
 
     protected $primaryKey = 'ID';
 
-    protected $hidden = ['user_pass', 'user_activation_key'];
+    protected $hidden = [ 'user_pass', 'user_activation_key' ];
 
-    protected $appends = ['photo'];
+    protected $appends = [ 'photo' ];
 
     public $timestamps = false;
 
     protected $searchable = [
         'display_name',
-        'user_email'
+        'user_email',
     ];
 
     public function scopeSearchBy($query, $search)
@@ -57,7 +71,7 @@ class User extends Model
         if ($search) {
             $fields = [
                 'display_name',
-                'user_login'
+                'user_login',
             ];
             $query->where(function ($query) use ($fields, $search) {
                 $query->where(array_shift($fields), 'LIKE', "$search%");
@@ -76,11 +90,11 @@ class User extends Model
      */
     public function getPhotoAttribute()
     {
-        if ($photo = get_user_meta($this->ID, '_fcom_user_photo', true)) {
+        if ($photo = get_user_meta($this->ID, '_fcom_user_photo', true)) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
             return $photo;
         }
 
-        if ($contact = $this->getContact()) {
+        if ($contact = $this->getContact()) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
             return $contact->photo;
         }
 
@@ -195,20 +209,20 @@ class User extends Model
             'created_at'   => $user->user_registered,
             'photo'        => $this->photo,
             'username'     => $this->username,
-            'is_verified'  => $this->isVerified()
+            'is_verified'  => $this->isVerified(),
         ];
     }
 
     public function spaces()
     {
         return $this->belongsToMany(BaseSpace::class, 'fcom_space_user', 'user_id', 'space_id')
-            ->withPivot(['role', 'status', 'created_at']);
+            ->withPivot([ 'role', 'status', 'created_at' ]);
     }
 
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'fcom_space_user', 'user_id', 'space_id')
-            ->withPivot(['role', 'created_at']);
+            ->withPivot([ 'role', 'created_at' ]);
     }
 
     public function notificationSubscriptions()
@@ -234,6 +248,7 @@ class User extends Model
     public function community_role()
     {
         return $this->belongsTo(Meta::class, 'ID', 'object_id')
+            ->where('object_type', 'user')
             ->where('meta_key', '_user_community_roles');
     }
 
@@ -249,15 +264,15 @@ class User extends Model
                 'display_name' => trim($firstName . ' ' . $lastName),
                 'description'  => isset($updateData['short_description']) ? sanitize_textarea_field($updateData['short_description']) : '',
                 'user_url'     => isset($updateData['website']) ? esc_url($updateData['website']) : '',
-                'ID'           => $this->ID
+                'ID'           => $this->ID,
             ];
 
             wp_update_user($userData);
 
-            if ($contact = $this->getContact()) {
+            if ($contact = $this->getContact()) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
                 $contact->fill(array_filter([
                     'first_name' => $firstName,
-                    'last_name'  => $lastName
+                    'last_name'  => $lastName,
                 ]));
 
                 $dirtyFields = $contact->getDirty();
@@ -317,7 +332,7 @@ class User extends Model
             'object_type' => 'user',
             'object_id'   => $this->ID,
             'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-            'value'       => $value
+            'value'       => $value,
         ]);
     }
 
@@ -345,7 +360,7 @@ class User extends Model
     {
         $globalRoles = $this->getCommunityRoles();
 
-        if (array_intersect($globalRoles, ['admin', 'moderator'])) {
+        if (array_intersect($globalRoles, [ 'admin', 'moderator' ])) {
             return BaseSpace::onlyMain()->pluck('id')->toArray();
         }
 
@@ -358,7 +373,7 @@ class User extends Model
     public function getCommunityRoles()
     {
         if (Helper::isSuperAdmin($this->ID)) {
-            return ['admin'];
+            return [ 'admin' ];
         }
 
         return (array)$this->getCustomMeta('_user_community_roles', []);
@@ -371,7 +386,7 @@ class User extends Model
 
     public function isCommunityModerator()
     {
-        return !!array_intersect(['moderator', 'admin'], $this->getCommunityRoles());
+        return (bool)array_intersect([ 'moderator', 'admin' ], $this->getCommunityRoles());
     }
 
     public function hasCommunityModeratorAccess()
@@ -404,7 +419,7 @@ class User extends Model
     {
         $permissions = array_filter($this->getPermissions(true));
 
-        return !!array_intersect(['community_admin', 'course_admin'], array_keys($permissions));
+        return (bool)array_intersect([ 'community_admin', 'course_admin' ], array_keys($permissions));
     }
 
     public function getSpaceRole($space)
@@ -448,7 +463,7 @@ class User extends Model
     {
         $globalRoles = $this->getCommunityRoles();
 
-        if (array_intersect($globalRoles, ['admin', 'moderator'])) {
+        if (array_intersect($globalRoles, [ 'admin', 'moderator' ])) {
             $spaces = BaseSpace::onlyMain()->get();
         } else {
             $spaces = BaseSpace::onlyMain()->where(function ($spaceQuery) {
@@ -470,12 +485,12 @@ class User extends Model
     {
         if (!$roles) {
             return apply_filters('fluent_community/user/permissions', [
-                'read' => true
+                'read' => true,
             ], $roles, $this);
         }
 
         $isAdmin = in_array('admin', $roles);
-        $isModerator = !!array_intersect($roles, ['admin', 'moderator']);
+        $isModerator = (bool)array_intersect($roles, [ 'admin', 'moderator' ]);
 
         $permissions = [
             'admin'               => $isAdmin,
@@ -486,13 +501,13 @@ class User extends Model
             'edit_any_feed'       => $isModerator,
             'delete_any_comment'  => $isModerator,
             'edit_any_comment'    => $isModerator,
-            'read'                => true
+            'read'                => true,
         ];
 
         if ($isAdmin || in_array('course_admin', $roles)) {
             $permissions['course_creator'] = true;
             $permissions['course_admin'] = true;
-        } else if (in_array('course_creator', $roles)) {
+        } elseif (in_array('course_creator', $roles)) {
             $permissions['course_creator'] = true;
         }
 
@@ -501,17 +516,15 @@ class User extends Model
 
     public function getPermissions($cached = true)
     {
-        static $permissions;
+        static $permissions = [];
 
-        if ($permissions && $cached) {
-            return $permissions;
+        if ($cached && isset($permissions[$this->ID])) {
+            return $permissions[$this->ID];
         }
 
         $roles = $this->getCommunityRoles();
 
-        $permissions = $this->getRolePermissions($roles);
-
-        return $permissions;
+        return $permissions[$this->ID] = $this->getRolePermissions($roles);
     }
 
     public function getSpacePermissions($space)
@@ -540,8 +553,8 @@ class User extends Model
                 'is_pending'         => false,
                 'is_non_member'      => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in']),
-                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, ['everybody', 'logged_in'])
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ]),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ]),
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
@@ -550,7 +563,7 @@ class User extends Model
                 $permissions['can_view_documents'] = false;
                 $permissions['can_view_media'] = false;
             }
-        } else if ($role == 'pending') {
+        } elseif ($role == 'pending') {
             $permissions = [
                 'can_create_post'    => false,
                 'registered'         => true,
@@ -559,8 +572,8 @@ class User extends Model
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, ['everybody', 'logged_in']),
-                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, ['everybody', 'logged_in'])
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ]),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ]),
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
@@ -569,7 +582,7 @@ class User extends Model
                 $permissions['can_view_documents'] = false;
                 $permissions['can_view_media'] = false;
             }
-        } else if ($role == 'member' || $role == 'student') {
+        } elseif ($role == 'member' || $role == 'student') {
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? false : true,
                 'registered'           => true,
@@ -579,10 +592,10 @@ class User extends Model
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
                 'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') == 'members_only',
-                'can_view_media'       => $hasMediaGallery
+                'can_view_media'       => $hasMediaGallery,
             ];
         } else {
-            $isMod = in_array($role, ['admin', 'moderator']);
+            $isMod = in_array($role, [ 'admin', 'moderator' ]);
             $isAdmin = $role === 'admin';
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? $isMod : true,
@@ -603,11 +616,11 @@ class User extends Model
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
                 'can_upload_documents' => $hasDocuments && $isMod,
-                'can_view_media'       => $hasMediaGallery
+                'can_view_media'       => $hasMediaGallery,
             ];
         }
 
-        $permissions['is_member'] = in_array($role, ['admin', 'moderator', 'member', 'student']);
+        $permissions['is_member'] = in_array($role, [ 'admin', 'moderator', 'member', 'student' ]);
 
         return apply_filters('fluent_community/user/space/permissions', $permissions, $space, $role, $this);
     }
@@ -734,13 +747,12 @@ class User extends Model
             'meta'              => [
                 'website'                    => $this->user_url,
                 'cover_photo'                => get_user_meta($this->ID, '_fluent_cover_photo', true),
-                'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml(get_user_meta($this->ID, 'description', true)))
-            ]
+                'short_description_rendered' => wp_kses_post(FeedsHelper::mdToHtml(get_user_meta($this->ID, 'description', true))),
+            ],
         ];
 
         if ($exist) {
-            unset($data['avatar']);
-            unset($data['username']);
+            $data = array_diff_key($data, [ 'avatar' => true, 'username' => true ]);
 
             if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
                 $data['created_at'] = $this->user_registered;
@@ -756,7 +768,7 @@ class User extends Model
         $initialUserName = $data['username'];
         while (XProfile::where('username', $initialUserName)->first()) {
             $initialUserName = $data['username'] . '_' . $counter;
-            $counter++;
+            ++$counter;
         }
 
         $data['username'] = $initialUserName;

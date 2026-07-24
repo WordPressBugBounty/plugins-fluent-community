@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
+use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
@@ -25,14 +26,14 @@ class ProfileController extends Controller
 {
     public function getProfile(Request $request, $userName)
     {
+        /** @var XProfile $xprofile */
         $xprofile = XProfile::where('username', $userName)
             ->firstOrFail();
 
         if ($xprofile->status != 'active' && !Helper::isModerator()) {
             return $this->sendError([
-                'message' => __('This profile is not active', 'fluent-community'),
-                'status'  => 403
-            ]);
+                'message' => __('This profile is not active', 'fluent-community')
+            ], 403);
         }
 
         $canViewProfile = Utility::canViewUserProfile($xprofile->user_id);
@@ -248,6 +249,7 @@ class ProfileController extends Controller
         $currentUser = $this->getUser(true);
         $data = $request->get('data', []);
 
+        /** @var XProfile $xProfile */
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
         if ($xProfile->user_id != get_current_user_id()) {
@@ -445,8 +447,92 @@ class ProfileController extends Controller
         ];
     }
 
+    public function changePassword(Request $request, $userName)
+    {
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+
+        // Password can only be changed by the account owner, never by moderators/admins here.
+        if ($xProfile->user_id != get_current_user_id()) {
+            return $this->sendError([
+                'message' => __('You are not allowed to change this password', 'fluent-community')
+            ]);
+        }
+
+        $data = $request->get('data', []);
+
+        $this->validate($data, [
+            'current_password' => 'required',
+            'new_password'     => 'required',
+            'confirm_password' => 'required',
+        ], [
+            'current_password.required' => __('Current password is required', 'fluent-community'),
+            'new_password.required'     => __('New password is required', 'fluent-community'),
+            'confirm_password.required' => __('Please confirm your new password', 'fluent-community'),
+        ]);
+
+        // Passwords are used verbatim; sanitizing would corrupt valid characters.
+        $currentPassword = (string) Arr::get($data, 'current_password');
+        $newPassword     = (string) Arr::get($data, 'new_password');
+        $confirmPassword = (string) Arr::get($data, 'confirm_password');
+
+        if (strlen($newPassword) < 4) {
+            return $this->sendError([
+                'message' => __('New password must be at least 4 characters long', 'fluent-community')
+            ]);
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return $this->sendError([
+                'message' => __('New password and confirmation do not match', 'fluent-community')
+            ]);
+        }
+
+        if ($newPassword === $currentPassword) {
+            return $this->sendError([
+                'message' => __('New password must be different from your current password', 'fluent-community')
+            ]);
+        }
+
+        $user = get_user_by('id', $xProfile->user_id);
+
+        if (!$user || !wp_check_password($currentPassword, $user->user_pass, $user->ID)) {
+            return $this->sendError([
+                'message' => __('Your current password is incorrect', 'fluent-community')
+            ]);
+        }
+
+        wp_set_password($newPassword, $user->ID);
+
+        // wp_set_password destroys every session for the user, which also invalidates the
+        // REST nonce the SPA holds. Re-issue the cookie to keep the session, capturing the
+        // fresh logged-in cookie so the nonces we mint below bind to the new session token.
+        $newLoggedInCookie = '';
+        $captureLoggedInCookie = function ($loggedInCookie) use (&$newLoggedInCookie) {
+            $newLoggedInCookie = $loggedInCookie;
+        };
+        add_action('set_logged_in_cookie', $captureLoggedInCookie);
+
+        wp_set_current_user($user->ID);
+        wp_set_auth_cookie($user->ID, true);
+
+        remove_action('set_logged_in_cookie', $captureLoggedInCookie);
+
+        if ($newLoggedInCookie) {
+            $_COOKIE[LOGGED_IN_COOKIE] = $newLoggedInCookie;
+        }
+
+        do_action('fluent_community/user/password_changed', $user->ID);
+
+        return [
+            'message'    => __('Your password has been changed successfully', 'fluent-community'),
+            'rest_nonce' => wp_create_nonce('wp_rest'),
+            'ajax_nonce' => wp_create_nonce('fluent_community_ajax_nonce'),
+        ];
+    }
+
     public function getAllMemberships(Request $request, $userName)
     {
+        /** @var XProfile $xProfile */
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
         $currentUser = $this->getUser();
@@ -469,6 +555,7 @@ class ProfileController extends Controller
 
     public function getSpaces(Request $request, $userName)
     {
+        /** @var XProfile $xProfile */
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
         $currentUser = $this->getUser();
 
@@ -515,6 +602,7 @@ class ProfileController extends Controller
             ]);
         }
 
+        /** @var XProfile $xProfile */
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
         $currentUser = $this->getUser();
 
@@ -579,13 +667,10 @@ class ProfileController extends Controller
         $comments = Comment::where('user_id', $xProfile->user_id)
             ->where('status', 'published')
             ->with([
-                'post' => function ($q) {
-                    $q->select(['id', 'title', 'message', 'type', 'space_id', 'slug', 'created_at'])
-                        ->with([
-                            'space' => function ($q) {
-                                $q->select(['id', 'title', 'slug', 'type']);
-                            }
-                        ]);
+                'post' => function ($q) use ($currentUser) {
+                    // Eager load the full feed so the post opens in the modal without a per-click fetch.
+                    $q->select(array_merge(Feed::$publicColumns, ['message']))
+                        ->with(Feed::withPublicRelations($currentUser));
                 }
             ])
             ->when(!$hasAllAccess, function ($q) {
@@ -596,6 +681,16 @@ class ProfileController extends Controller
             })
             ->orderBy('id', 'desc')
             ->paginate();
+
+            $posts = $comments->getCollection()
+                ->pluck('post')
+                ->filter()
+                ->unique('id')
+                ->values();
+
+            if ($posts->isNotEmpty()) {
+                FeedsHelper::transformFeedsCollection($posts);
+            }
 
             $data = [
                 'comments' => $comments,
@@ -629,7 +724,7 @@ class ProfileController extends Controller
                         3 => 'weekly'
                     ];
 
-                    if ($maps[$pref->is_read]) {
+                    if (isset($maps[$pref->is_read])) {
                         $userGlobalPrefs[$pref->notification_type] = $maps[$pref->is_read];
                     } else {
                         $userGlobalPrefs[$pref->notification_type] = 'default';

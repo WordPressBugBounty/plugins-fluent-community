@@ -249,11 +249,7 @@ class FluentBlockEditorHandler
         /**
          * Scripts
          */
-        wp_enqueue_media(
-            array(
-                'post' => null
-            )
-        );
+        wp_enqueue_media();
 
         add_filter('user_can_richedit', '__return_true');
         wp_tinymce_inline_scripts();
@@ -278,9 +274,15 @@ class FluentBlockEditorHandler
         wp_enqueue_style('global-styles-css-custom-properties');
         wp_enqueue_style('wp-block-spacer');
 
-        wp_register_style('fluent_com_editor_styles', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/style.css', false, FLUENT_COMMUNITY_PLUGIN_VERSION, 'all');
+        wp_register_style('fluent_com_editor_styles', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/style.css', [], FLUENT_COMMUNITY_PLUGIN_VERSION, 'all');
 
         add_action('fluent_enqueue_block_editor_assets', 'wp_enqueue_editor_format_library_assets');
+
+        // WP 6.9+ loads the LaTeX-to-MathML converter as a script module; core wires this on
+        // 'enqueue_block_editor_assets', which this standalone editor page never fires.
+        if (function_exists('wp_enqueue_block_editor_script_modules')) {
+            add_action('fluent_enqueue_block_editor_assets', 'wp_enqueue_block_editor_script_modules');
+        }
 
         /**
          * Fires after block assets have been enqueued for the editing interface.
@@ -297,7 +299,8 @@ class FluentBlockEditorHandler
         wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', ['react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins'], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
         wp_localize_script('fcom_editor_custom', 'fcomEditorI18n', $this->getEditorI18nStrings());
         wp_localize_script('fcom_editor_custom', 'fcomEditorVars', [
-            'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold()
+            'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold(),
+            'can_unfiltered_html'          => current_user_can('unfiltered_html') ? 'yes' : 'no',
         ]);
     }
 
@@ -323,6 +326,7 @@ class FluentBlockEditorHandler
             'Oembed'                                                                => __('Oembed', 'fluent-community'),
             'Custom HTML'                                                           => __('Custom HTML', 'fluent-community'),
             'Custom HTML Code'                                                      => __('Custom HTML Code', 'fluent-community'),
+            'Your account cannot save custom HTML. Scripts, iframes and similar tags are removed on save.' => __('Your account cannot save custom HTML. Scripts, iframes and similar tags are removed on save.', 'fluent-community'),
             'Paste an iframe code'                                                  => __('Paste an iframe code', 'fluent-community'),
             'Embed'                                                                 => __('Embed', 'fluent-community'),
             'Paste a URL to embed'                                                  => __('Paste a URL to embed', 'fluent-community'),
@@ -383,9 +387,12 @@ class FluentBlockEditorHandler
         add_action('fluent_community/block_editor_footer', function () {
             wp_underscore_playlist_templates();
             wp_print_footer_scripts();
+            $this->printScriptModules();
             wp_print_media_templates();
             wp_enqueue_global_styles();
-            wp_enqueue_stored_styles();
+            if (function_exists('wp_enqueue_stored_styles')) {
+                wp_enqueue_stored_styles();
+            }
             wp_maybe_inline_styles();
         });
 
@@ -419,6 +426,28 @@ class FluentBlockEditorHandler
         </body>
         </html>
         <?php
+    }
+
+    /**
+     * Core prints script modules on 'wp_footer' / 'admin_print_footer_scripts'. This editor page
+     * renders its own document and fires neither, so blocks relying on script modules (core/math
+     * and its LaTeX-to-MathML converter on WP 6.9+) would never load.
+     */
+    protected function printScriptModules()
+    {
+        if (!function_exists('wp_script_modules')) {
+            return;
+        }
+
+        $scriptModules = wp_script_modules();
+
+        $scriptModules->print_import_map();
+        $scriptModules->print_enqueued_script_modules();
+        $scriptModules->print_script_module_preloads();
+
+        if (method_exists($scriptModules, 'print_script_module_translations')) {
+            $scriptModules->print_script_module_translations();
+        }
     }
 
     private function shouldBlockAsset(string $src, string $pluginUrl, string $themesUrl, string $approvedPattern): bool
@@ -627,6 +656,7 @@ class FluentBlockEditorHandler
                 'core/columns',
                 'core/column',
                 'core/cover',
+                'core/details',
                 'core/embed',
                 'core/footnotes',
                 'core/freeform',
@@ -635,24 +665,21 @@ class FluentBlockEditorHandler
                 'core/heading',
                 'core/html',
                 'core/image',
-                'core/latest-posts',
                 'core/list',
                 'core/list-item',
+                'core/math',
                 'core/media-text',
                 'core/missing',
                 'core/paragraph',
                 'core/preformatted',
                 'core/pullquote',
                 'core/quote',
-                'core/rss',
                 'core/separator',
                 'core/social-link',
                 'core/social-links',
                 'core/spacer',
                 'core/table',
-                'core/text-columns',
-                'core/verse',
-                'core/freeform'
+                'core/verse'
             ]),
             'gradients'                        => [],
             'imageDefaultSize'                 => 'large',

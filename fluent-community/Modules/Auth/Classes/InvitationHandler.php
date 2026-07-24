@@ -39,6 +39,7 @@ class InvitationHandler
 
             if ($invitation->post_id) {
                 $space = BaseSpace::withoutGlobalScopes()->find($invitation->post_id);
+                /** @var BaseSpace|null $space */
                 if ($space) {
                     $role = 'member';
                     if ($space->type == 'course') {
@@ -132,6 +133,7 @@ class InvitationHandler
         $space = null;
         if ($invitation->post_id) {
             $space = BaseSpace::withoutGlobalScopes()->find($invitation->post_id);
+            /** @var BaseSpace|null $space */
             if ($space) {
                 $role = 'member';
                 if ($space->type == 'course') {

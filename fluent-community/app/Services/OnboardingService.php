@@ -93,6 +93,7 @@ class OnboardingService
             }
 
             $space = Space::create($spaceData);
+            /** @var Space $space */
             Helper::addToSpace($space, get_current_user_id(), 'admin');
         }
 
@@ -240,6 +241,7 @@ class OnboardingService
             }
 
             $space = Space::create($spaceData);
+            /** @var Space $space */
             Helper::addToSpace($space, get_current_user_id(), 'admin');
         }
     }
@@ -276,8 +278,10 @@ class OnboardingService
 
         $url = 'https://fluentcommunity.co/discount-deal/?fluentcrm=1&route=contact&hash=8850223d-c62d-4e6a-8108-b04c7e9e4fdb';
 
-        $response = wp_remote_post($url, [
-            'body' => json_encode([ // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
+        $response = wp_safe_remote_post($url, [
+            'timeout'     => 10,
+            'redirection' => 0,
+            'body'        => json_encode([ // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
                 'full_name'       => $userFullName,
                 'email'           => $userEmail,
                 'source'          => 'fcom_plugin',
@@ -327,7 +331,7 @@ class OnboardingService
         }
     }
 
-    private static function backgroundInstaller($plugin_to_install)
+    public static function backgroundInstaller($plugin_to_install)
     {
         if (!empty($plugin_to_install['repo-slug'])) {
             require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -339,7 +343,7 @@ class OnboardingService
 
             $skin = new \Automatic_Upgrader_Skin();
             $upgrader = new \WP_Upgrader($skin);
-            $installed_plugins = array_keys(\get_plugins());
+            $installed_plugins = array_reduce(array_keys(\get_plugins()), array(self::class, 'associate_plugin_file'), array());
             $plugin_slug = $plugin_to_install['repo-slug'];
             $plugin_file = isset($plugin_to_install['file']) ? $plugin_to_install['file'] : $plugin_slug . '.php';
             $installed = false;
@@ -439,5 +443,13 @@ class OnboardingService
                 }
             }
         }
+    }
+
+    private static function associate_plugin_file($plugins, $key)
+    {
+        $path = explode('/', $key);
+        $filename = end($path);
+        $plugins[$filename] = $key;
+        return $plugins;
     }
 }

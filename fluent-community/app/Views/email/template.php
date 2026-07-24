@@ -1,4 +1,10 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+<?php if ( ! defined( 'ABSPATH' ) ) { exit;} // Exit if accessed directly ?>
+<?php
+/** @var array|null $logo @var string $bodyContent @var array $footerLines */
+$fluentCommunityLogo = $logo ?? null;
+$fluentCommunityBodyContent = $bodyContent ?? '';
+$fluentCommunityFooterLines = $footerLines ?? [];
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -134,12 +140,12 @@
 </head>
 <body style="font-family: Helvetica, sans-serif; -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.3; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; background-color: #f4f5f6; margin: 0; padding: 0;">
 <table class="fcom_email" role="presentation" border="0" cellpadding="0" cellspacing="0" class="body" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f4f5f6; width: 100%;" width="100%" bgcolor="#f4f5f6">
-    <?php if($logo): ?>
+    <?php if($fluentCommunityLogo): ?>
     <tr>
         <td></td>
         <td>
             <a href="<?php echo esc_url(\FluentCommunity\App\Services\Helper::baseUrl()); ?>">
-                <img src="<?php echo esc_url($logo['url']); ?>" alt="<?php echo esc_attr($logo['alt']); ?>" style="display: block; margin: 0 auto;max-height: 60px; padding: 0; width: auto; margin-top: 12px;">
+                <img src="<?php echo esc_url($fluentCommunityLogo['url']); ?>" alt="<?php echo esc_attr($fluentCommunityLogo['alt']); ?>" style="display: block; margin: 0 auto;max-height: 60px; padding: 0; width: auto; margin-top: 12px;">
             </a>
         </td>
         <td></td>
@@ -168,7 +174,7 @@
                                 <tr>
                                     <td class="wrapper user_contents" style="font-family: Helvetica, sans-serif; font-size: 16px; line-height: 1.4; vertical-align: top; box-sizing: border-box; padding: 24px;" valign="top">
 <!--email_content_before-->
-                                        <?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($bodyContent, true); ?>
+                                        <?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($fluentCommunityBodyContent, true); ?>
 <!--email_content_after-->
                                     </td>
                                 </tr>
@@ -177,11 +183,11 @@
                     </tr>
                 </table>
                 <!--before-footer-lines-->
-                <?php if($footerLines): ?>
+                <?php if($fluentCommunityFooterLines): ?>
                 <div class="footer" style="clear: both; padding-top: 24px; padding-bottom: 24px; text-align: center; width: 100%;">
                     <!--before_footer_section-->
                     <table class="fcom_email" role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
-                        <?php foreach ($footerLines as $fluentCommunityLine):  ?>
+                        <?php foreach ($fluentCommunityFooterLines as $fluentCommunityLine): ?>
                         <tr>
                             <td class="content-block" style="font-family: Helvetica, sans-serif; vertical-align: top; color: #9a9ea6; font-size: 14px;  text-align: center;" valign="top" align="center">
                                 <span class="apple-link" style="color: #9a9ea6; font-size: 14px; text-align: center;"><?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($fluentCommunityLine, true); ?></span>

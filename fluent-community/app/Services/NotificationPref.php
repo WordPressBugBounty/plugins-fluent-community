@@ -179,7 +179,7 @@ class NotificationPref
     public static function willGetDigestEmail($userId, $globalStatus = null)
     {
         if ($globalStatus === null) {
-            $globalStatus = Arr::get(self::getGlobalPrefs(), 'digest_mail', false);
+            $globalStatus = Arr::get(self::getGlobalPrefs(), 'digest_email_status', false);
         }
 
         return self::isPrefEnabled($userId, 'digest_mail', $globalStatus);

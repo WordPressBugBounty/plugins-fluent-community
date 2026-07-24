@@ -202,6 +202,7 @@ class Utility
 
         $defaults = [
             'dark_mode'            => 'yes',
+            'default_theme_mode'   => 'light',
             'fixed_page_header'    => 'yes',
             'show_powered_by'      => 'yes',
             'feed_link_on_sidebar' => 'yes',
@@ -344,6 +345,10 @@ class Utility
         $preSettings = self::getPrivacySettings();
         $settings = Arr::only($settings, array_keys($preSettings));
 
+        $settings = array_map(function ($value) {
+            return is_scalar($value) ? sanitize_text_field($value) : '';
+        }, $settings);
+
         self::updateOption('privacy_settings', $settings);
         self::forgetCache('privacy_settings');
 
@@ -386,6 +391,44 @@ class Utility
             'utm_medium'   => 'site',
             'utm_campaign' => 'plugin_ui'
         ], $url);
+    }
+
+    /**
+     * Build a spec-compliant "Upgrade to Pro" URL.
+     *
+     * Follows the shared Fluent* UTM spec:
+     *   utm_source  = fluent-community (fixed vocabulary, never the wp.org slug)
+     *   utm_medium  = free_plugin | pro_plugin (acquisition vs cross-sell)
+     *   utm_campaign= upgrade_pro (override for xsell_<target> / license_* )
+     *   utm_content = the exact placement, e.g. feature_lock_moderation, upgrade_page
+     *   utm_term    = plugin version that generated the link
+     *   utm_id      = promo id, blank normally (omit unless passed)
+     *
+     * @param string $content   The utm_content placement.
+     * @param array  $overrides Override any utm_* param (e.g. utm_campaign for cross-sell).
+     * @return string
+     */
+    public static function getProUpgradeUrl($content = 'upgrade_page', $overrides = [])
+    {
+        $baseUrl = apply_filters(
+            'fluent_community/pro_upgrade_base_url',
+            'https://fluentcommunity.co/pricing/'
+        );
+
+        $params = wp_parse_args($overrides, [
+            'utm_source'   => 'fluent-community',
+            'utm_medium'   => defined('FLUENT_COMMUNITY_PRO_VERSION') ? 'pro_plugin' : 'free_plugin',
+            'utm_campaign' => 'upgrade_pro',
+            'utm_content'  => $content,
+            'utm_term'     => FLUENT_COMMUNITY_PLUGIN_VERSION,
+        ]);
+
+        // Drop any blank params (e.g. an unset utm_id) so they never hit the URL.
+        $params = array_filter($params, function ($value) {
+            return $value !== '' && $value !== null;
+        });
+
+        return add_query_arg($params, $baseUrl);
     }
 
     /**

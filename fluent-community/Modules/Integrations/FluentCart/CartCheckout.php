@@ -92,7 +92,7 @@ class CartCheckout
             add_action('fluent_cart/checkout_form_opening', function () {
                 $spaceId = intval($_REQUEST['space_id'] ?? ''); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 ?>
-                <input type="hidden" name="_fcom_space_id" value="<?php echo esc_attr($spaceId); ?>"/>
+                <input type="hidden" name="_fcom_space_id" value="<?php echo esc_attr((string) $spaceId); ?>"/>
                 <?php
             });
         }
@@ -130,7 +130,7 @@ class CartCheckout
                     --fct-checkout-secondary-text-color: var(--fcom-secondary-text, #959595);
                     --fct-checkout-border-color: var(--fcom-primary-border, #e3e8ee);
                     --fct-checkout-active-border-color: var(--fcom-secondary-border, #2B2E33);
-                    --fct-checkout-primary-bg-color: var(--fcom-primary-bg, #FFFFFF);
+                    --fct-checkout-primary-bg-color: var(--fcom-primary-button);
                     --fct-checkout-secondary-bg-color: var(--fcom-secondary-bg, #f0f0f1);
                     --fct-checkout-btn-bg-color: var(--fcom-primary-button, #2B2E33);
                     --fct-checkout-btn-text-color: var(--fcom-primary-button-text, #FFFFFF);

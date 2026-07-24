@@ -6,7 +6,6 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
-use FluentCommunity\App\Models\Reaction;
 
 class CleanupHandler
 {
@@ -64,12 +63,6 @@ class CleanupHandler
         $feed->reactions()->delete();
         $feed->activities()->delete();
         $this->queueMediaDelete($feed->media);
-
-        if ($feed->comtent_type == 'survey') {
-            Reaction::where('type', 'survey_vote')
-                ->where('object_id', $feed->id)
-                ->delete();
-        }
 
         // Loop is used to delete notification with notified user data from fcom_notification_users table
         foreach ($feed->notifications as $notification) {
@@ -198,12 +191,13 @@ class CleanupHandler
         }
 
         if (!$ids) {
-
             // Let's delete meta data
-            Utility::getApp('db')->table('fcom_meta')->whereIn('meta_key', [
-                '_last_mention_email_user_id',
-                '_last_email_user_id'
-            ])
+            Utility::getApp('db')->table('fcom_meta')
+                ->where('object_type', 'feed')
+                ->whereIn('meta_key', [
+                    '_last_mention_email_user_id',
+                    '_last_email_user_id'
+                ])
                 ->limit(9000)
                 ->where('created_at', '<', gmdate('Y-m-d H:i:s', strtotime('-1 week')))
                 ->delete();

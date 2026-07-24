@@ -4,6 +4,14 @@ namespace FluentCommunity\App\Models;
 
 use FluentCommunity\App\Functions\Utility;
 
+/**
+ * @property int         $id
+ * @property string|null $slug
+ * @property string|null $title
+ * @property string|null $taxonomy_name
+ * @property string|null $description
+ * @property mixed       $settings
+ */
 class Term extends Model
 {
     protected $table = 'fcom_terms';

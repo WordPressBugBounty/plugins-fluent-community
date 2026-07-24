@@ -3,7 +3,6 @@
 namespace FluentCommunity\App\Services;
 
 use FluentCommunity\App\Functions\Utility;
-use \FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
@@ -125,6 +124,23 @@ class FeedsHelper
             'pre'        => array(),
             'blockquote' => array(),
             'del'        => array(),
+            'table'      => array(),
+            'thead'      => array(),
+            'tbody'      => array(),
+            'tfoot'      => array(),
+            'tr'         => array(),
+            'th'         => array(
+                'align'   => true,
+                'style'   => true,
+                'colspan' => true,
+                'rowspan' => true,
+            ),
+            'td'         => array(
+                'align'   => true,
+                'style'   => true,
+                'colspan' => true,
+                'rowspan' => true,
+            ),
         ));
 
         return self::maybeTransformDynamicCodes($html);
@@ -491,6 +507,11 @@ class FeedsHelper
         }
 
         $data = apply_filters('fluent_community/feed/new_feed_data', $feedData, $allData);
+
+        if (is_wp_error($data)) {
+            return $data;
+        }
+
         $feed = new Feed();
         $feed->fill($data);
         $feed->save();
@@ -641,6 +662,7 @@ class FeedsHelper
                 ->get();
             $mediaIds = [];
             foreach ($documents as $document) {
+                /** @var Media $document */
                 $mediaIds[] = $document->getPrivateFileMeta();
             }
             $feed->document_ids = $mediaIds;
@@ -691,6 +713,15 @@ class FeedsHelper
             } else if ($type != 'meta_data') {
                 $feed->meta = $meta;
             }
+        }
+
+        // Preserve multi-audio so the edit composer can load, edit/remove, and re-save them
+        // (transformForEdit otherwise drops meta for audio-only posts).
+        $audioMedias = Arr::get($meta, 'audio_medias', []);
+        if ($audioMedias) {
+            $editMeta = (isset($feed->meta) && is_array($feed->meta)) ? $feed->meta : [];
+            $editMeta['audio_medias'] = $audioMedias;
+            $feed->meta = $editMeta;
         }
 
         $feed->load('space');
@@ -940,7 +971,7 @@ class FeedsHelper
             $feed->meta = $feedMeta;
         }
 
-        $spaceSettings = Space::where('id', $feed->space_id)->value('settings');
+        $spaceSettings = $feed->space ? $feed->space->settings : [];
         $feed->default_comment_sort_by = Arr::get($spaceSettings, 'default_comment_sort_by', '');
 
         self::setCurrentRelatedUserId($feed->user_id);

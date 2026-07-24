@@ -13,6 +13,15 @@ use FluentCommunity\App\Models\XProfile;
  * @package FluentCommunity\App\Models
  *
  * @version 1.0.0
+ *
+ * @property int         $id
+ * @property int|null    $feed_id
+ * @property int|null    $object_id
+ * @property int|null    $src_user_id
+ * @property string|null $src_object_type
+ * @property string|null $action
+ * @property mixed       $route
+ * @property string|null $content
  */
 class Notification extends Model
 {

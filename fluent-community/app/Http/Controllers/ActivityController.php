@@ -53,7 +53,7 @@ class ActivityController extends Controller
         $activities = Activity::whereIn('id', $latestActivityIds)
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }, 'feed', 'space'])
+            }, 'feed', 'feed.space', 'space'])
             ->whereHas('feed', function ($q) {
                 $q->where('status', 'published');
             })

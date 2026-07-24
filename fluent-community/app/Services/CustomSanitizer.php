@@ -27,7 +27,7 @@ class CustomSanitizer
             }
         }
 
-        $item['permalink'] = sanitize_url($item['permalink']);
+        $item['permalink'] = sanitize_url(Arr::get($item, 'permalink', ''));
 
         if (!empty($item['shape_svg'])) {
             $item['shape_svg'] = self::sanitizeSvg($item['shape_svg']);
@@ -120,6 +120,7 @@ class CustomSanitizer
     private static function sanitizeNode(\DOMNode $node, array $allowed_tags)
     {
         if ($node->nodeType === XML_ELEMENT_NODE) {
+            /** @var \DOMElement $node */
             if (!isset($allowed_tags[$node->nodeName])) {
                 $node->parentNode->removeChild($node);
                 return;
@@ -290,7 +291,7 @@ class CustomSanitizer
         $item['emoji'] = self::sanitizeEmoji(Arr::get($item, 'emoji'));
 
         if (empty($item['slug'])) {
-            $item['slug'] = sanitize_title($item['title']);
+            $item['slug'] = sanitize_title(Arr::get($item, 'title', ''));
         } else {
             $item['slug'] = sanitize_title($item['slug']);
         }
@@ -301,7 +302,7 @@ class CustomSanitizer
                 $item[$key] = sanitize_text_field($item[$key]);
             }
         }
-        $item['permalink'] = sanitize_url($item['permalink']);
+        $item['permalink'] = sanitize_url(Arr::get($item, 'permalink', ''));
 
 
         if (!empty($item['icon_image'])) {

@@ -33,7 +33,8 @@ class FeedCommentsMigrator
                 `updated_at` TIMESTAMP NULL,
                 INDEX `post_id` (`post_id`),
                 INDEX `status` (`status`),
-                INDEX `type` (`type`)
+                INDEX `type` (`type`),
+                INDEX `user_id` (`user_id`)
             ) $charsetCollate;";
             dbDelta($sql);
         } else {
@@ -41,6 +42,12 @@ class FeedCommentsMigrator
             $isMigrated = $wpdb->get_col($wpdb->prepare("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME='meta' AND TABLE_NAME=%s", $table));
             if(!$isMigrated) {
                 $wpdb->query("ALTER TABLE {$table} ADD COLUMN `meta` LONGTEXT NULL AFTER `message_rendered`");
+            }
+
+            // check if the user_id index exists or not
+            $hasUserIdIndex = $wpdb->get_col($wpdb->prepare("SELECT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s AND INDEX_NAME='user_id'", $table));
+            if (!$hasUserIdIndex) {
+                $wpdb->query("ALTER TABLE {$table} ADD INDEX `user_id` (`user_id`)");
             }
         }
     }

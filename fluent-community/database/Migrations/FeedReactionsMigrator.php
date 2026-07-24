@@ -56,7 +56,7 @@ class FeedReactionsMigrator
             $removeIndexes = ['object_id', 'object_type', 'type'];
 
             foreach ($indexes as $index) {
-                if (in_array($index->Column_name, $removeIndexes)) {
+                if (in_array($index->Key_name, $removeIndexes)) {
                     $wpdb->query("ALTER TABLE $table DROP INDEX $index->Key_name");
                 }
             }

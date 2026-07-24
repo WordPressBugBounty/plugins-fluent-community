@@ -375,6 +375,7 @@ class SpaceController extends Controller
 
     public function getMembers(Request $request, $slug)
     {
+        /** @var Space $space */
         $space = Space::where('slug', $slug)
             ->firstOrFail();
 
@@ -723,6 +724,10 @@ class SpaceController extends Controller
             ->pluck('ID')
             ->toArray();
 
+        if ($userIds) {
+            update_meta_cache('user', $userIds);
+        }
+
         $users = User::select($selects)
             ->whereIn('ID', $userIds)
             ->paginate(100);
@@ -945,7 +950,17 @@ class SpaceController extends Controller
 
     public function getLockScreenSettings(Request $request, $spaceSlug)
     {
-        $space = Space::where('slug', $spaceSlug)->firstOrFail();
+        /** @var Space $space */
+        $space = Space::where('slug', $spaceSlug)->first();
+
+        $userId = $this->getUser() ? $this->getUser()->ID : null;
+
+        if (!$space || ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true))) {
+            return $this->sendError([
+                'message' => __('Space not found', 'fluent-community')
+            ], 404);
+        }
+
         $lockscreen = $space->getLockscreen();
 
         $lockscreen = apply_filters('fluent_community/get_lockscreen_settings', $lockscreen, $space);

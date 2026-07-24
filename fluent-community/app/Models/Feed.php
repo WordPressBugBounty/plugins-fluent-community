@@ -5,13 +5,43 @@ namespace FluentCommunity\App\Models;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunityPro\App\Models\Follow;
 
+/**
+ * @property int             $id
+ * @property int|null        $user_id
+ * @property string|null     $title
+ * @property string|null     $slug
+ * @property string|null     $message
+ * @property string|null     $message_rendered
+ * @property string|null     $type
+ * @property string|null     $content_type
+ * @property int|null        $space_id
+ * @property string|null     $privacy
+ * @property string|null     $status
+ * @property int|null        $priority
+ * @property string|null     $featured_image
+ * @property int|null        $is_sticky
+ * @property string|null     $expired_at
+ * @property string|null     $scheduled_at
+ * @property int|null        $comments_count
+ * @property int|null        $reactions_count
+ * @property array           $meta
+ * @property string|null     $created_at
+ * @property string|null     $updated_at
+ * @property-read User|null       $user
+ * @property-read BaseSpace|null  $space
+ * @property-read \FluentCommunity\Framework\Database\Orm\Collection $comments
+ * @property bool|null            $has_user_react
+ * @property bool|null            $bookmarked
+ * @property string|null          $default_comment_sort_by
+ */
 class Feed extends Model
 {
     protected $table = 'fcom_posts';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $casts = [
         'comments_count'  => 'int',
@@ -40,12 +70,12 @@ class Feed extends Model
         'reactions_count',
         'meta',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     protected $searchable = [
         'message',
-        'title'
+        'title',
     ];
 
     public static $publicColumns = [
@@ -67,11 +97,11 @@ class Feed extends Model
         'is_sticky',
         'scheduled_at',
         'comments_count',
-        'reactions_count'
+        'reactions_count',
     ];
 
     protected $appends = [
-        'permalink'
+        'permalink',
     ];
 
     public static $scopeType = 'text';
@@ -105,7 +135,7 @@ class Feed extends Model
         static::deleting(function ($feed) {
             Media::where('feed_id', $feed->id)
                 ->update([
-                    'is_active' => 0
+                    'is_active' => 0,
                 ]);
             Reaction::where('object_id', $feed->id)
                 ->where(function ($query) {
@@ -147,7 +177,7 @@ class Feed extends Model
                 $count = time();
             }
             $slug = $title . '-' . $count;
-            $count++;
+            ++$count;
         }
 
         if (strlen($slug) <= 4) {
@@ -160,7 +190,7 @@ class Feed extends Model
     protected static function getDefaultMeta()
     {
         return [
-            'preview_data' => null
+            'preview_data' => null,
         ];
     }
 
@@ -187,7 +217,7 @@ class Feed extends Model
         }
 
         if (!$in || !is_array($in)) {
-            $in = ['post_content'];
+            $in = [ 'post_content' ];
         }
 
         $fields = $this->searchable;
@@ -208,7 +238,7 @@ class Feed extends Model
                         return $q->where('message', 'LIKE', "%$search%");
                     });
                 }
-            } else if ($in && in_array('post_comments', $in)) {
+            } elseif ($in && in_array('post_comments', $in)) {
                 $query->whereHas('comments', function ($q) use ($search) {
                     return $q->where('message', 'LIKE', "%$search%");
                 });
@@ -252,7 +282,7 @@ class Feed extends Model
             $user->hasCommunityModeratorAccess() ||
             ($space && $user->hasSpacePermission('edit_any_feed', $space))
         ) {
-            return $query->whereIn('status', ['published', 'pending']);
+            return $query->whereIn('status', [ 'published', 'pending' ]);
         }
 
         // This is a normal User.
@@ -420,6 +450,42 @@ class Feed extends Model
             ->where('object_type', 'feed');
     }
 
+    /**
+     * Eager-load closures for rendering a feed with its public relations
+     * (author, moderation-scoped comments, space, top reactions, topics).
+     */
+    public static function withPublicRelations($currentUserModel, $space = null)
+    {
+        return [
+            'xprofile'  => function ($q) {
+                $q->select(ProfileHelper::getXProfilePublicFields());
+            },
+            'comments'  => function ($q) use ($currentUserModel, $space) {
+                $q->byContentModerationAccessStatus($currentUserModel, $space)
+                    ->with(['xprofile' => function ($q) {
+                        $q->select(ProfileHelper::getXProfilePublicFields());
+                    }])
+                    ->whereHas('xprofile', function ($q) {
+                        $q->where('status', 'active');
+                    });
+            },
+            'space'     => function ($q) {
+                $q->select(['id', 'title', 'slug', 'type', 'settings']);
+            },
+            'reactions' => function ($q) {
+                $q->with(['xprofile' => function ($query) {
+                    $query->select(['user_id', 'avatar', 'display_name']);
+                }])
+                    ->where('type', 'like')
+                    ->limit(3);
+            },
+            'terms'     => function ($q) {
+                $q->select(['title', 'slug'])
+                    ->where('taxonomy_name', 'post_topic');
+            }
+        ];
+    }
+
     // New Relationship: Follow records where this post's user_id is the followed_id
     public function follows()
     {
@@ -443,7 +509,7 @@ class Feed extends Model
             return false;
         }
 
-        return Reaction::select(['id'])
+        return Reaction::select([ 'id' ])
             ->where('object_id', $this->id)
             ->where('object_type', 'feed')
             ->where('user_id', $userId)
@@ -556,7 +622,7 @@ class Feed extends Model
                 'object_id'   => $this->id,
                 'object_type' => 'feed',
                 'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'value'       => $value
+                'value'       => $value,
             ]);
         }
 
@@ -609,8 +675,8 @@ class Feed extends Model
                 'name'   => 'view_lesson',
                 'params' => [
                     'course_slug' => $this->space ? $this->space->slug : 'uknown',
-                    'lesson_slug' => $this->slug
-                ]
+                    'lesson_slug' => $this->slug,
+                ],
             ];
         }
 
@@ -619,15 +685,15 @@ class Feed extends Model
                 'name'   => 'space_feed',
                 'params' => [
                     'space'     => $this->space->slug,
-                    'feed_slug' => $this->slug
-                ]
+                    'feed_slug' => $this->slug,
+                ],
             ];
         } else {
             $route = [
                 'name'   => 'single_feed',
                 'params' => [
-                    'feed_slug' => $this->slug
-                ]
+                    'feed_slug' => $this->slug,
+                ],
             ];
         }
 
@@ -666,18 +732,18 @@ class Feed extends Model
         $feedHtml = $this->message_rendered;
         $feedHtml .= FeedsHelper::getMediaHtml($this->meta, $postPermalink);
 
-        $buttonText = $buttonText ?: __('Join the conversation', 'fluent-community');
+        $buttonText = $buttonText ? $buttonText : __('Join the conversation', 'fluent-community');
 
         $emailComposer->addBlock('post_boxed_content', $feedHtml, [
             'user'       => $this->user,
             'title'      => $this->title,
             'permalink'  => $postPermalink,
             'space_name' => $this->space ? $this->space->title : __('Community', 'fluent-community'),
-            'is_single'  => true
+            'is_single'  => true,
         ]);
 
         $emailComposer->addBlock('button', $buttonText, [
-            'link' => $postPermalink
+            'link' => $postPermalink,
         ]);
 
         $emailComposer->setDefaultLogo();

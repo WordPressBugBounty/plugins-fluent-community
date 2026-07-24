@@ -155,6 +155,7 @@ class InvitationController extends Controller
     public function resend(Request $request, $invitationId)
     {
         $invitation = Invitation::findOrFail($invitationId);
+        /** @var Invitation $invitation */
         $user = $this->getUser(true);
         $space = Space::findOrFail($invitation->post_id);
         $space->verifyUserPermisson($user, 'community_moderator');

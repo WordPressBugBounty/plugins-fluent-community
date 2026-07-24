@@ -81,6 +81,18 @@ class ReactionController extends Controller
         $type = $request->get('react_type', 'like');
         $willRemove = $request->get('remove');
 
+        if ($feed->status != 'published') {
+            return $this->sendError([
+                'message' => __('This post is not published yet', 'fluent-community')
+            ]);
+        }
+
+        if ($currentUser->ID === $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
+            return $this->sendError([
+                'message' => __('You cannot react to your own post', 'fluent-community')
+            ]);
+        }
+
         $react = Reaction::where('user_id', $currentUser->ID)
             ->where('object_id', $feed->id)
             ->where('type', $type)
@@ -92,6 +104,7 @@ class ReactionController extends Controller
                 $react->delete();
                 if ($type == 'like') {
                     $feed->reactions_count = $feed->reactions_count - 1;
+                    $feed->timestamps = false; // Don't update the updated_at timestamp
                     $feed->save();
                     do_action('fluent_community/feed/react_removed', $feed);
                 }
@@ -119,6 +132,7 @@ class ReactionController extends Controller
 
         if ($type == 'like') {
             $feed->reactions_count = $feed->reactions_count + 1;
+            $feed->timestamps = false; // Don't update the updated_at timestamp
             $feed->save();
 
             $react->load('xprofile');

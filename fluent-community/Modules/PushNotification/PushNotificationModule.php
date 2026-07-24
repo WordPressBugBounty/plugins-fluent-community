@@ -18,10 +18,10 @@ class PushNotificationModule
            // 'fluent_community/notification/comment/notifed_to_author',
             'fluent_community/notification/comment/notifed_to_mentions',
             //'fluent_community/notification/comment/notifed_to_other_users',
-            'fluent_community/notification/comment/notifed_to_thread_commetenter'
+            'fluent_community/notification/comment/notifed_to_thread_commetenter',
         ];
         foreach ($commentActions as $action) {
-            add_action($action, [$this, 'handleCommentNotification'], 10, 1);
+            add_action($action, [ $this, 'handleCommentNotification' ], 10, 1);
         }
 
         // let's load the assets
@@ -32,7 +32,7 @@ class PushNotificationModule
 
             $vars['js_files']['push_notification'] = [
                 'url'  => \FluentNotify\App\Vite::getStaticSrcUrl('push_notification.js'),
-                'deps' => []
+                'deps' => [],
             ];
             $vars['js_vars']['fluentNotifyPublic'] = \FluentNotify\App\Services\Helper::getPublicConfig();
 
@@ -78,6 +78,7 @@ class PushNotificationModule
             $commenter = $commenterParts[0];
         }
 
+        $title = '';
         switch ($key):
             case 'notifed_to_author':
                 /* translators: %1$s is the commenter name, %2$s is the post title */
@@ -114,4 +115,3 @@ class PushNotificationModule
         ]);
     }
 }
-

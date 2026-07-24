@@ -30,7 +30,8 @@ class NotificationUserMigrator
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
                  INDEX `{$indexPrefix}_mto_id_uio` (`user_id`, `is_read`, `object_type`),
-                 INDEX `{$indexPrefix}_mto_id_oion` (`object_id`, `is_read`, `object_type`, `notification_type`)
+                 INDEX `{$indexPrefix}_mto_id_oion` (`object_id`, `is_read`, `object_type`, `notification_type`),
+                 INDEX `{$indexPrefix}_created_uid` (`created_at`, `user_id`)
             ) $charsetCollate;";
             dbDelta($sql);
         } else {
@@ -79,6 +80,12 @@ class NotificationUserMigrator
         if(!in_array($index2, $allIndexes)) {
             // add this index
             $wpdb->query("ALTER TABLE $table ADD INDEX `{$index2}` (`object_id`, `is_read`, `object_type`, `notification_type`)");
+        }
+
+        $createdIndex = $wpdb->prefix . 'fcom_nu__created_uid';
+
+        if(!in_array($createdIndex, $allIndexes)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX `{$createdIndex}` (`created_at`, `user_id`)");
         }
     }
 }

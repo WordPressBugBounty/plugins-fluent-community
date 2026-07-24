@@ -89,6 +89,10 @@ class PortalHandler
                 'in_footer' => true
             ]);
             wp_localize_script('portal_general', 'fcom_portal_general', $this->getGlobalScriptVars());
+
+            if (Utility::isCustomizationEnabled('enable_sidebar_toggle')) {
+                add_action('fluent_community/before_portal_dom', [$this, 'renderSidebarCollapseFouc'], 1);
+            }
         });
 
         add_action('admin_bar_menu', function ($wp_admin_bar) {
@@ -116,7 +120,7 @@ class PortalHandler
                     <div style="display: flex;justify-content: space-between;" class="fcom_admin_menu">
                         <?php if (!defined('FLUENT_COMMUNITY_PRO')): ?>
                             <a title="Upgrade to Pro" target="_blank" rel="noopener" class="fcom_inline_icon_link_item"
-                               href="<?php echo esc_url(Utility::getProductUrl(true)) ?>">
+                               href="<?php echo esc_url(Utility::getProUpgradeUrl('sidebar_cta')) ?>">
                                 <span class="el-icon">
                                     <svg width="126" height="125" viewBox="0 0 126 125" fill="none"><rect x="0.22139"
                                                                                                           width="125"
@@ -181,7 +185,7 @@ class PortalHandler
                     <?php
                 } else if (Utility::isCustomizationEnabled('show_powered_by')) {
                     ?>
-                    <a target="_blank" rel="noopener" style="font-size: 80%; cursor: pointer;"
+                    <a target="_blank" rel="noopener" style="font-size: 13px; cursor: pointer;"
                        class="fcom_inline_icon_link_item" href="<?php echo esc_url(Utility::getProductUrl(true)) ?>">
                         <?php echo esc_html__('Powered by FluentCommunity', 'fluent-community'); ?>
                     </a>
@@ -246,7 +250,7 @@ class PortalHandler
             <?php do_action('fluent_community/before_header_right_menu_items', $auth); ?>
             <?php if ($has_color_scheme): ?>
                 <li class="top_menu_item fcom_color_mode">
-                    <button class="fcom_color_mode_core fcom_mode_switch fcom_menu_button">
+                    <button type="button" aria-label="<?php echo esc_attr__('Toggle dark mode', 'fluent-community'); ?>" class="fcom_color_mode_core fcom_mode_switch fcom_menu_button">
                         <span class="fcom_color_mode_action el-icon">
                             <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none"
                                  xmlns="http://www.w3.org/2000/svg">
@@ -285,6 +289,7 @@ class PortalHandler
                             ->count();
                         ?>
                         <a href="<?php echo esc_url(Helper::baseUrl('/notifications')); ?>" type="button"
+                           aria-label="<?php echo esc_attr__('Notifications', 'fluent-community'); ?>"
                            class="fcom_menu_button fcom_theme_button">
                             <i class="el-icon">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
@@ -314,7 +319,7 @@ class PortalHandler
                         <div class="fcom_profile_extend">
                             <div class="fcom_profile_menu">
                                 <div class="user_avatar">
-                                    <img alt="User Photo" src="<?php echo esc_url($auth->avatar); ?>"/>
+                                    <img alt="<?php echo esc_attr($auth->display_name); ?>" src="<?php echo esc_url($auth->avatar); ?>"/>
                                     <span class="avatar_icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" height="8" width="8"
                                              viewBox="0 0 1024 1024">
@@ -514,7 +519,6 @@ class PortalHandler
                 'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
                 'has_analytics'           => Utility::hasAnalyticsEnabled(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
-                'enable_sidebar_toggle' => Utility::isCustomizationEnabled('enable_sidebar_toggle'),
             ],
             'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
@@ -543,7 +547,7 @@ class PortalHandler
             'user_post_order_by_options' => Helper::getPostOrderOptions('user'),
             'routing_system'             => Helper::getPortalRouteType(),
             'portal_url'                 => Helper::baseUrl('/'),
-            'upgrade_url'                => 'https://fluentcommunity.co/discount-deal/?utm_source=wp&utm_medium=upgrade&utm_campaign=upgrade',
+            'upgrade_url'                => Utility::getProUpgradeUrl('upgrade_page'),
             'dateTime18n'                => apply_filters('fluent_community/date_time_i18n', [
                 /* translators: weekday. Please keep the serial and format */
                 'weekdays'           => __('Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday', 'fluent-community'),
@@ -750,6 +754,20 @@ class PortalHandler
         return $portalVars;
     }
 
+    public function renderSidebarCollapseFouc()
+    {
+        ?>
+        <script>
+            (function () {
+                var m = document.cookie.match(/(?:^|; )fcom_sidebar_collapsed=([^;]+)/);
+                if (m && m[1] === 'true') {
+                    document.documentElement.classList.add('fcom_sidebar_collapsed_desktop');
+                }
+            })();
+        </script>
+        <?php
+    }
+
     public function getGlobalScriptVars($scope = 'wp')
     {
         return apply_filters('fluent_community/general_portal_vars', [
@@ -758,8 +776,11 @@ class PortalHandler
             'default_color'                   => 'light',
             'color_switch_cookie_name'        => '',
             'has_color_scheme'                => Helper::hasColorScheme(),
+            'default_theme_mode'              => Helper::getDefaultThemeMode(),
             'collapse_sidebar_groups'         => Utility::isCustomizationEnabled('collapse_sidebar_groups'),
             'hide_header_on_scroll'           => Utility::isCustomizationEnabled('hide_header_on_scroll'),
+            'enable_sidebar_toggle'           => Utility::isCustomizationEnabled('enable_sidebar_toggle'),
+            'sidebar_toggle_label'            => __('Toggle sidebar', 'fluent-community'),
         ]);
     }
 

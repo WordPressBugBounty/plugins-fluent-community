@@ -1,7 +1,8 @@
-<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly
+<?php if (!defined('ABSPATH')) { exit; // Exit if accessed directly
+}
 
 /**
- * @var $app FluentCommunity\Framework\Foundation\Application
+ * @var FluentCommunity\Framework\Foundation\Application $app
  */
 
 $app->addFilter('fluent_community/auth/signup_fields', function ($fields) {

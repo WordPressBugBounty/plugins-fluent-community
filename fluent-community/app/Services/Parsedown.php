@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable -- Third-party library (Parsedown by Emanuil Rusev). Not subject to project coding standards.
 
 namespace FluentCommunity\App\Services;
 #
@@ -58,29 +59,29 @@ class Parsedown
     #
 
     protected $BlockTypes = array(
-        '#' => array('Header'),
-        '*' => array('Rule', 'List'),
-        '+' => array('List'),
-        '-' => array('SetextHeader', 'Table', 'Rule', 'List'),
-        '0' => array('List'),
-        '1' => array('List'),
-        '2' => array('List'),
-        '3' => array('List'),
-        '4' => array('List'),
-        '5' => array('List'),
-        '6' => array('List'),
-        '7' => array('List'),
-        '8' => array('List'),
-        '9' => array('List'),
-        ':' => array('Table'),
-        '<' => array('Comment', 'Markup'),
-        '=' => array('SetextHeader'),
-        '>' => array('Quote'),
-        '[' => array('Reference'),
-        '_' => array('Rule'),
-        '`' => array('FencedCode'),
-        '|' => array('Table'),
-        '~' => array('FencedCode'),
+        '#' => array( 'Header' ),
+        '*' => array( 'Rule', 'List' ),
+        '+' => array( 'List' ),
+        '-' => array( 'SetextHeader', 'Table', 'Rule', 'List' ),
+        '0' => array( 'List' ),
+        '1' => array( 'List' ),
+        '2' => array( 'List' ),
+        '3' => array( 'List' ),
+        '4' => array( 'List' ),
+        '5' => array( 'List' ),
+        '6' => array( 'List' ),
+        '7' => array( 'List' ),
+        '8' => array( 'List' ),
+        '9' => array( 'List' ),
+        ':' => array( 'Table' ),
+        '<' => array( 'Comment', 'Markup' ),
+        '=' => array( 'SetextHeader' ),
+        '>' => array( 'Quote' ),
+        '[' => array( 'Reference' ),
+        '_' => array( 'Rule' ),
+        '`' => array( 'FencedCode' ),
+        '|' => array( 'Table' ),
+        '~' => array( 'FencedCode' ),
     );
 
     # ~
@@ -95,7 +96,7 @@ class Parsedown
     {
 
         $config = wp_parse_args($config, [
-            'minHeaderLevel' => 0
+            'minHeaderLevel' => 0,
         ]);
 
         $this->minHeaderLevel = $config['minHeaderLevel'];
@@ -122,7 +123,7 @@ class Parsedown
         $this->DefinitionData = array();
 
         # standardize line breaks
-        $text = str_replace(array("\r\n", "\r"), "\n", $text);
+        $text = str_replace(array( "\r\n", "\r" ), "\n", $text);
 
         # remove surrounding line breaks
         $text = trim($text, "\n");
@@ -213,7 +214,7 @@ class Parsedown
 
             # ~
 
-            $Line = array('body' => $line, 'indent' => $indent, 'text' => $text);
+            $Line = array( 'body' => $line, 'indent' => $indent, 'text' => $text );
 
             # ~
 
@@ -225,11 +226,9 @@ class Parsedown
                     $CurrentBlock = $Block;
 
                     continue;
-                } else {
-                    if ($this->isBlockCompletable($CurrentBlock['type'])) {
+                } elseif ($this->isBlockCompletable($CurrentBlock['type'])) {
                         $methodName = 'block' . $CurrentBlock['type'] . 'Complete';
                         $CurrentBlock = $this->$methodName($CurrentBlock);
-                    }
                 }
             }
 
@@ -315,7 +314,7 @@ class Parsedown
     {
         if (!isset($Component['element'])) {
             if (isset($Component['markup'])) {
-                $Component['element'] = array('rawHtml' => $Component['markup']);
+                $Component['element'] = array( 'rawHtml' => $Component['markup'] );
             } elseif (isset($Component['hidden'])) {
                 $Component['element'] = array();
             }
@@ -463,7 +462,7 @@ class Parsedown
              */
             $language = substr($infostring, 0, strcspn($infostring, " \t\n\f\r"));
 
-            $Element['attributes'] = array('class' => "language-$language");
+            $Element['attributes'] = array( 'class' => "language-$language" );
         }
 
         $Block = array(
@@ -545,7 +544,7 @@ class Parsedown
                     'function'    => 'lineElements',
                     'argument'    => $text,
                     'destination' => 'elements',
-                )
+                ),
             ),
         );
 
@@ -557,7 +556,7 @@ class Parsedown
 
     protected function blockList($Line, array $CurrentBlock = null)
     {
-        list($name, $pattern) = $Line['text'][0] <= '-' ? array('ul', '[*+-]') : array('ol', '[0-9]{1,9}+[.\)]');
+        list($name, $pattern) = $Line['text'][0] <= '-' ? array( 'ul', '[*+-]' ) : array( 'ol', '[0-9]{1,9}+[.\)]' );
 
         if (preg_match('/^(' . $pattern . '([ ]++|$))(.*+)/', $Line['text'], $matches)) {
             $contentIndent = strlen($matches[2]);
@@ -599,7 +598,7 @@ class Parsedown
                         return;
                     }
 
-                    $Block['element']['attributes'] = array('start' => $listStart);
+                    $Block['element']['attributes'] = array( 'start' => $listStart );
                 }
             }
 
@@ -607,9 +606,9 @@ class Parsedown
                 'name'    => 'li',
                 'handler' => array(
                     'function'    => 'li',
-                    'argument'    => !empty($matches[3]) ? array($matches[3]) : array(),
-                    'destination' => 'elements'
-                )
+                    'argument'    => !empty($matches[3]) ? array( $matches[3] ) : array(),
+                    'destination' => 'elements',
+                ),
             );
 
             $Block['element']['elements'] [] = &$Block['li'];
@@ -655,9 +654,9 @@ class Parsedown
                 'name'    => 'li',
                 'handler' => array(
                     'function'    => 'li',
-                    'argument'    => array($text),
-                    'destination' => 'elements'
-                )
+                    'argument'    => array( $text ),
+                    'destination' => 'elements',
+                ),
             );
 
             $Block['element']['elements'] [] = &$Block['li'];
@@ -722,7 +721,7 @@ class Parsedown
                         'function'    => 'linesElements',
                         'argument'    => (array)$matches[1],
                         'destination' => 'elements',
-                    )
+                    ),
                 ),
             );
 
@@ -922,7 +921,7 @@ class Parsedown
                     'function'    => 'lineElements',
                     'argument'    => $headerCell,
                     'destination' => 'elements',
-                )
+                ),
             );
 
             if (isset($alignments[$index])) {
@@ -991,7 +990,7 @@ class Parsedown
                         'function'    => 'lineElements',
                         'argument'    => $cell,
                         'destination' => 'elements',
-                    )
+                    ),
                 );
 
                 if (isset($Block['alignments'][$index])) {
@@ -1049,16 +1048,16 @@ class Parsedown
     #
 
     protected $InlineTypes = array(
-        '!'  => array('Image'),
-        '&'  => array('SpecialCharacter'),
-        '*'  => array('Emphasis'),
-        ':'  => array('Url'),
-        '<'  => array('UrlTag', 'EmailTag', 'Markup'),
-        '['  => array('Link'),
-        '_'  => array('Emphasis'),
-        '`'  => array('Code'),
-        '~'  => array('Strikethrough'),
-        '\\' => array('EscapeSequence'),
+        '!'  => array( 'Image' ),
+        '&'  => array( 'SpecialCharacter' ),
+        '*'  => array( 'Emphasis' ),
+        ':'  => array( 'Url' ),
+        '<'  => array( 'UrlTag', 'EmailTag', 'Markup' ),
+        '['  => array( 'Link' ),
+        '_'  => array( 'Emphasis' ),
+        '`'  => array( 'Code' ),
+        '~'  => array( 'Strikethrough' ),
+        '\\' => array( 'EscapeSequence' ),
     );
 
     # ~
@@ -1077,7 +1076,7 @@ class Parsedown
     protected function lineElements($text, $nonNestables = array())
     {
         # standardize line breaks
-        $text = str_replace(array("\r\n", "\r"), "\n", $text);
+        $text = str_replace(array( "\r\n", "\r" ), "\n", $text);
 
         $Elements = array();
 
@@ -1093,7 +1092,7 @@ class Parsedown
 
             $markerPosition = strlen($text) - strlen($excerpt);
 
-            $Excerpt = array('text' => $excerpt, 'context' => $text);
+            $Excerpt = array( 'text' => $excerpt, 'context' => $text );
 
             foreach ($this->InlineTypes[$marker] as $inlineType) {
                 # check to see if the current inline type is nestable in the current context
@@ -1179,8 +1178,8 @@ class Parsedown
         $Inline['element']['elements'] = self::pregReplaceElements(
             $this->breaksEnabled ? '/[ ]*+\n/' : '/(?:[ ]*+\\\\|[ ]{2,}+)\n/',
             array(
-                array('name' => 'br'),
-                array('text' => "\n"),
+                array( 'name' => 'br' ),
+                array( 'text' => "\n" ),
             ),
             $text
         );
@@ -1259,7 +1258,7 @@ class Parsedown
                     'function'    => 'lineElements',
                     'argument'    => $matches[1],
                     'destination' => 'elements',
-                )
+                ),
             ),
         );
     }
@@ -1268,7 +1267,7 @@ class Parsedown
     {
         if (isset($Excerpt['text'][1]) and in_array($Excerpt['text'][1], $this->specialCharacters)) {
             return array(
-                'element' => array('rawHtml' => $Excerpt['text'][1]),
+                'element' => array( 'rawHtml' => $Excerpt['text'][1] ),
                 'extent'  => 2,
             );
         }
@@ -1316,7 +1315,7 @@ class Parsedown
                 'argument'    => null,
                 'destination' => 'elements',
             ),
-            'nonNestables' => array('Url', 'Link'),
+            'nonNestables' => array( 'Url', 'Link' ),
             'attributes'   => array(
                 'href'  => null,
                 'title' => null,
@@ -1379,21 +1378,21 @@ class Parsedown
 
         if ($Excerpt['text'][1] === '/' and preg_match('/^<\/\w[\w-]*+[ ]*+>/s', $Excerpt['text'], $matches)) {
             return array(
-                'element' => array('rawHtml' => $matches[0]),
+                'element' => array( 'rawHtml' => $matches[0] ),
                 'extent'  => strlen($matches[0]),
             );
         }
 
         if ($Excerpt['text'][1] === '!' and preg_match('/^<!---?[^>-](?:-?+[^-])*-->/s', $Excerpt['text'], $matches)) {
             return array(
-                'element' => array('rawHtml' => $matches[0]),
+                'element' => array( 'rawHtml' => $matches[0] ),
                 'extent'  => strlen($matches[0]),
             );
         }
 
         if ($Excerpt['text'][1] !== ' ' and preg_match('/^<\w[\w-]*+(?:[ ]*+' . $this->regexHtmlAttribute . ')*+[ ]*+\/?>/s', $Excerpt['text'], $matches)) {
             return array(
-                'element' => array('rawHtml' => $matches[0]),
+                'element' => array( 'rawHtml' => $matches[0] ),
                 'extent'  => strlen($matches[0]),
             );
         }
@@ -1405,7 +1404,7 @@ class Parsedown
             and preg_match('/^&(#?+[0-9a-zA-Z]++);/', $Excerpt['text'], $matches)
         ) {
             return array(
-                'element' => array('rawHtml' => '&' . $matches[1] . ';'),
+                'element' => array( 'rawHtml' => '&' . $matches[1] . ';' ),
                 'extent'  => strlen($matches[0]),
             );
         }
@@ -1428,7 +1427,7 @@ class Parsedown
                         'function'    => 'lineElements',
                         'argument'    => $matches[1],
                         'destination' => 'elements',
-                    )
+                    ),
                 ),
             );
         }
@@ -1523,12 +1522,12 @@ class Parsedown
 
     protected function handleElementRecursive(array $Element)
     {
-        return $this->elementApplyRecursive(array($this, 'handle'), $Element);
+        return $this->elementApplyRecursive(array( $this, 'handle' ), $Element);
     }
 
     protected function handleElementsRecursive(array $Elements)
     {
-        return $this->elementsApplyRecursive(array($this, 'handle'), $Elements);
+        return $this->elementsApplyRecursive(array( $this, 'handle' ), $Elements);
     }
 
     protected function elementApplyRecursive($closure, array $Element)
@@ -1625,12 +1624,10 @@ class Parsedown
                 $markup .= $this->elements($Element['elements']);
             } elseif (isset($Element['element'])) {
                 $markup .= $this->element($Element['element']);
+            } elseif (!$permitRawHtml) {
+                    $markup .= self::escape($text ?? '', true);
             } else {
-                if (!$permitRawHtml) {
-                    $markup .= self::escape($text, true);
-                } else {
-                    $markup .= $text;
-                }
+                $markup .= $text ?? '';
             }
 
             $markup .= $hasName ? '</' . $Element['name'] . '>' : '';
@@ -1700,7 +1697,7 @@ class Parsedown
             $before = substr($text, 0, $offset);
             $after = substr($text, $offset + strlen($matches[0][0]));
 
-            $newElements[] = array('text' => $before);
+            $newElements[] = array( 'text' => $before );
 
             foreach ($Elements as $Element) {
                 $newElements[] = $Element;
@@ -1709,7 +1706,7 @@ class Parsedown
             $text = $after;
         }
 
-        $newElements[] = array('text' => $text);
+        $newElements[] = array( 'text' => $text );
 
         return $newElements;
     }
@@ -1815,7 +1812,7 @@ class Parsedown
     # Read-Only
 
     protected $specialCharacters = array(
-        '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '|', '~'
+        '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '|', '~',
     );
 
     protected $StrongRegex = array(

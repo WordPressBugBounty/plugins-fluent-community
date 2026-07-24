@@ -1,5 +1,6 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) { exit; // Exit if accessed directly
+}
 /**
  * @var string $permalink
  * @var string $user_avatar
@@ -7,9 +8,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @var string $community_name
  * @var string $content
  * @var string $linkColor
+ * @var string $space_name
+ * @var string $title
  */
 
-$linkColor = !empty($linkColor) ? $linkColor : '#1f3349'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template-scoped variable injected by the view renderer
+$fluentCommunityLinkColor = !empty($linkColor) ? $linkColor : '#1f3349';
+$fluentCommunitySpaceName = $space_name ?? '';
+$fluentCommunityTitle = $title ?? '';
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
@@ -28,9 +33,9 @@ $linkColor = !empty($linkColor) ? $linkColor : '#1f3349'; // phpcs:ignore WordPr
                                     <a style="text-decoration: none; color: #333;" href="<?php echo esc_url($permalink); ?>">
                                         <span style="font-weight: bold;"><?php echo esc_html($user_name); ?></span>
                                     </a>
-                                    <?php if($space_name): ?>
+                                    <?php if($fluentCommunitySpaceName): ?>
                                         <?php /* translators: %s is replaced by the title of the space */ ?>
-                                        <span style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0;"><?php echo esc_html(sprintf(__('in %s', 'fluent-community'), $space_name)); ?></span>
+                                        <span style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0;"><?php echo esc_html(sprintf(__('in %s', 'fluent-community'), $fluentCommunitySpaceName)); ?></span>
                                     <?php endif; ?>
 
                                     <?php if(!empty($timestamp)): ?>
@@ -44,14 +49,14 @@ $linkColor = !empty($linkColor) ? $linkColor : '#1f3349'; // phpcs:ignore WordPr
                 </tr>
                 <tr>
                     <td style="padding: 0; line-height: 1.4;font-family: Helvetica, sans-serif;">
-                        <?php if($title): ?>
-                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($linkColor); ?>; display: block; overflow: hidden; margin: 0; line-height: 1.2; padding: 0; text-decoration: none;">
-                            <h2 style="color: <?php echo esc_attr($linkColor); ?>; display: block; font-size: 20px; overflow: hidden; margin: 0 0 10px 0; padding: 0; text-decoration: none;"><?php echo esc_html($title); ?></h2>
+                        <?php if($fluentCommunityTitle): ?>
+                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($fluentCommunityLinkColor); ?>; display: block; overflow: hidden; margin: 0; line-height: 1.2; padding: 0; text-decoration: none;">
+                            <h2 style="color: <?php echo esc_attr($fluentCommunityLinkColor); ?>; display: block; font-size: 20px; overflow: hidden; margin: 0 0 10px 0; padding: 0; text-decoration: none;"><?php echo esc_html($fluentCommunityTitle); ?></h2>
                         </a>
                         <?php endif; ?>
                         <?php \FluentCommunity\App\Services\CustomSanitizer::sanitizeRichText($content, true); ?>
                         <?php if(!empty($show_read_more)): ?>
-                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($linkColor); ?>; text-decoration: none; font-weight: bold; font-size: 14px;">
+                        <a href="<?php echo esc_url($permalink); ?>" style="color: <?php echo esc_attr($fluentCommunityLinkColor); ?>; text-decoration: none; font-weight: bold; font-size: 14px;">
                             <?php echo esc_html__('...read more', 'fluent-community'); ?>
                         </a>
                         <?php endif; ?>

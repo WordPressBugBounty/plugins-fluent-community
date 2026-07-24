@@ -47,7 +47,7 @@ class BPMigrationController extends Controller
     public function startMigration(Request $request)
     {
         if ($request->get('reset_migration') === 'yes') {
-            update_option('_fcom_bp_migrations_status', [], 'no');
+            update_option('_fcom_bp_migrations_status', [], false);
         }
 
         if ($request->get('delete_current_data') === 'yes') {
@@ -330,7 +330,7 @@ class BPMigrationController extends Controller
             'current_stage'
         ]);
 
-        update_option('_fcom_bp_migrations_status', $newData, 'no');
+        update_option('_fcom_bp_migrations_status', $newData, false);
 
         return $newData;
     }

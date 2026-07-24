@@ -110,6 +110,14 @@ class ActivityMonitorHandler
             return false;
         }
 
+        // Debounce: skip the write if last_activity was updated within the last 5 minutes.
+        // The ticker polls every ~45-75s per session; without this each poll issues an
+        // xprofile UPDATE, saturating the DB at scale.
+        $throttleSeconds = apply_filters('fluent_community/track_activity_throttle_seconds', 300);
+        if ($currentProfile->last_activity && (current_time('timestamp') - strtotime($currentProfile->last_activity)) < $throttleSeconds) {
+            return false;
+        }
+
         $currentProfile->last_activity = current_time('mysql');
         $currentProfile->save();
     }

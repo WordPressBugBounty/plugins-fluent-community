@@ -21,16 +21,45 @@ use FluentCommunity\Framework\Support\Arr;
  * @package FluentCrm\App\Models
  *
  * @version 1.1.0
+ *
+ * @property int         $id
+ * @property int|null    $user_id
+ * @property string|null $title
+ * @property string|null $slug
+ * @property string|null $message
+ * @property string|null $message_rendered
+ * @property string|null $type
+ * @property int|null    $space_id
+ * @property string|null $privacy
+ * @property string|null $status
+ * @property string|null $featured_image
+ * @property int|null    $is_sticky
+ * @property string|null $scheduled_at
+ * @property string|null $expired_at
+ * @property string|null $content_type
+ * @property int         $comments_count
+ * @property int         $reactions_count
+ * @property array       $meta
+ * @property int|null    $priority
+ * @property int|null    $parent_id
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ * @property-read array        $questions
+ * @property-read array        $enabled_questions
+ * @property-read bool         $is_enforce_pass
+ * @property-read bool         $is_free_preview
+ * @property-read int          $passing_score
+ * @property-read Course|null  $course
  */
 class CourseLesson extends Model
 {
     protected $table = 'fcom_posts';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $casts = [
         'comments_count'  => 'int',
-        'reactions_count' => 'int'
+        'reactions_count' => 'int',
     ];
 
     protected $fillable = [
@@ -52,16 +81,16 @@ class CourseLesson extends Model
         'reactions_count',
         'meta',
         'priority',
-        'parent_id'
+        'parent_id',
     ];
 
     protected $searchable = [
         'message',
-        'title'
+        'title',
     ];
 
     public static $publicColumns = [
-        'id', 'slug', 'title', 'message_rendered', 'featured_image', 'created_at', 'privacy', 'type', 'status', 'slug', 'space_id', 'user_id', 'meta', 'content_type', 'comments_count', 'reactions_count'
+        'id', 'slug', 'title', 'message_rendered', 'featured_image', 'created_at', 'privacy', 'type', 'status', 'slug', 'space_id', 'user_id', 'meta', 'content_type', 'comments_count', 'reactions_count',
     ];
 
     protected static $type = 'course_lesson';
@@ -103,11 +132,11 @@ class CourseLesson extends Model
                 'type'         => 'oembed',
                 'url'          => '',
                 'content_type' => 'video',
-                'html'         => ''
+                'html'         => '',
             ],
             'enable_comments' => 'yes',
             'enable_media'    => 'yes',
-            'document_lists'  => []
+            'document_lists'  => [],
         ];
     }
 
@@ -159,7 +188,7 @@ class CourseLesson extends Model
 
     public function getEnabledQuestionsAttribute()
     {
-        return array_filter($this->questions, function($question) {
+        return array_filter($this->questions, function ($question) {
             return Arr::isTrue($question, 'enabled');
         });
     }
@@ -249,7 +278,7 @@ class CourseLesson extends Model
         }
 
         return (bool)Reaction::where('object_id', $this->id)
-            ->select(['id'])
+            ->select([ 'id' ])
             ->where('object_type', 'feed')
             ->where('user_id', $userId)
             ->where('type', $type)
@@ -268,7 +297,7 @@ class CourseLesson extends Model
             // remove all tags
             $content = wp_strip_all_tags($content);
             // remove new lines and tabs
-            $content = str_replace(["\r", "\n", "\t"], ' ', $content);
+            $content = str_replace([ "\r", "\n", "\t" ], ' ', $content);
             // remove multiple spaces
             $content = preg_replace('/\s+/', ' ', $content);
 

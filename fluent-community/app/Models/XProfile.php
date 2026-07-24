@@ -21,12 +21,32 @@ use FluentCrm\App\Models\Subscriber;
  * @package FluentCommunity\App\Models
  *
  * @version 1.1.0
+ *
+ * @property int         $id
+ * @property int         $user_id
+ * @property int         $total_points
+ * @property string|null $username
+ * @property string      $status
+ * @property int         $is_verified
+ * @property string|null $display_name
+ * @property string|null $avatar
+ * @property string|null $short_description
+ * @property string|null $last_activity
+ * @property mixed       $meta
+ * @property mixed       $custom_fields
+ * @property object|null $created_at
+ * @property-read mixed  $badge
+ * @property-read string $permalink
+ * @property-read \FluentCommunity\App\Models\User|null $user
+ * @property int|null    $compilation_score
+ * @property string|null $user_email
+ * @property int|null    $ID
  */
 class XProfile extends Model
 {
     protected $table = 'fcom_xprofile';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $primaryKey = 'user_id';
 
@@ -48,15 +68,15 @@ class XProfile extends Model
         'last_activity',
         'meta',
         'custom_fields',
-        'created_at'
+        'created_at',
     ];
 
     protected $searchable = [
         'display_name',
-        'username'
+        'username',
     ];
 
-    protected $appends = ['badge', 'permalink'];
+    protected $appends = [ 'badge', 'permalink' ];
 
     public function scopeSearchBy($query, $search)
     {
@@ -99,7 +119,7 @@ class XProfile extends Model
     public function spaces()
     {
         return $this->belongsToMany(BaseSpace::class, 'fcom_space_user', 'user_id', 'space_id')
-            ->withPivot(['role', 'status', 'created_at']);
+            ->withPivot([ 'role', 'status', 'created_at' ]);
     }
 
     public function posts()
@@ -132,7 +152,7 @@ class XProfile extends Model
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'fcom_space_user', 'user_id', 'space_id')
-            ->withPivot(['role', 'status', 'created_at']);
+            ->withPivot([ 'role', 'status', 'created_at' ]);
     }
 
     public function space_pivot()
@@ -143,6 +163,7 @@ class XProfile extends Model
     public function community_role()
     {
         return $this->belongsTo(Meta::class, 'user_id', 'object_id')
+            ->where('object_type', 'user')
             ->where('meta_key', '_user_community_roles');
     }
 
@@ -193,7 +214,7 @@ class XProfile extends Model
 
             return get_avatar_url($this->user_id, [
                 'size'    => 128,
-                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/' . esc_attr($displayName) . '/128', $this->user_id)
+                'default' => apply_filters('fluent_community/default_avatar', 'https://ui-avatars.com/api/' . esc_attr($displayName) . '/128', $this->user_id),
             ]);
         }, WEEK_IN_SECONDS);
 
@@ -243,14 +264,14 @@ class XProfile extends Model
             $settings = [
                 'cover_photo' => '',
                 'badge_slug'  => [],
-                'website'     => ''
+                'website'     => '',
             ];
         }
 
         if (!Utility::canViewUserProfile($this->user_id)) {
             return [
                 'cover_photo' => Arr::get($settings, 'cover_photo', ''),
-                'badge_slug'  => Arr::get($settings, 'badge_slug', [])
+                'badge_slug'  => Arr::get($settings, 'badge_slug', []),
             ];
         }
 
@@ -262,7 +283,7 @@ class XProfile extends Model
         if (!$value) {
             $value = [
                 'cover_photo' => '',
-                'website'     => ''
+                'website'     => '',
             ];
         }
 
@@ -321,7 +342,7 @@ class XProfile extends Model
             'cover_photo'       => 20,
             'avatar'            => 20,
             'short_description' => 30,
-            'social_links'      => 20
+            'social_links'      => 20,
         ];
 
         $score = 0;
@@ -372,8 +393,8 @@ class XProfile extends Model
         return [
             'name'   => 'user_profile',
             'params' => [
-                'username' => $this->username
-            ]
+                'username' => $this->username,
+            ],
         ];
     }
 }

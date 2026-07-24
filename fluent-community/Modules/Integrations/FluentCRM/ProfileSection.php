@@ -215,6 +215,7 @@ class ProfileSection
 
         foreach ($spaceIds as $spaceId) {
             $space = BaseSpace::withoutGlobalScopes()->find($spaceId);
+            /** @var BaseSpace|null $space */
             if ($space) {
                 Helper::addToSpace($space, $userId);
             }

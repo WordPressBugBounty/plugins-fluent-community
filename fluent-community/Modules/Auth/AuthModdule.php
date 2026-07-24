@@ -104,6 +104,7 @@ class AuthModdule
         }
 
         if ($currentUserId && $inviation) {
+            /** @var BaseSpace|null $space */
             $space = BaseSpace::withoutGlobalScopes()->find($inviation->post_id);
             if ($space) {
                 if (Helper::isUserInSpace($currentUserId, $inviation->post_id)) {
@@ -536,7 +537,7 @@ class AuthModdule
         $redirectUrl = Helper::baseUrl();
 
         if (!empty($_REQUEST['redirect_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $redirectUrl = sanitize_url(wp_unslash($_REQUEST['redirect_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $redirectUrl = wp_validate_redirect(sanitize_url(wp_unslash($_REQUEST['redirect_to'])), Helper::baseUrl()); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
 
         $redirectUrl = apply_filters('fluent_community/auth/after_signup_redirect_url', $redirectUrl, $user, $_REQUEST); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -852,7 +853,7 @@ class AuthModdule
 
         add_action('fluent_community/before_registration_form', function ($frameData) {
             if (AuthHelper::isFluentAuthAvailable()) {
-                $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $currentUrl = esc_url(home_url(add_query_arg($_GET, $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
                 ob_start();
                 $titlePrefix = __('Signup with', 'fluent-community');

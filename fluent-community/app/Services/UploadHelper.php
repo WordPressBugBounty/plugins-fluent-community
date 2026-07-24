@@ -62,9 +62,9 @@ class UploadHelper
             return new \WP_Error('validation_error', __('Validation Error', 'fluent-community'), $validator->errors());
         }
 
-        add_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
+        add_filter('wp_handle_upload', [self::class, 'fixImageOrientation']);
         $uploadedFiles = FileSystem::put($requestFiles);
-        remove_filter('wp_handle_upload', [$this, 'fixImageOrientation']);
+        remove_filter('wp_handle_upload', [self::class, 'fixImageOrientation']);
 
         $file = $uploadedFiles[0];
 
@@ -207,7 +207,7 @@ class UploadHelper
         ];
     }
 
-    public function fixImageOrientation($file)
+    public static function fixImageOrientation($file)
     {
         // Only process JPEG images (since they typically have EXIF data)
         $image_types = array('image/jpeg', 'image/jpg');
@@ -229,21 +229,44 @@ class UploadHelper
 
         $orientation = $exif['Orientation'];
 
-        // Load the image based on the available library (Imagick or GD)
+        // Nothing to correct for the "normal" orientation
+        if ($orientation == 1) {
+            return $file;
+        }
+
+        // Bake rotation into pixels before WebP conversion strips EXIF (else 2/4/5/7 render sideways)
         if (extension_loaded('imagick') && class_exists('Imagick')) {
             // Use Imagick if available
             try {
                 $image = new \Imagick($file['file']);
+                $bg = new \ImagickPixel();
                 switch ($orientation) {
+                    case 2: // mirror horizontal
+                        $image->flopImage();
+                        break;
                     case 3: // 180°
-                        $image->rotateImage(new \ImagickPixel(), 180);
+                        $image->rotateImage($bg, 180);
+                        break;
+                    case 4: // mirror vertical
+                        $image->flipImage();
+                        break;
+                    case 5: // transpose (mirror vertical + 90° clockwise)
+                        $image->flipImage();
+                        $image->rotateImage($bg, 90);
                         break;
                     case 6: // 90° clockwise
-                        $image->rotateImage(new \ImagickPixel(), 90);
+                        $image->rotateImage($bg, 90);
+                        break;
+                    case 7: // transverse (mirror horizontal + 90° clockwise)
+                        $image->flopImage();
+                        $image->rotateImage($bg, 90);
                         break;
                     case 8: // 90° counter-clockwise
-                        $image->rotateImage(new \ImagickPixel(), -90);
+                        $image->rotateImage($bg, -90);
                         break;
+                    default:
+                        $image->destroy();
+                        return $file;
                 }
                 // Strip EXIF data to prevent further issues
                 $image->stripImage();
@@ -251,7 +274,7 @@ class UploadHelper
                 $image->writeImage($file['file']);
                 $image->destroy();
             } catch (\Exception $e) {
-
+                // Leave the original file untouched if Imagick fails
             }
         } elseif (function_exists('imagecreatefromjpeg')) {
             // Use GD if Imagick is not available
@@ -260,16 +283,34 @@ class UploadHelper
                 return $file;
             }
 
+            // GD's imagerotate uses counter-clockwise angles, so -90 == 90° clockwise
             switch ($orientation) {
+                case 2: // mirror horizontal
+                    imageflip($image, IMG_FLIP_HORIZONTAL);
+                    break;
                 case 3: // 180°
                     $image = imagerotate($image, 180, 0);
                     break;
+                case 4: // mirror vertical
+                    imageflip($image, IMG_FLIP_VERTICAL);
+                    break;
+                case 5: // transpose (mirror vertical + 90° clockwise)
+                    imageflip($image, IMG_FLIP_VERTICAL);
+                    $image = imagerotate($image, -90, 0);
+                    break;
                 case 6: // 90° clockwise
+                    $image = imagerotate($image, -90, 0);
+                    break;
+                case 7: // transverse (mirror horizontal + 90° clockwise)
+                    imageflip($image, IMG_FLIP_HORIZONTAL);
                     $image = imagerotate($image, -90, 0);
                     break;
                 case 8: // 90° counter-clockwise
                     $image = imagerotate($image, 90, 0);
                     break;
+                default:
+                    imagedestroy($image);
+                    return $file;
             }
 
             // Save the rotated image

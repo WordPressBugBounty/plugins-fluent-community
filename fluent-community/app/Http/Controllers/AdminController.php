@@ -124,8 +124,9 @@ class AdminController extends Controller
         }
 
         $slugChanged = false;
-        if ($settings['slug'] != $inputs['slug'] && !defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
-            $settings['slug'] = $inputs['slug'];
+        $newSlug = sanitize_title($inputs['slug'] ?? '');
+        if ($newSlug && $settings['slug'] != $newSlug && !defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
+            $settings['slug'] = $newSlug;
             $slugChanged = true;
         }
 
@@ -435,7 +436,7 @@ class AdminController extends Controller
         if (Arr::get($inputs, 'slug') && empty($settings['is_slug_defined'])) {
             $settings['slug'] = sanitize_title(Arr::get($inputs, 'slug'));
         }
-        update_option('fluent_community_settings', $settings, 'yes');
+        update_option('fluent_community_settings', $settings, true);
 
         // Email Subscription Settings
         $subscriptionSettings = array_filter([

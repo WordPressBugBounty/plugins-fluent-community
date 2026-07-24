@@ -12,6 +12,21 @@ use FluentCommunity\App\Models\XProfile;
  * @package FluentCommunity\App\Models
  *
  * @version 1.0.0
+ *
+ * @property int         $id
+ * @property int|null    $user_id
+ * @property int|null    $feed_id
+ * @property int|null    $space_id
+ * @property int|null    $related_id
+ * @property string|null $message
+ * @property int|null    $is_public
+ * @property string|null $action_name
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ * @property-read Feed|null      $feed
+ * @property-read BaseSpace|null $space
+ * @property-read User|null      $user
+ * @property-read XProfile|null  $xprofile
  */
 class Activity extends Model
 {
@@ -19,7 +34,7 @@ class Activity extends Model
 
     protected $primaryKey = 'id';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'user_id',
@@ -28,7 +43,7 @@ class Activity extends Model
         'related_id',
         'message',
         'is_public',
-        'action_name'
+        'action_name',
     ];
 
     public static function boot()
@@ -85,7 +100,7 @@ class Activity extends Model
         switch ($this->action_name) {
             case 'feed_published':
                 /* translators: %1$s is the person name and %2$s is the feed excerpt */
-            $message = sprintf(__('%1$s published a new status %2$s', 'fluent-community'), '<span class="fcom_user_name">' . esc_html($this->xprofile->display_name) . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
+                $message = sprintf(__('%1$s published a new status %2$s', 'fluent-community'), '<span class="fcom_user_name">' . esc_html($this->xprofile->display_name) . '</span>', '<span class="fcom_feed_excerpt">' . $this->feed->getHumanExcerpt() . '</span>');
                 break;
             case 'comment_added':
                 /* translators: %1$s is the person name and %2$s is the feed excerpt */

@@ -1,13 +1,18 @@
 <?php
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
+if (!defined('ABSPATH')) { exit; // Exit if accessed directly
+}
 /**
  * @var string $title
  * @var string $description
  * @var string $url
+ * @var string $og_title
  * @var string $featured_image
+ * @var string $theme_color
  * @var string $landing_route
  * @var bool $isHeadless
  */
+$fluentCommunityOgTitle = $og_title ?? '';
+$fluentCommunityThemeColor = $theme_color ?? '';
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?><?php echo !empty($html_class) ? ' class="' . esc_attr($html_class) . '"' : ''; ?>>
@@ -23,14 +28,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
         <meta property="og:type" content="website">
         <meta property="og:url" content="<?php echo esc_url($url); ?>">
         <meta property="og:site_name" content="<?php bloginfo('name'); ?>">
-        <meta property="og:title" content="<?php echo esc_attr($og_title); ?>">
+        <meta property="og:title" content="<?php echo esc_attr($fluentCommunityOgTitle); ?>">
         <meta property="og:description" content="<?php echo esc_attr($description); ?>">
         <?php if ($featured_image): ?>
             <meta property="og:image" content="<?php echo esc_url($featured_image); ?>">
             <meta name="twitter:image" content="<?php echo esc_url($featured_image); ?>">
         <?php endif; ?>
         <meta name="twitter:card" content="summary">
-        <meta name="theme-color" content="<?php echo esc_attr($theme_color); ?>">
+        <meta name="theme-color" content="<?php echo esc_attr($fluentCommunityThemeColor); ?>">
         <?php do_action('fluent_community/portal_head_meta', $landing_route); ?>
 
         <?php if(!empty($canonical_url)): ?>
@@ -42,19 +47,9 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
     <?php endif; ?>
 
 
-    <script type="text/javascript">
-        (function() {
-            const colorPref = localStorage.getItem('fcom_global_storage');
-            if(colorPref) {
-                const colorPrefObj = JSON.parse(colorPref);
-                if(colorPrefObj && colorPrefObj.colorScheme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    // set data-color-mode attribute for better css handling
-                    document.documentElement.setAttribute('data-color-mode', 'dark');
-                }
-            }
-        })();
-    </script>
+    <?php if (\FluentCommunity\App\Services\Helper::hasColorScheme()): ?>
+        <?php \FluentCommunity\App\Services\Helper::renderColorSchemePrePaintScript(); ?>
+    <?php endif; ?>
 
     <?php if (\FluentCommunity\App\Services\Helper::isRtl()): ?>
         <style>

@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * @var $router FluentCommunity\Framework\Http\Router
+ * @var FluentCommunity\Framework\Http\Router $router
  */
 
 $router->prefix('cart')

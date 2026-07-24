@@ -37,6 +37,7 @@ class Paywalls
         $checkIds = $space->type == 'course' ? 'course_ids' : 'space_ids';
 
         foreach ($communityIntegrations as $integration) {
+            /** @var \FluentCart\App\Models\ProductMeta $integration */
             $data = $integration->meta_value;
             $isEnabled = Arr::get($data, 'enabled', 'no');
             $eventTrigger = Arr::get($data, 'event_trigger');
@@ -99,6 +100,7 @@ class Paywalls
         $checkIds = $space->type == 'course' ? 'course_ids' : 'space_ids';
 
         foreach ($communityIntegrations as $integration) {
+            /** @var \FluentCart\App\Models\ProductMeta $integration */
             $data = $integration->meta_value;
             $isEnabled = Arr::get($data, 'enabled', 'no');
             $eventTrigger = Arr::get($data, 'event_trigger');
@@ -161,11 +163,11 @@ class Paywalls
 
     public function maybeFormatPaywallField($field, $value)
     {
-        if ($value['type'] != 'paywall') {
-            return $value;
+        if (Arr::get($value, 'type') != 'paywall') {
+            return $field;
         }
 
-        $value['paywalls'] = array_values(array_filter(
+        $field['paywalls'] = array_values(array_filter(
             array_map(function($paywall) {
                 return sanitize_text_field($paywall);
             }, $value['paywalls'] ?? []),
@@ -174,8 +176,8 @@ class Paywalls
             }
         ));
 
-        $value['show_description'] = Arr::get($value, 'show_description') == 'yes' ? 'yes' : 'no';
+        $field['show_description'] = Arr::get($value, 'show_description') == 'yes' ? 'yes' : 'no';
 
-        return $value;
+        return $field;
     }
 }

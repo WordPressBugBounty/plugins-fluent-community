@@ -2,6 +2,17 @@
 
 namespace FluentCommunity\App\Services\Libs;
 
+/**
+ * @method string getDir()
+ * @method mixed get(string $file)
+ * @method string getAbsolutePathOfFile(string $file)
+ * @method array uploadFromRequest()
+ * @method array put(array $files)
+ * @method void delete(array|string $files)
+ * @method void overrideUploadDir()
+ * @method array setCustomUploadDir(array $param)
+ * @method array renameFileName(array $file)
+ */
 class FileSystem
 {
     /**

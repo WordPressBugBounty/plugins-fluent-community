@@ -204,7 +204,7 @@ class PortalSettingsHandler
             'permalink_structure' => get_option('permalink_structure'),
             'is_slug_defined'     => defined('FLUENT_COMMUNITY_PORTAL_SLUG'),
             'has_pro'             => defined('FLUENT_COMMUNITY_PRO_VERSION'),
-            'upgrade_url'         => Utility::getProductUrl(false),
+            'upgrade_url'         => Utility::getProUpgradeUrl('upgrade_page'),
             'settings_page_url'   => admin_url('admin.php?page=fluent-community'),
             'is_license_page'     => isset($_GET['license']) && $_GET['license'] === 'yes', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             'license_url_page'    => defined('FLUENT_COMMUNITY_PRO_VERSION') ? admin_url('admin.php?page=fluent-community&license=yes') : '',

@@ -43,14 +43,19 @@ class MediaController extends Controller
 		    ]);
 	    }
 		
-        $allowedVideoTypes = apply_filters('fluent_community/support_video_types', [
-            'video/mp4',
-            'video/m3u8',
-			'video/mpd',
-            'video/webm',
-            'video/mov',
-            'video/quicktime'
-        ]);
+        $hasAudioUpload = Arr::get($fluentPlayerSettings, 'enable_audio') === 'yes';
+        $mediaKind = $request->getSafe('media_kind', 'sanitize_text_field', '');
+        if (!in_array($mediaKind, ['video', 'audio'], true)) {
+            $mediaKind = null;
+        }
+
+        if ($mediaKind === 'audio' && !$hasAudioUpload) {
+            return $this->sendError([
+                'message' => __('Uploading audio files is not allowed', 'fluent-community')
+            ]);
+        }
+
+        $allowedMediaTypes = Bootstrap::getAllowedMediaTypes($fluentPlayerSettings, $mediaKind);
         $maxFileUnit = apply_filters('fluent_community/video_upload_max_file_unit', 'MB');
         $maxFileSize = apply_filters('fluent_community/video_upload_max_file_size', 300);
         $allowedFileSize = $maxFileSize;
@@ -60,12 +65,12 @@ class MediaController extends Controller
             $allowedFileSize = $maxFileSize * 1024 * 1024;
         }
 
-        $allowedTypesString = implode(',', $allowedVideoTypes);
+        $allowedTypesString = implode(',', $allowedMediaTypes);
 
         $files = $this->validate($request->files(), [
             'file' => 'mimetypes:' . $allowedTypesString . '|max:' . $allowedFileSize,
         ], [
-            'file.mimetypes' => __('The file must be a valid video type (MP4, M3U8, MPD, WebM, MOV).', 'fluent-community'),
+            'file.mimetypes' => $this->getMimeTypeErrorMessage($mediaKind, $hasAudioUpload),
             /* translators: %1$s is the maximum file size value, %2$s is the size unit (KB, MB, etc.) */
             'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
         ]);
@@ -86,8 +91,9 @@ class MediaController extends Controller
             'media_path' => $file['path'],
             'media_url'  => $file['url'],
             'settings'   => [
-                'src'  => $file['url'],
-                'title' => $file['original_name']
+                'src'      => $file['url'],
+                'title'    => $file['original_name'],
+                'viewType' => $this->resolveViewType($file, $mediaKind)
             ]
         ];
 
@@ -124,6 +130,100 @@ class MediaController extends Controller
                 'html'      => ''
             ]
         ];
+    }
+
+    /**
+     * Whether the current user may edit an audio media's metadata.
+     * Owner (upload sets user_id) or a moderator/site admin.
+     */
+    public function canEditAudioMedia($media)
+    {
+        if (!$media) {
+            return false;
+        }
+        // Read user_id via the model accessor. A (array) cast of a WPFluent model exposes
+        // the protected $attributes under a mangled key, not a flat user_id.
+        if ((int) $media->user_id === (int) get_current_user_id()) {
+            return true;
+        }
+        return Helper::isModerator() || Helper::isSiteAdmin();
+    }
+
+    /**
+     * Update an audio media's display title and poster thumbnail from the composer.
+     */
+    public function updateAudioMeta(Request $request)
+    {
+        $media = Media::find(intval($request->get('media_id')));
+        if (!$media || !$this->canEditAudioMedia($media)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to edit this audio', 'fluent-community'),
+            ], 403);
+        }
+
+        // Only fluent-player audio media may be edited through this endpoint.
+        if ($media->media_type !== 'fluent_player' || !$this->isAudioMedia((array) $media->settings)) {
+            return $this->sendError([
+                'message' => __('This media is not an editable audio', 'fluent-community'),
+            ], 422);
+        }
+
+        $settings = (array) $media->settings;
+        $title = $request->getSafe('title', 'sanitize_text_field', '');
+        $posterSrc = $request->getSafe('posterSrc', 'sanitize_url', '');
+
+        if ($title !== '') {
+            $settings['title'] = $title;
+        }
+        if ($posterSrc !== '') {
+            $settings['posterSrc'] = $posterSrc;
+            // poster_is_custom gates whether the render path shows the custom thumbnail
+            // (see show_poster in generateFluentPlayerHtml).
+            $settings['poster_is_custom'] = true;
+        } else {
+            $settings['posterSrc'] = '';
+            $settings['poster_is_custom'] = false;
+        }
+
+        $media->settings = $settings;
+        $media->save();
+
+        return [
+            'media' => [
+                'media_id' => $media->id,
+                'settings' => $media->settings,
+            ],
+        ];
+    }
+
+    private function resolveViewType($file, $mediaKind)
+    {
+        $audioExtensions = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac'];
+        $name = Arr::get($file, 'original_name', Arr::get($file, 'url', ''));
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        if (in_array($extension, $audioExtensions, true)) {
+            return 'audio';
+        }
+
+        if ($extension) {
+            return 'video';
+        }
+
+        return $mediaKind === 'audio' ? 'audio' : 'video';
+    }
+
+    private function getMimeTypeErrorMessage($mediaKind, $hasAudioUpload)
+    {
+        if ($mediaKind === 'audio') {
+            return __('The file must be a valid audio (MP3, WAV, M4A, AAC, OGG, FLAC) type.', 'fluent-community');
+        }
+
+        if ($mediaKind === 'video' || !$hasAudioUpload) {
+            return __('The file must be a valid video (MP4, WebM, MOV) type.', 'fluent-community');
+        }
+
+        return __('The file must be a valid video (MP4, WebM, MOV) or audio (MP3, WAV, M4A, AAC, OGG, FLAC) type.', 'fluent-community');
     }
 
     public function getFluentPlayerContent(Request $request)
@@ -181,6 +281,21 @@ class MediaController extends Controller
         }
 
         $mediaSettings = wp_parse_args($mediaSettings, $this->getFluentplayerDefaultsSettings());
+
+        if ($this->isAudioMedia($mediaSettings)) {
+            // Only show a thumbnail block when the author uploaded one; otherwise render a
+            // clean player with no poster (per design). poster_is_custom is set by the
+            // audio edit modal / updateAudioMeta.
+            $hasCustomPoster = Arr::get($mediaSettings, 'posterSrc', '') !== ''
+                && filter_var(Arr::get($mediaSettings, 'poster_is_custom'), FILTER_VALIDATE_BOOLEAN);
+            $mediaSettings['show_poster'] = $hasCustomPoster;
+            // Show the inline "1x" speed control instead of the settings gear menu.
+            if (!isset($mediaSettings['controls']) || !is_array($mediaSettings['controls'])) {
+                $mediaSettings['controls'] = [];
+            }
+            $mediaSettings['controls']['settings'] = false;
+        }
+
         $formattedMedia['settings'] = $mediaSettings;
         $formattedMedia['deep_link_ref'] = $playerKey;
 
@@ -208,18 +323,28 @@ class MediaController extends Controller
         ];
     }
 
+    private function isAudioMedia($settings)
+    {
+        if (class_exists('\FluentPlayer\App\Helpers\Helper')
+            && method_exists('\FluentPlayer\App\Helpers\Helper', 'isAudioSource')) {
+            return \FluentPlayer\App\Helpers\Helper::isAudioSource($settings);
+        }
+        return Arr::get($settings, 'viewType') === 'audio';
+    }
+
     private function generateFluentPlayerCustomStyle($instanceId, $settings)
     {
         $customCss = '';
-        $playerWidth = Arr::get($settings, 'playerWidth');
-        if ($playerWidth) {
+        $isAudio = $this->isAudioMedia($settings);
+        $playerWidth = intval(Arr::get($settings, 'playerWidth'));
+        if ($playerWidth > 0) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " .fluent-player-container {
-                    width: " . esc_attr($playerWidth) . 'px' . ";
+                    width: " . $playerWidth . 'px' . ";
                 }
             ";
         }
-        $brandingColor = Arr::get($settings, 'brandColor', '');
+        $brandingColor = Bootstrap::sanitizeColor(Arr::get($settings, 'brandColor', ''));
         if ($brandingColor) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
@@ -227,8 +352,7 @@ class MediaController extends Controller
                 }
             ";
         }
-        $brandingColor = Arr::get($settings, 'brandColor', '');
-        $controlBarColor = Arr::get($settings, 'controlBarColor', '');
+        $controlBarColor = Bootstrap::sanitizeColor(Arr::get($settings, 'controlBarColor', ''));
         if ($brandingColor || $controlBarColor) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {";
@@ -255,8 +379,172 @@ class MediaController extends Controller
             ";
         }
 
+        if ($isAudio) {
+            // Audio follows the FluentCommunity color schema (Utility::getColorSchemas()).
+            // The player renders inside the portal DOM and inherits the --fcom-* CSS vars that
+            // generateCss() emits on body (and html.dark body), so theme/skin/dark changes recolor
+            // audio live with no re-save. The stock "modern" audio skin is built for a dark
+            // background (white title, translucent-white controls, brand-colored bar); we override
+            // those to a flat, theme-surface card. Play circle + progress fill use the auto-
+            // inverting primary_text/primary_bg pair so the same rules match a light card
+            // (dark on light) and a dark card (light on dark) without per-theme branching.
+            $playerId = '#fluent_player_' . esc_attr($instanceId);
+            $customCss .= "
+                {$playerId} {
+                    --media-brand: var(--fcom-primary-text, #19283a);
+                    --fp-control-bar-bg: transparent;
+                }
+                {$playerId} .fp-audio-layout {
+                    background-color: var(--fcom-secondary-content-bg, var(--fcom-active-bg, #f0f2f5));
+                    border-radius: 12px;
+                }
+                {$playerId} .fp-audio-main-controls {
+                    background: transparent;
+                }
+                {$playerId} .fp-audio-title {
+                    color: var(--fcom-primary-text, #19283a);
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                {$playerId} .fp-audio-subtitle {
+                    color: var(--fcom-primary-text, #19283a);
+                }
+                {$playerId} media-play-button {
+                    background: var(--fcom-primary-text, #19283a);
+                }
+                {$playerId} media-play-button media-icon {
+                    color: var(--fcom-primary-bg, #ffffff);
+                }
+                {$playerId} media-seek-button {
+                    background: transparent;
+                }
+                {$playerId} media-time-slider .fp-media-slider-track {
+                    background: var(--fcom-secondary-border, #9CA3AF);
+                    background: color-mix(in srgb, var(--fcom-primary-text, #19283a) 20%, transparent);
+                }
+                {$playerId} media-time-slider .fp-media-slider-track-fill {
+                    background: var(--fcom-primary-text, #19283a);
+                }
+                {$playerId} .fp-seek-backward-10,
+                {$playerId} .fp-seek-forward-10,
+                {$playerId} .fp-media-mute-icon,
+                {$playerId} .fp-media-volume-low-icon,
+                {$playerId} .fp-media-volume-high-icon,
+                {$playerId} media-seek-button media-icon,
+                {$playerId} media-icon[type=\"odometer\"],
+                {$playerId} media-icon[type=\"settings\"] {
+                    color: var(--fcom-secondary-text, #525866);
+                }
+                {$playerId} .fp-media-time-group,
+                {$playerId} .fp-media-time-group media-time,
+                {$playerId} .fp-media-time-divider {
+                    color: var(--fcom-primary-text, #19283a);
+                }
+            ";
+
+            // Exact layout: large play circle on the left (spanning title + controls),
+            // a single control row (seek / seek / volume / speed / time) and a full-width
+            // progress bar at the bottom. The volume slider is hidden until hover.
+            $customCss .= "
+                {$playerId} .fp-audio-layout {
+                    position: relative;
+                    padding: 22px 24px 14px;
+                }
+                {$playerId} .fp-audio-layout .fp-audio-content {
+                    padding: 0 0 0 82px;
+                    gap: 6px;
+                    width: 100%;
+                }
+                {$playerId} .fp-audio-header {
+                    padding-left: 8px;
+                }
+                {$playerId} media-play-button {
+                    position: absolute;
+                    left: 22px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 64px;
+                    height: 64px;
+                    min-width: 64px;
+                }
+                {$playerId} .fp-audio-main-controls {
+                    display: grid;
+                    grid-template-columns: max-content max-content max-content max-content 1fr max-content;
+                    grid-template-areas: \"sb sf vol spd play time\" \"pr pr pr pr pr pr\";
+                    align-items: center;
+                    column-gap: 0;
+                    row-gap: 6px;
+                    padding: 0;
+                    width: 100%;
+                }
+                {$playerId} .fp-audio-main-controls media-tooltip:nth-of-type(1) { grid-area: sb; margin: 0; }
+                {$playerId} .fp-audio-main-controls media-tooltip:nth-of-type(2) { grid-area: play; }
+                {$playerId} .fp-audio-main-controls media-tooltip:nth-of-type(3) { grid-area: sf; margin: 0; }
+                {$playerId} media-seek-button,
+                {$playerId} .fp-audio-volume-group media-mute-button {
+                    width: 32px;
+                    height: 32px;
+                    min-width: 32px;
+                }
+                {$playerId} .fp-audio-secondary-controls media-menu-button { min-width: 32px; padding: 0 6px; }
+                {$playerId} .fp-audio-volume-group { grid-area: vol; margin: 0; overflow: visible; }
+                {$playerId} .fp-audio-secondary-controls { grid-area: spd; margin: 0; }
+                {$playerId} .fp-media-time-group { grid-area: time; margin: 0; justify-self: end; }
+                {$playerId} media-player[data-view-type=\"audio\"] media-time-slider,
+                {$playerId} media-time-slider { grid-area: pr; margin: 8px; }
+                {$playerId} media-seek-button:hover,
+                {$playerId} .fp-audio-volume-group media-mute-button:hover,
+                {$playerId} .fp-audio-secondary-controls media-menu-button:hover {
+                    background: transparent;
+                }
+                {$playerId} .fp-audio-volume-group media-volume-slider {
+                    width: 0;
+                    max-width: 0;
+                    min-width: 0;
+                    opacity: 0;
+                    overflow: hidden;
+                    margin: 0;
+                    transition: width .2s ease, opacity .2s ease, margin .2s ease;
+                }
+                {$playerId} .fp-audio-volume-group:hover media-volume-slider,
+                {$playerId} .fp-audio-volume-group:focus-within media-volume-slider {
+                    width: 80px;
+                    max-width: 80px;
+                    opacity: 1;
+                    margin-left: 6px;
+                }
+                {$playerId} .fp-speed-menu .fcom_speed_label {
+                    font-weight: 600;
+                    font-size: 15px;
+                    line-height: 1;
+                    color: var(--fcom-primary-text, #19283a);
+                }
+            ";
+
+            // When a custom thumbnail is set, lay the card out as poster -> play -> content
+            // (matching the reference). The poster sits on the left, the play circle after it.
+            $customCss .= "
+                {$playerId} .fp-audio-layout:not(.fp-audio-no-poster) {
+                    gap: 16px;
+                    padding-left: 16px;
+                }
+                {$playerId} .fp-audio-layout:not(.fp-audio-no-poster) .fp-audio-poster {
+                    width: 96px;
+                    height: 96px;
+                    min-width: 96px;
+                    border-radius: 12px;
+                }
+                {$playerId} .fp-audio-layout:not(.fp-audio-no-poster) media-play-button {
+                    left: 128px;
+                }
+                {$playerId} .fp-audio-layout:not(.fp-audio-no-poster) .fp-audio-content {
+                    padding-left: 82px;
+                }
+            ";
+        }
+
         $aspectRatio = Arr::get($settings, 'aspectRatio');
-        if ($aspectRatio && $aspectRatio != 'original') {
+        if ($aspectRatio && $aspectRatio != 'original' && preg_match('/^\d+:\d+$/', $aspectRatio)) {
             $cssAspectRatio = preg_replace('/^(\d+):(\d+)$/', '$1/$2', $aspectRatio);
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
@@ -266,7 +554,7 @@ class MediaController extends Controller
                     aspect-ratio: " . esc_attr($cssAspectRatio) . ";
                 }
             ";
-        } else {
+        } else if (!$isAudio) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
                     max-width: 100%;

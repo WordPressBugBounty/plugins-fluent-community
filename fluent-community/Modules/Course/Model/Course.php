@@ -20,6 +20,17 @@ use FluentCommunity\App\Models\XProfile;
  * @package FluentCrm\App\Models
  *
  * @version 1.1.0
+ *
+ * @property bool|null   $is_course_admin
+ * @property bool|null   $can_self_enroll
+ * @property int|null    $students_count
+ * @property string|null $course_type
+ * @property mixed       $lockscreen
+ * @property mixed       $category_ids
+ * @property int|null    $completed_students
+ * @property float|null  $overAllProgress
+ * @property-read mixed  $categories
+ * @property-read mixed  $creator
  */
 class Course extends BaseSpace
 {
@@ -106,7 +117,7 @@ class Course extends BaseSpace
     {
         return $this->belongsToMany(User::class, 'fcom_space_user', 'space_id', 'user_id')
             ->wherePivot('role', 'student')
-            ->withPivot(['role', 'created_at', 'status']);
+            ->withPivot([ 'role', 'created_at', 'status' ]);
     }
 
     public function course_topics()
@@ -137,7 +148,7 @@ class Course extends BaseSpace
     {
         $courseType = Arr::get($this->settings, 'course_type', 'self_paced'); // possible values: self_paced | scheduled | structured
 
-        $validTypes = ['self_paced', 'scheduled', 'structured'];
+        $validTypes = [ 'self_paced', 'scheduled', 'structured' ];
 
         if (!in_array($courseType, $validTypes)) {
             return 'self_paced';

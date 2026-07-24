@@ -12,6 +12,12 @@ use FluentCommunity\App\Functions\Utility;
  * @package FluentCommunity\App\Models
  *
  * @version 1.0.0
+ *
+ * @property int         $id
+ * @property string|null $object_type
+ * @property int|null    $object_id
+ * @property string|null $meta_key
+ * @property mixed       $value
  */
 class Meta extends Model
 {

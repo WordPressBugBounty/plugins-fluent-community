@@ -7,17 +7,9 @@ class Emogrifier
 {
     private $html = '';
 
-    private $disableInvisibleNode = false;
-
     public function __construct($html)
     {
         $this->html = (string) $html;
-    }
-
-    public function disableInvisibleNodeRemoval()
-    {
-        $this->disableInvisibleNode = true;
-        return $this;
     }
 
     public function emogrify()

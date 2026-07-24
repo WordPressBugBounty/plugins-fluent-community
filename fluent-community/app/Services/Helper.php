@@ -151,6 +151,79 @@ class Helper
         return apply_filters('fluent_community/has_color_scheme', $status);
     }
 
+    /**
+     * Admin default theme mode: 'light', 'dark', or 'system'.
+     */
+    public static function getDefaultThemeMode()
+    {
+        $settings = Utility::getCustomizationSettings();
+        $mode = isset($settings['default_theme_mode']) ? $settings['default_theme_mode'] : 'light';
+
+        if (!in_array($mode, ['light', 'dark', 'system'], true)) {
+            $mode = 'light';
+        }
+
+        return apply_filters('fluent_community/default_theme_mode', $mode);
+    }
+
+    /**
+     * Pre-paint script that sets the theme before first render (no flash).
+     * Precedence mirrors runtime: host-theme cookie → user pick → admin default.
+     * Not persisted. Gate on hasColorScheme().
+     */
+    public static function renderColorSchemePrePaintScript()
+    {
+        $defaultMode = self::getDefaultThemeMode();
+        $portalVars = apply_filters('fluent_community/general_portal_vars', ['color_switch_cookie_name' => '']);
+        $cookieName = isset($portalVars['color_switch_cookie_name']) ? $portalVars['color_switch_cookie_name'] : '';
+        ?>
+        <script>
+            (function () {
+                var root = document.documentElement;
+                var cookieName = '<?php echo esc_js($cookieName); ?>';
+                var mode = null;
+
+                // host-theme integration cookie (Blocksy/Kadence) wins when present
+                if (cookieName) {
+                    var safeName = cookieName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    var match = document.cookie.match('(?:^|; )' + safeName + '=([^;]*)');
+                    if (match) {
+                        var cookieMode = decodeURIComponent(match[1]);
+                        if (cookieMode === 'dark' || cookieMode === 'light') {
+                            mode = cookieMode;
+                        }
+                    }
+                }
+
+                // explicit user pick
+                if (!mode) {
+                    try {
+                        var stored = JSON.parse(localStorage.getItem('fcom_global_storage') || '{}').fcom_color_mode;
+                        if (stored === 'dark' || stored === 'light') {
+                            mode = stored;
+                        }
+                    } catch (error) {}
+                }
+
+                // admin default
+                if (!mode) {
+                    var defaultMode = '<?php echo esc_js($defaultMode); ?>';
+                    if (defaultMode === 'system') {
+                        mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    } else {
+                        mode = defaultMode;
+                    }
+                }
+
+                root.setAttribute('data-color-mode', mode === 'dark' ? 'dark' : 'light');
+                if (mode === 'dark') {
+                    root.classList.add('dark');
+                }
+            })();
+        </script>
+        <?php
+    }
+
     public static function isSuperAdmin($userId = null)
     {
         $capability = apply_filters('fluent_community/super_admin_capability', 'manage_options');
@@ -558,14 +631,12 @@ class Helper
             return false;
         }
 
-        static $user;
-        if ($user && $cached) {
-            return $user;
+        static $users = [];
+        if ($cached && isset($users[$userId])) {
+            return $users[$userId];
         }
 
-        $user = User::find($userId);
-
-        return $user;
+        return $users[$userId] = User::find($userId);
     }
 
     /**
@@ -799,13 +870,17 @@ class Helper
             $validSpaces = [];
             $spaces = $communityGroup->spaces;
             $isShowAll = Arr::get($communityGroup->settings, 'always_show_spaces') === 'yes';
-            
+
             if (!$isShowAll && !$isSpaceModerator) {
                 $spaceIds = $spaces->pluck('id')->toArray();
                 $isNotMemberOfAnySpace = empty(array_intersect($spaceIds, $userSpaceIds));
                 if ($isNotMemberOfAnySpace) {
                     continue;
                 }
+            }
+
+            if ($user) {
+                BaseSpace::preloadMemberships($spaces, $user->ID);
             }
 
             foreach ($spaces as $space) {
@@ -1248,7 +1323,7 @@ class Helper
 
     public static function isLinkAccessible($link, $currentUser = null)
     {
-        $isEnabled = Arr::get($link, 'enabled') === 'yes';
+        $isEnabled = Arr::get($link, 'enabled', 'yes') === 'yes';
         $isUnavailable = Arr::get($link, 'is_unavailable') === 'yes';
 
         if (!$isEnabled || $isUnavailable) {
@@ -1278,12 +1353,14 @@ class Helper
             return false;
         }
 
-        static $userSpacesIds = null;
-        if ($userSpacesIds === null) {
-            $userSpacesIds = $currentUser->getJoinedSpaceIds();
+        static $userSpacesIds = [];
+        if (!isset($userSpacesIds[$currentUser->ID])) {
+            $userSpacesIds[$currentUser->ID] = $currentUser->getJoinedSpaceIds();
         }
 
-        return $userSpacesIds && !!array_intersect($userSpacesIds, $membershipIds);
+        $ids = $userSpacesIds[$currentUser->ID];
+
+        return $ids && !!array_intersect($ids, $membershipIds);
     }
 
     /**
@@ -1487,20 +1564,31 @@ class Helper
     {
         $xprofile = Helper::getCurrentProfile();
 
-        $mobileMenuItems = [
-            [
-                'route'    => [
-                    'name' => 'all_feeds'
-                ],
-                'icon_svg' => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"></path><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"></path><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>'
-            ],
-            [
-                'route'    => [
-                    'name' => 'spaces'
-                ],
-                'icon_svg' => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>'
-            ]
+        $mainMenuItems = Arr::get(self::getMenuItemsGroup('view'), 'mainMenuItems', []);
+
+        $defaultMobileIcons = [
+            'all_feeds' => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"></path><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"></path><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>',
+            'spaces'    => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>'
         ];
+
+        $mobileMenuItems = [];
+
+        foreach ($defaultMobileIcons as $slug => $defaultIcon) {
+            $menuItem = Arr::get($mainMenuItems, $slug);
+            if (!$menuItem) {
+                continue;
+            }
+
+            $iconSvg = Arr::get($menuItem, 'shape_svg');
+
+            $mobileMenuItems[] = [
+                'route'    => [
+                    'name' => $slug
+                ],
+                'title'    => Arr::get($menuItem, 'title'),
+                'icon_svg' => $iconSvg ? CustomSanitizer::sanitizeSvg($iconSvg) : $defaultIcon
+            ];
+        }
 
         if ($xprofile) {
             $mobileMenuItems[] = [
@@ -1510,11 +1598,13 @@ class Helper
                         'username' => $xprofile->username
                     ]
                 ],
+                'title'    => __('Profile', 'fluent-community'),
                 'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
             ];
         } else if (!get_current_user_id()) {
             $mobileMenuItems[] = [
                 'name'      => 'login',
+                'title'     => __('Login', 'fluent-community'),
                 'permalink' => Helper::getAuthUrl(),
                 'icon_svg'  => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
             ];
@@ -1594,7 +1684,7 @@ class Helper
     /**
      * Add a user to a space.
      *
-     * @param Space | int $space space to add the user to.
+     * @param BaseSpace|int $space space to add the user to.
      * @param int $userId The ID of the user to add.
      * @param string $role The role of the user in the space.
      * @param string $by The source of the action.
@@ -2233,10 +2323,10 @@ class Helper
 
             // Check if the character is escaped
             if ($char === "\\") {
-                // Add the next character to the result as is, without mapping
+                // Day.js escapes literal text with square brackets, not backslashes
                 $i++;
                 if ($i < strlen($phpFormat)) {
-                    $dayjsFormat .= "\\" . $phpFormat[$i];
+                    $dayjsFormat .= "[" . $phpFormat[$i] . "]";
                 }
                 continue;
             }

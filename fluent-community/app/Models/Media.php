@@ -15,6 +15,23 @@ use FluentCommunity\Framework\Support\Arr;
  * @package FluentCommunity\App\Models
  *
  * @version 1.0.0
+ *
+ * @property int          $id
+ * @property string       $object_source
+ * @property int|null     $user_id
+ * @property string       $media_key
+ * @property int|null     $feed_id
+ * @property int          $is_active
+ * @property int|null     $sub_object_id
+ * @property string|null  $media_type
+ * @property string|null  $driver
+ * @property string|null  $media_path
+ * @property string|null  $media_url
+ * @property array        $settings
+ * @property string|null  $created_at
+ * @property string|null  $updated_at
+ * @property-read string  $public_url
+ * @property string|null  $share_url
  */
 class Media extends Model
 {
@@ -22,9 +39,9 @@ class Media extends Model
 
     protected $primaryKey = 'id';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
-    protected $appends = ['public_url'];
+    protected $appends = [ 'public_url' ];
 
     protected $fillable = [
         'object_source',
@@ -37,7 +54,7 @@ class Media extends Model
         'driver',
         'media_path',
         'media_url',
-        'settings'
+        'settings',
     ];
 
     public static function boot()
@@ -49,7 +66,7 @@ class Media extends Model
                 $model->user_id = get_current_user_id();
             }
 
-            $model->media_key = $model->media_key ?: md5($model->media_url . '_' . time());
+            $model->media_key = $model->media_key ? $model->media_key : md5($model->media_url . '_' . time());
         });
 
         static::deleting(function ($media) {
@@ -156,7 +173,7 @@ class Media extends Model
             'url'       => $this->getPrivateDownloadUrl(),
             'media_key' => $this->media_key,
             'title'     => $this->getFileTitle(),
-            'type'      => $this->media_type
+            'type'      => $this->media_type,
         ];
     }
 }

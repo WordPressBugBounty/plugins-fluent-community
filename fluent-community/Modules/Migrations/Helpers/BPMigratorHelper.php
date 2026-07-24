@@ -393,6 +393,7 @@ class BPMigratorHelper
         $xprofile = $user->xprofile;
         // Let's sync the cover photo and avatar
         if (!$xprofile->hasCustomAvatar()) {
+            /** @phpstan-ignore argument.type (BuddyPress overrides get_avatar_url with different signature; WP stub doesn't match BP variant) */
             $avatar = get_avatar_url($user->ID, 'full', true);
 
             $coverPhoto = bp_attachments_get_attachment(

@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.7.0
+Stable tag: 2.7.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,11 +34,14 @@ Here’s the complete list of social networking features available in FluentComm
 * User-friendly Dashboards
 * Unlimited Spaces
 * User Profiles
+* Custom Profile Fields
 * Activity Feeds
 * Manage Topics
 * Posts
+* Post Scheduling
 * Comments/Reactions
 * Real-time Chats
+* Follow Members
 * Notifications
 * Privacy
 * Mentions
@@ -46,6 +49,8 @@ Here’s the complete list of social networking features available in FluentComm
 * Polls & Surveys
 * Leaderboard
 * Bookmarks
+* Content Moderation
+* Reporting & Analytics
 * Branding Customizations
 * Custom Sidebar Link
 * Welcome Message
@@ -53,6 +58,9 @@ Here’s the complete list of social networking features available in FluentComm
 * Search
 * Directory
 * File Upload
+* Media Gallery
+* Video Uploads (FluentPlayer)
+* Audio Uploads
 * GIF
 * Emoji
 * Media Storage
@@ -60,6 +68,7 @@ Here’s the complete list of social networking features available in FluentComm
 * User Approval
 * Email Digest
 * Dark/Light Mode
+* BuddyBoss/BuddyPress Migration
 
 
 ==Super Fast & Efficient Community Management==
@@ -86,15 +95,31 @@ Enable instant, private conversations between members with built-in chat functio
 ==Comments/Reactions==
 Boost community engagement by allowing members to comment on and react to posts and updates. This fosters dynamic interactions, encourages discussions, and strengthens connections within your community.
 
+==Follow Members==
+Let members follow each other to stay connected and never miss an update. Followers see new posts and activity from the people they care about, building tighter relationships and a more engaged community.
+
+==Media Gallery==
+Give every Space a rich media gallery for images, video, and audio. Members browse, share, and revisit community media in one organized place, keeping content discoverable long after it scrolls off the feed.
+
+==Content Moderation==
+Keep your community safe with built-in moderation tools—profanity filtering, auto-flag thresholds, first-comment approval, and a review queue. Empower moderators to act fast and keep conversations healthy.
+
 ==Powerful LMS Features of FluentCommunity==
 Here’s the complete list of LMS features available in FluentCommunity:
 
 * Setup Wizard
 * Course Editor (Gutenberg)
+* Quiz Module
 * Lesson Discussion
 * Progress Tracking
 * Drip Content
 * Embed Content
+* Sequential Lesson Lock
+* Course Welcome Banners
+* Course Monetization (FluentCart)
+* Video Lessons (FluentPlayer)
+* Details & LaTeX Blocks
+* Free Lesson Preview
 * Course Status
 * Enrollment Type
 * Lock Screen
@@ -112,7 +137,7 @@ Here’s the complete list of LMS features available in FluentCommunity:
 * Dark/Light Mode
 
 
-==Create Courses & Build Community Around Your Courses Efforlessly==
+==Create Courses & Build Community Around Your Courses Effortlessly==
 FluentCommunity features a powerful built-in Learning Management System (LMS) that eliminates the hassle of managing courses and communities on separate platforms. With FluentCommunity, you can effortlessly create and manage courses while fostering dedicated communities around them—all within a single, seamless solution.
 
 ==Powerful Course Builder==
@@ -131,6 +156,15 @@ Efficiently manage student enrollments, privacy settings, progress, and performa
 ==Progress Tracking==
 Monitor student progress with real-time tracking, providing both instructors and learners with clear insights into achievements and areas for improvement. Enable timely feedback and personalized guidance to ensure learners stay on track and make continuous progress toward their goals.
 
+==Quizzes & Assessments==
+Reinforce learning with built-in quizzes. Create graded assessments per lesson, track results, and export them, giving instructors clear insight into learner understanding and helping students measure their own progress.
+
+==Monetize Your Courses & Spaces==
+Turn your community into a business with native FluentCart monetization. Sell courses and Spaces with multiple pricing plans, paywalls, and seamless checkout, all without any third-party tools.
+
+==Sequential Lessons & Drip Content==
+Guide learners step by step with sequential lesson unlocking and scheduled drip content, so students progress in the right order and stay focused on what matters now.
+
 
 ==Features Available in the Pro Version==
 
@@ -138,10 +172,17 @@ Monitor student progress with real-time tracking, providing both instructors and
 * Leaderboards
 * User Badges
 * Verification Sign
+* Webhooks
+* Media Gallery
+* Follow / Following
+* SEO & XML Sitemap
+* Quiz Module
+* Sequential Lesson Lock
+* Document Library (Secure Documents)
+* Cloud Storage (S3 / BunnyCDN / R2)
 * Giphy Module
 * Emoji Module
 * Manage Topic
-* Media Module
 * Welcome Screen
 * Automation Actions
 
@@ -149,7 +190,7 @@ Monitor student progress with real-time tracking, providing both instructors and
 FluentCommunity is a versatile community platform designed for businesses of all kinds. Whether you're building a learning hub, fostering collaboration, or engaging with customers, FluentCommunity provides the tools to create and manage a dynamic community that meets your unique business needs. Let us help you build the perfect space to grow, connect, and thrive. Here’s how FluentCommunity can empower businesses:
 
 ==Community for Education==
-With FleuntCommunity, you can create a safe, collaborative space where students can learn, engage, and grow together. With tools for course management, peer interaction, and real-time feedback, FluentCommunity fosters a dynamic educational environment that supports both students and educators in achieving success.
+With FluentCommunity, you can create a safe, collaborative space where students can learn, engage, and grow together. With tools for course management, peer interaction, and real-time feedback, FluentCommunity fosters a dynamic educational environment that supports both students and educators in achieving success.
 
 ==Community for Nonprofits==
 Build a thriving community around the causes that matter most to you, and drive meaningful change. FluentCommunity empowers nonprofits to connect supporters, share updates, and collaborate on initiatives, creating a powerful space for advocacy, awareness, and impact.
@@ -249,6 +290,43 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.7.5 (Date: Jul 24, 2026) =
+- Introduced: Audio Uploads and Audio Media Gallery
+- Added: Details and LaTeX (Math) Blocks in Lesson Editor
+- Added: Password Change Option on Profile Edit
+- Added: Default Theme Mode Customization
+- Added: Rename Documents in Space Documents Section
+- Added: Open Profile Comments in Feed Modal
+- Added: Message Field Support in Lesson PATCH Endpoint
+- Improved: Activity Feed and Ticker Query Performance
+- Improved: New Posts Notification Preferences as a Table
+- Improved: Sidebar Membership Preloading and Per-User Permission Caching
+- Improved: Database Indexes on Notifications, Comments and Space Members
+- Improved: Space Feature Access Nested Under Toggles
+- Improved: Primary Menu Default Items Support Visibility Controls
+- Improved: Best-Quality WebP Thumbnails for YouTube Feed Previews
+- Improved: Cached Sitemap Index and Moderator Recipient Lists
+- Security: Access Control on Comments, Lockscreens and Documents
+- Security: Escaping, Input Sanitization and API Key Masking
+- Fixed: Fatal Error on WordPress 6.0 from Unguarded Core Calls
+- Fixed: Mobile Menu and Sidebar Feed Link Ignoring Menu Settings
+- Fixed: Duplicate and Missing Mention Notifications
+- Fixed: Notification Highlight Targeting the Wrong Comment
+- Fixed: Markdown Tables Stripped on Feed Render
+- Fixed: Cross-Space Post View via Space Permalink
+- Fixed: Photos Uploaded Sideways From Unhandled EXIF Orientations
+- Fixed: Moderation Actions for Course and Sticky Posts
+- Fixed: Comment Toolbox Overlapping Delete Dialog
+- Fixed: Space Lock and Unread Badge Visible in Collapsed Sidebar
+- Fixed: Space Sub-Header Overflow With Collapsible Sidebar
+- Fixed: Sidebar Toggle Missing on Fcom Frame Templates
+- Fixed: Empty Space Groups Skipped in FluentCRM Tagging
+- Fixed: Followers and Following Alphabetical Sort
+- Fixed: Corrected Comment Author Profile Links in SEO
+- Fixed: Course Lesson Comment Approval Feed Lookup
+- Fixed: Early Text Domain Translation Loading Notice
+- Fixed: Duplicate Auto-Flag Reports on Content Edit
 
 = 2.7.0 (Date: Jul 8, 2026) =
 - Introduced: Space Media Gallery

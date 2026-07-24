@@ -90,6 +90,7 @@ class CourseController extends Controller
         $user = $this->getUser();
 
         $course = Course::findOrFail($courseId);
+        /** @var Course $course */
 
         $isCourseCreator = $course->isCourseAdmin($user);
 
@@ -111,6 +112,7 @@ class CourseController extends Controller
         $user = $this->getUser();
 
         $course = Course::where('slug', $slug)->firstOrFail();
+        /** @var Course $course */
 
         $isCourseCreator = $course->isCourseAdmin($user);
 
@@ -147,6 +149,7 @@ class CourseController extends Controller
     {
         $user = $this->getUser();
 
+        /** @var Course $course */
         $course = Course::where('slug', $courseSlug)->firstOrFail();
 
         $isCourseCreator = $course->isCourseAdmin($user);
@@ -344,6 +347,7 @@ class CourseController extends Controller
         }
 
         $course = Course::findOrFail($courseId);
+        /** @var Course $course */
 
         $isCourseCreator = $course->isCourseAdmin($user);
 

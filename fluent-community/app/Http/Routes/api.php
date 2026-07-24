@@ -1,7 +1,8 @@
-<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly
+<?php if (!defined('ABSPATH')) { exit; // Exit if accessed directly
+}
 
 /**
- * @var $router FluentCommunity\Framework\Http\Router
+ * @var FluentCommunity\Framework\Http\Router $router
  */
 $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->get('/', 'SpaceController@get');
@@ -72,6 +73,7 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->get('welcome-banner', 'FeedsController@getWelcomeBanner');
 
     $router->get('/{feed_id}/reactions', 'ReactionController@getByFeedId')->int('feed_id');
+    $router->post('/{feed_id}/reactions/toggle', 'ReactionController@addOrRemovePostReact')->int('feed_id');
 
     $router->post('/{feed_id}/apps/survey-vote', 'ReactionController@castSurveyVote')->int('feed_id');
 
@@ -84,6 +86,7 @@ $router->prefix('profile')->withPolicy('PortalPolicy')->group(function ($router)
     $router->get('/{username}', 'ProfileController@getProfile')->alphaNumDash('username');
     $router->post('/{username}', 'ProfileController@updateProfile')->alphaNumDash('username');
     $router->put('/{username}', 'ProfileController@patchProfile')->alphaNumDash('username');
+    $router->post('/{username}/change-password', 'ProfileController@changePassword')->alphaNumDash('username');
     $router->get('/{username}/spaces', 'ProfileController@getSpaces')->alphaNumDash('username');
     $router->get('/{username}/courses', 'ProfileController@getCourses')->alphaNumDash('username');
     $router->get('/{username}/memberships', 'ProfileController@getAllMemberships')->alphaNumDash('username');
@@ -108,8 +111,8 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
 
     $router->get('/auth-settings', 'AdminController@getAuthSettings');
 
-    $router->get('/on-boardings', 'AdminController@getOnboardingSettings');
-    $router->post('/on-boardings', 'AdminController@saveOnboardingSettings');
+    $router->get('/on-boardings', 'AdminController@getOnBoardingSettings');
+    $router->post('/on-boardings', 'AdminController@saveOnBoardingSettings');
     $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
 
     $router->get('/profile-link-providers', 'AdminController@getProfileLinkProviders');

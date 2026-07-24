@@ -10,11 +10,27 @@ use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
+/**
+ * @property int         $id
+ * @property int|null    $user_id
+ * @property int|null    $post_id
+ * @property string|null $message
+ * @property string|null $message_rendered
+ * @property mixed       $meta
+ * @property string|null $type
+ * @property int         $reactions_count
+ * @property string|null $status
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ * @property-read User|null      $user
+ * @property-read XProfile|null  $xprofile
+ * @property-read BaseSpace|null $space
+ */
 class Invitation extends Model
 {
     protected $table = 'fcom_post_comments';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'user_id',
@@ -26,17 +42,17 @@ class Invitation extends Model
         'reactions_count',
         'status',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     protected $searchable = [
-        'message'
+        'message',
     ];
 
     protected $hidden = [
         'parent_id',
         'content_type',
-        'is_sticky'
+        'is_sticky',
     ];
 
     public static function boot()
@@ -97,7 +113,7 @@ class Invitation extends Model
             $spaceRole = $user->getSpaceRole(BaseSpace::findOrFail($spaceId));
             $query->where('post_id', $spaceId);
 
-            if (!in_array($spaceRole, ['admin', 'moderator'])) {
+            if (!in_array($spaceRole, [ 'admin', 'moderator' ])) {
                 $query->where('user_id', $user->ID);
             }
         } elseif (!$user->isCommunityModerator()) {
@@ -129,7 +145,7 @@ class Invitation extends Model
             'post_id'          => Arr::get($data, 'space_id'),
             'message'          => $data['email'],
             'message_rendered' => $data['token'],
-            'meta'             => ['role' => $data['role']],
+            'meta'             => [ 'role' => $data['role'] ],
             'type'             => 'invitation',
             'content_type'     => $data['content_type'],
             'status'           => 'pending',
@@ -147,7 +163,7 @@ class Invitation extends Model
     {
         return add_query_arg([
             'fcom_action'      => 'auth',
-            'invitation_token' => $this->message_rendered
+            'invitation_token' => $this->message_rendered,
         ], Helper::baseUrl('/'));
     }
 

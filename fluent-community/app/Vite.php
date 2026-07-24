@@ -18,14 +18,14 @@ class Vite
     public static function enqueueScript($handle, $src, $dependency = [], $version = false, $inFooter = false)
     {
         static::$moduleScripts [] = $handle;
-        $src = static::generateSrc($src);
+        $src = self::generateSrc($src);
         wp_enqueue_script($handle, $src, $dependency, $version, $inFooter);
-        static::addModuleToScript();
+        self::addModuleToScript();
     }
 
     public static function enqueueStyle($handle, $src, $dependency = [], $version = false, $media = 'all')
     {
-        $src = static::generateSrc($src);
+        $src = self::generateSrc($src);
         wp_enqueue_style($handle, $src, $dependency, $version, $media);
     }
 
@@ -67,8 +67,8 @@ class Vite
 
     private static function generateSrc($src, $isRtl = null)
     {
-        if (!static::isDev()) {
-            $manifest = static::parseManifest();
+        if (!self::isDev()) {
+            $manifest = self::parseManifest();
             $src = 'src/' . $src;
             $mainSrc = isset($manifest[$src]) ? $manifest[$src] : false;
 
@@ -103,13 +103,13 @@ class Vite
 
     public static function getDynamicSrcUrl($src, $isRtl = null)
     {
-        return static::generateSrc($src, $isRtl);
+        return self::generateSrc($src, $isRtl);
     }
 
     public static function getDynamicProductionSrcUrl($src, $isRtl = null)
     {
-        if (!static::isDev()) {
-            return static::generateSrc($src, $isRtl);
+        if (!self::isDev()) {
+            return self::generateSrc($src, $isRtl);
         }
 
         return false;
@@ -117,7 +117,7 @@ class Vite
 
     public static function getAssetsUrl()
     {
-        if (!static::isDev()) {
+        if (!self::isDev()) {
             return static::$assetsURL;
         }
         return static::$resourceURL;

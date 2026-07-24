@@ -234,7 +234,8 @@ class NotificationEventHandler
             return;
         }
 
-        $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
+        // Skip a mentioned author here; notifyMentionedUsers() notifies them instead.
+        $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
         if (in_array($authorId, $mentionedUserIds)) {
             return;
         }
@@ -252,11 +253,10 @@ class NotificationEventHandler
                 })
                 ->first();
 
-            $totalUsers = $feed->comments
+            $totalUsers = Comment::where('post_id', $feed->id)
                 ->where('user_id', '!=', $authorId)
-                ->pluck('user_id')
-                ->unique()
-                ->count();
+                ->distinct()
+                ->count('user_id');
 
             if ($feed->space_id) {
                 if ($totalUsers > 1) {
@@ -369,8 +369,15 @@ class NotificationEventHandler
 
     protected function commentNotificationToFeedCommenters($comment, $feed)
     {
+        $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
+
+        // Notify mentioned users for both top-level comments and replies.
+        if ($mentionedUserIds) {
+            $this->notifyMentionedUsers($comment, $feed, $mentionedUserIds);
+        }
+
         if ($comment->parent_id) {
-            return $this->notifyForChildCommentReply($comment, $feed);
+            return $this->notifyForChildCommentReply($comment, $feed, $mentionedUserIds);
         }
 
         $userIds = Comment::whereNotIn('user_id', [$feed->user_id, $comment->user_id])
@@ -379,8 +386,6 @@ class NotificationEventHandler
             ->distinct()
             ->pluck('user_id')
             ->toArray();
-
-        $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
 
         if (!$userIds && !$mentionedUserIds) {
             return;
@@ -393,11 +398,10 @@ class NotificationEventHandler
         $space = $feed->space;
 
         if ($feed->comments_count > 1) {
-            $totalUsers = $feed->comments
+            $totalUsers = Comment::where('post_id', $feed->id)
                 ->where('user_id', '!=', $comment->user_id)
-                ->pluck('user_id')
-                ->unique()
-                ->count();
+                ->distinct()
+                ->count('user_id');
 
             if ($feed->space_id) {
                 if ($totalUsers > 1) {
@@ -453,33 +457,6 @@ class NotificationEventHandler
                     $feedTitle,
                 );
             }
-        }
-
-        if ($mentionedUserIds) {
-            $mentionNotification = Notification::create([
-                'feed_id'         => $feed->id,
-                'object_id'       => $comment->id,
-                'src_user_id'     => $comment->user_id,
-                'src_object_type' => 'comment',
-                'action'          => 'mention_added',
-                'content'         => \sprintf(
-                /* translators: %1$s is the commenter name & %2$s is the feed title */
-                    __('%1$s mentioned you in a comment at %2$s', 'fluent-community'),
-                    $commenter,
-                    $feedTitle,
-                ),
-                'route'           => $route,
-            ]);
-
-            $mentionNotification->subscribe($mentionedUserIds);
-
-            do_action('fluent_community/notification/comment/notifed_to_mentions', [
-                'user_ids'     => $mentionedUserIds,
-                'notification' => $mentionNotification,
-                'key'          => 'notifed_to_mentions',
-                'comment'      => $comment,
-                'feed'         => $feed
-            ]);
         }
 
         if ($mentionedUserIds) {
@@ -550,7 +527,44 @@ class NotificationEventHandler
         ]);
     }
 
-    protected function notifyForChildCommentReply($comment, $feed)
+    protected function notifyMentionedUsers($comment, $feed, $mentionedUserIds)
+    {
+        if (!$mentionedUserIds) {
+            return;
+        }
+
+        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->display_name) . '</b>';
+        $feedTitle = '<span class="fcom_nft">' . $feed->getHumanExcerpt(60) . '</span>';
+
+        $mentionNotification = Notification::create([
+            'feed_id'         => $feed->id,
+            'object_id'       => $comment->id,
+            'src_user_id'     => $comment->user_id,
+            'src_object_type' => 'comment',
+            'action'          => 'mention_added',
+            'content'         => \sprintf(
+            /* translators: %1$s is the commenter name & %2$s is the feed title */
+                __('%1$s mentioned you in a comment at %2$s', 'fluent-community'),
+                $commenter,
+                $feedTitle,
+            ),
+            'route'           => $feed->getJsRoute(),
+        ]);
+
+        $mentionNotification->subscribe($mentionedUserIds);
+
+        do_action('fluent_community/notification/comment/notifed_to_mentions', [
+            'user_ids'     => $mentionedUserIds,
+            'notification' => $mentionNotification,
+            'key'          => 'notifed_to_mentions',
+            'comment'      => $comment,
+            'feed'         => $feed
+        ]);
+
+        return $mentionNotification;
+    }
+
+    protected function notifyForChildCommentReply($comment, $feed, $mentionedUserIds = [])
     {
         // This is a parent comment, so we need to notify the parent comment author & all child comment authors
         $childCommentUserIds = Comment::where(function ($q) use ($comment) {
@@ -563,6 +577,11 @@ class NotificationEventHandler
             ->get()
             ->pluck('user_id')
             ->toArray();
+
+        // Mentioned users get a mention notification instead, so skip them here.
+        if ($mentionedUserIds) {
+            $childCommentUserIds = array_values(array_diff($childCommentUserIds, $mentionedUserIds));
+        }
 
         if (!$childCommentUserIds) {
             return false;
