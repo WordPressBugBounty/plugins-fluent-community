@@ -541,7 +541,7 @@ class BaseSpace extends Model
         }
 
         if ($this->logo) {
-            return '<img alt="" src="' . $this->logo . '"/>';
+            return '<img alt="" src="' . esc_url($this->logo) . '"/>';
         }
 
         if ($imoji = Arr::get($this->settings, 'emoji')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure

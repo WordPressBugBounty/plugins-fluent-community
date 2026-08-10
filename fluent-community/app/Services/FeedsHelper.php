@@ -728,6 +728,53 @@ class FeedsHelper
         return $feed;
     }
 
+    /**
+     * Whether the current request may attach a raw "HTML Code" (iframe_html) embed.
+     *
+     * Mirrors the frontend rule in _VideoEmbeder.vue, which exposes that editor tab only
+     * when is_admin is true — i.e. community_moderator globally or within the target
+     * space. Programmatic creation is judged on the supplied author's permission rather
+     * than the HTTP session, so integrations work without a logged-in user. Defaults to
+     * denying when no user can be established at all.
+     *
+     * @param array $requestData Raw request payload.
+     * @param array $data Feed data being assembled.
+     * @param \FluentCommunity\App\Models\Feed|null $existingFeed Set when editing.
+     * @return bool
+     */
+    private static function canEmbedRawHtml($requestData, $data, $existingFeed = null)
+    {
+        // FeedsController::store()/update() already resolved this against the target space.
+        $precomputed = Arr::get($requestData, 'is_admin');
+        if ($precomputed !== null) {
+            return (bool)$precomputed;
+        }
+
+        // Every other caller resolves it here, against the post's author where one has
+        // been established server-side (createFeed() takes user_id from its caller), and
+        // the current user otherwise. Read from $data and never $requestData: the author
+        // is assigned by the controller, so a request cannot nominate whose permission
+        // gets checked.
+        $userId = (int)Arr::get($data, 'user_id');
+        if (!$userId) {
+            $userId = get_current_user_id();
+        }
+
+        $user = $userId ? User::find($userId) : null;
+        if (!$user) {
+            return false;
+        }
+
+        $space = null;
+        if ($existingFeed) {
+            $space = $existingFeed->space;
+        } elseif ($spaceId = (Arr::get($data, 'space_id') ?: Arr::get($requestData, 'space_id'))) {
+            $space = BaseSpace::find($spaceId);
+        }
+
+        return (bool)$user->hasPermissionOrInCurrentSpace('community_moderator', $space);
+    }
+
     public static function processFeedMetaData($data, $requestData, $existingFeed = null)
     {
         if (empty($data['meta'])) {
@@ -797,7 +844,23 @@ class FeedsHelper
 		    )
 	    ) {
             if (Arr::get($requestData, 'media.type') == 'iframe_html') {
+                // The UI only offers the "HTML Code" embed to moderators
+                // (_VideoEmbeder.vue passes has_iframe="is_admin"). That is a hint, not a
+                // control, so the same rule is enforced here. Reaching this branch without
+                // the permission means the field was posted straight to the REST API, so
+                // the embed is dropped rather than stored.
+                if (!self::canEmbedRawHtml($requestData, $data, $existingFeed)) {
+                    return [$data, $uplaodedDocs];
+                }
+
                 $mediaPreview = array_filter(Arr::get($requestData, 'media', []));
+
+                // Moderators are trusted to embed, not to bypass sanitization: the markup
+                // still goes through the same allowlist the oembed branch below uses.
+                if (!empty($mediaPreview['html'])) {
+                    $mediaPreview['html'] = RemoteUrlParser::sanitizeOembedHtml($mediaPreview['html']);
+                    $mediaPreview = array_filter($mediaPreview);
+                }
 
                 if (empty($mediaPreview['image']) && !empty($mediaPreview['html'])) {
                     $thumb = RemoteUrlParser::extractIframeThumbnail($mediaPreview['html']);

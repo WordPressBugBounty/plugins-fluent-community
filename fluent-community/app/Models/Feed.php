@@ -207,7 +207,7 @@ class Feed extends Model
             $meta = [];
         }
 
-        return $meta;
+        return Helper::sanitizeStoredMediaPreview($meta);
     }
 
     public function scopeSearchBy($query, $search, $in = [])

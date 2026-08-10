@@ -86,6 +86,7 @@ class ProfileController extends Controller
             $profile['short_description'] = $xprofile->short_description;
             $profile['can_change_username'] = $isAdmin || Utility::getPrivacySetting('can_customize_username') === 'yes';
             $profile['can_change_email'] = current_user_can('edit_users') || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn);
+            $profile['can_change_password'] = $isOwn && Utility::getPrivacySetting('can_change_password') === 'yes';
         }
 
         $profileBaseUrl = Helper::baseUrl('u/' . $xprofile->username . '/');
@@ -455,6 +456,12 @@ class ProfileController extends Controller
         if ($xProfile->user_id != get_current_user_id()) {
             return $this->sendError([
                 'message' => __('You are not allowed to change this password', 'fluent-community')
+            ]);
+        }
+
+        if (Utility::getPrivacySetting('can_change_password') !== 'yes') {
+            return $this->sendError([
+                'message' => __('Password change is disabled', 'fluent-community')
             ]);
         }
 

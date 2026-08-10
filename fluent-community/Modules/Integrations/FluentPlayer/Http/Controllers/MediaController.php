@@ -344,25 +344,18 @@ class MediaController extends Controller
                 }
             ";
         }
-        $brandingColor = Bootstrap::sanitizeColor(Arr::get($settings, 'brandColor', ''));
-        if ($brandingColor) {
-            $customCss .= "
-                #fluent_player_" . esc_attr($instanceId) . " {
-                    --media-brand: " . esc_attr($brandingColor) . ";
-                }
-            ";
-        }
-        $controlBarColor = Bootstrap::sanitizeColor(Arr::get($settings, 'controlBarColor', ''));
-        if ($brandingColor || $controlBarColor) {
+        $colorVars = array_filter([
+            '--media-brand'       => Bootstrap::sanitizeColor(Arr::get($settings, 'brandColor', '')),
+            '--fp-control-bar-bg' => Bootstrap::sanitizeColor(Arr::get($settings, 'controlBarColor', '')),
+            '--media-play-color'  => Bootstrap::sanitizeColor(Arr::get($settings, 'playButtonColor', '')),
+            '--media-play-bg'     => Bootstrap::sanitizeColor(Arr::get($settings, 'playButtonBgColor', ''))
+        ]);
+        if ($colorVars) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {";
-            if ($brandingColor) {
+            foreach ($colorVars as $varName => $varValue) {
                 $customCss .= "
-                    --media-brand: " . esc_attr($brandingColor) . ";";
-            }
-            if ($controlBarColor) {
-                $customCss .= "
-                    --fp-control-bar-bg: " . esc_attr($controlBarColor) . ";";
+                    " . $varName . ": " . esc_attr($varValue) . ";";
             }
             $customCss .= "
                 }

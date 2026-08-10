@@ -263,6 +263,7 @@ class Utility
         $defaults = [
             'can_customize_username'         => 'no',
             'can_change_email'               => 'no',
+            'can_change_password'            => 'yes',
             'show_last_activity'             => 'yes',
             'can_deactive_account'           => 'no',
             'email_auto_login'               => 'yes',

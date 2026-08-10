@@ -229,7 +229,7 @@ class Comment extends Model
             $meta = [];
         }
 
-        return $meta;
+        return Helper::sanitizeStoredMediaPreview($meta);
     }
 
     public function getHumanExcerpt($length = 30)

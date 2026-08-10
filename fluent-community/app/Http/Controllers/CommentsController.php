@@ -405,12 +405,15 @@ class CommentsController extends Controller
             }
         }
 
+        // type/provider reach :class bindings and width/height a :style binding in
+        // _MediaPreview.vue. Neither is an executable sink, but the stored values are
+        // request-supplied so they are normalised here rather than trusted.
         $commentData['meta']['media_preview'] = array_filter([
             'image'    => sanitize_url(Arr::get($requestData, 'meta.media_preview.image', '')),
-            'type'     => Arr::get($requestData, 'meta.media_preview.type', 'image'),
-            'provider' => Arr::get($requestData, 'meta.media_preview.provider', ''),
-            'height'   => Arr::get($requestData, 'meta.media_preview.height', 0),
-            'width'    => Arr::get($requestData, 'meta.media_preview.width', 0),
+            'type'     => sanitize_text_field(Arr::get($requestData, 'meta.media_preview.type', 'image')),
+            'provider' => sanitize_text_field(Arr::get($requestData, 'meta.media_preview.provider', '')),
+            'height'   => (int) Arr::get($requestData, 'meta.media_preview.height', 0),
+            'width'    => (int) Arr::get($requestData, 'meta.media_preview.width', 0),
         ]);
 
         return [$commentData, []];

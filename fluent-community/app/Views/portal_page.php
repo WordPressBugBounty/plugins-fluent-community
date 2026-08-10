@@ -42,7 +42,7 @@ $fluentCommunityThemeColor = $theme_color ?? '';
         <link rel="canonical" href="<?php echo esc_url($canonical_url); ?>">
         <?php endif; ?>
 
-        <?php if(!empty($json_ld)): ?><script type="application/ld+json"><?php echo json_encode($json_ld); ?></script>
+        <?php if(!empty($json_ld)): ?><script type="application/ld+json"><?php echo wp_json_encode($json_ld, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
         <?php endif; ?>
     <?php endif; ?>
 

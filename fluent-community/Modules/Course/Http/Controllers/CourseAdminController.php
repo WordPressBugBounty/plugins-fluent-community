@@ -776,7 +776,18 @@ class CourseAdminController extends Controller
             $acceptedFields[] = 'reactions_count';
         }
 
+        // Request::only() does not sanitize. Section titles currently render as escaped
+        // text, so this is hygiene rather than a live sink, but keep the stored value
+        // clean so a future v-html render cannot turn it into one.
         $topicData = $request->only($acceptedFields);
+
+        if (isset($topicData['title'])) {
+            $topicData['title'] = sanitize_text_field($topicData['title']);
+        }
+
+        if (isset($topicData['status'])) {
+            $topicData['status'] = sanitize_text_field($topicData['status']);
+        }
 
         if (!empty($topicData['scheduled_at'])) {
             $topic->reactions_count = 0;
@@ -1054,9 +1065,24 @@ class CourseAdminController extends Controller
         $acceptedFields = [ 'title', 'status', 'slug' ];
 
         // empty title/slug/status must not overwrite, but a literal "0" is a valid value
+        // Request::only() is a plain array pick with no sanitization, so each field is
+        // sanitized here the same way createLesson/updateLesson do it. The title is
+        // rendered with v-html in the course views, so it must not carry markup.
         $lessonData = array_filter($request->only($acceptedFields), function ($value) {
             return $value !== null && $value !== '';
         });
+
+        if (isset($lessonData['title'])) {
+            $lessonData['title'] = sanitize_text_field($lessonData['title']);
+        }
+
+        if (isset($lessonData['slug'])) {
+            $lessonData['slug'] = sanitize_title($lessonData['slug']);
+        }
+
+        if (isset($lessonData['status']) && !in_array($lessonData['status'], ['draft', 'published', 'archived'], true)) {
+            unset($lessonData['status']);
+        }
 
         if (Arr::get($lessonData, 'status') === 'published' && $lesson->status !== 'published') {
             if (empty($lesson->scheduled_at)) {

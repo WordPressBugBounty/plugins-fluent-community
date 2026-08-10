@@ -10,11 +10,10 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-24 13:10+0000\n"
+"POT-Creation-Date: 2026-08-10 11:22+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: Loco https://localise.biz/\n"
 "X-Domain: fluent-community\n"
-"\n"
 "Language: \n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;"
 
@@ -583,7 +582,7 @@ msgstr ""
 msgid "(Copy)"
 msgstr ""
 
-#: app/Services/Helper.php:994
+#: app/Services/Helper.php:1017
 msgid "(Draft)"
 msgstr ""
 
@@ -597,7 +596,7 @@ msgid "+ Add Section"
 msgstr ""
 
 #. %d is the number of additional images not shown in the preview.
-#: app/Services/FeedsHelper.php:1080
+#: app/Services/FeedsHelper.php:1143
 msgid "+%d more image"
 msgid_plural "+%d more images"
 msgstr[0] ""
@@ -767,7 +766,7 @@ msgid "a year"
 msgstr ""
 
 #: app/Services/TransStrings.php:129
-#: app/Http/Controllers/ProfileController.php:96
+#: app/Http/Controllers/ProfileController.php:97
 msgid "About"
 msgstr ""
 
@@ -821,6 +820,10 @@ msgstr ""
 
 #: app/Services/TransStrings.php:135
 msgid "Account Deactivation"
+msgstr ""
+
+#: app/Hooks/Handlers/PortalHandler.php:321
+msgid "Account menu"
 msgstr ""
 
 #: Modules/Auth/AuthHelper.php:184
@@ -1193,7 +1196,7 @@ msgid ""
 "all their future posts and comments require approval. Keep 0 to disable."
 msgstr ""
 
-#: app/Services/Helper.php:2179
+#: app/Services/Helper.php:2202
 msgid "Against Community Rules"
 msgstr ""
 
@@ -1316,7 +1319,7 @@ msgstr ""
 msgid "Almost done, just a few more seconds..."
 msgstr ""
 
-#: app/Services/TransStrings.php:223 app/Services/Helper.php:2234
+#: app/Services/TransStrings.php:223 app/Services/Helper.php:2257
 msgid "Alphabetical"
 msgstr ""
 
@@ -1880,7 +1883,7 @@ msgstr ""
 msgid "Bookmarked"
 msgstr ""
 
-#: app/Services/Helper.php:1220
+#: app/Services/Helper.php:1243
 msgid "Bookmarks"
 msgstr ""
 
@@ -2269,7 +2272,7 @@ msgstr ""
 msgid "Comment cannot be empty"
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:435
+#: app/Http/Controllers/CommentsController.php:438
 msgid "Comment cannot be empty."
 msgstr ""
 
@@ -2302,7 +2305,7 @@ msgid "commented on:"
 msgstr ""
 
 #: app/Services/TransStrings.php:390
-#: app/Http/Controllers/ProfileController.php:141
+#: app/Http/Controllers/ProfileController.php:142
 msgid "Comments"
 msgstr ""
 
@@ -2313,11 +2316,11 @@ msgid "Comments (%s)"
 msgstr ""
 
 #: app/Services/TransStrings.php:393
-#: app/Http/Controllers/CommentsController.php:464
+#: app/Http/Controllers/CommentsController.php:467
 msgid "Comments are disabled for this course"
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:451
+#: app/Http/Controllers/CommentsController.php:454
 msgid "Comments are disabled for this post"
 msgstr ""
 
@@ -2379,8 +2382,8 @@ msgstr ""
 msgid "Community title"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:298
-#: app/Http/Controllers/ProfileController.php:331
+#: app/Http/Controllers/ProfileController.php:299
+#: app/Http/Controllers/ProfileController.php:332
 msgid "Community Username already taken by someone else"
 msgstr ""
 
@@ -2689,7 +2692,7 @@ msgstr ""
 msgid "Course Module is disabled"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:601
+#: app/Http/Controllers/ProfileController.php:608
 msgid "Course module is disabled."
 msgstr ""
 
@@ -2753,8 +2756,8 @@ msgstr ""
 msgid "Course title is required."
 msgstr ""
 
-#: app/Services/TransStrings.php:464 app/Services/Helper.php:1141
-#: app/Http/Controllers/ProfileController.php:129
+#: app/Services/TransStrings.php:464 app/Services/Helper.php:1164
+#: app/Http/Controllers/ProfileController.php:130
 msgid "Courses"
 msgstr ""
 
@@ -2879,7 +2882,7 @@ msgstr ""
 msgid "Current Password"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:468
+#: app/Http/Controllers/ProfileController.php:475
 msgid "Current password is required"
 msgstr ""
 
@@ -2899,8 +2902,8 @@ msgstr ""
 msgid "Currently set to: loggedin users can access"
 msgstr ""
 
-#: app/Functions/Utility.php:599 app/Functions/Utility.php:1031
-#: app/Functions/Utility.php:1036 app/Services/TransStrings.php:488
+#: app/Functions/Utility.php:600 app/Functions/Utility.php:1032
+#: app/Functions/Utility.php:1037 app/Services/TransStrings.php:488
 msgid "Custom"
 msgstr ""
 
@@ -3081,11 +3084,11 @@ msgstr ""
 msgid "Decline"
 msgstr ""
 
-#: app/Functions/Utility.php:609 app/Services/TransStrings.php:522
+#: app/Functions/Utility.php:610 app/Services/TransStrings.php:522
 msgid "Default"
 msgstr ""
 
-#: app/Functions/Utility.php:816
+#: app/Functions/Utility.php:817
 msgid "Default (Dark)"
 msgstr ""
 
@@ -3401,7 +3404,7 @@ msgstr ""
 msgid "Eager"
 msgstr ""
 
-#: app/Services/TransStrings.php:595 app/Services/Helper.php:2244
+#: app/Services/TransStrings.php:595 app/Services/Helper.php:2267
 msgid "Earliest"
 msgstr ""
 
@@ -3538,13 +3541,13 @@ msgstr ""
 msgid "Email Address"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:422
+#: app/Http/Controllers/ProfileController.php:423
 msgid ""
 "Email address already taken by someone else. Please use a different email "
 "address."
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:432
+#: app/Http/Controllers/ProfileController.php:433
 msgid ""
 "Email address change is pending. Please check your inbox to verify the new "
 "email address."
@@ -3609,7 +3612,7 @@ msgstr ""
 msgid "Email notification on messaging is disabled"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:907
+#: app/Http/Controllers/ProfileController.php:914
 msgid "Email Notification preferences have been updated"
 msgstr ""
 
@@ -3670,11 +3673,11 @@ msgstr ""
 msgid "Embed Handler"
 msgstr ""
 
-#: app/Functions/Utility.php:773
+#: app/Functions/Utility.php:774
 msgid "Emerald Essence"
 msgstr ""
 
-#: app/Functions/Utility.php:985
+#: app/Functions/Utility.php:986
 msgid "Emerald Essence (Dark)"
 msgstr ""
 
@@ -4206,7 +4209,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: app/Services/TransStrings.php:746 app/Services/Helper.php:1121
+#: app/Services/TransStrings.php:746 app/Services/Helper.php:1144
 #: app/Views/portal/main_sidebar.php:52
 msgid "Feed"
 msgstr ""
@@ -4280,7 +4283,7 @@ msgstr ""
 msgid "First Name"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:266
+#: app/Http/Controllers/ProfileController.php:267
 msgid "First name is required"
 msgstr ""
 
@@ -4500,7 +4503,7 @@ msgstr ""
 msgid "Fri"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:844
+#: app/Http/Controllers/ProfileController.php:851
 #: app/Hooks/Handlers/PortalHandler.php:715
 msgid "Friday"
 msgstr ""
@@ -4764,7 +4767,7 @@ msgstr ""
 msgid "half year"
 msgstr ""
 
-#: app/Services/Helper.php:2175
+#: app/Services/Helper.php:2198
 msgid "Harassment"
 msgstr ""
 
@@ -4801,7 +4804,7 @@ msgid "Headline"
 msgstr ""
 
 #. %d: Maximum number of characters allowed in the profile headline.
-#: app/Http/Controllers/ProfileController.php:376
+#: app/Http/Controllers/ProfileController.php:377
 msgid "Headline should not exceed %d characters."
 msgstr ""
 
@@ -5137,7 +5140,7 @@ msgstr ""
 msgid "Incorrect"
 msgstr ""
 
-#: app/Services/Helper.php:2178
+#: app/Services/Helper.php:2201
 msgid "Incorrect Space"
 msgstr ""
 
@@ -5195,8 +5198,8 @@ msgid "Integrated Marketing Automation"
 msgstr ""
 
 #: app/Http/Controllers/CommentsController.php:201
-#: app/Http/Controllers/CommentsController.php:574
-#: app/Http/Controllers/CommentsController.php:612
+#: app/Http/Controllers/CommentsController.php:577
+#: app/Http/Controllers/CommentsController.php:615
 msgid "Invalid comment"
 msgstr ""
 
@@ -5224,8 +5227,12 @@ msgstr ""
 msgid "Invalid invitation token. Please try again"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:189
+#: app/Http/Controllers/ProfileController.php:190
 msgid "Invalid media image. Please upload a new one."
+msgstr ""
+
+#: app/Hooks/Handlers/ActivityMonitorHandler.php:52
+msgid "Invalid nonce"
 msgstr ""
 
 #: app/Http/Controllers/CommentsController.php:123
@@ -5240,7 +5247,7 @@ msgstr ""
 msgid "Invalid plugin or file mods are disabled."
 msgstr ""
 
-#: app/Services/CustomSanitizer.php:512
+#: app/Services/CustomSanitizer.php:519
 msgid "Invalid redirect URL."
 msgstr ""
 
@@ -5277,8 +5284,12 @@ msgstr ""
 msgid "Invalid URL"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:292
-#: app/Http/Controllers/ProfileController.php:325
+#: app/Hooks/Handlers/ActivityMonitorHandler.php:57
+msgid "Invalid user"
+msgstr ""
+
+#: app/Http/Controllers/ProfileController.php:293
+#: app/Http/Controllers/ProfileController.php:326
 msgid "Invalid username. Only Latin characters with _ & - are allowed."
 msgstr ""
 
@@ -5552,8 +5563,8 @@ msgstr ""
 msgid "Last Week"
 msgstr ""
 
-#: app/Services/TransStrings.php:932 app/Services/Helper.php:2230
-#: app/Services/Helper.php:2245
+#: app/Services/TransStrings.php:932 app/Services/Helper.php:2253
+#: app/Services/Helper.php:2268
 msgid "Latest"
 msgstr ""
 
@@ -5589,7 +5600,7 @@ msgstr ""
 msgid "Layout is already loaded before"
 msgstr ""
 
-#: app/Services/TransStrings.php:940 app/Services/Helper.php:1167
+#: app/Services/TransStrings.php:940 app/Services/Helper.php:1190
 msgid "Leaderboard"
 msgstr ""
 
@@ -5698,15 +5709,15 @@ msgstr ""
 msgid "Lesson Duration"
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:961
+#: Modules/Course/Http/Controllers/CourseAdminController.php:972
 msgid "Lesson has been created successfully."
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:1098
+#: Modules/Course/Http/Controllers/CourseAdminController.php:1124
 msgid "Lesson has been deleted successfully."
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:1155
+#: Modules/Course/Http/Controllers/CourseAdminController.php:1181
 msgid "Lesson has been duplicated successfully."
 msgstr ""
 
@@ -5714,8 +5725,8 @@ msgstr ""
 msgid "Lesson has been moved successfully"
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:1041
-#: Modules/Course/Http/Controllers/CourseAdminController.php:1080
+#: Modules/Course/Http/Controllers/CourseAdminController.php:1052
+#: Modules/Course/Http/Controllers/CourseAdminController.php:1106
 msgid "Lesson has been updated successfully."
 msgstr ""
 
@@ -5791,7 +5802,7 @@ msgstr ""
 msgid "Light Mode"
 msgstr ""
 
-#: app/Services/TransStrings.php:973 app/Services/Helper.php:2233
+#: app/Services/TransStrings.php:973 app/Services/Helper.php:2256
 msgid "Likes"
 msgstr ""
 
@@ -5843,7 +5854,7 @@ msgstr ""
 msgid "LinkedIn"
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:1217
+#: Modules/Course/Http/Controllers/CourseAdminController.php:1243
 msgid "Links have been updated for the course"
 msgstr ""
 
@@ -5954,7 +5965,7 @@ msgid "Logged-in users only"
 msgstr ""
 
 #: app/Services/AuthenticationService.php:48 app/Services/TransStrings.php:1003
-#: app/Services/Helper.php:1607 Modules/Auth/AuthModdule.php:171
+#: app/Services/Helper.php:1630 Modules/Auth/AuthModdule.php:171
 #: Modules/Auth/AuthModdule.php:241 app/Hooks/Handlers/PortalHandler.php:361
 #: app/Views/auth/user_invitation.php:54
 msgid "Login"
@@ -6010,7 +6021,7 @@ msgstr ""
 msgid "Logo Permalink"
 msgstr ""
 
-#: app/Services/Helper.php:1229
+#: app/Services/Helper.php:1252
 msgid "Logout"
 msgstr ""
 
@@ -6240,7 +6251,7 @@ msgid "Member status has been updated"
 msgstr ""
 
 #: app/Models/BaseSpace.php:652 app/Services/TransStrings.php:1043
-#: app/Services/Helper.php:1152
+#: app/Services/Helper.php:1175
 msgid "Members"
 msgstr ""
 
@@ -6399,7 +6410,7 @@ msgstr ""
 msgid "Mon"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:840
+#: app/Http/Controllers/ProfileController.php:847
 #: app/Hooks/Handlers/PortalHandler.php:711
 msgid "Monday"
 msgstr ""
@@ -6430,7 +6441,7 @@ msgstr ""
 msgid "Most Recent"
 msgstr ""
 
-#: app/Services/TransStrings.php:1081 app/Services/Helper.php:2247
+#: app/Services/TransStrings.php:1081 app/Services/Helper.php:2270
 msgid "Most Replied"
 msgstr ""
 
@@ -6486,7 +6497,7 @@ msgstr ""
 msgid "My Profile"
 msgstr ""
 
-#: app/Services/TransStrings.php:1095 app/Services/Helper.php:1211
+#: app/Services/TransStrings.php:1095 app/Services/Helper.php:1234
 msgid "My Spaces"
 msgstr ""
 
@@ -6531,7 +6542,7 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: app/Services/Helper.php:2229
+#: app/Services/Helper.php:2252
 msgid "New Activity"
 msgstr ""
 
@@ -6593,20 +6604,20 @@ msgid "New Password"
 msgstr ""
 
 #: app/Services/TransStrings.php:1114
-#: app/Http/Controllers/ProfileController.php:486
+#: app/Http/Controllers/ProfileController.php:493
 msgid "New password and confirmation do not match"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:469
+#: app/Http/Controllers/ProfileController.php:476
 msgid "New password is required"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:480
+#: app/Http/Controllers/ProfileController.php:487
 msgid "New password must be at least 4 characters long"
 msgstr ""
 
 #: app/Services/TransStrings.php:1115
-#: app/Http/Controllers/ProfileController.php:492
+#: app/Http/Controllers/ProfileController.php:499
 msgid "New password must be different from your current password"
 msgstr ""
 
@@ -7054,11 +7065,11 @@ msgstr ""
 msgid "Objects"
 msgstr ""
 
-#: app/Functions/Utility.php:691
+#: app/Functions/Utility.php:692
 msgid "Ocean Blue"
 msgstr ""
 
-#: app/Functions/Utility.php:900
+#: app/Functions/Utility.php:901
 msgid "Ocean Blue (Dark)"
 msgstr ""
 
@@ -7087,7 +7098,7 @@ msgstr ""
 msgid "Off Text Color"
 msgstr ""
 
-#: app/Services/Helper.php:2177
+#: app/Services/Helper.php:2200
 msgid "Offensive"
 msgstr ""
 
@@ -7095,7 +7106,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: app/Services/Helper.php:2231
+#: app/Services/Helper.php:2254
 msgid "Oldest"
 msgstr ""
 
@@ -7267,12 +7278,12 @@ msgstr ""
 msgid "Organizations"
 msgstr ""
 
-#: app/Services/Helper.php:2180
+#: app/Services/Helper.php:2203
 msgid "Other"
 msgstr ""
 
 #: app/Http/Controllers/SettingController.php:475
-#: app/Http/Controllers/ProfileController.php:832
+#: app/Http/Controllers/ProfileController.php:839
 msgid "Other Spaces"
 msgstr ""
 
@@ -7329,6 +7340,10 @@ msgstr ""
 
 #: Modules/Auth/AuthModdule.php:438 Modules/Auth/AuthModdule.php:440
 msgid "Password and confirmation password do not match"
+msgstr ""
+
+#: app/Http/Controllers/ProfileController.php:464
+msgid "Password change is disabled"
 msgstr ""
 
 #: app/Services/TransStrings.php:1233
@@ -7550,7 +7565,7 @@ msgstr ""
 msgid "Please configure your %s groups for FluentCommunity Menu"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:470
+#: app/Http/Controllers/ProfileController.php:477
 msgid "Please confirm your new password"
 msgstr ""
 
@@ -7784,7 +7799,7 @@ msgstr ""
 msgid "Please upgrade to Pro to use this feature"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:344
+#: app/Http/Controllers/ProfileController.php:345
 msgid "Please use another username. This username is reserved"
 msgstr ""
 
@@ -7840,8 +7855,8 @@ msgstr ""
 msgid "Poll Settings"
 msgstr ""
 
-#: app/Services/TransStrings.php:1320 app/Services/Helper.php:2232
-#: app/Services/Helper.php:2246
+#: app/Services/TransStrings.php:1320 app/Services/Helper.php:2255
+#: app/Services/Helper.php:2269
 msgid "Popular"
 msgstr ""
 
@@ -7933,7 +7948,7 @@ msgid "Posting in:"
 msgstr ""
 
 #: app/Models/BaseSpace.php:643 app/Services/TransStrings.php:1340
-#: app/Http/Controllers/ProfileController.php:105
+#: app/Http/Controllers/ProfileController.php:106
 msgid "Posts"
 msgstr ""
 
@@ -8090,7 +8105,7 @@ msgstr ""
 msgid "Profanity Filter"
 msgstr ""
 
-#: app/Services/Helper.php:1601
+#: app/Services/Helper.php:1624
 msgid "Profile"
 msgstr ""
 
@@ -8099,7 +8114,7 @@ msgid "Profile Badges"
 msgstr ""
 
 #. %d: Maximum number of characters allowed in the profile bio.
-#: app/Http/Controllers/ProfileController.php:365
+#: app/Http/Controllers/ProfileController.php:366
 msgid "Profile bio should not exceed %d characters."
 msgstr ""
 
@@ -8107,8 +8122,8 @@ msgstr ""
 msgid "Profile Dropdown Items"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:407
-#: app/Http/Controllers/ProfileController.php:445
+#: app/Http/Controllers/ProfileController.php:408
+#: app/Http/Controllers/ProfileController.php:446
 msgid "Profile has been updated"
 msgstr ""
 
@@ -8124,7 +8139,7 @@ msgstr ""
 msgid "Profile Not Found"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:660
+#: app/Http/Controllers/ProfileController.php:667
 msgid "Profile not found"
 msgstr ""
 
@@ -8132,7 +8147,7 @@ msgstr ""
 msgid "Profile Social Media Links"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:243
+#: app/Http/Controllers/ProfileController.php:244
 msgid "Profile updated"
 msgstr ""
 
@@ -8274,16 +8289,16 @@ msgid "Reacted Users"
 msgstr ""
 
 #: app/Http/Controllers/ReactionController.php:143
-#: app/Http/Controllers/CommentsController.php:562
+#: app/Http/Controllers/CommentsController.php:565
 msgid "Reaction has been added"
 msgstr ""
 
 #: app/Http/Controllers/ReactionController.php:114
-#: app/Http/Controllers/CommentsController.php:533
+#: app/Http/Controllers/CommentsController.php:536
 msgid "Reaction has been removed"
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:660
+#: app/Http/Controllers/CommentsController.php:663
 msgid "Reaction has been toggled"
 msgstr ""
 
@@ -8493,7 +8508,7 @@ msgstr ""
 msgid "Reply"
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:433
+#: app/Http/Controllers/CommentsController.php:436
 msgid "Reply cannot be empty."
 msgstr ""
 
@@ -8693,7 +8708,7 @@ msgstr ""
 msgid "Sat"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:845
+#: app/Http/Controllers/ProfileController.php:852
 #: app/Hooks/Handlers/PortalHandler.php:716
 msgid "Saturday"
 msgstr ""
@@ -8887,7 +8902,7 @@ msgstr ""
 msgid "Secret"
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:855
+#: Modules/Course/Http/Controllers/CourseAdminController.php:866
 msgid "Section has been copied to the selected course"
 msgstr ""
 
@@ -8895,7 +8910,7 @@ msgstr ""
 msgid "Section has been created successfully."
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:882
+#: Modules/Course/Http/Controllers/CourseAdminController.php:893
 msgid "Section has been deleted successfully."
 msgstr ""
 
@@ -9189,7 +9204,7 @@ msgstr ""
 msgid "Select who can see this link."
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:601
+#: app/Http/Controllers/CommentsController.php:604
 msgid "Selected comment has been deleted"
 msgstr ""
 
@@ -9517,11 +9532,11 @@ msgstr ""
 msgid "Skipped:"
 msgstr ""
 
-#: app/Functions/Utility.php:732
+#: app/Functions/Utility.php:733
 msgid "Sky Blue"
 msgstr ""
 
-#: app/Functions/Utility.php:944
+#: app/Functions/Utility.php:945
 msgid "Sky Blue (Dark)"
 msgstr ""
 
@@ -9871,8 +9886,8 @@ msgstr ""
 msgid "Space will be created under the selected Menu group."
 msgstr ""
 
-#: app/Services/TransStrings.php:1670 app/Services/Helper.php:1131
-#: app/Http/Controllers/ProfileController.php:118
+#: app/Services/TransStrings.php:1670 app/Services/Helper.php:1154
+#: app/Http/Controllers/ProfileController.php:119
 #: Modules/Integrations/FluentCRM/ProfileSection.php:66
 msgid "Spaces"
 msgstr ""
@@ -9881,7 +9896,7 @@ msgstr ""
 msgid "spaces"
 msgstr ""
 
-#: app/Services/Helper.php:2176
+#: app/Services/Helper.php:2199
 msgid "Spam"
 msgstr ""
 
@@ -10032,7 +10047,7 @@ msgstr ""
 msgid "Sun_Mon_Tue_Wed_Thu_Fri_Sat"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:846
+#: app/Http/Controllers/ProfileController.php:853
 #: app/Hooks/Handlers/PortalHandler.php:710
 msgid "Sunday"
 msgstr ""
@@ -10042,11 +10057,11 @@ msgstr ""
 msgid "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday"
 msgstr ""
 
-#: app/Functions/Utility.php:650
+#: app/Functions/Utility.php:651
 msgid "Sunset Sands"
 msgstr ""
 
-#: app/Functions/Utility.php:859
+#: app/Functions/Utility.php:860
 msgid "Sunset Sands (Dark)"
 msgstr ""
 
@@ -10197,7 +10212,7 @@ msgid "The button text color of the form"
 msgstr ""
 
 #. %s is the maximum allowed character count
-#: app/Http/Controllers/CommentsController.php:442
+#: app/Http/Controllers/CommentsController.php:445
 #, php-format
 msgid "The comment is too long. Please keep it under %s characters."
 msgstr ""
@@ -10592,7 +10607,7 @@ msgstr ""
 
 #: app/Http/Controllers/ReactionController.php:86
 #: app/Http/Controllers/CommentsController.php:84
-#: app/Http/Controllers/CommentsController.php:505
+#: app/Http/Controllers/CommentsController.php:508
 msgid "This post is not published yet"
 msgstr ""
 
@@ -10687,7 +10702,7 @@ msgstr ""
 msgid "Thumbnail / Open Graph Image (Recommended Size: 1200 x 630)"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:843
+#: app/Http/Controllers/ProfileController.php:850
 #: app/Hooks/Handlers/PortalHandler.php:714
 msgid "Thursday"
 msgstr ""
@@ -10822,7 +10837,7 @@ msgid "Top members by Activity count"
 msgstr ""
 
 #: Modules/Course/Http/Controllers/CourseAdminController.php:758
-#: Modules/Course/Http/Controllers/CourseAdminController.php:809
+#: Modules/Course/Http/Controllers/CourseAdminController.php:820
 msgid "Topic has been updated successfully."
 msgstr ""
 
@@ -10904,7 +10919,7 @@ msgstr ""
 msgid "Tue"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:841
+#: app/Http/Controllers/ProfileController.php:848
 #: app/Hooks/Handlers/PortalHandler.php:712
 msgid "Tuesday"
 msgstr ""
@@ -10968,7 +10983,7 @@ msgstr ""
 msgid "Unable to retrieve body from response at this URL."
 msgstr ""
 
-#: app/Services/Helper.php:2235
+#: app/Services/Helper.php:2258
 msgid "Unanswered"
 msgstr ""
 
@@ -11452,7 +11467,7 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:306
+#: app/Http/Controllers/ProfileController.php:307
 msgid ""
 "Username already taken by someone else. Please use a different username."
 msgstr ""
@@ -11473,7 +11488,7 @@ msgstr ""
 msgid "Username is required"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:337
+#: app/Http/Controllers/ProfileController.php:338
 msgid "Username should be at least 3 characters long."
 msgstr ""
 
@@ -11734,7 +11749,7 @@ msgstr ""
 msgid "Wed"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:842
+#: app/Http/Controllers/ProfileController.php:849
 #: app/Hooks/Handlers/PortalHandler.php:713
 msgid "Wednesday"
 msgstr ""
@@ -12057,7 +12072,7 @@ msgstr ""
 msgid "You are not allowed to add members to this space"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:457
+#: app/Http/Controllers/ProfileController.php:458
 msgid "You are not allowed to change this password"
 msgstr ""
 
@@ -12065,11 +12080,11 @@ msgstr ""
 msgid "You are not allowed to complete this lesson."
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:168
+#: app/Http/Controllers/ProfileController.php:169
 msgid "You are not allowed to deactivate this account."
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:581
+#: app/Http/Controllers/CommentsController.php:584
 msgid "You are not allowed to delete this comment"
 msgstr ""
 
@@ -12089,7 +12104,7 @@ msgstr ""
 msgid "You are not allowed to join this space"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:258
+#: app/Http/Controllers/ProfileController.php:259
 msgid "You are not allowed to update this profile"
 msgstr ""
 
@@ -12101,15 +12116,15 @@ msgstr ""
 msgid "You are not allowed to view members of this space"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:611
+#: app/Http/Controllers/ProfileController.php:618
 msgid "You are not allowed to view this profile's courses."
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:542
+#: app/Http/Controllers/ProfileController.php:549
 msgid "You are not allowed to view this profile's membership."
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:564
+#: app/Http/Controllers/ProfileController.php:571
 msgid "You are not allowed to view this profile's spaces."
 msgstr ""
 
@@ -12171,12 +12186,12 @@ msgstr ""
 msgid "You cannot pin a reply comment"
 msgstr ""
 
-#: app/Http/Controllers/CommentsController.php:625
+#: app/Http/Controllers/CommentsController.php:628
 msgid "You cannot react to your own comment"
 msgstr ""
 
 #: app/Http/Controllers/ReactionController.php:92
-#: app/Http/Controllers/CommentsController.php:511
+#: app/Http/Controllers/CommentsController.php:514
 msgid "You cannot react to your own post"
 msgstr ""
 
@@ -12195,7 +12210,7 @@ msgstr ""
 msgid "You currently have %s scheduled posts to be published"
 msgstr ""
 
-#: Modules/Course/Http/Controllers/CourseAdminController.php:823
+#: Modules/Course/Http/Controllers/CourseAdminController.php:834
 msgid "You do not have permission to access this course"
 msgstr ""
 
@@ -12271,7 +12286,7 @@ msgid "You have already invited this user"
 msgstr ""
 
 #: app/Http/Controllers/ReactionController.php:121
-#: app/Http/Controllers/CommentsController.php:540
+#: app/Http/Controllers/CommentsController.php:543
 msgid "You have already reacted to this post"
 msgstr ""
 
@@ -12511,7 +12526,7 @@ msgstr ""
 msgid "Your CSS Code"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:500
+#: app/Http/Controllers/ProfileController.php:507
 msgid "Your current password is incorrect"
 msgstr ""
 
@@ -12575,7 +12590,7 @@ msgstr ""
 msgid "Your option text"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:527
+#: app/Http/Controllers/ProfileController.php:534
 msgid "Your password has been changed successfully"
 msgstr ""
 
@@ -12615,7 +12630,7 @@ msgstr ""
 msgid "Your post has been updated"
 msgstr ""
 
-#: app/Http/Controllers/ProfileController.php:178
+#: app/Http/Controllers/ProfileController.php:179
 msgid "Your profile has been deactivated successfully."
 msgstr ""
 
@@ -12641,6 +12656,10 @@ msgstr ""
 msgid ""
 "Your session has expired due to inactivity. Please refresh the page to "
 "continue."
+msgstr ""
+
+#: app/Hooks/Handlers/ActivityMonitorHandler.php:43
+msgid "Your session has expired. Please log in again."
 msgstr ""
 
 #: app/Services/TransStrings.php:2036

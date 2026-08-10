@@ -322,7 +322,11 @@ class CustomSanitizer
         if (!empty($item['icon_svg'])) {
             $item['icon_svg'] = self::sanitizeSvg($item['icon_svg']);
         }
-        
+
+        if (!empty($item['shape_svg'])) {
+            $item['shape_svg'] = self::sanitizeSvg($item['shape_svg']);
+        }
+
         if (Arr::get($item, 'privacy') == 'members_only') {
             $item['membership_ids'] = array_map('sanitize_text_field', (array)Arr::get($item, 'membership_ids', []));
         }
@@ -355,16 +359,20 @@ class CustomSanitizer
         }
 
         $tags = wp_kses_allowed_html('post');
-        $tags['style'] = [
-            'types' => [],
-        ];
 
-        // iframe
+        // No <style> element: kses filters style="" attributes but never the text content
+        // of a <style> block, so allowing it would let any role that can author this markup
+        // persist CSS (@import, attribute-selector data exfiltration, UI redress) against
+        // every viewer. Embed/media HTML never needs a <style> element.
+
+        // iframe. Note there is deliberately no 'srcdoc' here: a srcdoc iframe without a
+        // sandbox attribute is same-origin with the portal, so allowing it would let any
+        // role that can author embed markup run script against every viewer. Real embed
+        // providers only ever use src.
         $tags['iframe'] = [
             'width'           => [],
             'height'          => [],
             'src'             => [],
-            'srcdoc'          => [],
             'title'           => [],
             'frameborder'     => [],
             'allow'           => [],
@@ -372,7 +380,6 @@ class CustomSanitizer
             'id'              => [],
             'allowfullscreen' => [],
             'referrerpolicy'  => [],
-            'style'           => [],
         ];
 
         $tags = apply_filters('fluent_community/allowed_html_tags', $tags);

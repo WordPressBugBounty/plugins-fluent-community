@@ -1260,6 +1260,8 @@ class TransStrings
             'Placeholder image' => __('Placeholder image', 'fluent-community'),
             'Placeholder text' => __('Placeholder text', 'fluent-community'),
             'Play' => __('Play', 'fluent-community'),
+            'Play Button Background Color' => __('Play Button Background Color', 'fluent-community'),
+            'Play Button Color' => __('Play Button Color', 'fluent-community'),
             'Play Embedded Videos With FluentPlayer' => __('Play Embedded Videos With FluentPlayer', 'fluent-community'),
             'Play/Pause' => __('Play/Pause', 'fluent-community'),
             'Playback Speed' => __('Playback Speed', 'fluent-community'),

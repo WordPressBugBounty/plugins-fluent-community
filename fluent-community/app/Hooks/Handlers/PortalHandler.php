@@ -318,7 +318,7 @@ class PortalHandler
                     <div class="fcom_user_menu_item">
                         <div class="fcom_profile_extend">
                             <div class="fcom_profile_menu">
-                                <div class="user_avatar">
+                                <div class="user_avatar" role="button" tabindex="0" aria-expanded="false" aria-controls="fcom_profile_sub_menu" aria-label="<?php echo esc_attr__('Account menu', 'fluent-community'); ?>">
                                     <img alt="<?php echo esc_attr($auth->display_name); ?>" src="<?php echo esc_url($auth->avatar); ?>"/>
                                     <span class="avatar_icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" height="8" width="8"
@@ -331,7 +331,7 @@ class PortalHandler
                                 <span class="user_name">
                                     <?php echo esc_html($auth->display_name); ?>
                                 </span>
-                                <ul class="fcom_profile_sub_menu">
+                                <ul id="fcom_profile_sub_menu" class="fcom_profile_sub_menu">
                                     <li class="fcom_profile_block">
                                         <a href="<?php echo esc_url(Helper::baseUrl('/u/' . $auth->username)); ?>">
                                             <div class="fcom_profile_avatar">

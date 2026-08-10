@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.7.5
+Stable tag: 2.7.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,29 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.7.7 (Date: Aug 10, 2026) =
+- Security: Restricted HTML Embed for media (props to patchstack. CVE-2026-66467)
+- Added: Privacy Control for Profile Password Changes
+- Added: Divider Option in the Editor Slash Menu
+- Added: Play Button Color Options in FluentPlayer Settings
+- Improved: Media Gallery Tabs Synced to URL Query Params
+- Improved: Audio Edit Modal Thumbnail Upload and Styling
+- Improved: Quiz Result Badges in Dark Mode
+- Improved: Keyboard and Screen Reader Accessibility
+- Fixed: Session-Expiry Request Loop on Portal Tab
+- Fixed: Comment Reply Mention, Focus and Collapse Behavior
+- Fixed: Unsaved Changes Warning Missing for Comment Replies
+- Fixed: Mobile Sidebar Not Closing on Scroll or Outside Tap
+- Fixed: Mobile Bottom Nav Overlapped by Video Overlays
+- Fixed: Blank Audio Players After Media Gallery Tab Switch
+- Fixed: Multi-Select Quiz Answers Not Marked
+- Fixed: Lesson Editor Ignoring Browser Back Button
+- Fixed: Textarea Profile Fields Losing Line Breaks
+- Fixed: HTML Entities Showing in Community Card Excerpts
+- Fixed: Action Menu Popover Styling and Sticky-Header Overlap
+- Fixed: Box Card Placeholder Ignoring Theme Colors
+- Fixed: Sidebar Custom Link Missing Top Padding
 
 = 2.7.5 (Date: Jul 24, 2026) =
 - Introduced: Audio Uploads and Audio Media Gallery

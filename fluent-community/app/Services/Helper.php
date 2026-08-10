@@ -750,6 +750,29 @@ class Helper
     }
 
     /**
+     * Sanitize embed markup held in a feed/comment meta array on read.
+     *
+     * meta.media_preview.html is rendered with v-html in _MediaPreview.vue, so it is
+     * sanitized on write. Doing it on read as well neutralizes rows that were stored
+     * before the write-side fix landed, and covers any writer reaching the meta via
+     * the fluent_community/feed/* filters. The emptiness check keeps this free for the
+     * vast majority of rows, which carry no embed markup at all.
+     *
+     * @param array $meta The unserialized meta array.
+     * @return array The meta array with any embed markup passed through the allowlist.
+     */
+    public static function sanitizeStoredMediaPreview($meta)
+    {
+        if (empty($meta['media_preview']['html'])) {
+            return $meta;
+        }
+
+        $meta['media_preview']['html'] = RemoteUrlParser::sanitizeOembedHtml($meta['media_preview']['html']);
+
+        return $meta;
+    }
+
+    /**
      * Get a human-readable excerpt from content.
      *
      * @param string $content The content to extract from.

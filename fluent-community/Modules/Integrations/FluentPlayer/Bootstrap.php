@@ -79,6 +79,8 @@ class Bootstrap
             'skin'                 => 'modern',
             'brandColor'           => '#4a90e2',
             'controlBarColor'      => '',
+            'playButtonColor'      => '',
+            'playButtonBgColor'    => '',
             'controls'             => [
                 'play'            => true,
                 'volume'          => true,
@@ -121,6 +123,8 @@ class Bootstrap
             'skin'                 => 'sanitize_text_field',
             'brandColor'           => 'sanitize_text_field',
             'controlBarColor'      => 'sanitize_text_field',
+            'playButtonColor'      => 'sanitize_text_field',
+            'playButtonBgColor'    => 'sanitize_text_field',
             'controls.*'           => 'rest_sanitize_boolean',
             'behaviors.*'          => 'rest_sanitize_boolean',
             'video_upload'         => 'sanitize_text_field',
@@ -140,6 +144,8 @@ class Bootstrap
         $settings['enable_audio'] = Arr::get($settings, 'enable_audio') === 'yes' ? 'yes' : 'no';
         $settings['brandColor'] = self::sanitizeColor(Arr::get($settings, 'brandColor', ''));
         $settings['controlBarColor'] = self::sanitizeColor(Arr::get($settings, 'controlBarColor', ''));
+        $settings['playButtonColor'] = self::sanitizeColor(Arr::get($settings, 'playButtonColor', ''));
+        $settings['playButtonBgColor'] = self::sanitizeColor(Arr::get($settings, 'playButtonBgColor', ''));
 
         Utility::updateOption('_fluent_player_settings', $settings);
 
@@ -374,7 +380,7 @@ class Bootstrap
             if (!isset($data['meta'])) {
                 $data['meta'] = [];
             }
-            $data['meta']['media_preview'] = array_filter($media);
+            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml($media));
         }
         $audioMedias = $this->sanitizeAudioMedias($requestData);
         if ($audioMedias) {
@@ -392,7 +398,7 @@ class Bootstrap
             if (!isset($data['meta'])) {
                 $data['meta'] = [];
             }
-            $data['meta']['media_preview'] = array_filter($media);
+            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml($media));
         }
         $audioMedias = $this->sanitizeAudioMedias($requestData);
         if ($audioMedias) {
@@ -402,6 +408,20 @@ class Bootstrap
             $data['meta']['audio_medias'] = $audioMedias;
         }
         return $data;
+    }
+
+    /**
+     * media_preview.html is rendered with v-html in _MediaPreview.vue whenever the
+     * player itself cannot handle the media, so request-supplied markup has to go
+     * through the oembed allowlist before it is stored.
+     */
+    private static function sanitizeMediaHtml($media)
+    {
+        if (!empty($media['html'])) {
+            $media['html'] = \FluentCommunity\App\Services\RemoteUrlParser::sanitizeOembedHtml($media['html']);
+        }
+
+        return $media;
     }
 
     public function maybeUpdateUploadedMedia($uploadedMedias, $requestData)

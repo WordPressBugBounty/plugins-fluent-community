@@ -36,24 +36,31 @@ class ActivityMonitorHandler
             }
         });
 
-        add_action('wp_ajax_fluent_community_renew_nonce', function () {
+        add_action('wp_ajax_fluent_community_renew_nonce', [$this, 'renewNonce']);
 
-            $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-            if (!wp_verify_nonce($ajax_nonce, 'fluent_community_ajax_nonce')) {
-                wp_send_json(['message' => 'Invalid nonce'], 400);
-            }
-
-            $currentProfile = Helper::getCurrentProfile();
-            if (!$currentProfile) {
-                wp_send_json(['message' => 'Invalid user'], 400);
-            }
-
-            wp_send_json([
-                'rest_nonce' => wp_create_nonce('wp_rest'),
-                'ajax_nonce' => wp_create_nonce('fluent_community_ajax_nonce'),
-            ], 200);
+        // Logged-out: without this, WP returns "0"/200 and the SPA loops on a stale nonce.
+        add_action('wp_ajax_nopriv_fluent_community_renew_nonce', function () {
+            wp_send_json(['message' => __('Your session has expired. Please log in again.', 'fluent-community')], 401);
         });
+    }
+
+    public function renewNonce()
+    {
+        $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        if (!wp_verify_nonce($ajax_nonce, 'fluent_community_ajax_nonce')) {
+            wp_send_json(['message' => __('Invalid nonce', 'fluent-community')], 400);
+        }
+
+        $currentProfile = Helper::getCurrentProfile();
+        if (!$currentProfile) {
+            wp_send_json(['message' => __('Invalid user', 'fluent-community')], 401);
+        }
+
+        wp_send_json([
+            'rest_nonce' => wp_create_nonce('wp_rest'),
+            'ajax_nonce' => wp_create_nonce('fluent_community_ajax_nonce'),
+        ], 200);
     }
 
 

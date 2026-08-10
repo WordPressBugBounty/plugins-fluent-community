@@ -203,8 +203,8 @@ class NotificationEventHandler
         $notificationContent = \sprintf(
         /* translators: %1$s is the role name, %2$s is the space title */
             __('You have been added as %1$s in %2$s', 'fluent-community'),
-            '<b>' . $pivot->role . '</b>',
-            '<b>' . $space->title . '</b>'
+            '<b>' . esc_html($pivot->role) . '</b>',
+            '<b>' . esc_html($space->title) . '</b>'
         );
 
         $route = [
@@ -266,7 +266,7 @@ class NotificationEventHandler
                         $commenter,
                         '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
                         '<span class="fcom_nft">' . $feedTitle . '</span>',
-                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                        '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 } else {
                     $notificationContent = \sprintf(
@@ -274,7 +274,7 @@ class NotificationEventHandler
                         __('%1$s commented on your post: %2$s in %3$s', 'fluent-community'),
                         $commenter,
                         '<span class="fcom_nft">' . $feedTitle . '</span>',
-                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                        '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 }
             } else {
@@ -303,7 +303,7 @@ class NotificationEventHandler
                     __('%1$s commented on your post: %2$s in %3$s', 'fluent-community'),
                     $commenter,
                     '<span class="fcom_nft">' . $feedTitle . '</span>',
-                    '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                    '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                 );
             } else {
                 $notificationContent = \sprintf(
@@ -411,7 +411,7 @@ class NotificationEventHandler
                         $commenter,
                         '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
                         $feedTitle,
-                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                        '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 } else {
                     $notificationContent = \sprintf(
@@ -419,7 +419,7 @@ class NotificationEventHandler
                         __('%1$s also commented on %2$s in %3$s', 'fluent-community'),
                         $commenter,
                         $feedTitle,
-                        '<b class="fcom_nst">' . $feed->space->title . '</b>'
+                        '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 }
             } else {
@@ -447,7 +447,7 @@ class NotificationEventHandler
                     __('%1$s also commented on %2$s in %3$s', 'fluent-community'),
                     $commenter,
                     $feedTitle,
-                    '<b class="fcom_nst">' . $space->title . '</b>'
+                    '<b class="fcom_nst">' . esc_html($space->title) . '</b>'
                 );
             } else {
                 $notificationContent = \sprintf(
