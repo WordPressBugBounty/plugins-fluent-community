@@ -28,6 +28,8 @@ class FeedSpaceUserMigrator
                 INDEX `status` (`status`),
                 INDEX `space_id_user_id` (`space_id`, `user_id`),
                 INDEX `user_id_status` (`user_id`, `status`),
+                INDEX `space_status_created` (`space_id`, `status`, `created_at`),
+                INDEX `space_role_created` (`space_id`, `role`, `created_at`),
                 INDEX `role` (`role`)
             ) $charsetCollate;";
             dbDelta($sql);
@@ -59,6 +61,14 @@ class FeedSpaceUserMigrator
 
             if (!in_array('user_id_status', $index_names)) {
                 $wpdb->query("ALTER TABLE $table ADD INDEX `user_id_status` (`user_id`, `status`)");
+            }
+
+            if (!in_array('space_status_created', $index_names)) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX `space_status_created` (`space_id`, `status`, `created_at`)");
+            }
+
+            if (!in_array('space_role_created', $index_names)) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX `space_role_created` (`space_id`, `role`, `created_at`)");
             }
 
         }

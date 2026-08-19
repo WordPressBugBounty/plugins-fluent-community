@@ -51,6 +51,8 @@ class FluentBlockEditorHandler
                 <?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
 
                 <style>
+                    /* No admin bar here; WP 7.1 offsets the editor by this var, leaving a gap. */
+                    html { --wp-admin--admin-bar--height: 0; }
                     <?php echo wp_strip_all_tags($this->getColorSchemaCss()); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- generated CSS, no user input ?>
                 </style>
 

@@ -2,9 +2,9 @@
 Contributors: techjewel, wpmanageninja
 Tags: community, forum, social network, LMS
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.7
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -291,6 +291,40 @@ OR
 
 == Changelog ==
 
+= 2.8.0 (Date: Aug 19, 2026) =
+- Introduced: Progressive Web App (PWA) Module
+- Added: Unlisted Post Visibility with Feed Status Filter
+- Added: Sort Direction Control on Member and Student Lists
+- Added: FluentCRM Bounce Suppression with Email Re-Confirm Flow
+- Improved: Customizer Back Button Keyboard Accessibility
+- Improved: WordPress 7.1 Compatibility
+- Improved: Quiz Submit Disabled for Non-Enrolled Members
+- Improved: Onboarding License Management Experience
+- Security: Hardened REST API endpoints and data sanitization and escaping
+- Fixed: Lesson Duplication Copying Deleted Documents
+- Fixed: Member Join Time Off by Site Timezone
+- Fixed: Profile Dropdown Links Not Redirecting on iOS
+- Fixed: Missing Padding on Loading Skeletons
+- Fixed: Unstyled Logo Picker Buttons in Input Group
+- Fixed: Untranslated Password-Change and Slash-Menu Labels
+- Fixed: YouTube Playlist Links Spinning Forever in Feed
+- Fixed: Feed Edit Deleting Media from Remote Storage
+- Fixed: Replacing Native Video with Image on Post Edit
+- Fixed: Feed Videos Forcing Fullscreen on Android
+- Fixed: Unsupported HTML Embed Rendering Broken Output
+- Fixed: Emoji Picker Hidden Inside Popovers
+- Fixed: Social Login Buttons Missing on Signup
+- Fixed: Media Insert Failing Under Strict SQL Mode
+- Fixed: Link Fields Rejecting Valid Paths and Placeholders
+- Fixed: Empty Title or Slug When Creating Space Group
+- Fixed: Misleading Lock Icon on Public-View Lessons
+- Fixed: Mobile Lesson Table of Contents Cannot Collapse
+- Fixed: Self-Reaction Block Hooks Not Working
+- Fixed: Members Denied Access to Own Scheduled Posts
+- Fixed: Popular Spaces Report Ranking Oldest Spaces
+- Fixed: Cloud Storage URLs for Keys with Special Characters
+- Fixed: Misspelled Manager and Sitemap Hook Names
+
 = 2.7.7 (Date: Aug 10, 2026) =
 - Security: Restricted HTML Embed for media (props to patchstack. CVE-2026-66467)
 - Added: Privacy Control for Profile Password Changes
@@ -331,7 +365,6 @@ OR
 - Improved: Best-Quality WebP Thumbnails for YouTube Feed Previews
 - Improved: Cached Sitemap Index and Moderator Recipient Lists
 - Security: Access Control on Comments, Lockscreens and Documents
-- Security: Escaping, Input Sanitization and API Key Masking
 - Fixed: Fatal Error on WordPress 6.0 from Unguarded Core Calls
 - Fixed: Mobile Menu and Sidebar Feed Link Ignoring Menu Settings
 - Fixed: Duplicate and Missing Mention Notifications

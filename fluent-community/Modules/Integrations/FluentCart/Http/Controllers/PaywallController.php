@@ -5,7 +5,7 @@ namespace FluentCommunity\Modules\Integrations\FluentCart\Http\Controllers;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
-use FluentCart\App\Services\Permission\PermissionManager;
+use FluentCart\App\Services\Permission\PermissionManager as CartPermissionManager;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Services\Helper;
@@ -18,6 +18,13 @@ class PaywallController extends Controller
     public function getPaywalls(Request $request, $spaceId)
     {
         $space = BaseSpace::withoutGlobalScopes()->findOrFail($spaceId);
+
+        $userId = get_current_user_id();
+        if ($space->privacy === 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true)) {
+            return $this->sendError([
+                'message' => __('The space could not be found', 'fluent-community')
+            ], 404);
+        }
 
         $paywallIds = array_map('intval', $request->get('paywall_ids', []));
         $productIds = Arr::get($space->settings, 'cart_product_ids', []);
@@ -166,7 +173,7 @@ class PaywallController extends Controller
 
     public function createProduct(Request $request)
     {
-        if (!PermissionManager::hasPermission('products/create')) {
+        if (!CartPermissionManager::hasPermission('products/create')) {
             return $this->sendError([
                 'message' => __('You do not have permission to create products', 'fluent-community')
             ], 422);

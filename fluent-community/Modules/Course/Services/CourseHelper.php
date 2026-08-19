@@ -595,6 +595,9 @@ class CourseHelper
         $newLessonMeta = $newLesson->meta;
         $newLessonMeta['document_lists'] = [];
         foreach ($lesson->media as $media) {
+            if (!$media->is_active) {
+                continue;
+            }
             $newMedia = $media->replicate();
             $newMedia->feed_id = $newLesson->id;
             $newMedia->save();
@@ -603,10 +606,8 @@ class CourseHelper
             }
         }
 
-        if (!empty($newLessonMeta['document_lists'])) {
-            $newLesson->meta = $newLessonMeta;
-            $newLesson->save();
-        }
+        $newLesson->meta = $newLessonMeta;
+        $newLesson->save();
     }
 
     public static function getAccessMessage($course, $lesson, $config)

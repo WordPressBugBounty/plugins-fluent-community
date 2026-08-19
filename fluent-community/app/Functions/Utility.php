@@ -117,6 +117,7 @@ class Utility
             'content_moderation'    => 'no',
             'followers_module'      => 'no',
             'custom_profile_fields' => 'no',
+            'pwa_module'            => 'no',
         ];
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
@@ -135,6 +136,7 @@ class Utility
             $features['user_badge'] = 'no';
             $features['followers_module'] = 'no';
             $features['custom_profile_fields'] = 'no';
+            $features['pwa_module'] = 'no';
         }
 
         return $features;
@@ -269,6 +271,7 @@ class Utility
             'email_auto_login'               => 'yes',
             'enable_gravatar'                => 'yes',
             'enable_user_sync'               => 'yes',
+            'skip_crm_undeliverable_emails'  => 'yes',
             'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
             'profile_page_visibility'        => 'everybody', // everybody, logged_in, admin_only
             'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only

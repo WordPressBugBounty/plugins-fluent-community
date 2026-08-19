@@ -9,7 +9,6 @@ use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\SpaceUserPivot;
-use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
@@ -21,6 +20,7 @@ use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
+use FluentCommunity\Framework\Foundation\Exceptions\HttpException;
 
 class ProfileController extends Controller
 {
@@ -157,7 +157,7 @@ class ProfileController extends Controller
 
     public function patchProfile(Request $request, $userName)
     {
-        $xprofile = $this->verfifyAndGetProfile($userName);
+        $xprofile = $this->verifyAndGetProfile($userName);
 
         $updateData = $request->get('data', []);
 
@@ -551,9 +551,16 @@ class ProfileController extends Controller
             ]);
         }
 
-        $memberships = $xProfile->space_pivot()
-            ->where('status', 'active')
-            ->pluck('space_id');
+        $canSeeSecret = $xProfile->user_id == get_current_user_id()
+            || ($currentUser && $currentUser->isCommunityModerator());
+
+        $memberships = $xProfile->spaces()
+            ->wherePivot('status', 'active')
+            ->when(!$canSeeSecret, function ($q) {
+                $q->whereIn('privacy', ['public', 'private']);
+            })
+            ->get()
+            ->pluck('id');
 
         return apply_filters('fluent_community/profile_all_memberships_api_response', [
             'memberships' => $memberships
@@ -711,7 +718,7 @@ class ProfileController extends Controller
     {
         $emailPref = Utility::getEmailNotificationSettings();
 
-        $xProfile = $this->verfifyAndGetProfile($userName);
+        $xProfile = $this->verifyAndGetProfile($userName);
 
         $globalPreferances = NotificationPref::getGlobalPrefs();
 
@@ -857,12 +864,21 @@ class ProfileController extends Controller
             }
         }
 
+        $crmEmailStatus = '';
+        if ($xProfile->user_id == get_current_user_id()) {
+            $profileUser = get_user_by('ID', $xProfile->user_id);
+            if ($profileUser && $profileUser->user_email) {
+                $crmEmailStatus = Helper::getCrmUndeliverableStatus($profileUser->user_email);
+            }
+        }
+
         $data = [
             'user_globals'                      => (object)$userGlobalPrefs,
             'spaceGroups'                       => $formattedSpaceGroups,
             'space_prefs'                       => $spaceWisePrefs,
             'digestEmailDay'                    => $digestDay,
             'default_messaging_email_frequency' => Arr::get($messagingConfig, 'messaging_email_status') !== 'yes' ? 'no' : Arr::get($messagingConfig, 'messaging_email_frequency'),
+            'crm_email_status'                  => $crmEmailStatus,
         ];
 
         return apply_filters('fluent_community/profile_notification_pref_api_response', $data, $request->all());
@@ -870,7 +886,7 @@ class ProfileController extends Controller
 
     public function saveNotificationPreferance(Request $request, $userName)
     {
-        $xProfile = $this->verfifyAndGetProfile($userName);
+        $xProfile = $this->verifyAndGetOwnProfile($userName);
 
         $userPrefs = $request->get('user_globals', []);
         $sapcePrefs = $request->get('space_prefs', []);
@@ -915,13 +931,73 @@ class ProfileController extends Controller
         ];
     }
 
-    private function verfifyAndGetProfile($userName)
+    public function reconfirmEmail(Request $request, $userName)
+    {
+        if (!defined('FLUENTCRM')) {
+            return $this->sendError([
+                'message' => __('FluentCRM is not available on this site', 'fluent-community')
+            ]);
+        }
+
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+
+        if ($xProfile->user_id != get_current_user_id()) {
+            return $this->sendError([
+                'message' => __('You can only re-confirm your own email address', 'fluent-community')
+            ]);
+        }
+
+        $profileUser = get_user_by('ID', $xProfile->user_id);
+        $email = $profileUser ? $profileUser->user_email : '';
+
+        if (!$email || !Helper::getCrmUndeliverableStatus($email)) {
+            return $this->sendError([
+                'message' => __('Your email address does not need re-confirmation', 'fluent-community')
+            ]);
+        }
+
+        $subscriber = \FluentCrm\App\Models\Subscriber::where('email', $email)->first();
+
+        if (!$subscriber) {
+            return $this->sendError([
+                'message' => __('Your email address does not need re-confirmation', 'fluent-community')
+            ]);
+        }
+
+        // In-memory only, never saved: the opt-in sender is gated on status == 'pending'
+        // and does not persist the subscriber, so the stored status stays untouched
+        // and FluentCommunity keeps pausing emails until the confirmation link is clicked.
+        $subscriber->status = 'pending';
+
+        if (!$subscriber->sendDoubleOptinEmail()) {
+            return $this->sendError([
+                'message' => __('The confirmation email could not be sent right now. Please try again after a few minutes.', 'fluent-community')
+            ]);
+        }
+
+        return [
+            'message' => __('A confirmation email has been sent. Please check your inbox and click the confirmation link to resume email notifications.', 'fluent-community')
+        ];
+    }
+
+    private function verifyAndGetProfile($userName)
     {
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
-        $currentUser = $this->getUser();
-        if ($xProfile->user_id != get_current_user_id() && (!$currentUser || !$currentUser->isCommunityModerator())) {
+        $currentUserId = get_current_user_id();
+        if ($xProfile->user_id != $currentUserId && !Helper::isSuperAdmin($currentUserId)) {
             throw new \Exception('You are not allowed to update this profile');
+        }
+
+        return $xProfile;
+    }
+
+    private function verifyAndGetOwnProfile($userName)
+    {
+        $xProfile = XProfile::where('username', $userName)->firstOrFail();
+
+        if (!get_current_user_id() || $xProfile->user_id != get_current_user_id()) {
+            throw new HttpException(403, __('You are not allowed to access these notification preferences.', 'fluent-community'));
         }
 
         return $xProfile;

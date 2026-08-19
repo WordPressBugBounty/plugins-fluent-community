@@ -46,6 +46,15 @@ class BPMigrationController extends Controller
 
     public function startMigration(Request $request)
     {
+        // Validate the destructive confirmation before mutating anything, so a rejected request
+        // never clears saved migration progress.
+        if ($request->get('delete_current_data') === 'yes' && $request->get('delete_current_data_confirmation') !== 'DELETE') {
+            return $this->sendError([
+                // translators: %s is the confirmation word the user must type (DELETE)
+                'message' => sprintf(__('Please type %s to confirm permanently removing all existing FluentCommunity data.', 'fluent-community'), 'DELETE')
+            ]);
+        }
+
         if ($request->get('reset_migration') === 'yes') {
             update_option('_fcom_bp_migrations_status', [], false);
         }

@@ -290,13 +290,16 @@ class AuthModdule
 
         add_action('fluent_community/headless/head_early', function ($scope) use ($formSettings) {
             $bannerColors = array_filter(Arr::only($formSettings['banner'], ['title_color', 'text_color', 'background_color']));
-            $css = Utility::getColorCssVariables(); ?>
+            $css = Utility::getColorCssVariables();
+
+            $sideVars = '';
+            foreach ($bannerColors as $colorKey => $colorValue) {
+                $sideVars .= '--fcom_' . esc_html($colorKey) . ': ' . esc_html($colorValue) . ';';
+            }
+            ?>
             <link rel="canonical" href="<?php echo esc_url(Helper::getAuthUrl()); ?>" />
             <style>
-                .fcom_layout_side {
-                <?php foreach ($bannerColors as $colorKey => $colorValue): ?> --fcom_ <?php echo esc_html($colorKey); ?>: <?php echo esc_html($colorValue); ?>;
-                <?php endforeach; ?>
-                }
+                .fcom_layout_side { <?php echo $sideVars; ?> }
                 <?php echo esc_html($css); ?>
             </style>
             <?php
@@ -855,10 +858,8 @@ class AuthModdule
             if (AuthHelper::isFluentAuthAvailable()) {
                 $currentUrl = esc_url(home_url(add_query_arg($_GET, $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-                ob_start();
                 $titlePrefix = __('Signup with', 'fluent-community');
-                do_shortcode('[fs_auth_buttons redirect="' . $currentUrl . '" title_prefix="' . $titlePrefix . ' " title=""]');
-                $html = ob_get_clean();
+                $html = do_shortcode('[fs_auth_buttons redirect="' . $currentUrl . '" title_prefix="' . $titlePrefix . ' " title=""]');
 
                 if ($html) {
                     echo '<div class="fcom_social_auth_wrap">';

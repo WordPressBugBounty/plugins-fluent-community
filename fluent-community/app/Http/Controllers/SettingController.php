@@ -49,6 +49,7 @@ class SettingController extends Controller
             'has_crm_sync'          => 'sanitize_text_field',
             'followers_module'      => 'sanitize_text_field',
             'custom_profile_fields' => 'sanitize_text_field',
+            'pwa_module'            => 'sanitize_text_field',
         ]);
 
         $prevConfig = Utility::getFeaturesConfig();

@@ -3,6 +3,7 @@
 namespace FluentCommunity\Modules\Integrations\FluentPlayer\Http\Controllers;
 
 use FluentCommunity\App\Http\Controllers\Controller;
+use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\FileSystem;
@@ -238,9 +239,29 @@ class MediaController extends Controller
         $shareUrl = esc_url_raw($request->get('share_url'));
         $media = Media::find($mediaId);
         if (!$media) {
-            $media = (object) $request->all();
-        } else if ($shareUrl) {
-            $media->share_url = $shareUrl;
+            // Non-DB media (external embed / share URL) from a synthetic hash id: build from
+            // allowlisted scalars only. Never trust request `settings`/`layers` — accepting
+            // them lets an anon caller inject shortcode layers into FluentPlayer's renderer.
+            $media = (object) [
+                'url'       => esc_url_raw($request->get('url')),
+                'title'     => sanitize_text_field($request->get('title')),
+                'image'     => esc_url_raw($request->get('image')),
+                'share_url' => esc_url_raw($request->get('share_url')),
+                'provider'  => sanitize_text_field($request->get('provider')),
+                'type'      => sanitize_text_field($request->get('type')),
+            ];
+        } else {
+            $currentUserId = get_current_user_id();
+            $canView = ($currentUserId && (int) $media->user_id === $currentUserId)
+                || ($media->feed_id && Feed::byUserAccess($currentUserId)
+                        ->byContentModerationAccessStatus($this->getUser())
+                        ->find($media->feed_id));
+            if (!$canView) {
+                return ['html' => ''];
+            }
+            if ($shareUrl) {
+                $media->share_url = $shareUrl;
+            }
         }
         return $this->generateFluentPlayerHtml($mediaId, $media, $instanceKey);
     }
@@ -577,6 +598,7 @@ class MediaController extends Controller
             'brandColor' => '#4a90e2',
             'aspectRatio' => 'original',
             'playerWidth' => '',
+            'playsInline' => true
         ];
 		$mediaSettings = Bootstrap::getSettings();
 	    if (Arr::isTrue($mediaSettings, 'behaviors.muted_autoplay')) {

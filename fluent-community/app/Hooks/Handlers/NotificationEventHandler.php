@@ -61,7 +61,7 @@ class NotificationEventHandler
         $notificationContent = \sprintf(
         /* translators: %1$s is the user name, %2$s is the feed title and %3$3s is the space title */
             __('%1$s posted %2$s in %3$s', 'fluent-community'),
-            '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+            '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
             '<span class="fcom_nft">' . $feedTitle . '</span>',
             '<b class="fcom_nst">' . esc_html($space->title) . '</b>'
         );
@@ -101,7 +101,7 @@ class NotificationEventHandler
                 $notificationContent = \sprintf(
                 /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
                     __('%1$s and %2$s other people reacted to your post %3$s', 'fluent-community'),
-                    '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+                    '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
                     '<b class="fcom_nrc">' . ($feed->reactions_count - 1) . '</b>',
                     '<span class="fcom_nft">' . $feedTitle . '</span>'
                 );
@@ -122,7 +122,7 @@ class NotificationEventHandler
         $notificationContent = \sprintf(
         /* translators: %1$s is the user name, %2$s is the feed title */
             __('%1$s reacted to your post %2$s', 'fluent-community'),
-            '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+            '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
             '<span class="fcom_nft">' . $feedTitle . '</span>'
         );
 
@@ -155,7 +155,7 @@ class NotificationEventHandler
             $notificationContent = \sprintf(
             /* translators: %1$s is the user name, %2$s is the like count & %3$s is the comment excerpt */
                 __('%1$s and %2$s other people reacted to your comment %3$s', 'fluent-community'),
-                '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+                '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
                 '<b class="fcom_nrc">' . ($comment->reactions_count - 1) . '</b>',
                 '<span class="fcom_nft">' . $commentExcerpt . '</span>'
             );
@@ -163,7 +163,7 @@ class NotificationEventHandler
             $notificationContent = \sprintf(
             /* translators: %1$s is the user name, %2$s is the comment excerpt */
                 __('%1$s reacted to your comment %2$s', 'fluent-community'),
-                '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+                '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
                 '<span class="fcom_nft">' . $commentExcerpt . '</span>'
             );
         }
@@ -240,7 +240,7 @@ class NotificationEventHandler
             return;
         }
 
-        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->display_name) . '</b>';
+        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->getPublicDisplayName()) . '</b>';
         $feedTitle = $feed->getHumanExcerpt(60);
 
         $exist = null;
@@ -391,7 +391,7 @@ class NotificationEventHandler
             return;
         }
 
-        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->display_name) . '</b>';
+        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->getPublicDisplayName()) . '</b>';
         $feedTitle = '<span class="fcom_nft">' . $feed->getHumanExcerpt(60) . '</span>';
 
         $route = $feed->getJsRoute();
@@ -533,7 +533,7 @@ class NotificationEventHandler
             return;
         }
 
-        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->display_name) . '</b>';
+        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->getPublicDisplayName()) . '</b>';
         $feedTitle = '<span class="fcom_nft">' . $feed->getHumanExcerpt(60) . '</span>';
 
         $mentionNotification = Notification::create([
@@ -587,7 +587,7 @@ class NotificationEventHandler
             return false;
         }
 
-        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->display_name) . '</b>';
+        $commenter = '<b class="fcom_nudn">' . esc_html($comment->user->getPublicDisplayName()) . '</b>';
 
         $existingNotification = Notification::where('object_id', $comment->parent_id)
             ->where('action', 'child_comment_added')
@@ -686,7 +686,7 @@ class NotificationEventHandler
         $notificationContent = \sprintf(
         /* translators: %1$s is the user name, %2$s is the feed title */
             __('%1$s mentioned you in a post: %2$s', 'fluent-community'),
-            '<b class="fcom_nudn">' . esc_html($user->display_name) . '</b>',
+            '<b class="fcom_nudn">' . esc_html($user->getPublicDisplayName()) . '</b>',
             '<b class="fcom_nft">' . $feedTitle . '</b>'
         );
 

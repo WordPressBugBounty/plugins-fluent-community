@@ -79,6 +79,7 @@ class ReactionController extends Controller
         $currentUser = $this->getUser(true);
         $feed = Feed::withoutGlobalScopes()->byUserAccess($currentUser->ID)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
+        $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
         if ($feed->status != 'published') {
@@ -87,7 +88,7 @@ class ReactionController extends Controller
             ]);
         }
 
-        if ($currentUser->ID === $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
+        if (!$willRemove && (int) $currentUser->ID === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
                 'message' => __('You cannot react to your own post', 'fluent-community')
             ]);

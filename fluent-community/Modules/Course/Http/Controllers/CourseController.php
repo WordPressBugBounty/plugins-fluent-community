@@ -531,16 +531,28 @@ class CourseController extends Controller
         $user = $this->getUser();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
-        $courses = Course::where(function ($q) use ($isCourseCreator, $user) {
+        $coursesQuery = Course::where(function ($q) use ($isCourseCreator, $user) {
                 if ($isCourseCreator) {
                     $q->where('status', 'published')
                       ->orWhere('created_by', $user->ID);
                 } else {
                     $q->where('status', 'published');
                 }
-            })
-            ->with(['creator'])
-            ->paginate();
+            });
+
+        if (!($user && $user->isCommunityModerator())) {
+            $userId = get_current_user_id();
+            $coursesQuery->where(function ($q) use ($userId) {
+                $q->whereIn('privacy', ['public', 'private'])
+                    ->orWhereHas('space_pivot', function ($sub) use ($userId) {
+                        $sub->where('user_id', $userId)
+                            ->where('role', 'student');
+                    })
+                    ->orWhere('created_by', $userId);
+            });
+        }
+
+        $courses = $coursesQuery->with(['creator'])->paginate();
 
         $formattedCourses = [];
         foreach ($courses as $course) {

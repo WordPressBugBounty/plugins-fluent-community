@@ -153,7 +153,7 @@ class PortalHandler
                                 <span><?php esc_html_e('Upgrade', 'fluent-community'); ?></span>
                             </a>
                         <?php else: ?>
-                            <a title="Go to /wp-admin" class="fcom_inline_icon_link_item fcom_wp_admin_link"
+                            <a title="Go to /wp-admin" aria-label="<?php echo esc_attr__('Go to WordPress admin', 'fluent-community'); ?>" class="fcom_inline_icon_link_item fcom_wp_admin_link"
                                href="<?php echo esc_url(admin_url()); ?>">
                                 <span class="el-icon">
                                     <svg viewBox="0 0 122.52 122.523"><g fill="currentColor">
@@ -199,7 +199,7 @@ class PortalHandler
                 add_action('fluent_community/before_header_menu_items', function () {
                     ?>
                     <li class="top_menu_item fcom_icon_link">
-                        <a href="<?php echo esc_url(Helper::baseUrl('admin/settings')); ?>">
+                        <a aria-label="<?php echo esc_attr__('Settings', 'fluent-community'); ?>" href="<?php echo esc_url(Helper::baseUrl('admin/settings')); ?>">
                             <span class="el-icon">
                             <svg viewBox="0 0 1024 1024" data-v-d2e47025="">
                                 <path fill="currentColor"
@@ -1051,7 +1051,7 @@ class PortalHandler
             if (count($uriParts) >= 2) {
                 $userName = $uriParts[1];
                 $xProfile = XProfile::where('username', $userName)->first();
-                if ($xProfile) {
+                if ($xProfile && $xProfile->status === 'active' && Utility::canViewUserProfile($xProfile->user_id)) {
                     $data['title'] = 'User ' . esc_html($xProfile->display_name) . ' - ' . $data['title'];
                     $data['og_title'] = esc_html($xProfile->display_name) . ' - ' . $data['og_title'];
                     if ($xProfile->short_description) {
@@ -1159,13 +1159,25 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
 
             $lessonSlug = Arr::get($uriParts, 3);
-            if (!$lessonSlug) {
+            $courseSlug = Arr::get($uriParts, 1);
+            if (!$lessonSlug || !$courseSlug) {
                 return $data;
             }
 
-            $lesson = CourseLesson::query()->where('slug', $lessonSlug)->first();
+            $lesson = CourseLesson::query()->where('slug', $lessonSlug)->where('status', 'published')->first();
 
             if (!$lesson) {
+                return $data;
+            }
+
+            $course = BaseSpace::query()->onlyMain()
+                ->where('id', $lesson->space_id)
+                ->where('slug', $courseSlug)
+                ->where('status', 'published')
+                ->where('privacy', 'public')
+                ->first();
+
+            if (!$course) {
                 return $data;
             }
 
@@ -1279,6 +1291,8 @@ class PortalHandler
     public function getPortalSidebar($echo = false, $context = 'headless')
     {
         $data = Utility::getPortalSidebarData('sidebar');
+
+        $data['context'] = $context;
 
         if ($echo) {
             App::make('view')->render('portal.main_sidebar', $data);

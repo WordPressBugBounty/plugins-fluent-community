@@ -151,10 +151,12 @@ class EmailNotificationHandler
             return; // It's done
         }
 
+        $undeliverableEmails = Helper::getUndeliverableEmails($users->pluck('user_email')->toArray());
+
         $emailSubject = \sprintf(
         /* translators: %1$s is the author name and %2$s is the post excerpt (max 30 chars) */
             __('New Post By %1$s: %2$s', 'fluent-community'),
-            $feed->user->getDisplayName(),
+            $feed->user->getPublicDisplayName(),
             $feed->getHumanExcerpt(30)
         );
 
@@ -173,6 +175,10 @@ class EmailNotificationHandler
         foreach ($users as $index => $user) {
             $feed->updateCustomMeta('_last_email_user_id', $user->ID);
             if ($user->ID == $feed->user_id) {
+                continue;
+            }
+
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
                 continue;
             }
 
@@ -323,6 +329,8 @@ class EmailNotificationHandler
             return; // it's done
         }
 
+        $undeliverableEmails = Helper::getUndeliverableEmails($users->pluck('user_email')->toArray());
+
         $emailBody = $comment->getCommentHtml(true);
         $emailSubject = $comment->getEmailSubject($feed);
 
@@ -334,6 +342,10 @@ class EmailNotificationHandler
         foreach ($users as $index => $user) {
             $lastUserId = $user->ID;
             if ($user->ID == $comment->user_id) {
+                continue;
+            }
+
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
                 continue;
             }
 
@@ -433,13 +445,15 @@ class EmailNotificationHandler
             return true; // it's done
         }
 
+        $undeliverableEmails = Helper::getUndeliverableEmails($users->pluck('user_email')->toArray());
+
         $author = $feed->user;
 
         $emailSubject = \sprintf(
         /* translators: for admin post to send email all space members: %1$s is the feed title, %2$s is the author name and %3$s space name */
             __('%1$s - %2$s [%3$s]', 'fluent-community'),
             $feed->getHumanExcerpt(30),
-            $author->display_name,
+            $author->getPublicDisplayName(),
             $feed->space->title
         );
 
@@ -452,6 +466,10 @@ class EmailNotificationHandler
         foreach ($users as $index => $user) {
             $lastSendUserId = $user->ID;
             if ($user->ID == $author->ID) {
+                continue;
+            }
+
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
                 continue;
             }
 
@@ -562,12 +580,19 @@ class EmailNotificationHandler
             return false;
         }
 
+        $undeliverableEmails = Helper::getUndeliverableEmails($users->pluck('user_email')->toArray());
+
         $startAt = microtime(true);
         $maxSendPerSecond = 10;
         $sentCount = 0;
 
         foreach ($users as $user) {
             Utility::updateOption('last_digest_sent_user_id', $user->ID);
+
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+                continue;
+            }
+
             $emailDigest = new DailyDigest($user);
             if ($emailDigest->send()) {
                 $sentCount++;
@@ -645,7 +670,7 @@ class EmailNotificationHandler
 
             $moderator = get_user_by('ID', $modUserId);
 
-            if (!$moderator || !$moderator->user_email) {
+            if (!$moderator || !$moderator->user_email || Helper::isUndeliverableEmail($moderator->user_email)) {
                 return;
             }
 
@@ -661,9 +686,15 @@ class EmailNotificationHandler
             $mailer = new Mailer('', $emailSubject, $emailBody);
 
             $users = User::whereIn('ID', $chunk)->get();
+            $undeliverableEmails = Helper::getUndeliverableEmails($users->pluck('user_email')->toArray());
+
             $first = null;
             foreach ($users as $user) {
                 if (!$user || !$user->user_email) {
+                    continue;
+                }
+
+                if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
                     continue;
                 }
                 if (!$first) {

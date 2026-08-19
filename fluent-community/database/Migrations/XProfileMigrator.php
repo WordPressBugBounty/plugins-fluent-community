@@ -35,9 +35,15 @@ class XProfileMigrator
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
                  INDEX `{$indexPrefix}_user_id` (`user_id`),
-                 INDEX `{$indexPrefix}_username` (`username`)
+                 INDEX `{$indexPrefix}_username` (`username`),
+                 INDEX `{$indexPrefix}_last_activity` (`last_activity`)
             ) $charsetCollate;";
             dbDelta($sql);
+        }
+
+        $indexNames = $wpdb->get_col("SHOW INDEX FROM $table", 2);
+        if (!in_array("{$indexPrefix}_last_activity", $indexNames, true)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX `{$indexPrefix}_last_activity` (`last_activity`)");
         }
     }
 }

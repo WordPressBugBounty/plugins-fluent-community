@@ -84,7 +84,7 @@ class EmailComposer
 
         if ($block['type'] == 'boxed_content') {
             return (string)App::make('view')->make('email.Default._user_box_content', [
-                'user_name'    => $block['options']['user']->display_name,
+                'user_name'    => $block['options']['user']->getPublicDisplayName(),
                 'user_avatar'  => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
                 'content'      => $block['content'],
                 'permalink'    => $block['options']['permalink'],
@@ -95,7 +95,7 @@ class EmailComposer
 
         if ($block['type'] == 'post_boxed_content') {
             return (string)App::make('view')->make('email.Default._user_post_content', [
-                'user_name'   => $block['options']['user']->display_name,
+                'user_name'   => $block['options']['user']->getPublicDisplayName(),
                 'user_avatar' => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
                 'content'     => $block['content'],
                 'title'       => Arr::get($block['options'], 'title'),

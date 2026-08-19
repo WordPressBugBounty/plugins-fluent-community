@@ -160,7 +160,8 @@ class SpaceController extends Controller
         }])
             ->where(function ($q) {
                 $q->whereHas('space_pivot', function ($q) {
-                    $q->where('user_id', get_current_user_id());
+                    $q->where('user_id', get_current_user_id())
+                        ->where('status', 'active');
                 })
                     ->orWhereIn('privacy', ['public', 'private']);
             })
@@ -209,9 +210,21 @@ class SpaceController extends Controller
 
     public function getAllSpaces(Request $request)
     {
-        $spaces = Space::paginate();
-
         $currentUser = $this->getUser();
+
+        $spacesQuery = Space::query();
+
+        if (!($currentUser && $currentUser->isCommunityModerator())) {
+            $spacesQuery->where(function ($q) {
+                $q->whereHas('space_pivot', function ($q) {
+                    $q->where('user_id', get_current_user_id())
+                        ->where('status', 'active');
+                })
+                    ->orWhereIn('privacy', ['public', 'private']);
+            });
+        }
+        $spaces = $spacesQuery->paginate();
+
         $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
@@ -415,18 +428,35 @@ class SpaceController extends Controller
             }
         }
 
+        $defaultDirections = [
+            'last_activity' => 'DESC',
+            'display_name'  => 'ASC',
+            'created_at'    => 'DESC',
+        ];
+
+        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'created_at');
+        $sortColumn = in_array($sortBy, array_keys($defaultDirections), true) ? $sortBy : 'created_at';
+        $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
+        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true) ? $sortDir : ($sortColumn === 'created_at' ? 'ASC' : $defaultDirections[$sortColumn]);
+
+        $profileSort = $sortColumn !== 'created_at';
+        $orderColumn = $profileSort ? 'fcom_xprofile.' . $sortColumn : 'fcom_space_user.created_at';
+
         $spaceMembers = SpaceUserPivot::bySpace($space->id)
             ->whereHas('xprofile', function ($q) use ($search) {
-                return $q->searchBy($search)
-                    ->where('status', 'active');
+                $q->searchBy($search)->where('status', 'active');
             })
+            ->where('fcom_space_user.status', 'active')
             ->with(['xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
             }])
-            ->where('status', 'active')
-            ->orderBy('created_at', 'ASC')
+            ->when($profileSort, function ($q) {
+                $q->join('fcom_xprofile', 'fcom_xprofile.user_id', '=', 'fcom_space_user.user_id')
+                    ->select('fcom_space_user.*');
+            })
+            ->orderBy($orderColumn, $sortDirection)
             ->paginate();
-        
+
         return apply_filters('fluent_community/space_members_api_response', [
             'members'       => $spaceMembers,
             'pending_count' => $pendingCount
@@ -823,11 +853,26 @@ class SpaceController extends Controller
             'slug'  => 'required|unique:fcom_spaces,slug'
         ]);
 
+        $title = sanitize_text_field(Arr::get($data, 'title', ''));
+        $slug = sanitize_title(Arr::get($data, 'slug', ''));
+        $desc = sanitize_textarea_field(Arr::get($data, 'description', ''));
+
+        if (!$title) {
+            return $this->sendError([
+                'message' => __('Please enter a valid group title.', 'fluent-community')
+            ]);
+        }
+
+        if (!$slug) {
+            return $this->sendError([
+                'message' => __('Please enter a valid group slug.', 'fluent-community')
+            ]);
+        }
 
         $formattedData = [
-            'title'       => sanitize_text_field($data['title']),
-            'slug'        => sanitize_title($data['slug']),
-            'description' => sanitize_textarea_field($data['description']),
+            'title'       => $title,
+            'slug'        => $slug,
+            'description' => $desc,
             'status'      => 'active',
             'type'        => 'space_group',
             'settings'    => [

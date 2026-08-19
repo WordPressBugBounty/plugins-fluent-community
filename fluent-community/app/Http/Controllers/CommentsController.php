@@ -285,6 +285,12 @@ class CommentsController extends Controller
 
         $comment = Comment::findOrFail($commentId);
 
+        if ($comment->post_id != $feed->id) {
+            return $this->sendError([
+                'message' => __('Invalid comment', 'fluent-community')
+            ]);
+        }
+
         $user = $this->getUser(true);
 
         $isMod = $user && $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
@@ -501,6 +507,7 @@ class CommentsController extends Controller
         $userId = get_current_user_id();
         $feed = Feed::withoutGlobalScopes()->byUserAccess($userId)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
+        $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
         if ($feed->status != 'published') {
@@ -509,7 +516,7 @@ class CommentsController extends Controller
             ]);
         }
 
-        if ($userId === $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
+        if (!$willRemove && (int) $userId === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
                 'message' => __('You cannot react to your own post', 'fluent-community')
             ]);
@@ -607,7 +614,7 @@ class CommentsController extends Controller
 
     public function toggleReaction(Request $request, $feedId, $commentId)
     {
-        $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
+        $feed = Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
 
         if ($comment->post_id != $feed->id) {
@@ -623,13 +630,13 @@ class CommentsController extends Controller
         }
 
         $userId = get_current_user_id();
-        if ($userId === $comment->user_id && apply_filters('fluent_community/disable_self_comment_react', false, $feed)) {
+        $reactionState = !!$request->get('state', false);
+
+        if ($reactionState && (int) $userId === (int) $comment->user_id && apply_filters('fluent_community/disable_self_comment_react', false, $feed)) {
             return $this->sendError([
                 'message' => __('You cannot react to your own comment', 'fluent-community')
             ]);
         }
-
-        $reactionState = !!$request->get('state', false);
 
         if ($reactionState) {
             // add or update the reaction

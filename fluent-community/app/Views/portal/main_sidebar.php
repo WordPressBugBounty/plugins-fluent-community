@@ -27,6 +27,10 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
 
 ?>
 
+<?php if ($fluentCommunityContext != 'ajax'): ?>
+    <?php do_action('fluent_community/before_sidebar_wrap', $fluentCommunityContext); ?>
+<?php endif; ?>
+
 <div id="fcom_sidebar_wrap" class="fcom_sidebar_wrap">
     <?php if (apply_filters('fluent_community/will_render_default_sidebar_items', true)) : ?>
         <nav aria-label="<?php echo esc_attr__('Main Sidebar Home menu', 'fluent-community'); ?>">

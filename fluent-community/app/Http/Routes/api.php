@@ -94,6 +94,7 @@ $router->prefix('profile')->withPolicy('PortalPolicy')->group(function ($router)
 
     $router->get('/{username}/notification-preferences', 'ProfileController@getNotificationPreferance')->alphaNumDash('username');
     $router->post('/{username}/notification-preferences', 'ProfileController@saveNotificationPreferance')->alphaNumDash('username');
+    $router->post('/{username}/reconfirm-email', 'ProfileController@reconfirmEmail')->alphaNumDash('username');
 });
 
 $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {

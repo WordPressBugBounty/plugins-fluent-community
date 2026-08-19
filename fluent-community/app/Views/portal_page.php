@@ -23,8 +23,13 @@ $fluentCommunityThemeColor = $theme_color ?? '';
     <meta name="mobile-web-app-capable" content="yes">
     <?php if (!$isHeadless) : wp_head(); else: ?>
         <meta name="description" content="<?php echo esc_attr($description); ?>">
-        <link rel="icon" type="image/x-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
-        <link rel="apple-touch-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
+        <?php $fluentCommunitySiteIcon = get_site_icon_url(); ?>
+        <?php if ($fluentCommunitySiteIcon): ?>
+            <link rel="icon" type="image/x-icon" href="<?php echo esc_url($fluentCommunitySiteIcon); ?>"/>
+            <?php if (apply_filters('fluent_community/render_default_touch_icon', true)): ?>
+                <link rel="apple-touch-icon" href="<?php echo esc_url($fluentCommunitySiteIcon); ?>"/>
+            <?php endif; ?>
+        <?php endif; ?>
         <meta property="og:type" content="website">
         <meta property="og:url" content="<?php echo esc_url($url); ?>">
         <meta property="og:site_name" content="<?php bloginfo('name'); ?>">

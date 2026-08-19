@@ -241,7 +241,9 @@ class AuthHelper
 
     public static function isPasswordConfRequired()
     {
-        return apply_filters('fluent_community/autg/password_confirmation', true);
+        $isRequired = apply_filters_deprecated('fluent_community/autg/password_confirmation', [true], '2.7.8', 'fluent_community/auth/password_confirmation');
+
+        return apply_filters('fluent_community/auth/password_confirmation', $isRequired);
     }
 
     public static function isRegistrationEnabled()
@@ -274,20 +276,16 @@ class AuthHelper
             $verifcationCode = str_pad((string) wp_rand(100123, 900987), 6, '0', STR_PAD_LEFT);
         }
 
-        // Hash the code
+        // Keep the code hash server-side, keyed by an opaque challenge id. The client only ever
+        // receives the id, never the password verifier, so the code cannot be recovered offline.
         $codeHash = wp_hash_password($verifcationCode);
-
-        // Create a token with the email and code hash
-        $data = [
+        $signedToken = 'fcs_' . wp_generate_password(40, false);
+        set_transient('fcom_signup_2fa_' . $signedToken, [
             'email'     => $formData['email'],
             'code_hash' => $codeHash,
-            'expires'   => time() + 600 // 10 minutes expiry
-        ];
-        $token = base64_encode(json_encode($data));
-
-        // Sign the token
-        $signature = hash_hmac('sha256', $token, SECURE_AUTH_KEY);
-        $signedToken = $token . '.' . $signature;
+            'expires'   => time() + 600, // 10 minutes expiry
+            'attempts'  => 0,
+        ], 600);
 
         /* translators: %s is replaced by the title of the site */
         $mailSubject = apply_filters("fluent_community/auth/signup_verification_mail_subject", sprintf(__('Your registration verification code for %s', 'fluent-community'), Arr::get($generalSettings, 'site_title')));
@@ -370,32 +368,19 @@ class AuthHelper
 
     public static function validateVerificationCode($code, $verificationToken, $formData)
     {
-        if (!is_string($verificationToken) || strpos($verificationToken, '.') === false) {
+        if (!is_string($verificationToken) || $verificationToken === '') {
             return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
         }
 
-        list($data, $signature) = explode('.', $verificationToken, 2);
-        if (!$data || !$signature) {
-            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
-        }
+        $transientKey = 'fcom_signup_2fa_' . $verificationToken;
+        $data = get_transient($transientKey);
 
-        $expectedSignature = hash_hmac('sha256', $data, SECURE_AUTH_KEY);
-
-        if (!hash_equals($expectedSignature, $signature)) {
-            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
-        }
-
-        $decodedData = base64_decode($data, true); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-        if ($decodedData === false) {
-            return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
-        }
-
-        $data = json_decode($decodedData, true);
         if (!is_array($data) || empty($data['expires']) || empty($data['email']) || empty($data['code_hash'])) {
             return new \WP_Error('invalid_token', __('Invalid verification token. Please try again', 'fluent-community'));
         }
 
         if ((int)$data['expires'] < time()) {
+            delete_transient($transientKey);
             return new \WP_Error('expired_token', __('Verification token has expired. Please try again.', 'fluent-community'));
         }
 
@@ -403,9 +388,20 @@ class AuthHelper
             return new \WP_Error('invalid_email', __('Invalid email address. Please try again', 'fluent-community'));
         }
 
+        // Cap online guesses per challenge: after too many wrong codes the challenge is burned.
+        if ((int) Arr::get($data, 'attempts', 0) >= 10) {
+            delete_transient($transientKey);
+            return new \WP_Error('too_many_attempts', __('Too many invalid attempts. Please try again', 'fluent-community'));
+        }
+
         if (!wp_check_password($code, $data['code_hash'])) {
+            $data['attempts'] = (int) Arr::get($data, 'attempts', 0) + 1;
+            set_transient($transientKey, $data, max(1, (int) $data['expires'] - time()));
             return new \WP_Error('invalid_code', __('Invalid verification code. Please try again', 'fluent-community'));
         }
+
+        // Single-use: consume the challenge on success.
+        delete_transient($transientKey);
 
         return true;
     }

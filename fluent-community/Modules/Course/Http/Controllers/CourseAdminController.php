@@ -488,18 +488,38 @@ class CourseAdminController extends Controller
 
         $search = $request->getSafe('search');
 
-        $students = XProfile::whereHas('space_pivot', function ($q) use ($courseId) {
-            return $q->where('space_id', $courseId)
-                ->where('role', 'student');
-        })
-            ->searchBy($search)
+        $defaultDirections = [
+            'display_name'  => 'ASC',
+            'created_at'    => 'DESC',
+            'last_activity' => 'DESC',
+        ];
+
+        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'created_at');
+        $sortColumn = in_array($sortBy, array_keys($defaultDirections), true) ? $sortBy : 'created_at';
+        $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
+        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true) ? $sortDir : $defaultDirections[$sortColumn];
+        $orderColumn = $sortColumn === 'created_at'
+            ? 'fcom_space_user.created_at'
+            : 'fcom_xprofile.' . $sortColumn;
+
+        $publicFields = array_map(function ($field) {
+            return 'fcom_xprofile.' . $field;
+        }, ProfileHelper::getXProfilePublicFields());
+
+        $students = XProfile::searchBy($search)
             ->whereHas('user')
             ->with([
                 'space_pivot' => function ($q) use ($courseId) {
                     return $q->where('space_id', $courseId);
                 },
             ])
-            ->select(ProfileHelper::getXProfilePublicFields())
+            ->join('fcom_space_user', function ($join) use ($courseId) {
+                $join->on('fcom_space_user.user_id', '=', 'fcom_xprofile.user_id')
+                    ->where('fcom_space_user.space_id', $courseId)
+                    ->where('fcom_space_user.role', 'student');
+            })
+            ->select($publicFields)
+            ->orderBy($orderColumn, $sortDirection)
             ->paginate();
 
         $studentUserIds = $students->pluck('user_id')->toArray();
@@ -692,12 +712,11 @@ class CourseAdminController extends Controller
         $sectionId = $request->getSafe('section_id', 'intval');
 
         Course::findOrFail($courseId);
-        CourseTopic::findOrFail($sectionId);
-
-        $lesson = CourseLesson::findOrFail($lessonId);
+        $section = CourseTopic::where('space_id', $courseId)->findOrFail($sectionId);
+        $lesson = CourseLesson::where('space_id', $courseId)->findOrFail($lessonId);
 
         $lesson->update([
-            'parent_id' => $sectionId,
+            'parent_id' => $section->id,
         ]);
 
         return [

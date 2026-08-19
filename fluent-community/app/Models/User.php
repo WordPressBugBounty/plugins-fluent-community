@@ -108,7 +108,7 @@ class User extends Model
             return '';
         }
 
-        if (Utility::getPrivacySetting('enable_gravatar') != 'yes') {
+        if (Utility::getPrivacySetting('enable_gravatar') == 'no') {
             return apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->ID);
         }
 
@@ -287,6 +287,7 @@ class User extends Model
         return $this;
     }
 
+    // WP account real name (first + last, falling back to wp_users.display_name). Not the public community name — use getPublicDisplayName() for anything shown to other members.
     public function getDisplayName()
     {
         $user = get_user_by('ID', $this->ID);
@@ -299,6 +300,17 @@ class User extends Model
         }
 
         return $user->display_name;
+    }
+
+    // Public community name (xprofile.display_name, falling back to wp_users.display_name). Use this for actor names in notifications/emails to avoid leaking the legal name.
+    public function getPublicDisplayName()
+    {
+        $name = $this->xprofile ? $this->xprofile->display_name : '';
+        if (!$name) {
+            $name = $this->display_name;
+        }
+
+        return apply_filters('fluent_community/public_display_name', $name, $this);
     }
 
     public function getCustomMeta($key, $default = null)
@@ -755,7 +767,7 @@ class User extends Model
             $data = array_diff_key($data, [ 'avatar' => true, 'username' => true ]);
 
             if (apply_filters('fluent/community/user_wp_user_registered_date', true, $this)) {
-                $data['created_at'] = $this->user_registered;
+                $data['created_at'] = get_date_from_gmt($this->user_registered, 'Y-m-d H:i:s');
             }
 
             $data['meta'] = wp_parse_args($exist->meta, $data['meta']);

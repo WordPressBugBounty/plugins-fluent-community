@@ -1,14 +1,12 @@
 <?php return array(
     'root' => array(
         'name' => 'wpfluent/wpfluent',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => 'c69f4fa2a603a4b7d46ea1bed2c6ae30d3b77d8e',
+        'pretty_version' => 'dev-develop',
+        'version' => 'dev-develop',
+        'reference' => 'fe8862cf80f5236b73e886ce2109f8bd5c6b3618',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
-        'aliases' => array(
-            0 => '2.0.x-dev',
-        ),
+        'aliases' => array(),
         'dev' => false,
     ),
     'versions' => array(
@@ -31,14 +29,12 @@
             'dev_requirement' => false,
         ),
         'wpfluent/wpfluent' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'c69f4fa2a603a4b7d46ea1bed2c6ae30d3b77d8e',
+            'pretty_version' => 'dev-develop',
+            'version' => 'dev-develop',
+            'reference' => 'fe8862cf80f5236b73e886ce2109f8bd5c6b3618',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
-            'aliases' => array(
-                0 => '2.0.x-dev',
-            ),
+            'aliases' => array(),
             'dev_requirement' => false,
         ),
     ),

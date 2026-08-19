@@ -20,6 +20,10 @@ class ActivityController extends Controller
         $spaceId = !empty($context['space_id']) ? (int)$context['space_id'] : null;
         $userId = !empty($context['user_id']) ? (int)$context['user_id'] : null;
 
+        $maxPerPage = (int) apply_filters('fluent_community/max_per_page', 100) ?: 100;
+        $perPage = min($maxPerPage, max(1, (int)$request->get('per_page', 5)));
+        $page = max(1, (int)$request->get('page', 1));
+
         $latestActivityIds = Activity::where(function ($q) {
             if (Helper::isModerator()) {
                 return $q;
@@ -61,8 +65,8 @@ class ActivityController extends Controller
                 $q->where('status', 'active');
             })
             ->orderBy('id', 'DESC')
-            ->limit($request->get('per_page', 5) + 1)
-            ->offset(($request->get('page', 1) - 1) * $request->get('per_page', 5))
+            ->limit($perPage + 1)
+            ->offset(($page - 1) * $perPage)
             ->get();
 
         $formattedActivities = [];
@@ -103,7 +107,7 @@ class ActivityController extends Controller
 
         $totalCount = count($formattedActivities);
 
-        $hasMore = $totalCount > $request->get('per_page', 5);
+        $hasMore = $totalCount > $perPage;
 
         if ($hasMore) {
             array_pop($formattedActivities);
@@ -113,8 +117,8 @@ class ActivityController extends Controller
             'activities'      => [
                 'data'         => $formattedActivities,
                 'has_more'     => (boolean) $hasMore,
-                'per_page'     => (int) $request->get('per_page', 5),
-                'current_page' => (int) $request->get('page', 1),
+                'per_page'     => $perPage,
+                'current_page' => $page,
             ],
             'after_contents'  => $afterContent,
             'before_contents' => $beforeContent,

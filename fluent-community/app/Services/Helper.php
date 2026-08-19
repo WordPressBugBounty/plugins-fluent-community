@@ -6,6 +6,7 @@ use FluentCommunity\App\App;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Hooks\Handlers\ActivationHandler;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\Contact;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\Media;
@@ -2483,5 +2484,63 @@ class Helper
         }
 
         return $collapsed;
+    }
+
+    public static function getUndeliverableEmails($emails)
+    {
+        if (!$emails || !defined('FLUENTCRM')) {
+            return [];
+        }
+
+        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') != 'yes') {
+            return [];
+        }
+
+        /**
+         * FluentCRM contact statuses that FluentCommunity treats as undeliverable.
+         * Emails to contacts with these statuses are skipped for notification emails.
+         *
+         * @param array $statuses Contact statuses to skip. Default: bounced, complained, spammed.
+         */
+        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', ['bounced', 'complained', 'spammed']);
+
+        if (!$skippableStatuses) {
+            return [];
+        }
+
+        $undeliverableEmails = Contact::whereIn('email', $emails)
+            ->whereIn('status', $skippableStatuses)
+            ->pluck('email')
+            ->toArray();
+
+        return array_map('strtolower', $undeliverableEmails);
+    }
+
+    public static function getCrmUndeliverableStatus($email)
+    {
+        if (!$email || !defined('FLUENTCRM')) {
+            return '';
+        }
+
+        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') != 'yes') {
+            return '';
+        }
+
+        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', ['bounced', 'complained', 'spammed']);
+
+        if (!$skippableStatuses) {
+            return '';
+        }
+
+        $contact = Contact::where('email', $email)
+            ->whereIn('status', $skippableStatuses)
+            ->first();
+
+        return $contact ? $contact->status : '';
+    }
+
+    public static function isUndeliverableEmail($email)
+    {
+        return (bool)self::getCrmUndeliverableStatus($email);
     }
 }

@@ -39,6 +39,11 @@
         "classmap": [
             "database/"
         ],
+        "exclude-from-classmap": [
+            "dev/qa/stubs/",
+            "app/ComposerScript.php",
+            "app/Services/Libs/Emogrifier/scoped-vendor/"
+        ],
         "files": []
     },
     "autoload-dev": {

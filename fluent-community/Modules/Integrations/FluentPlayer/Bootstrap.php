@@ -44,7 +44,7 @@ class Bootstrap
         $this->app->addFilter('fluent_community/feed/update_feed_data', [$this, 'maybeUpdateFluentPlayerMedia'], 10, 2);
         $this->app->addFilter('fluent_community/feed/uploaded_feed_medias', [$this, 'maybeUpdateUploadedMedia'], 10, 2);
     }
-    
+
     /**
      * Get FluentPlayer plugin status
      *
@@ -433,9 +433,15 @@ class Bootstrap
         if ($media && is_array($media) && Arr::get($media, 'player') == 'fluent_player' && $mediaId = Arr::get($media, 'media_id')) {
             $mediaId = intval($mediaId);
             if ($mediaId) {
-                $media = Media::find($mediaId);
-                if ($media) {
-                    $uploadedMedias[] = $media;
+                $currentUserId = (int) get_current_user_id();
+                $mediaModel = Media::find($mediaId);
+                // Owner, or a moderator/admin who can edit the media's feed — never cross-user.
+                $canAttach = $mediaModel && $currentUserId && (
+                    (int) $mediaModel->user_id === $currentUserId
+                    || ($mediaModel->feed_id && $mediaModel->feed && $mediaModel->feed->hasEditAccess($currentUserId))
+                );
+                if ($canAttach) {
+                    $uploadedMedias[] = $mediaModel;
                 }
             }
         }

@@ -100,7 +100,7 @@ class RemoteUrlParser
     public function getOembed($url)
     {
         $data = (new \WP_oEmbed())->get_data($url, [
-            'discover' => false
+            'discover' => Helper::isSiteAdmin()
         ]);
 
         if (empty($data) || is_wp_error($data) || empty($data->provider_name)) {
@@ -158,6 +158,10 @@ class RemoteUrlParser
                 'sandbox'         => true,
             ];
         }
+
+        // Strip <script>/<style> incl. contents; wp_kses keeps their inner text otherwise.
+        $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#is', '', $html);
+        $html = preg_replace('#<(script|style)\b[^>]*/?>#i', '', $html);
 
         return wp_kses($html, $allowed, ['https']);
     }

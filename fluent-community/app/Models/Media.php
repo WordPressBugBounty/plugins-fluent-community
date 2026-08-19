@@ -66,6 +66,10 @@ class Media extends Model
                 $model->user_id = get_current_user_id();
             }
 
+            if (!isset($model->object_source)) {
+                $model->object_source = '';
+            }
+
             $model->media_key = $model->media_key ? $model->media_key : md5($model->media_url . '_' . time());
         });
 

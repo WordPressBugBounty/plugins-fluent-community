@@ -257,7 +257,15 @@ class FeedsHelper
         $profileUrlPrefix = Helper::baseUrl('u/');
 
         foreach ($matches[2] as $href) {
-            if (strpos($href, $profileUrlPrefix) === 0) {
+            // Rendered HTML encodes "&" as "&amp;". Left encoded, "?a=1&amp;b=2" is read
+            // as a parameter named "amp;b" — which makes YouTube drop the "list" param.
+            // Re-sanitized because decoding also restores quotes and angle brackets,
+            // and this value is fetched remotely and stored on the feed.
+            $href = sanitize_url(html_entity_decode($href, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+            // sanitize_url() empties a disallowed scheme. Returning that would report
+            // "no links" for the whole post and skip any later, usable link.
+            if (!$href || strpos($href, $profileUrlPrefix) === 0) {
                 continue;
             }
             return $href;
@@ -692,9 +700,9 @@ class FeedsHelper
                 $feed->media = $mediaPreview;
             }
 
-            // Only fetch the specific attached media, not all media (which would include inline images)
+            // Only fetch the specific attached media, not all media (which would include inline images).
             $mediaId = Arr::get($mediaPreview, 'media_id');
-            if ($mediaId) {
+            if ($mediaId && $type != 'oembed' && $type != 'iframe_html') {
                 $media = Media::where('id', $mediaId)
                     ->where('feed_id', $feed->id)
                     ->where('is_active', 1)
@@ -859,6 +867,12 @@ class FeedsHelper
                 // still goes through the same allowlist the oembed branch below uses.
                 if (!empty($mediaPreview['html'])) {
                     $mediaPreview['html'] = RemoteUrlParser::sanitizeOembedHtml($mediaPreview['html']);
+
+                    // Keep only if a usable <iframe> survived; else it renders as junk.
+                    if (stripos($mediaPreview['html'], '<iframe') === false) {
+                        unset($mediaPreview['html']);
+                    }
+
                     $mediaPreview = array_filter($mediaPreview);
                 }
 
@@ -867,6 +881,11 @@ class FeedsHelper
                     if ($thumb) {
                         $mediaPreview['image'] = $thumb;
                     }
+                }
+
+                // Nothing usable survived; skip storing a broken preview.
+                if (empty($mediaPreview['html']) && empty($mediaPreview['image'])) {
+                    return [$data, $uplaodedDocs];
                 }
 
                 $data['meta']['media_preview'] = $mediaPreview;
@@ -1137,7 +1156,7 @@ class FeedsHelper
 
         if ($mediaImage) {
             $feedHtml .= '<div class="fcom_media" style="margin-top: 20px;">';
-            $feedHtml .= '<a href="' . $postPermalink . '"><img src="' . $mediaImage . '" style="max-width: 100%; height: auto; display: block; margin: 0 auto 0px;" /></a>';
+            $feedHtml .= '<a href="' . $postPermalink . '"><img src="' . $mediaImage . '" alt="" style="max-width: 100%; height: auto; display: block; margin: 0 auto 0px;" /></a>';
             if ($mediaCount > 1) {
                 /* translators: %d is the number of additional images not shown in the preview. */
                 $feedHtml .= '<p style="text-align: center; font-size: 14px; color: #666; margin-top: 10px;">' . sprintf(_n('+%d more image', '+%d more images', $mediaCount - 1, 'fluent-community'), $mediaCount - 1) . '</p>';

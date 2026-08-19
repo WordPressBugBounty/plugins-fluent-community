@@ -37,20 +37,38 @@ class FeedsController extends Controller
         }
 
         $currentUserModel = $this->getUser();
+        $currentUserId = get_current_user_id();
+
+        $isOwnProfile = $userId && (int)$userId === (int)$currentUserId;
+
+        $filterableStatuses = apply_filters('fluent_community/feed/filterable_statuses', []);
+
+        $statusFilter = $request->getSafe('status', 'sanitize_text_field', '');
+
+        $applyStatusFilter = $statusFilter
+            && in_array($statusFilter, $filterableStatuses, true)
+            && (Helper::isModerator() || $isOwnProfile);
+
+        $maxPerPage = (int) apply_filters('fluent_community/max_per_page', 100) ?: 100;
 
         $queryArgs = [
             'selected_topic' => $selectedTopic,
-            'per_page'       => (int)$request->get('per_page', 10),
-            'page'           => (int)$request->get('page', 1),
+            'per_page'       => min($maxPerPage, max(1, (int)$request->get('per_page', 10))),
+            'page'           => max(1, (int)$request->get('page', 1)),
             'search'         => $search,
         ];
 
-        $feedsQuery = Feed::byContentModerationAccessStatus($currentUserModel, $space)
-            ->select(Feed::$publicColumns)
+        $feedsQuery = Feed::select(Feed::$publicColumns)
             ->with(Feed::withPublicRelations($currentUserModel, $space))
             ->searchBy($search, (array)$request->get('search_in', ['post_content']))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->getSafe('order_by_type'));
+
+        if ($applyStatusFilter) {
+            $feedsQuery->byStatus($statusFilter);
+        } else {
+            $feedsQuery->byContentModerationAccessStatus($currentUserModel, $space);
+        }
 
         $stickyFeed = null;
 
@@ -66,12 +84,12 @@ class FeedsController extends Controller
             if ($queryArgs['page'] === 1) {
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
+                    ->byUserAccess($currentUserId)
+                    ->byContentModerationAccessStatus($currentUserModel, $space)
                     ->with(Feed::withPublicRelations($this->getUser(), $space))
                     ->first();
             }
         }
-
-        $currentUserId = get_current_user_id();
 
         if ($userId) {
             $feedsQuery = $feedsQuery->where('user_id', $userId);
@@ -172,7 +190,9 @@ class FeedsController extends Controller
             ], 404);
         }
 
-        if ($feed->status != 'published' && !$feed->hasEditAccess($this->getUserId())) {
+        $viewableByLinkStatuses = ['published', 'unlisted'];
+
+        if (!in_array($feed->status, $viewableByLinkStatuses, true) && !$feed->hasEditAccess($this->getUserId())) {
             return $this->sendError([
                 'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
             ], 404);
@@ -260,6 +280,8 @@ class FeedsController extends Controller
         $data = $this->sanitizeAndValidateData($requestData);
         $data['user_id'] = $user->ID;
         $data['status'] = 'published';
+
+        $data['status'] = apply_filters('fluent_community/feed/save_status', $data['status'], $requestData, null);
 
         $feed = new Feed();
         $feed->user_id = $user->ID;
@@ -398,7 +420,7 @@ class FeedsController extends Controller
             ];
         }
 
-        if ($feed->status != 'published') {
+        if (!in_array($feed->status, ['published', 'unlisted'])) {
             do_action('fluent_community/feed/new_feed_' . $feed->status, $feed);
             /* translators: %s: The status of the post */
             $message = sprintf(__('Your post has been marked as %s', 'fluent-community'), $feed->status);
@@ -417,9 +439,11 @@ class FeedsController extends Controller
             do_action('fluent_community/profile_feed/created', $feed);
         }
 
+        $message = __('Your post has been published', 'fluent-community');
+
         return apply_filters('fluent_community/feed/new_feed_response', [
             'feed'                   => FeedsHelper::transformFeed($feed),
-            'message'                => __('Your post has been published', 'fluent-community'),
+            'message'                => $message,
             'last_fetched_timestamp' => current_time('timestamp')
         ], $feed, $request->all());
     }
@@ -452,8 +476,9 @@ class FeedsController extends Controller
         }
 
         if ($status = Arr::get($requestData, 'status')) {
-            if (in_array($status, $editableStatuses)) {
-                $data['status'] = $status;
+            if (in_array($status, $editableStatuses, true)) {
+                $fallbackStatus = $status === 'unlisted' ? $existingFeed->status : $status;
+                $data['status'] = apply_filters('fluent_community/feed/save_status', $fallbackStatus, $requestData, $existingFeed);
             }
         }
 
@@ -588,10 +613,17 @@ class FeedsController extends Controller
             $mediaItemIds[] = $mediaItem->id;
         }
 
-        Media::where('object_source', 'feed')
-            ->where('feed_id', $existingFeed->id)
-            ->whereNotIn('id', $mediaItemIds)
-            ->update(['is_active' => 0]);
+        if (Arr::has($requestData, 'media_images')) {
+            $deactivateQuery = Media::where('object_source', 'feed')
+                ->where('feed_id', $existingFeed->id)
+                ->whereNotIn('id', $mediaItemIds);
+
+            if (empty(Arr::get($requestData, 'media_images'))) {
+                $deactivateQuery->where('media_type', '!=', 'fluent_player');
+            }
+
+            $deactivateQuery->update(['is_active' => 0]);
+        }
 
         if ($mediaItems) {
             $this->saveMediaItems($existingFeed, $mediaItems);
@@ -655,6 +687,16 @@ class FeedsController extends Controller
         $data = Arr::only($allData, $validKeys);
 
         $data = array_map('intval', $data);
+
+        // List/unlist toggle — community-moderator only, routed through the shared save_status filter.
+        if (Helper::isModerator($user)
+            && ($reqStatus = Arr::get($allData, 'status'))
+            && in_array($reqStatus, ['published', 'unlisted'], true)
+            && in_array($feed->status, ['published', 'unlisted'], true)
+        ) {
+            $fallbackStatus = $reqStatus === 'unlisted' ? $feed->status : $reqStatus;
+            $data['status'] = apply_filters('fluent_community/feed/save_status', $fallbackStatus, $allData, $feed);
+        }
 
         if (isset($data['is_sticky'])) {
             $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;

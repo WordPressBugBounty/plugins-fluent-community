@@ -285,11 +285,10 @@ class Feed extends Model
             return $query->whereIn('status', [ 'published', 'pending' ]);
         }
 
-        // This is a normal User.
-        return $query->where(function ($q) use ($user) {
-            $q->where('status', 'published')
-                ->orWhere(function ($q) use ($user) {
-                    $q->where('status', 'pending')
+        return $query->where(function ($statusQuery) use ($user) {
+            $statusQuery->where('status', 'published')
+                ->orWhere(function ($subQuery) use ($user) {
+                    $subQuery->where('status', 'pending')
                         ->where('user_id', $user->ID);
                 });
         });

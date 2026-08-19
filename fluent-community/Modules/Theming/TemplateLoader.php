@@ -304,9 +304,9 @@ class TemplateLoader
                 <?php do_action('ocean_before_main'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                 <main id="main" class="site-main clr"<?php oceanwp_schema_markup('main'); ?> role="main">
                     <?php do_action('ocean_page_header'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
-                    <?php do_action('ocean_before_content_wrap'); ?>
+                    <?php do_action('ocean_before_content_wrap'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                     <div id="content-wrap" class="container clr">
-                        <?php do_action('ocean_before_primary'); ?>
+                        <?php do_action('ocean_before_primary'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                         <div id="primary" class="content-area clr">
                             <?php do_action('ocean_before_content'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound ?>
                             <div id="content" class="site-content clr">

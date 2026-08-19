@@ -169,6 +169,11 @@ class Commands
 
         $page = 590;
 
+        $dumpDir = wp_upload_dir()['basedir'] . '/fcom-dump';
+        if (!is_dir($dumpDir)) {
+            wp_mkdir_p($dumpDir);
+        }
+
         while (true) {
             $response = wp_remote_get($baseUrl . $page, [
                 'timeout' => 60,
@@ -187,7 +192,7 @@ class Commands
             }
 
             // save the json to a file
-            file_put_contents(ABSPATH . '/dump/' . $page . '.json', $json);
+            file_put_contents($dumpDir . '/' . $page . '.json', $json);
 
             \WP_CLI::line('Downloaded page ' . $page);
 

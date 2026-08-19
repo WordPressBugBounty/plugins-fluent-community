@@ -20,7 +20,7 @@ class DeactivationHandler
             \as_unschedule_all_actions('fluent_community_daily_jobs');
         }
 
-        if(function_exists('wp_cache_flush_group') && wp_cache_supports( 'flush_group' )) {
+        if (function_exists('wp_cache_supports') && wp_cache_supports('flush_group') && function_exists('wp_cache_flush_group')) {
             wp_cache_flush_group('fluent_community');
         }
     }

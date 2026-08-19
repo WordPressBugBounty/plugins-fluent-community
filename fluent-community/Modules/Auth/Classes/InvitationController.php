@@ -160,6 +160,13 @@ class InvitationController extends Controller
         $space = Space::findOrFail($invitation->post_id);
         $space->verifyUserPermisson($user, 'community_moderator');
 
+        // Links have no recipient; resending would mail an empty address and burn a redemption.
+        if (!is_email($invitation->message)) {
+            return $this->sendError([
+                'message' => __('Only email invitations can be resent.', 'fluent-community')
+            ]);
+        }
+
         if ($invitation->reactions_count > 5) {
             return $this->sendError([
                 'message' => __('You cannot resend this invitation', 'fluent-community')

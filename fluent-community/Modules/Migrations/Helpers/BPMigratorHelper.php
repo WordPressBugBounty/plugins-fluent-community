@@ -622,6 +622,24 @@ class BPMigratorHelper
 
     public static function deleteCurrentData()
     {
+        // Capture an audit context before the wipe so this destructive erasure of member PII is
+        // traceable (who/when/how much) and downstream modules can purge remote copies.
+        $auditContext = [
+            'user_id'   => get_current_user_id(),
+            'timestamp' => current_time('mysql'),
+            'counts'    => [
+                'feeds'      => \FluentCommunity\App\Models\Feed::count(),
+                'comments'   => \FluentCommunity\App\Models\Comment::count(),
+                'reactions'  => \FluentCommunity\App\Models\Reaction::count(),
+                'media'      => \FluentCommunity\App\Models\Media::count(),
+                'activities' => \FluentCommunity\App\Models\Activity::count(),
+                'profiles'   => \FluentCommunity\App\Models\XProfile::count(),
+                'spaces'     => \FluentCommunity\App\Models\Space::where('type', 'community')->count(),
+            ],
+        ];
+
+        do_action('fluent_community/migration/before_delete_current_data', $auditContext);
+
         // delete the folder in uploads folder fluent-community with php please
         $uploadDir = wp_upload_dir();
         $fcomDir = $uploadDir['basedir'] . '/fluent-community';
@@ -647,6 +665,8 @@ class BPMigratorHelper
         delete_option('_bp_fcom_last_post_id');
         delete_option('_bp_fcom_last_user_id');
         delete_option('_bp_fcom_last_migrated_member_id');
+
+        do_action('fluent_community/migration/after_delete_current_data', $auditContext);
     }
 
     public static function getFcomSpaceIdByGroupId($bbGroupId)

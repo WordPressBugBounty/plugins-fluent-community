@@ -59,8 +59,12 @@ return function ($file) {
          */
         $currentDBVersion = get_option('fluent_community_db_version');
         if (!$currentDBVersion || version_compare($currentDBVersion, FLUENT_COMMUNITY_DB_VERSION, '<')) {
-            update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
-            \FluentCommunity\Database\DBMigrator::run();
+            if (!get_transient('fluent_community_db_migration_lock')) {
+                set_transient('fluent_community_db_migration_lock', 1, 5 * MINUTE_IN_SECONDS);
+                \FluentCommunity\Database\DBMigrator::run();
+                update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
+                delete_transient('fluent_community_db_migration_lock');
+            }
         }
 
 

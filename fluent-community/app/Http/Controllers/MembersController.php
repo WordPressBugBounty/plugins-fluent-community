@@ -88,7 +88,17 @@ class MembersController extends Controller
 
         $sortColumn = in_array($sortBy, $validSortFields, true) ? $sortBy : 'last_activity';
 
-        $sortDirection = ($sortColumn === 'last_activity') ? 'DESC' : 'ASC';
+        $defaultDirections = [
+            'last_activity' => 'DESC',
+            'display_name'  => 'ASC',
+            'created_at'    => 'DESC',
+        ];
+
+        $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
+
+        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true)
+            ? $sortDir
+            : $defaultDirections[$sortColumn];
 
         $members = $members->orderBy($sortColumn, $sortDirection);
 

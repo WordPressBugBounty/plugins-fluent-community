@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Http\Policies;
 
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\Space;
+use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Http\Request\Request;
 
@@ -47,6 +48,11 @@ class SpacePolicy extends BasePolicy
     public function create(Request $request)
     {
         return $this->canManageCommunity($request, null);
+    }
+
+    public function searchProduct(Request $request)
+    {
+        return $this->canManageCommunity($request);
     }
 
     public function patchBySlug(Request $request, $slug)
@@ -95,7 +101,7 @@ class SpacePolicy extends BasePolicy
     public function getSpaceGroups(Request $request)
     {
         if ($request->get('options_only')) {
-            return true;
+            return !!Helper::canAccessPortal(get_current_user_id());
         }
 
         return $this->canManageSpace($request, null);
@@ -136,6 +142,16 @@ class SpacePolicy extends BasePolicy
         return $this->canManageSpace($request, Space::where('slug', $spaceSlug)->first());
     }
 
+    public function addPaywall(Request $request, $spaceId)
+    {
+        return $this->canManageCommunity($request, BaseSpace::withoutGlobalScopes()->find((int) $spaceId));
+    }
+
+    public function removePaywall(Request $request, $spaceId)
+    {
+        return $this->canManageCommunity($request, BaseSpace::withoutGlobalScopes()->find((int) $spaceId));
+    }
+
     protected function canManageCommunity(Request $request, $space = false)
     {
         $user = User::find(get_current_user_id());
@@ -149,7 +165,7 @@ class SpacePolicy extends BasePolicy
         }
 
         if ($space === false) {
-            $space = Space::find($request->get('space_id'));
+            $space = Space::find((int) $request->get('space_id'));
         }
 
         return $space && $user->getSpaceRole($space) === 'admin';
@@ -168,7 +184,7 @@ class SpacePolicy extends BasePolicy
         }
 
         if ($space === false) {
-            $space = Space::find($request->get('space_id'));
+            $space = Space::find((int) $request->get('space_id'));
         }
 
         return $space && $user->getSpaceRole($space) === 'admin';
