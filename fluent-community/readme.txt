@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -291,6 +291,18 @@ OR
 
 == Changelog ==
 
+= 2.8.1 (Date: Aug 20, 2026) =
+- Added: Verified Members Only Posting Option for Spaces
+- Added: PWA Install Instructions for Non-Chromium Android and iOS
+- Improved: Sidebar Link Row Layout and Truncated Title
+- Improved: Feed Customizer Mobile Responsiveness
+- Improved: Translator Context for Placeholder Strings
+- Fixed: MemberPress Blocking Portal Signup
+- Fixed: English Source Strings Reported by Translators
+- Fixed: Card Action Popover Menu Rendered Sideways
+- Fixed: Stuck Popover on Space Member Actions
+- Fixed: Sidebar Gap With PWA Install Button at Top
+
 = 2.8.0 (Date: Aug 19, 2026) =
 - Introduced: Progressive Web App (PWA) Module
 - Added: Unlisted Post Visibility with Feed Status Filter
@@ -300,7 +312,8 @@ OR
 - Improved: WordPress 7.1 Compatibility
 - Improved: Quiz Submit Disabled for Non-Enrolled Members
 - Improved: Onboarding License Management Experience
-- Security: Hardened REST API endpoints and data sanitization and escaping
+- Security: Plugin-Wide Access Control and Data Protection Hardening
+- Fixed: Full Legal Name Exposed in Notifications and Emails
 - Fixed: Lesson Duplication Copying Deleted Documents
 - Fixed: Member Join Time Off by Site Timezone
 - Fixed: Profile Dropdown Links Not Redirecting on iOS
@@ -365,6 +378,7 @@ OR
 - Improved: Best-Quality WebP Thumbnails for YouTube Feed Previews
 - Improved: Cached Sitemap Index and Moderator Recipient Lists
 - Security: Access Control on Comments, Lockscreens and Documents
+- Security: Escaping, Input Sanitization and API Key Masking
 - Fixed: Fatal Error on WordPress 6.0 from Unguarded Core Calls
 - Fixed: Mobile Menu and Sidebar Feed Link Ignoring Menu Settings
 - Fixed: Duplicate and Missing Mention Notifications

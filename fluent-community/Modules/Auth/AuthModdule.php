@@ -294,12 +294,12 @@ class AuthModdule
 
             $sideVars = '';
             foreach ($bannerColors as $colorKey => $colorValue) {
-                $sideVars .= '--fcom_' . esc_html($colorKey) . ': ' . esc_html($colorValue) . ';';
+                $sideVars .= '--fcom_' . $colorKey . ': ' . $colorValue . ';';
             }
             ?>
             <link rel="canonical" href="<?php echo esc_url(Helper::getAuthUrl()); ?>" />
             <style>
-                .fcom_layout_side { <?php echo $sideVars; ?> }
+                .fcom_layout_side { <?php echo esc_html($sideVars); ?> }
                 <?php echo esc_html($css); ?>
             </style>
             <?php

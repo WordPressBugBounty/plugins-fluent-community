@@ -44,6 +44,8 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
                 <?php if ($fluentCommunityShowFeedLink): ?>
                     <li class="fcom_menu_item_all_feeds fcom_desktop_only">
                         <a class="fcom_menu_link <?php echo esc_attr(Arr::get($fluentCommunityFeedItem, 'link_classes', 'fcom_dashboard route_url')); ?>"
+                           data-fcom-tip="<?php echo esc_attr(Arr::get($fluentCommunityFeedItem, 'title', __('Feed', 'fluent-community'))); ?>"
+                           title="<?php echo esc_attr(Arr::get($fluentCommunityFeedItem, 'title', __('Feed', 'fluent-community'))); ?>"
                            href="<?php echo esc_url(Arr::get($fluentCommunityFeedItem, 'permalink', Helper::baseUrl('/'))); ?>">
                             <div class="community_avatar">
                             <span class="fcom_shape">
@@ -73,7 +75,7 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
                     ?>
                 <div class="<?php echo esc_attr('fcom_communities_menu' . $fluentCommunityGroupCollapsedClass); ?>">
                     <div class="fcom_space_group_header fcom_group_title">
-                        <h4 data-group_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" class="space_section_title" tabindex="0" role="button" aria-label="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" aria-expanded="<?php echo $fluentCommunityGroupCollapsedClass ? 'false' : 'true'; ?>">
+                        <h4 data-group_id="<?php echo (int)$fluentCommunitySpaceGroup['id']; ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" title="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" class="space_section_title" tabindex="0" role="button" aria-label="<?php echo esc_attr($fluentCommunitySpaceGroup['title']); ?>" aria-expanded="<?php echo $fluentCommunityGroupCollapsedClass ? 'false' : 'true'; ?>">
                             <span><?php echo esc_html($fluentCommunitySpaceGroup['title']); ?></span>
                             <i class="el-icon fcom_space_down">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z"></path></svg>
@@ -109,7 +111,7 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
                     ?>
                     <div class="<?php echo esc_attr('fcom_communities_menu' . $fluentCommunityBottomCollapsedClass); ?>">
                         <div class="fcom_space_group_header fcom_group_title">
-                            <h4 role="button" tabindex="0" aria-expanded="<?php echo $fluentCommunityBottomCollapsedClass ? 'false' : 'true'; ?>" aria-label="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>"
+                            <h4 role="button" tabindex="0" aria-expanded="<?php echo $fluentCommunityBottomCollapsedClass ? 'false' : 'true'; ?>" aria-label="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>" data-group_id="<?php echo esc_attr($fluentCommunityBottomLink['slug']); ?>" data-fcom-tip="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>" title="<?php echo esc_attr($fluentCommunityBottomLink['title']); ?>"
                                 class="space_section_title">
                                 <span><?php echo esc_html($fluentCommunityBottomLink['title']); ?></span>
                                 <i class="el-icon fcom_space_down">

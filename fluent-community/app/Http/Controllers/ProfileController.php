@@ -997,7 +997,7 @@ class ProfileController extends Controller
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
         if (!get_current_user_id() || $xProfile->user_id != get_current_user_id()) {
-            throw new HttpException(403, __('You are not allowed to access these notification preferences.', 'fluent-community'));
+            throw new HttpException(403, esc_html__('You are not allowed to access these notification preferences.', 'fluent-community'));
         }
 
         return $xProfile;

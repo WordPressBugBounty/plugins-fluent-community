@@ -46,7 +46,17 @@ class AuthHelper
             );
         }
 
+        /**
+         * MemberPress rejects every `register_post` while its "Disable WordPress registration form"
+         * option is on (default on). That option targets wp-login.php, not the community portal, which has its own registration gate.
+         */
+        $hadMeprBlocker = remove_action('register_post', 'MeprUsersCtrl::maybe_disable_wp_registration_form', 10);
+
         do_action('register_post', $sanitized_user_login, $user_email, $errors); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
+        if ($hadMeprBlocker) {
+            add_action('register_post', 'MeprUsersCtrl::maybe_disable_wp_registration_form', 10, 3);
+        }
 
         if ($errors->has_errors()) {
             return $errors;

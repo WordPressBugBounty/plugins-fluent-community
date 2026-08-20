@@ -100,7 +100,7 @@ class RemoteUrlParser
     public function getOembed($url)
     {
         $data = (new \WP_oEmbed())->get_data($url, [
-            'discover' => Helper::isSiteAdmin()
+            'discover' => false
         ]);
 
         if (empty($data) || is_wp_error($data) || empty($data->provider_name)) {

@@ -52,7 +52,7 @@ class AdminTransStrings
             'Fetching License Information Please wait.' => __('Fetching License Information Please wait.', 'fluent-community'),
             'Finishing up...' => __('Finishing up...', 'fluent-community'),
             'FluentCommunity Pro is not installed on this site.' => __('FluentCommunity Pro is not installed on this site.', 'fluent-community'),
-            'Get Feature Update via email' => __('Get Feature Update via email', 'fluent-community'),
+            'Get Feature Updates via email' => __('Get Feature Updates via email', 'fluent-community'),
             'Get Support' => __('Get Support', 'fluent-community'),
             'Go Back' => __('Go Back', 'fluent-community'),
             'Go to Permalink Settings' => __('Go to Permalink Settings', 'fluent-community'),
@@ -85,10 +85,10 @@ class AdminTransStrings
             'Only Logged In Users' => __('Only Logged In Users', 'fluent-community'),
             'Organizations' => __('Organizations', 'fluent-community'),
             'Pick a Fluent Community Template' => __('Pick a Fluent Community Template', 'fluent-community'),
-            'Please Provide a license key of' => __('Please Provide a license key of', 'fluent-community'),
             'Please contact our support team for assistance.' => __('Please contact our support team for assistance.', 'fluent-community'),
             'Please enter a valid slug' => __('Please enter a valid slug', 'fluent-community'),
             'Please provide a license key' => __('Please provide a license key', 'fluent-community'),
+            'Please provide a license key of' => __('Please provide a license key of', 'fluent-community'),
             'Please wait while we save your settings' => __('Please wait while we save your settings', 'fluent-community'),
             'Portal Settings' => __('Portal Settings', 'fluent-community'),
             'Portal Slug' => __('Portal Slug', 'fluent-community'),
@@ -127,27 +127,33 @@ class AdminTransStrings
             'Who can access your portal' => __('Who can access your portal', 'fluent-community'),
             'Yes, Change' => __('Yes, Change', 'fluent-community'),
             'Yes, Deactivate' => __('Yes, Deactivate', 'fluent-community'),
-            'You are in a grace period, so everything keeps working for now. Updates and support will end soon - renew your license to keep them.' => __('You are in a grace period, so everything keeps working for now. Updates and support will end soon - renew your license to keep them.', 'fluent-community'),
+            'You are in a grace period, so everything keeps working for now. Updates and support will end soon — renew your license to keep them.' => __('You are in a grace period, so everything keeps working for now. Updates and support will end soon — renew your license to keep them.', 'fluent-community'),
             'Your Account' => __('Your Account', 'fluent-community'),
             'Your Community is Ready 🚀' => __('Your Community is Ready 🚀', 'fluent-community'),
             'Your Email Address' => __('Your Email Address', 'fluent-community'),
             'Your Name' => __('Your Name', 'fluent-community'),
+            /* translators: %s is the license expiry date */
             'Your license expired on %s' => __('Your license expired on %s', 'fluent-community'),
+            /* translators: %d is the number of days remaining */
             'Your license expires in %d days' => __('Your license expires in %d days', 'fluent-community'),
             'Your license expires today.' => __('Your license expires today.', 'fluent-community'),
             'Your license has expired.' => __('Your license has expired.', 'fluent-community'),
+            /* translators: %s is the license expiry date */
             'Your license will not renew on its own. It expires on %s.' => __('Your license will not renew on its own. It expires on %s.', 'fluent-community'),
+            /* translators: %s is the subscription status label */
             'Your subscription is not active (%s)' => __('Your subscription is not active (%s)', 'fluent-community'),
             '__COMMUNITY_ACCESS_LABEL__' => __('Select if your community can be accessed by public users or only logged in users.', 'fluent-community'),
             '__EMAIL_SUB_DESC__' => __('Subscribe to our newsletter to get feature updates, tips and tricks to grow your community. We promise not to spam you.', 'fluent-community'),
-            '__FLUENT_CART_DESC__' => __('__FLUENT_CART_DESC__', 'fluent-community'),
+            '__FLUENT_CART_DESC__' => __('Monetize your community by selling courses and digital products with FluentCart.', 'fluent-community'),
             '__FLUENT_CRM_DESC__' => __('Send targeted onboarding emails, marketing emails and run automations to your community members with FluentCRM.', 'fluent-community'),
             '__IMPROVE_DESC__' => __('Help to improve the product by sharing non-sensitive data like members, spaces count.', 'fluent-community'),
             '__PERMALINK_CHANGE_DESC__' => __('We do not recommend to change URL of your portal if you already have lots of contents. All of the portal related URLs will be changed by your new URL.', 'fluent-community'),
             '__permalink_broken_desk__' => __('Looks like you did not set your permalink structure as pretty. FluentCommunity requires the permalink settings other than the plain.', 'fluent-community'),
+            /* translators: %d is the number of days since expiry */
             'expired %d days ago' => __('expired %d days ago', 'fluent-community'),
             'expired 1 day ago' => __('expired 1 day ago', 'fluent-community'),
             'expires today' => __('expires today', 'fluent-community'),
+            /* translators: %d is the number of days until expiry */
             'in %d days' => __('in %d days', 'fluent-community'),
             'in 1 day' => __('in 1 day', 'fluent-community')
 ];

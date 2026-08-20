@@ -483,6 +483,7 @@ class CustomSanitizer
     {
         $yesNotFields = [
             'restricted_post_only',
+            'verified_post_only',
             'can_request_join',
             'show_paywalls',
             'show_sidebar',

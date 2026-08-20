@@ -551,6 +551,7 @@ class User extends Model
         $hasMediaGallery = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'media_gallery') == 'yes';
 
         $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') == 'yes';
+        $isVerifiedPostOnly = Arr::get($space->settings, 'verified_post_only') == 'yes';
 
         $documentAccess = Arr::get($space->settings, 'document_access');
         $mediaAccess    = Arr::get($space->settings, 'media_access');
@@ -596,7 +597,7 @@ class User extends Model
             }
         } elseif ($role == 'member' || $role == 'student') {
             $permissions = [
-                'can_create_post'      => $isRestrictedPost ? false : true,
+                'can_create_post'      => $isRestrictedPost ? false : (!$isVerifiedPostOnly || $this->isVerified()),
                 'registered'           => true,
                 'can_view_posts'       => true,
                 'can_view_members'     => $space->canViewMembers($this),

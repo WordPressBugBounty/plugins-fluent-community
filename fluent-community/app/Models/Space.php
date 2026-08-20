@@ -19,6 +19,7 @@ class Space extends BaseSpace
     {
         return [
             'restricted_post_only'    => 'no',
+            'verified_post_only'      => 'no', // yes / no
             'emoji'                   => '',
             'shape_svg'               => '',
             'custom_lock_screen'      => 'no',

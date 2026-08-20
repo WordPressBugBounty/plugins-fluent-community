@@ -311,7 +311,7 @@ class SettingController extends Controller
             } else if ($pluginSlug == 'fluent-player') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError(['message' => __('FluentPlayer is required pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community')]);
+                    return $this->sendError(['message' => __('FluentPlayer requires the pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community')]);
                 }
 
                 do_action('fluent_community/install_fluent_player_plugin');

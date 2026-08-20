@@ -1860,6 +1860,7 @@ class Helper
         ?>
         <a aria-label="Go to <?php echo esc_attr(Arr::get($link, 'title')); ?> page"
            data-fcom-tip="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
+           title="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
            href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
             echo esc_attr($key) . '="' . esc_attr($value) . '"';
         } ?>>
