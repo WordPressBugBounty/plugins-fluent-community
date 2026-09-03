@@ -44,6 +44,13 @@ class PortalPolicy extends BasePolicy
         return is_user_logged_in() && $this->verifyRequest($request);
     }
 
+    public function getOembed(Request $request)
+    {
+        $profile = Helper::getCurrentProfile();
+
+        return $profile && $profile->status === 'active' && $this->verifyRequest($request);
+    }
+
     public function updateAudioMeta(Request $request)
     {
         // Route-layer gate; resource ownership is enforced in MediaController::canEditAudioMedia.

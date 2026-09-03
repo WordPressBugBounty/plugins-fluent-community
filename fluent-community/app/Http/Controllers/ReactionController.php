@@ -5,7 +5,9 @@ namespace FluentCommunity\App\Http\Controllers;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
+use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\FeedsHelper;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
@@ -82,7 +84,7 @@ class ReactionController extends Controller
         $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
-        if ($feed->status != 'published') {
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
                 'message' => __('This post is not published yet', 'fluent-community')
             ]);
@@ -124,18 +126,39 @@ class ReactionController extends Controller
             ];
         }
 
-        $react = Reaction::create([
-            'user_id'     => $currentUser->ID,
-            'object_id'   => $feed->id,
-            'type'        => $type,
-            'object_type' => 'feed'
-        ]);
+        // Serialize a user's concurrent reactions by locking their profile row,
+        // so parallel add requests cannot each insert a duplicate reaction. The
+        // like counter is updated atomically, so unrelated users never contend.
+        $react = Helper::dbTransaction(function () use ($feed, $currentUser, $type) {
+            XProfile::where('user_id', $currentUser->ID)->lockForUpdate()->first();
 
-        if ($type == 'like') {
-            $feed->reactions_count = $feed->reactions_count + 1;
-            $feed->timestamps = false; // Don't update the updated_at timestamp
-            $feed->save();
+            $react = Reaction::where('user_id', $currentUser->ID)
+                ->where('object_id', $feed->id)
+                ->where('type', $type)
+                ->objectType('feed')
+                ->first();
 
+            if ($react) {
+                return $react;
+            }
+
+            $react = Reaction::create([
+                'user_id'     => $currentUser->ID,
+                'object_id'   => $feed->id,
+                'type'        => $type,
+                'object_type' => 'feed'
+            ]);
+
+            if ($type == 'like') {
+                // getQuery() so the atomic increment does not touch updated_at
+                Feed::withoutGlobalScopes()->where('id', $feed->id)->getQuery()->increment('reactions_count');
+                $feed->reactions_count = $feed->reactions_count + 1;
+            }
+
+            return $react;
+        });
+
+        if ($react->wasRecentlyCreated && $type == 'like') {
             $react->load('xprofile');
             do_action('fluent_community/feed/react_added', $react, $feed);
         }

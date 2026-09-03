@@ -206,7 +206,6 @@ class Route
     /**
      * Map the route to be used in front-end.
      *
-     * @param mixed $handler
      * @return self
      */
     public function preparefrontendHandlers()

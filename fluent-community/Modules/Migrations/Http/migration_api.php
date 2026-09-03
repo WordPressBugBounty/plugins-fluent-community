@@ -8,7 +8,7 @@ defined('ABSPATH') || exit;
 
 $router->prefix('migrations')
     ->namespace('FluentCommunity\Modules\Migrations\Http\Controllers')
-    ->withPolicy(\FluentCommunity\App\Http\Policies\AdminPolicy::class)
+    ->withPolicy(\FluentCommunity\App\Http\Policies\SuperAdminPolicy::class)
     ->group(function ($router) {
         $router->get('/', 'MigrationController@getAvailableMigrations');
         $router->get('/buddypress/config', 'BPMigrationController@getMigrationConfig');

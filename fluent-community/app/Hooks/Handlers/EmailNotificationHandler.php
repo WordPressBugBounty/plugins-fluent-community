@@ -61,20 +61,21 @@ class EmailNotificationHandler
             return false;
         }
 
-        $types = ['np_by_member_mail'];
+        $events = ['np_by_member'];
         $spaceRole = $feed->user->getSpaceRole($feed->space);
         if (in_array($spaceRole, ['admin', 'moderator'])) {
-            $types[] = 'np_by_admin_mail';
+            $events[] = 'np_by_admin';
         }
 
-        $hasSubscribers = User::query()->where(function ($query) use ($types, $space, $feed) {
-            $query->whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
-                $query->whereIn('notification_type', $types)
+        $hasSubscribers = User::query()->where(function ($query) use ($events, $space, $feed) {
+            $query->whereHas('notificationPreferences', function ($query) use ($events, $space) {
+                $query->where('channel', 'mail')
+                    ->whereIn('event_key', $events)
                     ->where('object_id', $space->id)
-                    ->where('is_read', 1);
+                    ->where('value', 1);
             });
 
-            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $types]);
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $events]);
 
             return $query;
         })->exists();
@@ -108,18 +109,19 @@ class EmailNotificationHandler
             return;
         }
 
-        $types = ['np_by_member_mail'];
+        $events = ['np_by_member'];
         $spaceRole = $feed->user->getSpaceRole($feed->space);
         if (in_array($spaceRole, ['admin', 'moderator'])) {
-            $types[] = 'np_by_admin_mail';
+            $events[] = 'np_by_admin';
         }
 
         $lastSendUserId = (int)$feed->getCustomMeta('_last_email_user_id', 0);
-        $usersQuery = User::query()->where(function ($query) use ($types, $space, $feed) {
-            $query->whereHas('notificationSubscriptions', function ($query) use ($types, $space) {
-                $query->whereIn('notification_type', $types)
+        $usersQuery = User::query()->where(function ($query) use ($events, $space, $feed) {
+            $query->whereHas('notificationPreferences', function ($query) use ($events, $space) {
+                $query->where('channel', 'mail')
+                    ->whereIn('event_key', $events)
                     ->where('object_id', $space->id)
-                    ->where('is_read', 1);
+                    ->where('value', 1);
             });
 
             $mentionedUserIds = Arr::get($feed->meta, 'mentioned_user_ids', []);
@@ -128,7 +130,7 @@ class EmailNotificationHandler
                 $query->orWhereIn('ID', $mentionedUserIds);
             }
 
-            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $types]);
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $events]);
 
             return $query;
         })
@@ -247,7 +249,7 @@ class EmailNotificationHandler
         $authorId = FeedsHelper::getNotificationAuthorId($feed);
 
         $notificationUserIds = [];
-        if ($comment->user_id != $authorId && NotificationPref::willGetCommentEmail($authorId, $globalCommentStatus)) {
+        if ($comment->user_id != $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
             as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
             return true;
         }
@@ -255,7 +257,7 @@ class EmailNotificationHandler
         if ($comment->parent_id) {
             $notificationUserIds = $comment->getCommentParentUserIds();
             $notificationUserIds = array_filter($notificationUserIds, function ($userId) use ($globalCommentStatus) {
-                return NotificationPref::willGetCommentReplyEmail($userId, $globalCommentStatus);
+                return NotificationPref::willGetNotification($userId, 'reply', 'mail', $globalCommentStatus);
             });
         }
 
@@ -290,12 +292,12 @@ class EmailNotificationHandler
 
         $notificationUserIds = $comment->getCommentParentUserIds($lastUserId);
         $notificationUserIds = array_filter($notificationUserIds, function ($userId) use ($globalCommentStatus) {
-            return NotificationPref::willGetCommentReplyEmail($userId, $globalCommentStatus);
+            return NotificationPref::willGetNotification($userId, 'reply', 'mail', $globalCommentStatus);
         });
 
         $notificationUserIds = array_diff($notificationUserIds, [$comment->user_id]);
         $authorId = FeedsHelper::getNotificationAuthorId($feed);
-        if ($comment->user_id != $authorId && NotificationPref::willGetCommentEmail($authorId, $globalCommentStatus)) {
+        if ($comment->user_id != $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
             // Add at the first
             $notificationUserIds[] = $authorId;
         }
@@ -303,7 +305,7 @@ class EmailNotificationHandler
         // the mentioned user ids
         if ($mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', [])) {
             foreach ($mentionedUserIds as $mentionedUserId) {
-                if (NotificationPref::willGetMentionEmail($mentionedUserId, $this->isEnabled('mention_mail'))) {
+                if (NotificationPref::willGetNotification($mentionedUserId, 'mention', 'mail', $this->isEnabled('mention_mail'))) {
                     $notificationUserIds[] = $mentionedUserId;
                 }
             }
@@ -423,9 +425,10 @@ class EmailNotificationHandler
             return true;
         }
 
-        $users = User::whereDoesntHave('notificationSubscriptions', function ($query) {
-            $query->where('notification_type', 'mention_mail')
-                ->where('is_read', 0);
+        $users = User::whereDoesntHave('notificationPreferences', function ($query) {
+            $query->where('channel', 'mail')
+                ->where('event_key', 'mention')
+                ->where('value', 0);
         })
             ->whereHas('space_pivot', function ($query) use ($feed) {
                 $query->where('space_id', $feed->space_id)
@@ -544,9 +547,10 @@ class EmailNotificationHandler
         $lastSentUserId = Utility::getOption('last_digest_sent_user_id');
 
         if ($globalEnabled) {
-            $users = User::whereDoesntHave('notification_records', function ($query) {
-                $query->where('notification_type', 'digest_mail')
-                    ->where('is_read', 0);
+            $users = User::whereDoesntHave('notificationPreferences', function ($query) {
+                $query->where('channel', 'mail')
+                    ->where('event_key', 'digest')
+                    ->where('value', 0);
             })
                 ->whereHas('xprofile', function ($query) {
                     $query->where('status', 'active');
@@ -558,9 +562,10 @@ class EmailNotificationHandler
                 ->orderBy('ID', 'ASC')
                 ->get();
         } else {
-            $users = User::whereHas('notification_records', function ($query) {
-                $query->where('notification_type', 'digest_mail')
-                    ->where('is_read', 1);
+            $users = User::whereHas('notificationPreferences', function ($query) {
+                $query->where('channel', 'mail')
+                    ->where('event_key', 'digest')
+                    ->where('value', 1);
             })
                 ->whereHas('xprofile', function ($query) {
                     $query->where('status', 'active');

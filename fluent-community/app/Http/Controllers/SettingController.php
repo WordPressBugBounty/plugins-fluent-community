@@ -191,6 +191,15 @@ class SettingController extends Controller
                 'action_text'    => $this->isPluginInstalled('fluent-messaging/fluent-messaging.php') ? __('Active FluentCommunity Chat', 'fluent-community') : __('Install FluentCommunity Chat', 'fluent-community'),
                 'description'    => __('FluentCommunity Chat is a real-time chat plugin for WordPress. It allows you to create a chat room for your community members.', 'fluent-community')
             ],
+            'fluent-notify'    => [
+                'is_repo'        => false,
+                'title'          => __('FluentNotify', 'fluent-community'),
+                'logo'           => Helper::assetUrl('images/brands/fluent-notify.svg'),
+                'is_installed'   => defined('FLUENT_NOTIFY_PLUGIN_VERSION'),
+                'learn_more_url' => 'https://fluentnotify.com',
+                'action_text'    => $this->isPluginInstalled('fluent-notify/fluent-notify.php') ? __('Active FluentNotify', 'fluent-community') : __('Install FluentNotify', 'fluent-community'),
+                'description'    => __('Send browser push notifications to your community members for comments, replies and mentions.', 'fluent-community')
+            ],
             'fluent-player'    => [
                 'is_repo'        => false,
                 'title'          => __('FluentPlayer', 'fluent-community'),
@@ -315,6 +324,12 @@ class SettingController extends Controller
                 }
 
                 do_action('fluent_community/install_fluent_player_plugin');
+            } else if ($pluginSlug == 'fluent-notify') {
+                try {
+                    do_action('fluent_community/install_fluent_notify_plugin');
+                } catch (\Exception $e) {
+                    return $this->sendError(['message' => $e->getMessage()]);
+                }
             }
         }
 

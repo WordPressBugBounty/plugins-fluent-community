@@ -248,6 +248,7 @@ class Helper
      * Check if the user is a site admin.
      *
      * @param int|null $userId The user ID to check. If null, checks the current user.
+     * @param \FluentCommunity\App\Models\User|null $user Resolved user model, to save a lookup.
      * @return bool True if the user is a site admin, false otherwise.
      */
     public static function isSiteAdmin($userId = null, $user = null)
@@ -257,7 +258,9 @@ class Helper
         }
 
         if (!$user) {
-            $user = self::getCurrentUser();
+            $user = ($userId && (int)$userId !== get_current_user_id())
+                ? User::find($userId)
+                : self::getCurrentUser();
         }
 
         return $user && Arr::get($user->getPermissions(), 'community_admin');
@@ -796,10 +799,10 @@ class Helper
                 '/^\s*>\s?/m'                           => '',
                 // Horizontal rules: replace with empty line
                 '/^\s*([-*_])\1{2,}\s*$/m'              => "\n",
+                // Images: keep only the alt text (run before links)
+                '/!\[([^\]]*)\]\([^\)]+\)/'             => '$1',
                 // Links: keep only the link text
-                '/\[([^\]]+)\]\([^\)]+\)/'              => '$1',
-                // Images: keep only the alt text
-                '/!\[([^\]]+)\]\([^\)]+\)/'             => '$1',
+                '/\[([^\]]*)\]\([^\)]+\)/'              => '$1',
                 // Strikethrough: remove '~~' symbols
                 '/~~(.*?)~~/'                           => '$1',
                 // Task lists: remove checkbox syntax
@@ -807,6 +810,8 @@ class Helper
             ];
 
             $content = preg_replace(array_keys($patterns), array_values($patterns), $content);
+
+            $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
             // remove all tags
             $content = wp_strip_all_tags($content);
@@ -1858,11 +1863,10 @@ class Helper
         ]);
 
         ?>
-        <a aria-label="Go to <?php echo esc_attr(Arr::get($link, 'title')); ?> page"
-           data-fcom-tip="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
+        <a data-fcom-tip="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
            title="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
            href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
-            echo esc_attr($key) . '="' . esc_attr($value) . '"';
+            echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
         } ?>>
             <?php $renderIcon && self::printLinkIcon($link, $fallback); ?>
             <span class="community_name"><?php echo wp_kses_post(Arr::get($link, 'title')); ?></span>

@@ -42,6 +42,39 @@ return function ($file) {
         });
     });
 
+    /*
+     * A stale schema is repaired from two places. Portal render catches sites where
+     * an admin browses the community; admin_init catches the plugin-update case,
+     * where the first request after the new code lands is a wp-admin page and a
+     * newly added table would otherwise not exist yet. A missing index only slows
+     * things down, but a missing table is fatal, so the second entry point matters.
+     */
+    if (!function_exists('fluent_community_maybe_migrate_db')) {
+        function fluent_community_maybe_migrate_db()
+        {
+            $currentDBVersion = get_option('fluent_community_db_version');
+
+            if ($currentDBVersion && version_compare($currentDBVersion, FLUENT_COMMUNITY_DB_VERSION, '>=')) {
+                return;
+            }
+
+            if (get_transient('fluent_community_db_migration_lock')) {
+                return;
+            }
+
+            set_transient('fluent_community_db_migration_lock', 1, 5 * MINUTE_IN_SECONDS);
+            \FluentCommunity\Database\DBMigrator::run();
+            update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
+            delete_transient('fluent_community_db_migration_lock');
+        }
+    }
+
+    add_action('admin_init', function () {
+        if (current_user_can('activate_plugins')) {
+            fluent_community_maybe_migrate_db();
+        }
+    });
+
     add_action('fluent_community/portal_render_for_user', function () {
         if (!\FluentCommunity\App\Services\Helper::isSiteAdmin()) {
             return;
@@ -57,15 +90,7 @@ return function ($file) {
         /*
          * We will remove this after final release
          */
-        $currentDBVersion = get_option('fluent_community_db_version');
-        if (!$currentDBVersion || version_compare($currentDBVersion, FLUENT_COMMUNITY_DB_VERSION, '<')) {
-            if (!get_transient('fluent_community_db_migration_lock')) {
-                set_transient('fluent_community_db_migration_lock', 1, 5 * MINUTE_IN_SECONDS);
-                \FluentCommunity\Database\DBMigrator::run();
-                update_option('fluent_community_db_version', FLUENT_COMMUNITY_DB_VERSION, false);
-                delete_transient('fluent_community_db_migration_lock');
-            }
-        }
+        fluent_community_maybe_migrate_db();
 
 
         if (defined('FLUENT_COMMUNITY_PRO_VERSION')) {

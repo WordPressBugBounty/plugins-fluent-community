@@ -3,10 +3,11 @@
 namespace FluentCommunity\App\Hooks\Handlers;
 
 use FluentCommunity\App\Functions\Utility;
-use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Framework\Support\DateTime;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\NotificationPref;
+use FluentCommunity\Database\Migrations\NotificationPrefMigrator;
 
 class Scheduler
 {
@@ -19,6 +20,16 @@ class Scheduler
 
         add_action('fluent_community_send_daily_digest_init', function () {
             do_action('fluent_community_send_daily_digest');
+        }, 10);
+
+        /*
+         * Continuation for a preference backfill that ran out of request budget.
+         * Not reachable through DBMigrator: boot/app.php stamps the db-version
+         * option as soon as that returns, which closes the gate on any further
+         * migrator pass.
+         */
+        add_action(NotificationPrefMigrator::RESUME_HOOK, function () {
+            NotificationPrefMigrator::continueBackfill();
         }, 10);
 
         add_action('fluent_community_daily_jobs', function () {
@@ -37,9 +48,10 @@ class Scheduler
         if ($globalStatus != 'yes') {
             // Global Status is false
             // Check if any user enabled that or not
-            $isEnabled = NotificationSubscription::query()->where('notification_type', 'digest_mail')
-                ->where('is_read', 1)
-                ->exists();
+            // Answered from a denormalized option refreshed on the preference
+            // write path. This used to be an hourly unindexed scan of the
+            // notification receipts table looking for a handful of pref rows.
+            $isEnabled = NotificationPref::hasAnyEnabled('digest');
 
             if (!$isEnabled) {
                 // unset the scheduled action

@@ -30,4 +30,15 @@ class BasePolicy extends Policy
     {
         return current_user_can($permission);
     }
+
+    protected function getRouteParam(Request $request, $key, $default = null)
+    {
+        $urlParams = $request->get_url_params();
+
+        if (!is_array($urlParams) || !isset($urlParams[$key])) {
+            return $default;
+        }
+
+        return $urlParams[$key];
+    }
 }

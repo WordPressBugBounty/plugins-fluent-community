@@ -139,12 +139,12 @@ class WPDBConnection implements ConnectionInterface
     }
 
     /**
-     * Register PHP-backed SOUNDEX() and LEVENSHTEIN() functions on the SQLite
-     * connection so phonetic ("sounds like") and fuzzy ("similar") queries
-     * work, mirroring MySQL's native/stored equivalents.
+     * Register a PHP-backed SOUNDEX() function on the SQLite connection so
+     * phonetic ("sounds like") queries work, mirroring MySQL's native
+     * equivalent.
      *
-     * SQLite ships neither function; PHP provides both natively, so we bind
-     * them as UDFs. Using PHP's soundex() here matches the term that
+     * SQLite doesn't ship the function; PHP provides it natively, so we bind
+     * it as a UDF. Using PHP's soundex() here matches the term that
      * SQLiteGrammar encodes with the same soundex() on the binding side.
      *
      * No-ops on MySQL and silently skips if the underlying PDO is unreachable,
@@ -164,11 +164,10 @@ class WPDBConnection implements ConnectionInterface
 
         try {
             $pdo->sqliteCreateFunction('soundex', 'soundex', 1);
-            $pdo->sqliteCreateFunction('levenshtein', 'levenshtein', 2);
         } catch (\Throwable $e) {
-            // Leave the functions unregistered rather than break booting;
-            // whereSoundsLike()/whereSimilar() will only surface a SQL error
-            // if they are actually used on this connection.
+            // Leave the function unregistered rather than break booting;
+            // whereSoundsLike() will only surface a SQL error if it is
+            // actually used on this connection.
         }
     }
 

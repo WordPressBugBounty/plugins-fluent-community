@@ -18,7 +18,8 @@ class MigrationModule
         });
 
         add_filter('fluent_community/portal_settings_menu_items', function ($menuItems) {
-            if (!\FluentCommunity\App\Services\Helper::isSiteAdmin()) {
+            // Matches the route policy: migrations are super-admin only.
+            if (!\FluentCommunity\App\Services\Helper::isSuperAdmin()) {
                 return $menuItems;
             }
 

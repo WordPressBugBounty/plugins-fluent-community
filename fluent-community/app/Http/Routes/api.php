@@ -104,6 +104,9 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('/email-settings', 'AdminController@getEmailSettings');
     $router->post('/email-settings', 'AdminController@saveEmailSettings');
 
+    $router->get('/push-settings', 'AdminController@getPushSettings');
+    $router->post('/push-settings', 'AdminController@savePushSettings');
+
     $router->get('/storage-settings', 'AdminController@getStorageSettings');
     $router->post('/storage-settings', 'AdminController@updateStorageSettings');
 
@@ -113,14 +116,17 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('/auth-settings', 'AdminController@getAuthSettings');
 
     $router->get('/on-boardings', 'AdminController@getOnBoardingSettings');
-    $router->post('/on-boardings', 'AdminController@saveOnBoardingSettings');
-    $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
 
     $router->get('/profile-link-providers', 'AdminController@getProfileLinkProviders');
     $router->post('/profile-link-providers', 'AdminController@updateProfileLinkProviders');
 
     $router->get('/all_space_courses', 'AdminController@getAllSpaceCourses');
 
+});
+
+$router->prefix('admin')->withPolicy('SuperAdminPolicy')->group(function ($router) {
+    $router->post('/on-boardings', 'AdminController@saveOnBoardingSettings');
+    $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
 });
 
 $router->prefix('members')->withPolicy('PortalPolicy')->group(function ($router) {

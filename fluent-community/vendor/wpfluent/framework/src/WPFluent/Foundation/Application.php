@@ -31,7 +31,7 @@ use FluentCommunity\Framework\Foundation\Concerns\FoundationTrait;
  * @property \FluentCommunity\Framework\Foundation\Config        $config
  * @property \FluentCommunity\Framework\View\View                $view
  * @property \FluentCommunity\Framework\Cache\Cache              $cache
- * @property \FluentCommunity\Framework\Http\Router\Router       $router
+ * @property \FluentCommunity\Framework\Http\Router              $router
  * @property \FluentCommunity\Framework\Http\Request\Request     $request
  * @property \FluentCommunity\Framework\Http\Response\Response   $response
  * @property \FluentCommunity\Framework\Validator\Validator      $validator

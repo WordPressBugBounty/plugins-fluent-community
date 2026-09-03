@@ -11,11 +11,11 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     );
 
     public static $prefixLengthsPsr4 = array (
-        'W' =>
+        'W' => 
         array (
             'WPFluent\\' => 9,
         ),
-        'F' =>
+        'F' => 
         array (
             'FluentCommunity\\Modules\\' => 24,
             'FluentCommunity\\Framework\\' => 26,
@@ -25,23 +25,23 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     );
 
     public static $prefixDirsPsr4 = array (
-        'WPFluent\\' =>
+        'WPFluent\\' => 
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Modules\\' =>
+        'FluentCommunity\\Modules\\' => 
         array (
             0 => __DIR__ . '/../..' . '/Modules',
         ),
-        'FluentCommunity\\Framework\\' =>
+        'FluentCommunity\\Framework\\' => 
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Dev\\' =>
+        'FluentCommunity\\Dev\\' => 
         array (
             0 => __DIR__ . '/../..' . '/dev',
         ),
-        'FluentCommunity\\App\\' =>
+        'FluentCommunity\\App\\' => 
         array (
             0 => __DIR__ . '/../..' . '/app',
         ),
@@ -86,6 +86,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Http\\Policies\\BasePolicy' => __DIR__ . '/../..' . '/app/Http/Policies/BasePolicy.php',
         'FluentCommunity\\App\\Http\\Policies\\PortalPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/PortalPolicy.php',
         'FluentCommunity\\App\\Http\\Policies\\SpacePolicy' => __DIR__ . '/../..' . '/app/Http/Policies/SpacePolicy.php',
+        'FluentCommunity\\App\\Http\\Policies\\SuperAdminPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/SuperAdminPolicy.php',
         'FluentCommunity\\App\\Http\\Policies\\UserPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/UserPolicy.php',
         'FluentCommunity\\App\\Http\\Requests\\UserRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UserRequest.php',
         'FluentCommunity\\App\\Models\\Activity' => __DIR__ . '/../..' . '/app/Models/Activity.php',
@@ -98,6 +99,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Models\\Meta' => __DIR__ . '/../..' . '/app/Models/Meta.php',
         'FluentCommunity\\App\\Models\\Model' => __DIR__ . '/../..' . '/app/Models/Model.php',
         'FluentCommunity\\App\\Models\\Notification' => __DIR__ . '/../..' . '/app/Models/Notification.php',
+        'FluentCommunity\\App\\Models\\NotificationPreference' => __DIR__ . '/../..' . '/app/Models/NotificationPreference.php',
         'FluentCommunity\\App\\Models\\NotificationSubscriber' => __DIR__ . '/../..' . '/app/Models/NotificationSubscriber.php',
         'FluentCommunity\\App\\Models\\NotificationSubscription' => __DIR__ . '/../..' . '/app/Models/NotificationSubscription.php',
         'FluentCommunity\\App\\Models\\Reaction' => __DIR__ . '/../..' . '/app/Models/Reaction.php',
@@ -140,6 +142,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Database\\Migrations\\FeedSpaceUserMigrator' => __DIR__ . '/../..' . '/database/Migrations/FeedSpaceUserMigrator.php',
         'FluentCommunity\\Database\\Migrations\\MediaArchiveMigrator' => __DIR__ . '/../..' . '/database/Migrations/MediaArchiveMigrator.php',
         'FluentCommunity\\Database\\Migrations\\MetaMigrator' => __DIR__ . '/../..' . '/database/Migrations/MetaMigrator.php',
+        'FluentCommunity\\Database\\Migrations\\NotificationPrefMigrator' => __DIR__ . '/../..' . '/database/Migrations/NotificationPrefMigrator.php',
         'FluentCommunity\\Database\\Migrations\\NotificationUserMigrator' => __DIR__ . '/../..' . '/database/Migrations/NotificationUserMigrator.php',
         'FluentCommunity\\Database\\Migrations\\NotificationsMigrator' => __DIR__ . '/../..' . '/database/Migrations/NotificationsMigrator.php',
         'FluentCommunity\\Database\\Migrations\\TermFeedMigrator' => __DIR__ . '/../..' . '/database/Migrations/TermFeedMigrator.php',
@@ -436,7 +439,6 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\MigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/MigrationController.php',
         'FluentCommunity\\Modules\\Migrations\\MigrationModule' => __DIR__ . '/../..' . '/Modules/Migrations/MigrationModule.php',
-        'FluentCommunity\\Modules\\PushNotification\\FnSubscriptionModel' => __DIR__ . '/../..' . '/Modules/PushNotification/FnSubscriptionModel.php',
         'FluentCommunity\\Modules\\PushNotification\\PushNotificationModule' => __DIR__ . '/../..' . '/Modules/PushNotification/PushNotificationModule.php',
         'FluentCommunity\\Modules\\Theming\\TemplateLoader' => __DIR__ . '/../..' . '/Modules/Theming/TemplateLoader.php',
     );

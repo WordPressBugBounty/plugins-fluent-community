@@ -466,22 +466,17 @@ class FluentBlockEditorHandler
 
     private function unloadOtherScripts()
     {
+        // skips scripts and styles both; fluent_community/skip_no_conflict is styles only
         $isSkip = apply_filters('fluent_com_editor/skip_no_conflict', false);
         if ($isSkip) {
             return;
         }
 
-        /**
-         * Define the list of approved slugs for FluentCRM assets.
-         *
-         * This filter allows modification of the list of slugs that are approved for FluentCRM assets.
-         *
-         * @param array $approvedSlugs An array of approved slugs for FluentCRM assets.
-         */
+        // scripts only; styles use fluent_community/asset_listed_slugs
         $approvedSlugs = apply_filters('fluent_com_editor/asset_listed_slugs', [
             '\/gutenberg\/'
         ]);
-        $approvedSlugs[] = 'fluent-community';
+        $approvedSlugs[] = '\/fluent-community(-pro)?\/';
         $approvedSlugs = array_unique($approvedSlugs);
         $approvedSlugs = implode('|', $approvedSlugs);
 
@@ -531,11 +526,12 @@ class FluentBlockEditorHandler
                 return;
             }
 
+            // styles only; scripts use fluent_com_editor/asset_listed_slugs
             $approvedSlugs = apply_filters('fluent_community/asset_listed_slugs', [
                 '\/gutenberg\/',
             ]);
 
-            $approvedSlugs[] = '\/fluent-community\/';
+            $approvedSlugs[] = '\/fluent-community(-pro)?\/';
 
             $approvedSlugs = array_unique($approvedSlugs);
             $approvedSlugs = implode('|', $approvedSlugs);

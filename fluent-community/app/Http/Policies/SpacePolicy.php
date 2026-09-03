@@ -37,12 +37,16 @@ class SpacePolicy extends BasePolicy
 
     public function join(Request $request)
     {
-        return !!get_current_user_id();
+        $xProfile = Helper::getCurrentProfile(true);
+
+        return $xProfile && $xProfile->status == 'active';
     }
 
     public function leave(Request $request)
     {
-        return !!get_current_user_id();
+        $xProfile = Helper::getCurrentProfile(true);
+
+        return $xProfile && $xProfile->status == 'active';
     }
 
     public function create(Request $request)

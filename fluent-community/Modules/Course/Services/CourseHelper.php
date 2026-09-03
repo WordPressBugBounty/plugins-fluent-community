@@ -490,7 +490,22 @@ class CourseHelper
     {
         $terms = Term::whereHas('base_spaces', function ($q) {
             $q->where('type', 'course');
-        })->get();
+        })->orderBy('title', 'ASC')->get();
+        // Respect the admin-defined order (settings.serial)
+        $terms = $terms->sort(function ($a, $b) {
+            $serialA = Arr::get($a->settings, 'serial');
+            $serialB = Arr::get($b->settings, 'serial');
+            if ($serialA === null && $serialB === null) {
+                return 0;
+            }
+            if ($serialA === null) {
+                return 1;
+            }
+            if ($serialB === null) {
+                return -1;
+            }
+            return (int) $serialA <=> (int) $serialB;
+        })->values();
 
         $formattedTerms = [];
 
@@ -541,13 +556,19 @@ class CourseHelper
         $inlineCss = '';
         if ($parseContent && $canViewLesson) {
             $content = $lesson->message_rendered;
-            if (!$content && $lesson->message) {
-                $content = apply_filters('the_content', $lesson->message); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-                if (function_exists('wp_style_engine_get_stylesheet_from_context')) {
-                    $core_styles_keys = array('block-supports');
-                    // Adds comment if code is prettified to identify core styles sections in debugging.
-                    foreach ($core_styles_keys as $style_key) {
-                        $inlineCss .= wp_style_engine_get_stylesheet_from_context($style_key, []);
+
+            // message_rendered still holding block markup never went through the_content
+            if (!$content || has_blocks($content)) {
+                $source = $lesson->message ?: $content;
+
+                if ($source) {
+                    $content = apply_filters('the_content', $source); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                    if (function_exists('wp_style_engine_get_stylesheet_from_context')) {
+                        $core_styles_keys = array('block-supports');
+                        // Adds comment if code is prettified to identify core styles sections in debugging.
+                        foreach ($core_styles_keys as $style_key) {
+                            $inlineCss .= wp_style_engine_get_stylesheet_from_context($style_key, []);
+                        }
                     }
                 }
             }

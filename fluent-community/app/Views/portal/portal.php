@@ -1,5 +1,6 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
 <div class="fhr_wrap">
+    <a class="screen-reader-shortcut" href="#fluent_com_portal"><?php esc_html_e('Skip to main content', 'fluent-community'); ?></a>
     <?php do_action('fluent_community/portal_header', 'headless'); ?>
     <div class="fhr_content">
         <div id="fluent_comminity_body" class="fhr_home">
@@ -9,7 +10,7 @@
                         <?php do_action('fluent_community/portal_sidebar', 'headless'); ?>
                     </div>
                 </div>
-                <div id="fluent_com_portal"></div>
+                <div id="fluent_com_portal" tabindex="-1"></div>
             </div>
         </div>
     </div>

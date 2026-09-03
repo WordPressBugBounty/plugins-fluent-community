@@ -20,6 +20,7 @@ use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
+use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 use FluentCommunity\Framework\Foundation\Exceptions\HttpException;
 
 class ProfileController extends Controller
@@ -313,8 +314,11 @@ class ProfileController extends Controller
             }
 
             if (Helper::isFeatureEnabled('user_badge')) {
-                $badgeSlug = (array)Arr::get($data, 'badge_slugs', []);
-                $meta['badge_slug'] = $badgeSlug;
+                $badgeSlug = array_filter((array) Arr::get($data, 'badge_slugs', []), 'is_scalar');
+                $badgeSlug = array_map('sanitize_text_field', $badgeSlug);
+
+                $definedBadges = (array) Utility::getOption('user_badges', []);
+                $meta['badge_slug'] = array_values(array_intersect($badgeSlug, array_keys($definedBadges)));
             }
         } else if (Utility::getPrivacySetting('can_customize_username')) {
             $userName = Arr::get($data, 'username');
@@ -757,6 +761,8 @@ class ProfileController extends Controller
         $messagingConfig = Utility::getOption('_messaging_settings', []);
         $isGlobalPerUser = Arr::get($messagingConfig, 'messaging_email_frequency') == 'disabled';
 
+        $pushAvailable = PushNotificationModule::isAvailable();
+
         $userGlobalPrefsDefaults = [
             'digest_mail'             => Arr::get($globalPreferances, 'digest_email_status') ? 'yes' : 'no',
             'mention_mail'            => Arr::get($globalPreferances, 'mention_mail') ? 'yes' : 'no',
@@ -764,6 +770,15 @@ class ProfileController extends Controller
             'com_my_post_mail'        => Arr::get($globalPreferances, 'com_my_post_mail') ? 'yes' : 'no',
             'message_email_frequency' => $isGlobalPerUser ? 'disabled' : 'default'
         ];
+
+        if ($pushAvailable) {
+            $pushPreferances = NotificationPref::getGlobalPrefs('push');
+
+            $userGlobalPrefsDefaults['com_my_post_push'] = Arr::get($pushPreferances, 'com_my_post_push') ? 'yes' : 'no';
+            $userGlobalPrefsDefaults['reply_my_com_push'] = Arr::get($pushPreferances, 'reply_my_com_push') ? 'yes' : 'no';
+            $userGlobalPrefsDefaults['mention_push'] = Arr::get($pushPreferances, 'mention_push') ? 'yes' : 'no';
+            $userGlobalPrefsDefaults['co_com_push'] = Arr::get($pushPreferances, 'co_com_push') ? 'yes' : 'no';
+        }
 
         $userGlobalPrefs = wp_parse_args($userGlobalPrefs, $userGlobalPrefsDefaults);
 
@@ -879,6 +894,7 @@ class ProfileController extends Controller
             'digestEmailDay'                    => $digestDay,
             'default_messaging_email_frequency' => Arr::get($messagingConfig, 'messaging_email_status') !== 'yes' ? 'no' : Arr::get($messagingConfig, 'messaging_email_frequency'),
             'crm_email_status'                  => $crmEmailStatus,
+            'push_available'                    => $pushAvailable,
         ];
 
         return apply_filters('fluent_community/profile_notification_pref_api_response', $data, $request->all());

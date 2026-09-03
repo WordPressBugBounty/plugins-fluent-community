@@ -11,6 +11,7 @@ use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 
 class Utility
 {
@@ -477,6 +478,27 @@ class Utility
         return $settings;
     }
 
+    public static function getPushNotificationSettings()
+    {
+        static $settings;
+        if ($settings) return $settings;
+
+        $default = [
+            'push_enabled'      => 'yes',
+            'com_my_post_push'  => 'yes',
+            'reply_my_com_push' => 'yes',
+            'mention_push'      => 'yes',
+            'co_com_push'       => 'yes',
+            'prompt_placements' => PushNotificationModule::PROMPT_PLACEMENTS
+        ];
+
+        $settings = self::getOption('global_push_settings', $default);
+
+        $settings = wp_parse_args($settings, $default);
+
+        return $settings;
+    }
+
     public static function hasEmailAnnouncementEnabled()
     {
         $settings = self::getEmailNotificationSettings();
@@ -529,6 +551,23 @@ class Utility
         $topics = self::getFromCache($key, function () {
             $topics = Term::where('taxonomy_name', 'post_topic')->orderBy('title', 'ASC')->get();
 
+            // Respect the admin-defined order (settings.serial) when present;
+            // topics without a serial fall back to the alphabetical order above.
+            $topics = $topics->sort(function ($a, $b) {
+                $serialA = Arr::get($a->settings, 'serial');
+                $serialB = Arr::get($b->settings, 'serial');
+                if ($serialA === null && $serialB === null) {
+                    return 0;
+                }
+                if ($serialA === null) {
+                    return 1;
+                }
+                if ($serialB === null) {
+                    return -1;
+                }
+                return (int) $serialA <=> (int) $serialB;
+            })->values();
+
             /*
              *  object_id = term_id
              *  meta_key = space_id
@@ -553,6 +592,7 @@ class Utility
                     'description' => $topic->description,
                     'slug'        => $topic->slug,
                     'admin_only'  => Arr::get($topic->settings, 'admin_only', 'no'),
+                    'serial'      => Arr::get($topic->settings, 'serial'),
                     'space_ids'   => isset($relations[$topic->id]) ? $relations[$topic->id] : []
                 ];
             }

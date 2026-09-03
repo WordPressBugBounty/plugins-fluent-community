@@ -26,97 +26,22 @@ class CourseAdminPolicy extends BasePolicy
             return false;
         }
 
-        if ($request->get('course_id')) {
+        if ($this->getRouteParam($request, 'course_id')) {
             return $this->canManageCourse($request);
         }
 
         return true;
     }
 
-    public function findCourse(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function updateCourse(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function deleteCourse(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function getOtherUsers(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function addStudent(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function removeStudent(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function resetStudentProgress(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function bulkAddStudents(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function bulkImportStudents(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function resolveCrmTagCourse(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function updateLinks(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function updateCourseLockscreenSettings(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function getCourseWelcomeBannerSettings(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function updateCourseWelcomeBannerSettings(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
-    public function duplicateLesson(Request $request)
-    {
-        return $this->canManageCourse($request);
-    }
-
     protected function canManageCourse(Request $request)
     {
-        if (current_user_can('manage_options')) {
+        if (Helper::isSuperAdmin()) {
             return true;
         }
 
         $user = Helper::getCurrentUser(true);
 
-        if ($courseId = $request->get('course_id')) {
+        if ($courseId = $this->getRouteParam($request, 'course_id')) {
             $course = Course::find($courseId);
             if (!$course) {
                 return false;

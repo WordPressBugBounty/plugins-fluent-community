@@ -200,6 +200,7 @@ class PortalSettingsHandler
             'i18n'                => AdminTransStrings::getStrings(),
             'logo'                => Helper::assetUrl('images/logo.png'),
             'is_admin'            => Helper::isSiteAdmin(),
+            'is_super_admin'      => Helper::isSuperAdmin(),
             'is_onboarded'        => !!Utility::getOption('onboarding_sub_settings'),
             'permalink_structure' => get_option('permalink_structure'),
             'is_slug_defined'     => defined('FLUENT_COMMUNITY_PORTAL_SLUG'),

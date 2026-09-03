@@ -68,7 +68,7 @@ class LockscreenService
         foreach ($settings as &$setting) {
             if ($viewOnly && Arr::get($setting, 'type') === 'block' && !empty($setting['content'])) {
                 $user = Helper::getCurrentUser();
-                $content = apply_filters('the_content', $setting['content']); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                $content = self::renderBlockContent($setting['content']);
                 $setting['content'] = (new SmartCodeParser())->parse($content, $user);
             }
 
@@ -78,6 +78,24 @@ class LockscreenService
         }
 
         return apply_filters('fluent_community/lockscreen_fields', $settings, $space);
+    }
+
+    /**
+     * Renders without the_content: a space admin need not hold unfiltered_html, and
+     * the_content's do_shortcode pass would run their shortcodes for every visitor.
+     */
+    protected static function renderBlockContent($content)
+    {
+        $rendered = do_blocks(strip_shortcodes($content));
+
+        // Core skips wpautop for block content to avoid mangling it.
+        if (!has_blocks($content)) {
+            $rendered = wpautop($rendered);
+        }
+
+        $rendered = wptexturize($rendered);
+
+        return wp_filter_content_tags($rendered);
     }
 
     public static function formatLockscreenFields($settingFields, $space)

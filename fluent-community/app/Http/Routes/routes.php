@@ -8,6 +8,6 @@ $router->namespace('FluentCommunity\App\Http\Controllers')->group(function ($rou
     require_once __DIR__ . '/api.php';
 });
 
-if (file_exists(FLUENT_COMMUNITY_PLUGIN_DIR .'dev/seed-routes.php')) {
-    require_once FLUENT_COMMUNITY_PLUGIN_DIR .'dev/seed-routes.php';
-}
+//if (file_exists(FLUENT_COMMUNITY_PLUGIN_DIR .'dev/seed-routes.php')) {
+//    require_once FLUENT_COMMUNITY_PLUGIN_DIR .'dev/seed-routes.php';
+//}

@@ -15,6 +15,7 @@ class RateLimitHandler
         add_action('fluent_community/check_rate_limit/create_post', [$this, 'maybeLimitPost'], 10, 1);
         add_action('fluent_community/check_rate_limit/create_comment', [$this, 'maybeLimitComment'], 10, 1);
         add_action('fluent_community/check_rate_limit/media_upload', [$this, 'maybeLimitMediaUpload'], 10, 1);
+        add_action('fluent_community/check_rate_limit/oembed', [$this, 'maybeLimitOembed'], 10, 1);
     }
 
     public function maybeLimitPost(User $user)
@@ -30,7 +31,7 @@ class RateLimitHandler
 
         $limitPer5Minutes = apply_filters('fluent_community/rate_limit/posts_per_5_minutes', 5);
 
-        if ($postsCount > $limitPer5Minutes) {
+        if ($postsCount >= $limitPer5Minutes) {
             throw new \Exception(esc_html__('You have reached the limit of posting. Please try after some time', 'fluent-community'));
         }
     }
@@ -48,7 +49,7 @@ class RateLimitHandler
 
         $limitPerMinute = apply_filters('fluent_community/rate_limit/comments_per_minute', 5);
 
-        if ($commentsCount > $limitPerMinute) {
+        if ($commentsCount >= $limitPerMinute) {
             throw new \Exception(esc_html__('You have reached the limit of commenting. Please try after some time', 'fluent-community'));
         }
     }
@@ -66,8 +67,31 @@ class RateLimitHandler
 
         $limitPerMinute = apply_filters('fluent_community/rate_limit/media_upload_per_minute', 10);
 
-        if ($mediaCount > $limitPerMinute) {
+        if ($mediaCount >= $limitPerMinute) {
             throw new \Exception(esc_html__('You have reached the limit of media uploads. Please try after some time', 'fluent-community'));
+        }
+    }
+
+    public function maybeLimitOembed(User $user)
+    {
+        if (Helper::isSiteAdmin($user->ID, $user)) {
+            return;
+        }
+
+        $limitPerMinute = apply_filters('fluent_community/rate_limit/oembed_per_minute', 20);
+
+        if (wp_using_ext_object_cache()) {
+            $cacheKey = 'oembed_rate_limit_' . $user->ID;
+            wp_cache_add($cacheKey, 0, 'fluent-community', MINUTE_IN_SECONDS);
+            $previewCount = (int) wp_cache_incr($cacheKey, 1, 'fluent-community');
+        } else {
+            $transientKey = 'fcom_oembed_rate_limit_' . $user->ID;
+            $previewCount = (int) get_transient($transientKey) + 1;
+            set_transient($transientKey, $previewCount, MINUTE_IN_SECONDS);
+        }
+
+        if ($previewCount > $limitPerMinute) {
+            throw new \Exception(esc_html__('You have reached the limit of link previews. Please try after some time', 'fluent-community'));
         }
     }
 }

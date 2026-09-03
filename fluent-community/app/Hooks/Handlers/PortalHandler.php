@@ -1072,6 +1072,9 @@ class PortalHandler
                 $space = BaseSpace::query()->onlyMain()->where('slug', $paceSlug)->first();
                 if ($space && $space->privacy != 'secret') {
 
+                    // matches the URL the sitemap submits, so tab variants consolidate onto it
+                    $data['canonical_url'] = $space->getPermalink();
+
                     if ($dynamicRoute == 'course_view') {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
@@ -1105,7 +1108,10 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $postSlug = end($uriParts);
-                $feed = Feed::query()->withoutGlobalScopes()->where('slug', $postSlug)
+                // Keeps the type scope, so course lessons sharing fcom_posts are not
+                // described here.
+                $feed = Feed::query()->where('slug', $postSlug)
+                    ->where('status', 'published')
                     ->with([
                         'xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
@@ -1184,6 +1190,7 @@ class PortalHandler
             $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
             $data['og_title'] = esc_html($lesson->title);
             $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
+            $data['canonical_url'] = $lesson->getPermalink();
 
             return $data;
         }

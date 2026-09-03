@@ -29,7 +29,7 @@ class NotificationUserMigrator
                 `is_read` TINYINT(1) UNSIGNED NULL DEFAULT 0,
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
-                 INDEX `{$indexPrefix}_mto_id_uio` (`user_id`, `is_read`, `object_type`),
+                 INDEX `{$indexPrefix}_uiou` (`user_id`, `is_read`, `object_type`, `updated_at`),
                  INDEX `{$indexPrefix}_mto_id_oion` (`object_id`, `is_read`, `object_type`, `notification_type`),
                  INDEX `{$indexPrefix}_created_uid` (`created_at`, `user_id`)
             ) $charsetCollate;";
@@ -86,6 +86,21 @@ class NotificationUserMigrator
 
         if(!in_array($createdIndex, $allIndexes)) {
             $wpdb->query("ALTER TABLE $table ADD INDEX `{$createdIndex}` (`created_at`, `user_id`)");
+        }
+
+        /*
+         * Every ticker poll counts a member's unread rows, and the live-notification
+         * toast reads the newest of them. Without a user_id-leading index MySQL falls
+         * back to the single-column is_read index - on a table where nearly every row
+         * is unread that means scanning half the table, per poll, per member.
+         *
+         * user_id + is_read + object_type answer both queries as a covering index, and
+         * the trailing updated_at removes the toast query's filesort as well.
+         */
+        $unreadIndex = $wpdb->prefix . 'fcom_nu__uiou';
+
+        if(!in_array($unreadIndex, $allIndexes)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX `{$unreadIndex}` (`user_id`, `is_read`, `object_type`, `updated_at`)");
         }
     }
 }

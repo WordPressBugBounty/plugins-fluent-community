@@ -225,9 +225,22 @@ class User extends Model
             ->withPivot([ 'role', 'created_at' ]);
     }
 
+    /**
+     * @deprecated 2.8.2 Use notificationPreferences() - preferences no longer live
+     *             in fcom_notification_users.
+     */
     public function notificationSubscriptions()
     {
         return $this->hasMany(NotificationSubscription::class, 'user_id');
+    }
+
+    /**
+     * Explicit notification preference overrides across every channel.
+     * Recipient selection for email fan-outs is driven off this relation.
+     */
+    public function notificationPreferences()
+    {
+        return $this->hasMany(NotificationPreference::class, 'user_id', 'ID');
     }
 
     public function space_pivot()

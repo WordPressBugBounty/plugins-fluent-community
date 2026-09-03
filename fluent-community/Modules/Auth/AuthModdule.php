@@ -64,8 +64,48 @@ class AuthModdule
         // Remove fcom_action and fcom_url_hash from the current url
         $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $url = remove_query_arg(['fcom_action', 'fcom_url_hash'], $currentUrl);
-        wp_redirect($url, 302); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+        $this->redirectAndExit($url);
+    }
+
+    /**
+     * Send a redirect and stop.
+     *
+     * Extracted only so it can be observed: a bare `exit()` terminates the PHP
+     * process, which in a test run kills the whole suite with no result (see
+     * FIX-PLAN item 22 for the same problem on PortalHandler). A test subclass
+     * overrides this and the two methods below to record what was about to
+     * happen and throw instead. Behaviour in production is unchanged — this is
+     * the original call, moved.
+     *
+     * This one keeps the UNSAFE variant its single caller already used. That
+     * caller builds its target with home_url(), so it is same-host by
+     * construction rather than by validation. Kept as a separate method from
+     * safeRedirectAndExit(), rather than a $safe flag, so the distinction stays
+     * visible to anyone grepping for wp_redirect.
+     */
+    protected function redirectAndExit($url, $status = 302)
+    {
+        wp_redirect($url, $status); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
         exit();
+    }
+
+    /**
+     * Send a host-confined redirect and stop. See redirectAndExit().
+     */
+    protected function safeRedirectAndExit($url)
+    {
+        wp_safe_redirect($url);
+        exit();
+    }
+
+    /**
+     * Render the headless page and stop. See redirectAndExit().
+     */
+    protected function renderPageAndExit($template, $pageVars)
+    {
+        status_header(200);
+        App::make('view')->render($template, $pageVars);
+        exit(200);
     }
 
     public function viewAuthPage()
@@ -99,8 +139,7 @@ class AuthModdule
                 $redirectUrl = Helper::baseUrl();
             }
 
-            wp_safe_redirect($redirectUrl);
-            exit();
+            $this->safeRedirectAndExit($redirectUrl);
         }
 
         if ($currentUserId && $inviation) {
@@ -110,8 +149,7 @@ class AuthModdule
                 if (Helper::isUserInSpace($currentUserId, $inviation->post_id)) {
                     // let's redirect the user to the space
                     $redirectUrl = $space->getPermalink();
-                    wp_safe_redirect($redirectUrl);
-                    exit();
+                    $this->safeRedirectAndExit($redirectUrl);
                 }
 
                 if (!empty($_REQUEST['auto_accept'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -119,8 +157,7 @@ class AuthModdule
                     if (is_wp_error($redirectUrl) || !$redirectUrl) {
                         $redirectUrl = Helper::baseUrl();
                     }
-                    wp_safe_redirect($redirectUrl);
-                    exit();
+                    $this->safeRedirectAndExit($redirectUrl);
                 }
             }
         }
@@ -156,8 +193,7 @@ class AuthModdule
 
         $isFluentAuth = AuthHelper::isFluentAuthAvailable();
         if (!$isFluentAuth && $targetForm == 'reset_password') {
-            wp_safe_redirect(wp_lostpassword_url(Helper::baseUrl()));
-            exit();
+            $this->safeRedirectAndExit(wp_lostpassword_url(Helper::baseUrl()));
         }
 
         $portalSettings = Helper::generalSettings();
@@ -176,8 +212,7 @@ class AuthModdule
             if (!$inviation) {
                 $customSignupUrl = Arr::get($portalSettings, 'custom_signup_url');
                 if ($customSignupUrl) {
-                    wp_safe_redirect($customSignupUrl);
-                    exit();
+                    $this->safeRedirectAndExit($customSignupUrl);
                 }
             }
         }
@@ -192,7 +227,11 @@ class AuthModdule
                 wp_localize_script('fluent_auth_scripts', 'fluentComRegistration', array(
                     'ajax_url'         => admin_url('admin-ajax.php'),
                     'is_logged_in'     => is_user_logged_in(),
-                    'redirecting_text' => __('Redirecting...', 'fluent-community')
+                    'redirecting_text' => __('Redirecting...', 'fluent-community'),
+                    'i18n'             => [
+                        'generic_error' => esc_html__('Something went wrong. Please try again later', 'fluent-community'),
+                        'network_error' => esc_html__('Could not reach the server. Please check your connection and try again.', 'fluent-community'),
+                    ]
                 ));
             }
         }, 10);
@@ -297,6 +336,8 @@ class AuthModdule
                 $sideVars .= '--fcom_' . $colorKey . ': ' . $colorValue . ';';
             }
             ?>
+            <?php // the auth screen renders with load_wp, which skips headless_page's noindex ?>
+            <meta name="robots" content="noindex, noarchive" />
             <link rel="canonical" href="<?php echo esc_url(Helper::getAuthUrl()); ?>" />
             <style>
                 .fcom_layout_side { <?php echo esc_html($sideVars); ?> }
@@ -312,9 +353,7 @@ class AuthModdule
             return $frameData['title'];
         }, 9999, 1);
 
-        status_header(200);
-        App::make('view')->render('headless_page', $pageVars);
-        exit(200);
+        $this->renderPageAndExit('headless_page', $pageVars);
     }
 
     public function handleUserSignup()

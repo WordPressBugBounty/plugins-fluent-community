@@ -61,26 +61,6 @@ trait Searchable
     }
 
     /**
-     * Search the searchable columns by fuzzy edit-distance (Levenshtein).
-     *
-     * @param \FluentCommunity\Framework\Database\Orm\Builder $query
-     * @param string $value
-     * @param int $distance
-     * @return \FluentCommunity\Framework\Database\Orm\Builder
-     * @throws \Exception
-     */
-    public function scopeSimilar($query, $value, $distance = 2)
-    {
-        $columns = $this->ensureSearchableColumns();
-
-        return $query->where(function($query) use ($columns, $value, $distance) {
-            foreach ($columns as $column) {
-                $query->orWhereSimilar($column, $value, $distance);
-            }
-        });
-    }
-
-    /**
      * Search the searchable columns by full-text relevance, returning rows
      * ranked by how well they match (a "relevance" column is added).
      *

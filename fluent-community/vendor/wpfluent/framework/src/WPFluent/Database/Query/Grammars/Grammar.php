@@ -353,20 +353,6 @@ class Grammar extends BaseGrammar
     }
 
     /**
-     * Compile the SQL for a fuzzy "similar to" (Levenshtein) comparison.
-     *
-     * Requires a LEVENSHTEIN() function on the connection (a stored function
-     * on MySQL, a PHP-backed UDF on SQLite).
-     *
-     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
-     * @return string
-     */
-    public function compileSimilar($column)
-    {
-        return 'levenshtein(lower('.$this->wrap($column).'), lower(?)) <= ?';
-    }
-
-    /**
      * Compile a "where in" clause.
      *
      * @param  \FluentCommunity\Framework\Database\Query\Builder  $query

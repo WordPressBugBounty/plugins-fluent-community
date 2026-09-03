@@ -9,6 +9,7 @@ use FluentCommunity\Database\Migrations\FeedSpaceMigrator;
 use FluentCommunity\Database\Migrations\FeedSpaceUserMigrator;
 use FluentCommunity\Database\Migrations\MediaArchiveMigrator;
 use FluentCommunity\Database\Migrations\MetaMigrator;
+use FluentCommunity\Database\Migrations\NotificationPrefMigrator;
 use FluentCommunity\Database\Migrations\NotificationsMigrator;
 use FluentCommunity\Database\Migrations\NotificationUserMigrator;
 use FluentCommunity\Database\Migrations\TermFeedMigrator;
@@ -46,6 +47,7 @@ class DBMigrator
         MetaMigrator::migrate();
         NotificationsMigrator::migrate();
         NotificationUserMigrator::migrate();
+        NotificationPrefMigrator::migrate();
         UserActivitiesMigrator::migrate();
         TermMigrator::migrate();
         TermFeedMigrator::migrate();

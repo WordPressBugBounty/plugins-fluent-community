@@ -46,13 +46,11 @@ class UploadHelper
             $allowedFileSize = $maxFileSize * 1024 * 1024;
         }
 
-        $validator = new Validator([
-            'file' => $requestFiles
-        ], );
-
-        $validator->validate($requestFiles, [
-            'file' => 'mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
+        // messages belong on the constructor: Validator::validate() takes only data and rules
+        $validator = Validator::make($requestFiles, [
+            'file' => 'required|mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
         ], [
+            'file.required'  => __('No upload file was received. Please try again.', 'fluent-community'),
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
             /* translators: %$1s is replaced by the maximum allowed file size, %2$s is replaced by the file size unit (e.g. MB) */
             'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
@@ -66,7 +64,15 @@ class UploadHelper
         $uploadedFiles = FileSystem::put($requestFiles);
         remove_filter('wp_handle_upload', [self::class, 'fixImageOrientation']);
 
-        $file = $uploadedFiles[0];
+        $file = Arr::get($uploadedFiles, 0);
+
+        if (is_wp_error($file)) {
+            return $file;
+        }
+
+        if (!is_array($file) || empty($file['url']) || empty($file['file']) || empty($file['type'])) {
+            return new \WP_Error('upload_error', __('No upload file was received. Please try again.', 'fluent-community'));
+        }
 
         $upload_dir = wp_upload_dir();
 

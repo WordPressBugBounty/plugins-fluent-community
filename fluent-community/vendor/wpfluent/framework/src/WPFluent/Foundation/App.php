@@ -5,16 +5,15 @@ namespace FluentCommunity\Framework\Foundation;
 use FluentCommunity\Framework\Container\Contracts\BindingResolutionException;
 
 /**
- * @method static db();
- * @method static view();
- * @method static events();
- * @method static config();
- * @method static request();
- * @method static response();
- * @method static encrypter();
- * @method static validator();
+ * @method static \FluentCommunity\Framework\Database\DatabaseManager db()
+ * @method static \FluentCommunity\Framework\View\View view()
+ * @method static \FluentCommunity\Framework\Events\Dispatcher events()
+ * @method static \FluentCommunity\Framework\Foundation\Config config()
+ * @method static \FluentCommunity\Framework\Http\Request\Request request()
+ * @method static \FluentCommunity\Framework\Http\Response\Response response()
+ * @method static \FluentCommunity\Framework\Encryption\Encrypter encrypter()
+ * @method static \FluentCommunity\Framework\Validator\Validator validator()
  */
-
 class App
 {
     /**

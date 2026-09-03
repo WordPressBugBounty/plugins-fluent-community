@@ -952,6 +952,9 @@ class CourseAdminController extends Controller
         return apply_filters('fluent_community/admin_course_lesson_api_response', $data, $request->all());
     }
 
+    /**
+     * Expects `title` and `section_id` at the top level of the request.
+     */
     public function createLesson(Request $request, $courseId)
     {
         $this->validate($request->all(), [
@@ -993,11 +996,14 @@ class CourseAdminController extends Controller
         ];
     }
 
+    /**
+     * Expects the fields nested under `lesson`, referencing the section as `parent_id`.
+     */
     public function updateLesson(Request $request, $courseId, $lessionId)
     {
         Course::findOrFail($courseId);
 
-        $lessonData = $request->get('lesson');
+        $lessonData = (array)$request->get('lesson');
 
         $this->validate($lessonData, [
             'title'     => 'required',

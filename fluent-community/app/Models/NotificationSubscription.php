@@ -6,9 +6,13 @@ use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Models\User;
 
 /**
- *  Meta Model - DB Model for Notifications table
+ *  Legacy notification preference rows in fcom_notification_users.
  *
- *  Database Model
+ * @deprecated 2.8.2 Preferences moved to fcom_notification_prefs; use
+ *             NotificationPreference and the NotificationPref service instead.
+ *             Retained so the pre-2.8.2 rows stay readable and third-party code
+ *             referencing this model does not fatal. Nothing in the plugin
+ *             writes through it any more.
  *
  * @package FluentCommunity\App\Models
  *

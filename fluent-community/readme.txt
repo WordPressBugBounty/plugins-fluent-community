@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.1
+Stable tag: 2.9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,41 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.9.0 (Date: Sep 3, 2026) =
+- Introduced: Push Notifications with FluentNotify
+- Added: Per-Member and Community-Level Push Preferences
+- Added: Drag-and-Drop Ordering for Topics and Profile Badges
+- Added: Canonical Tags for Spaces, Courses and Lessons
+- Added: Video Thumbnail Preview for Feed Card View
+- Added: Full-Site Support for the Installed PWA App
+- Added: Pull-to-Refresh for the Installed iOS PWA
+- Added: Filter to Set PWA Icon Purpose for Maskable Icons
+- Improved: Screen Reader and Keyboard Accessibility Across the Portal
+- Improved: Notification Preference Lookups via a Dedicated Table
+- Improved: Unread Filter Moved Into the Notifications Header
+- Improved: Ticker Refresh on Window and App Refocus
+- Improved: Feedback When Video Playback Fails
+- Security: Access Control, Data Scoping and Input Sanitization Hardening
+- Fixed: Duplicate Submissions and Lost Counter Updates Under Concurrency
+- Fixed: Silent Login Failure With Two-Factor Plugins
+- Fixed: Editor Fallback on Older iOS Devices and False Failure Notices
+- Fixed: Lesson Editor Styles, Block Rendering and Empty-Payload Saves
+- Fixed: Empty Lesson Discussion Area Layout in Courses
+- Fixed: Deleted Quizzes Still Listed in Quiz Results
+- Fixed: Notification Badge Count and Drawer Not Refreshing
+- Fixed: Poll End Date Marked as Ended on Non-UTC Timezones
+- Fixed: Empty Media Upload Treated as a Valid File
+- Fixed: Raw HTML Entities and Hidden Images in Post Excerpts
+- Fixed: Overlapping Text in Script-Based oEmbeds
+- Fixed: Mobile Sidebar Missing Overlay Backdrop
+- Fixed: Mobile Sidebar Not Closing on Create
+- Fixed: Document List Overflow in Edit Feed Modal on Mobile
+- Fixed: Auth Page Indexed as a Canonical URL
+- Fixed: Topic Kept on Posts Moved to a Profile
+- Fixed: PWA Head Tags and iOS Home Screen Launch
+- Fixed: S3 Delete Failing on S3-Compatible Storage
+- Fixed: Undefined Version Notice on Plugin Details
 
 = 2.8.1 (Date: Aug 20, 2026) =
 - Added: Verified Members Only Posting Option for Spaces

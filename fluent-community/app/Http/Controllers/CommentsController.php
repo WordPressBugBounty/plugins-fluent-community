@@ -12,6 +12,7 @@ use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
+use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
 
 class CommentsController extends Controller
@@ -22,7 +23,7 @@ class CommentsController extends Controller
             ->byUserAccess(get_current_user_id())
             ->findOrFail($feed_id);
 
-        if ($feed->status != 'published' && !$feed->hasEditAccess($this->getUserId())) {
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true) && !$feed->hasEditAccess($this->getUserId())) {
             return $this->sendError([
                 'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
             ], 404);
@@ -79,7 +80,7 @@ class CommentsController extends Controller
         $text = $this->validateCommentText($request->all());
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
 
-        if ($feed->status != 'published') {
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
                 'message' => __('This post is not published yet', 'fluent-community')
             ]);
@@ -88,23 +89,6 @@ class CommentsController extends Controller
         $this->verifyCreateCommentPermission($feed);
 
         $requestData = $request->all();
-
-        // Check for duplicate (only for comments with text)
-        if ($text) {
-            $skipDuplicateCheck = apply_filters('fluent_community/disable_duplicate_comment_check', false, get_current_user_id(), $feed->id);
-            if (!$skipDuplicateCheck) {
-                $exist = Comment::where('user_id', get_current_user_id())
-                    ->where('message', $text)
-                    ->where('post_id', $feed->id)
-                    ->first();
-
-                if ($exist) {
-                    return $this->sendError([
-                        'message' => __('No duplicate comment please!', 'fluent-community')
-                    ]);
-                }
-            }
-        }
 
         [$markdown, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($text);
         $mentions = FeedsHelper::getMentions($markdown, $feed->space_id, true);
@@ -139,10 +123,31 @@ class CommentsController extends Controller
 
         $commentData = apply_filters('fluent_community/comment/comment_data', $commentData, $feed);
 
-        $comment = Comment::create($commentData);
+        // Only comments with text are duplicate checked
+        $shouldCheckDuplicate = $text && !apply_filters('fluent_community/disable_duplicate_comment_check', false, get_current_user_id(), $feed->id);
+
+        // Serialize a member's concurrent submissions by locking their profile row,
+        // so parallel matching requests cannot pass the duplicate check and both insert.
+        $comment = Helper::dbTransaction(function () use ($commentData, $feed, $text, $shouldCheckDuplicate) {
+            XProfile::where('user_id', get_current_user_id())->lockForUpdate()->first();
+
+            if ($shouldCheckDuplicate && Comment::where('user_id', get_current_user_id())->where('message', $text)->where('post_id', $feed->id)->first()) {
+                return null;
+            }
+
+            $newComment = Comment::create($commentData);
+            Feed::withoutGlobalScopes()->where('id', $feed->id)->increment('comments_count');
+
+            return $newComment;
+        });
+
+        if (!$comment) {
+            return $this->sendError([
+                'message' => __('No duplicate comment please!', 'fluent-community')
+            ]);
+        }
 
         $feed->comments_count = $feed->comments_count + 1;
-        $feed->save();
 
 
         // Merge and save all media in one loop
@@ -510,7 +515,7 @@ class CommentsController extends Controller
         $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
-        if ($feed->status != 'published') {
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
                 'message' => __('This post is not published yet', 'fluent-community')
             ]);
@@ -639,17 +644,27 @@ class CommentsController extends Controller
         }
 
         if ($reactionState) {
-            // add or update the reaction
-            $reaction = Reaction::firstOrCreate([
-                'user_id'     => get_current_user_id(),
-                'object_id'   => $comment->id,
-                'object_type' => 'comment',
-                'parent_id'   => $feed->id
-            ]);
+            // Serialize concurrent reactions on this comment by locking its row,
+            // so parallel add requests cannot each insert a duplicate reaction.
+            $reaction = Helper::dbTransaction(function () use ($comment, $feed) {
+                XProfile::where('user_id', get_current_user_id())->lockForUpdate()->first();
+
+                $reaction = Reaction::firstOrCreate([
+                    'user_id'     => get_current_user_id(),
+                    'object_id'   => $comment->id,
+                    'object_type' => 'comment',
+                    'parent_id'   => $feed->id
+                ]);
+
+                if ($reaction->wasRecentlyCreated) {
+                    Comment::where('id', $comment->id)->increment('reactions_count');
+                    $comment->reactions_count = $comment->reactions_count + 1;
+                }
+
+                return $reaction;
+            });
 
             if ($reaction->wasRecentlyCreated) {
-                $comment->reactions_count = $comment->reactions_count + 1;
-                $comment->save();
                 do_action('fluent_community/comment/react_added', $reaction, $comment, $feed);
             }
         } else {

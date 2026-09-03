@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Media;
+use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\User;
@@ -16,6 +17,7 @@ use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
 
 class FeedsController extends Controller
@@ -190,7 +192,7 @@ class FeedsController extends Controller
             ], 404);
         }
 
-        $viewableByLinkStatuses = ['published', 'unlisted'];
+        $viewableByLinkStatuses = FeedsHelper::getViewableByLinkStatuses();
 
         if (!in_array($feed->status, $viewableByLinkStatuses, true) && !$feed->hasEditAccess($this->getUserId())) {
             return $this->sendError([
@@ -328,9 +330,7 @@ class FeedsController extends Controller
         $spaceId = Arr::get($data, 'space_id');
         $message = Arr::get($data, 'message');
 
-        if ($isDulicate = $this->checkForDuplicatePost($user->ID, $message, $spaceId)) {
-            return $isDulicate;
-        }
+        $duplicateCheckMessage = $message;
 
         $mentions = FeedsHelper::getMentions($data['message'], Arr::get($data, 'space_id'), true);
         if ($mentions) {
@@ -377,10 +377,26 @@ class FeedsController extends Controller
         }
 
         $feed->fill($data);
-        $feed->save();
+
+        // Serialize a member's concurrent submissions by locking their profile row,
+        // so parallel matching requests cannot pass the duplicate check and both insert.
+        $isDuplicate = Helper::dbTransaction(function () use ($feed, $user, $spaceId, $duplicateCheckMessage) {
+            XProfile::where('user_id', $user->ID)->lockForUpdate()->first();
+
+            if ($duplicate = $this->checkForDuplicatePost($user->ID, $duplicateCheckMessage, $spaceId)) {
+                return $duplicate;
+            }
+
+            $feed->save();
+
+            return null;
+        });
+
+        if ($isDuplicate) {
+            return $isDuplicate;
+        }
 
         $feed = Feed::find($feed->id); // just renewing the feed
-        /** @var Feed $feed */
 
         if ($mentions) {
             do_action('fluent_community/feed_mentioned', $feed, Arr::get($mentions, 'users'));
@@ -466,6 +482,10 @@ class FeedsController extends Controller
 
         $user->canEditFeed($existingFeed, true);
 
+        // Must resolve before processFeedMetaData() reads it.
+        $isModerator = $user->hasPermissionOrInCurrentSpace('community_moderator', $existingFeed->space);
+        $requestData['is_admin'] = $isModerator;
+
         if ($surveyOptionError = FeedsHelper::getSurveyOptionsUpdateError(
             Arr::get($existingFeed->meta, 'survey_config.options', []),
             Arr::get($requestData, 'survey', [])
@@ -475,7 +495,7 @@ class FeedsController extends Controller
             ]);
         }
 
-        if ($status = Arr::get($requestData, 'status')) {
+        if ($isModerator && ($status = Arr::get($requestData, 'status'))) {
             if (in_array($status, $editableStatuses, true)) {
                 $fallbackStatus = $status === 'unlisted' ? $existingFeed->status : $status;
                 $data['status'] = apply_filters('fluent_community/feed/save_status', $fallbackStatus, $requestData, $existingFeed);
@@ -503,8 +523,6 @@ class FeedsController extends Controller
         if (isset($existingFeed->meta['comments_disabled'])) {
             $data['meta']['comments_disabled'] = $existingFeed->meta['comments_disabled'];
         }
-
-        $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $existingFeed->space);
 
         if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
             $data['meta']['send_announcement_email'] = 'yes';
@@ -550,6 +568,8 @@ class FeedsController extends Controller
             ];
         }
 
+        $movingToProfile = false;
+
         if ($newSpaceId = $request->get('new_space_id')) {
             if (!Helper::isUserInSpace($existingFeed->user_id, $newSpaceId)) {
                 return $this->sendError([
@@ -578,6 +598,7 @@ class FeedsController extends Controller
             }
 
             $data['space_id'] = null;
+            $movingToProfile = true;
 
             \FluentCommunity\App\Models\Activity::where('feed_id', $existingFeed->id)
                 ->update(['space_id' => null]);
@@ -645,6 +666,9 @@ class FeedsController extends Controller
                     $existingFeed->terms()->where('taxonomy_name', 'post_topic')->detach();
                 }
             }
+        } else if ($movingToProfile) {
+            // Topics are space-scoped; a post moved to the profile must not keep them.
+            $existingFeed->terms()->where('taxonomy_name', 'post_topic')->detach();
         }
 
         if ($dirty) {
@@ -926,8 +950,9 @@ class FeedsController extends Controller
         }
 
         $files = $this->validate($this->request->files(), [
-            'file' => 'mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
+            'file' => 'required|mimetypes:' . $allowedTypes . '|max:' . $allowedFileSize,
         ], [
+            'file.required'  => __('No upload file was received. Please try again.', 'fluent-community'),
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
             /* translators: %$1s is replaced by the maximum allowed file size, %2$s is replaced by the file size unit (e.g. MB) */
             'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
@@ -945,7 +970,20 @@ class FeedsController extends Controller
         $uploadedFiles = FileSystem::put($files);
         remove_filter('wp_handle_upload', [UploadHelper::class, 'fixImageOrientation']);
 
-        $file = $uploadedFiles[0];
+        $file = Arr::get($uploadedFiles, 0);
+
+        if (is_wp_error($file)) {
+            return $this->sendError([
+                'message' => $file->get_error_message()
+            ]);
+        }
+
+        // an empty request body reaches here with nothing uploaded; never build media data from it
+        if (!is_array($file) || empty($file['url']) || empty($file['file']) || empty($file['type'])) {
+            return $this->sendError([
+                'message' => __('No upload file was received. Please try again.', 'fluent-community')
+            ]);
+        }
 
         $upload_dir = wp_upload_dir();
 
@@ -1162,19 +1200,125 @@ class FeedsController extends Controller
         // Get notification count
         $notificationCount = NotificationSubscriber::unread()->where('user_id', $userId)->count();
 
+        $newNotifications = $this->getToastNotifications($userId, $since, $notificationCount);
+
         $response = [
             'timestamp'      => current_time('mysql'),
             'has_changes'    => $hasChanges,
             'feeds'          => $feedUpdates,
             'notifications'  => [
                 'unread_count' => $notificationCount,
-                'new_count'    => 0 // Could track new since last check
+                'new_count'    => count($newNotifications),
+                'new_items'    => $newNotifications
             ],
             'spaces'         => [], // For future use
             'execution_time' => microtime(true) - $start
         ];
 
         return apply_filters('fluent_community/feed_ticker', $response, $request->all());
+    }
+
+    /**
+     * Unread notifications that landed since the previous ticker check, shaped for the
+     * in-app toast. Deliberately cheap:
+     *
+     *  - returns before touching the DB when the toast is filtered off or the user has
+     *    nothing unread, so the steady state costs zero extra queries
+     *  - the predicate is answered by the (user_id, is_read, object_type, updated_at)
+     *    index added in NotificationUserMigrator, so this is a short range scan with
+     *    no filesort - on a 177k-row table it examines a single row instead of the
+     *    ~88k the single-column is_read index used to force
+     *  - the cursor is the subscriber `updated_at`, not `created_at`: a re-notification
+     *    ("X and 3 others reacted to your post") bumps the existing subscriber row in
+     *    place instead of inserting a new one - see NotificationEventHandler
+     *  - the xprofile eager load only fires when at least one row came back
+     *
+     * @param int    $userId
+     * @param string $since MySQL datetime in site local time
+     * @param int    $unreadCount
+     * @return array
+     */
+    protected function getToastNotifications($userId, $since, $unreadCount)
+    {
+        if (!$unreadCount || !$since) {
+            return [];
+        }
+
+        if (!apply_filters('fluent_community/enable_notification_toast', true, $userId)) {
+            return [];
+        }
+
+        $limit = (int)apply_filters('fluent_community/notification_toast_limit', 3, $userId);
+
+        if ($limit < 1) {
+            return [];
+        }
+
+        $notifications = Notification::query()
+            ->select([
+                'fcom_notifications.id',
+                'fcom_notifications.feed_id',
+                'fcom_notifications.object_id',
+                'fcom_notifications.src_user_id',
+                'fcom_notifications.action',
+                'fcom_notifications.content',
+                'fcom_notifications.route',
+                'fcom_notification_users.updated_at as notified_at'
+            ])
+            ->join('fcom_notification_users', 'fcom_notification_users.object_id', '=', 'fcom_notifications.id')
+            ->where('fcom_notification_users.user_id', $userId)
+            ->where('fcom_notification_users.is_read', 0)
+            ->where('fcom_notification_users.object_type', 'notification')
+            ->where('fcom_notification_users.updated_at', '>', $since)
+            ->with(['xprofile' => function ($q) {
+                return $q->select(['user_id', 'display_name', 'username', 'avatar']);
+            }])
+            ->orderBy('fcom_notification_users.updated_at', 'DESC')
+            ->limit($limit)
+            ->get();
+
+        $items = [];
+
+        foreach ($notifications as $notification) {
+            $xprofile = $notification->xprofile;
+
+            $items[] = [
+                'id'          => (int)$notification->id,
+                'feed_id'     => $notification->feed_id ? (int)$notification->feed_id : null,
+                'object_id'   => $notification->object_id ? (int)$notification->object_id : null,
+                'action'      => $notification->action,
+                'route'       => $notification->route,
+                'text'        => $this->getToastText($notification->content),
+                'notified_at' => $notification->notified_at,
+                'avatar'      => $xprofile ? $xprofile->avatar : '',
+                'name'        => $xprofile ? $xprofile->display_name : ''
+            ];
+        }
+
+        return apply_filters('fluent_community/notification_toast_items', $items, $userId);
+    }
+
+    /**
+     * Flatten stored notification HTML to a single line of plain text. The toast renders
+     * this with v-text, so it must never carry markup back to the client.
+     *
+     * @param string $content
+     * @return string
+     */
+    protected function getToastText($content)
+    {
+        if (!$content) {
+            return '';
+        }
+
+        $text = wp_specialchars_decode(wp_strip_all_tags($content), ENT_QUOTES);
+        $text = trim(preg_replace('/\s+/', ' ', $text));
+
+        if (mb_strlen($text) > 140) {
+            $text = mb_substr($text, 0, 140) . '...';
+        }
+
+        return $text;
     }
 
     public function batchFetch(Request $request)
@@ -1304,8 +1448,12 @@ class FeedsController extends Controller
 
     public function getOembed(Request $request)
     {
-        $url = $request->get('url');
-        // check if the url is valid
+        $currentUser = $this->getUser(true);
+
+        do_action('fluent_community/check_rate_limit/oembed', $currentUser);
+
+        $url = $request->getSafe('url', 'sanitize_url');
+
         $metaData = RemoteUrlParser::parse($url);
 
         if ($metaData && !is_wp_error($metaData)) {

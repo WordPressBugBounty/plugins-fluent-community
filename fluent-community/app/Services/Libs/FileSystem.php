@@ -81,6 +81,7 @@ class FileSystem
 
             if (isset($uploadedFile['error'])) {
                 $uploadedFiles[] = new \WP_Error('upload_error', $uploadedFile['error']);
+                continue;
             }
 
             $uploadedFile['original_name'] = $originalName;

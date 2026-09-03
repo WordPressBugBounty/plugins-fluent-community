@@ -9,6 +9,7 @@ use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Modules\Auth\AuthHelper;
+use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\OnboardingService;
 use FluentCommunity\Framework\Http\Request\Request;
@@ -42,6 +43,7 @@ class AdminController extends Controller
     {
         $inputs = $request->get('settings', []);
         $settings = Helper::generalSettings(false);
+        $storedSettings = $settings;
         $inputs = Arr::only($inputs, array_keys($settings));
 
         $settings['logo'] = Arr::get($inputs, 'logo', '');
@@ -130,6 +132,16 @@ class AdminController extends Controller
             $slugChanged = true;
         }
 
+        if (!Helper::isSuperAdmin()) {
+            foreach (['auth_url', 'cutsom_auth_url', 'auth_form_type', 'auth_redirect', 'custom_signup_url', 'use_custom_signup_page', 'explicit_registration'] as $restrictedKey) {
+                if ($settings[$restrictedKey] != Arr::get($storedSettings, $restrictedKey, '')) {
+                    return $this->sendError([
+                        'message' => __('You do not have permission to change the authentication and login settings', 'fluent-community')
+                    ]);
+                }
+            }
+        }
+
         update_option('fluent_community_settings', $settings);
 
         $redirectUrl = '';
@@ -201,6 +213,42 @@ class AdminController extends Controller
         ];
     }
 
+    public function getPushSettings(Request $request)
+    {
+        $data = [
+            'push_settings'  => Utility::getPushNotificationSettings(),
+            'push_available' => PushNotificationModule::isFluentNotifyActive()
+        ];
+
+        return apply_filters('fluent_community/push_settings_api_response', $data, $request->all());
+    }
+
+    public function savePushSettings(Request $request)
+    {
+        $prevSettings = Utility::getPushNotificationSettings();
+
+        $settings = Arr::only((array)$request->get('settings', []), array_keys($prevSettings));
+        $settings = wp_parse_args($settings, $prevSettings);
+
+        foreach ($settings as $key => $value) {
+            if ($key === 'prompt_placements') {
+                $settings[$key] = array_values(array_intersect(
+                    array_map('sanitize_text_field', (array)$value),
+                    PushNotificationModule::PROMPT_PLACEMENTS
+                ));
+            } else {
+                $settings[$key] = $value === 'yes' ? 'yes' : 'no';
+            }
+        }
+
+        Utility::updateOption('global_push_settings', $settings);
+
+        return [
+            'push_settings' => $settings,
+            'message'       => __('Push notification settings have been updated', 'fluent-community')
+        ];
+    }
+
     public function getStorageSettings(Request $request)
     {
         if (!defined('FLUENT_COMMUNITY_PRO')) {
@@ -230,7 +278,7 @@ class AdminController extends Controller
             ]);
         }
 
-        $config = $request->get('config', []);
+        $config = (array)$request->get('config', []);
 
         $driver = Arr::get($config, 'driver', 'local');
 

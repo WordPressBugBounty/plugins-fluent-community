@@ -250,6 +250,7 @@ class CleanupHandler
          * fcom_meta where object_type = user and object_id = user_id
          *
          * fcom_notification_users where user_id = user_id
+         * fcom_notification_prefs where user_id = user_id
          * fcom_post_comments where user_id = user_id
          * fcom_post_reactions where user_id = user_id
          * fcom_posts where user_id = user_id & type = text
@@ -280,6 +281,9 @@ class CleanupHandler
 
         // notifications
         Utility::getApp('db')->table('fcom_notification_users')->where('user_id', $userId)->delete();
+
+        // notification preferences
+        Utility::getApp('db')->table('fcom_notification_prefs')->where('user_id', $userId)->delete();
 
         // comments
         Utility::getApp('db')->table('fcom_post_comments')->where('user_id', $userId)->delete();

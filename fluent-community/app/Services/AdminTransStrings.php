@@ -128,6 +128,8 @@ class AdminTransStrings
             'Yes, Change' => __('Yes, Change', 'fluent-community'),
             'Yes, Deactivate' => __('Yes, Deactivate', 'fluent-community'),
             'You are in a grace period, so everything keeps working for now. Updates and support will end soon — renew your license to keep them.' => __('You are in a grace period, so everything keeps working for now. Updates and support will end soon — renew your license to keep them.', 'fluent-community'),
+            'You do not have permission to manage the plugin license. Please contact a site administrator.' => __('You do not have permission to manage the plugin license. Please contact a site administrator.', 'fluent-community'),
+            'You do not have permission to set up the community. Please contact a site administrator.' => __('You do not have permission to set up the community. Please contact a site administrator.', 'fluent-community'),
             'Your Account' => __('Your Account', 'fluent-community'),
             'Your Community is Ready 🚀' => __('Your Community is Ready 🚀', 'fluent-community'),
             'Your Email Address' => __('Your Email Address', 'fluent-community'),

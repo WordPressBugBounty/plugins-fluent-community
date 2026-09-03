@@ -40,7 +40,7 @@
             "database/"
         ],
         "exclude-from-classmap": [
-            "dev/qa/stubs/",
+            "dev/qa/",
             "app/ComposerScript.php",
             "app/Services/Libs/Emogrifier/scoped-vendor/"
         ],

@@ -10,6 +10,7 @@ use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\Framework\Foundation\Exceptions\UnprocessableEntityHttpException;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Framework\Validator\Validator;
 
@@ -57,6 +58,17 @@ class FeedsHelper
         $user = User::find($userId);
 
         return $user->spaces()->pluck('slug')->toArray();
+    }
+
+    /**
+     * Statuses where a post is fully reachable by its direct link. An unlisted post is
+     * hidden from listings only, so it stays commentable and reactable like a published one.
+     *
+     * @return array
+     */
+    public static function getViewableByLinkStatuses()
+    {
+        return ['published', 'unlisted'];
     }
 
     public static function getLastFeedId()
@@ -555,7 +567,10 @@ class FeedsHelper
         $messageForValidation = preg_replace('/\s+/u', '', $messageForValidation);
 
         if (!$messageForValidation) {
-            throw new \Exception(esc_html__('Message is required', 'fluent-community'));
+            throw new UnprocessableEntityHttpException(
+                esc_html__('Message is required', 'fluent-community'),
+                'feed_message_required'
+            );
         }
 
         $processedData = [
@@ -597,8 +612,11 @@ class FeedsHelper
 
         $maxlen = apply_filters('fluent_community/max_post_length', 15000);
         if (\strlen($message) > $maxlen) {
-            /* translators: %s is the maximum allowed character count */
-            throw new \Exception(esc_html(sprintf(__('The post is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxlen))));
+            throw new UnprocessableEntityHttpException(
+                /* translators: %s is the maximum allowed character count */
+                esc_html(sprintf(__('The post is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxlen))),
+                'feed_message_too_long'
+            );
         }
 
         $titlePref = Utility::postTitlePref();
@@ -606,7 +624,10 @@ class FeedsHelper
         if ($titlePref) {
             $processedData['title'] = sanitize_text_field(Arr::get($data, 'title'));
             if ($titlePref == 'required' && empty($processedData['title'])) {
-                throw new \Exception(esc_html__('Title is required. Please provide a title', 'fluent-community'));
+                throw new UnprocessableEntityHttpException(
+                    esc_html__('Title is required. Please provide a title', 'fluent-community'),
+                    'feed_title_required'
+                );
             }
             // trim the title if it's too long to 192 chars (multibyte-safe; column is VARCHAR(192) characters)
             if (mb_strlen($processedData['title']) > 192) {

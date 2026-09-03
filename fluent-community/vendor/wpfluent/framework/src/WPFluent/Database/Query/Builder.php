@@ -1311,43 +1311,6 @@ class Builder
     }
 
     /**
-     * Add a fuzzy "similar to" (Levenshtein edit-distance) clause.
-     *
-     * Matches values within $distance single-character edits, e.g. searching
-     * "collap" matches "collapse", "bll" matches "bill", "hera" matches "heera".
-     *
-     * Requires a LEVENSHTEIN() SQL function on the connection (a stored
-     * function on MySQL, a PHP-backed UDF on SQLite).
-     *
-     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
-     * @param  string  $value
-     * @param  int  $distance
-     * @param  string  $boolean
-     * @return $this
-     */
-    public function whereSimilar($column, $value, $distance = 2, $boolean = 'and')
-    {
-        return $this->whereRaw(
-            $this->grammar->compileSimilar($column),
-            [$value, $distance],
-            $boolean
-        );
-    }
-
-    /**
-     * Add an "or" fuzzy "similar to" clause to the query.
-     *
-     * @param  \FluentCommunity\Framework\Database\Query\Expression|string  $column
-     * @param  string  $value
-     * @param  int  $distance
-     * @return $this
-     */
-    public function orWhereSimilar($column, $value, $distance = 2)
-    {
-        return $this->whereSimilar($column, $value, $distance, 'or');
-    }
-
-    /**
      * Add a "where in" clause to the query.
      *
      * @param  string  $column
