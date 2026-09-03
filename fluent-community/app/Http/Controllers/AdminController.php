@@ -217,7 +217,12 @@ class AdminController extends Controller
     {
         $data = [
             'push_settings'  => Utility::getPushNotificationSettings(),
-            'push_available' => PushNotificationModule::isFluentNotifyActive()
+            'push_available' => PushNotificationModule::isFluentNotifyActive(),
+            'push_setup'     => [
+                'state'        => PushNotificationModule::getSetupState(),
+                'settings_url' => PushNotificationModule::getSettingsUrl(),
+                'can_install'  => current_user_can('install_plugins')
+            ]
         ];
 
         return apply_filters('fluent_community/push_settings_api_response', $data, $request->all());

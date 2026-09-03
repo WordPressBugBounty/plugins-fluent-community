@@ -5,7 +5,6 @@ namespace FluentCommunity\App\Http\Controllers;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
-use FluentCommunity\App\Models\NotificationSubscription;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\SpaceUserPivot;
@@ -726,36 +725,38 @@ class ProfileController extends Controller
 
         $globalPreferances = NotificationPref::getGlobalPrefs();
 
-        $userPrefs = NotificationSubscription::where('user_id', $xProfile->user_id)
-            ->select(['notification_type', 'is_read', 'object_id'])
-            ->get();
+        // Read through the same service the save path writes through. These rows
+        // live in fcom_notification_prefs, keyed by flat keys - space-scoped ones
+        // carry an '_<space id>' suffix.
+        $userPrefs = NotificationPref::getUserPrefs($xProfile->user_id);
+
+        $frequencyMaps = [
+            0 => 'disabled',
+            1 => 'hourly',
+            2 => 'daily',
+            3 => 'weekly'
+        ];
 
         $userGlobalPrefs = [];
         $spaceWisePrefs = [];
-        foreach ($userPrefs as $pref) {
-            if (!$pref->object_id) {
-                if ($pref->notification_type === 'message_email_frequency') {
-                    $maps = [
-                        0 => 'disabled',
-                        1 => 'hourly',
-                        2 => 'daily',
-                        3 => 'weekly'
-                    ];
-
-                    if (isset($maps[$pref->is_read])) {
-                        $userGlobalPrefs[$pref->notification_type] = $maps[$pref->is_read];
-                    } else {
-                        $userGlobalPrefs[$pref->notification_type] = 'default';
-                    }
-                    continue;
-                }
-                $userGlobalPrefs[$pref->notification_type] = $pref->is_read ? 'yes' : 'no';
-            } else {
-                if (empty($spaceWisePrefs[$pref->object_id])) {
-                    $spaceWisePrefs[$pref->object_id] = [];
-                }
-                $spaceWisePrefs[$pref->object_id][$pref->notification_type] = $pref->is_read;
+        foreach ($userPrefs as $prefKey => $prefValue) {
+            if ($prefKey === 'message_email_frequency') {
+                $userGlobalPrefs[$prefKey] = isset($frequencyMaps[$prefValue]) ? $frequencyMaps[$prefValue] : 'default';
+                continue;
             }
+
+            if (preg_match('/^(np_by_(?:member|admin)_mail)_(\d+)$/', $prefKey, $matches)) {
+                $spaceId = (int)$matches[2];
+
+                if (empty($spaceWisePrefs[$spaceId])) {
+                    $spaceWisePrefs[$spaceId] = [];
+                }
+
+                $spaceWisePrefs[$spaceId][$matches[1]] = $prefValue;
+                continue;
+            }
+
+            $userGlobalPrefs[$prefKey] = $prefValue ? 'yes' : 'no';
         }
 
         $messagingConfig = Utility::getOption('_messaging_settings', []);

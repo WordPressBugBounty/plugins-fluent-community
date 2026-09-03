@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.0
+Stable tag: 2.9.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,11 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.9.1 (Date: Sep 04, 2026) =
+- Hotfix: Notification Prefs Cache Not Updating on Pref Change
+- Fixed: Deprecation Notices From the Markdown Parser
+- Improved: Push Notification Setup Guidance
 
 = 2.9.0 (Date: Sep 3, 2026) =
 - Introduced: Push Notifications with FluentNotify

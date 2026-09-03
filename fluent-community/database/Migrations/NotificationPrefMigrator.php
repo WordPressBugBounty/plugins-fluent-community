@@ -3,6 +3,8 @@
 
 namespace FluentCommunity\Database\Migrations;
 
+use FluentCommunity\App\Services\NotificationPref;
+
 class NotificationPrefMigrator
 {
     /**
@@ -177,10 +179,32 @@ class NotificationPrefMigrator
          */
         $unmigrated = self::countUnmigratedRows();
 
-        if ($unmigrated > 0) {
+        /*
+         * And separately: rows whose notification_type is not in $legacyMap at all.
+         *
+         * countUnmigratedRows() cannot see these. It joins the same map the copy
+         * joins, so a key the map does not know about is absent from both sides of
+         * that comparison and reads as zero - the copy skips it, the check passes
+         * it, and an unscoped delete then removes a preference nobody carried over.
+         * The check has to be asked about the rows the map does not cover, not only
+         * about the rows it does.
+         */
+        $unmapped = self::countUnmappedRows();
+
+        if ($unmigrated > 0 || $unmapped > 0) {
             // Copied data stands and the new table is authoritative, so this is
             // complete either way - but leave the source alone for inspection.
-            update_option(self::ERROR_OPTION, sprintf('%d legacy rows had no counterpart; source left in place', $unmigrated), false);
+            $problems = [];
+
+            if ($unmigrated > 0) {
+                $problems[] = sprintf('%d legacy rows had no counterpart', $unmigrated);
+            }
+
+            if ($unmapped > 0) {
+                $problems[] = sprintf('%d legacy rows used a key this version does not map', $unmapped);
+            }
+
+            update_option(self::ERROR_OPTION, implode('; ', $problems) . '; source left in place', false);
             self::markComplete();
 
             return true;
@@ -208,21 +232,40 @@ class NotificationPrefMigrator
      * flag is never set, the next pass re-runs a copy that is now a no-op and
      * carries on deleting.
      *
+     * Public as a test seam, for the same reason copyLegacyRange() is: it is pure
+     * DML, and what it is scoped to is the part worth pinning down.
+     *
      * @param float $startedAt microtime this call began, for the shared budget
      * @return bool true when nothing is left to delete
      */
-    private static function deleteLegacyRows($startedAt)
+    public static function deleteLegacyRows($startedAt)
     {
         global $wpdb;
 
         $legacyTable = $wpdb->prefix . 'fcom_notification_users';
 
+        $keys = array_keys(self::$legacyMap);
+        $placeholders = implode(', ', array_fill(0, count($keys), '%s'));
+
         while (true) {
-            // Pinned to the preference rows. This cannot reach a notification
-            // receipt, which is live data the ticker and the toast read.
+            /*
+             * Pinned twice over: to the preference rows, so this cannot reach a
+             * notification receipt (live data the ticker and the toast read), and
+             * to the keys the copy above actually knows how to place, so a key
+             * this version does not map survives rather than being deleted
+             * uncopied. The guard in the caller should already have stopped us
+             * before that could happen; this makes it true by construction
+             * instead of by check.
+             */
+            $args = $keys;
+            $args[] = self::DELETE_BATCH_SIZE;
+
             $deleted = $wpdb->query($wpdb->prepare(
-                "DELETE FROM {$legacyTable} WHERE `object_type` = 'notification_pref' LIMIT %d",
-                self::DELETE_BATCH_SIZE
+                "DELETE FROM {$legacyTable}
+                 WHERE `object_type` = 'notification_pref'
+                   AND `notification_type` IN ({$placeholders})
+                 LIMIT %d",
+                $args
             ));
 
             if ($deleted === false) {
@@ -338,6 +381,36 @@ class NotificationPrefMigrator
     }
 
     /**
+     * Legacy preference rows whose key is not in $legacyMap.
+     *
+     * The blind spot in countUnmigratedRows(): that query joins the map, so it can
+     * only ever report on keys the map contains. This one asks the complement, and
+     * a non-zero answer means the vocabulary has drifted from the frozen map and
+     * the source must not be deleted.
+     *
+     * A NULL notification_type counts as unmapped. It is as unplaceable as an
+     * unknown one, and SQL's NOT IN would otherwise return NULL and drop it.
+     *
+     * @return int
+     */
+    public static function countUnmappedRows()
+    {
+        global $wpdb;
+
+        $legacyTable = $wpdb->prefix . 'fcom_notification_users';
+
+        $keys = array_keys(self::$legacyMap);
+        $placeholders = implode(', ', array_fill(0, count($keys), '%s'));
+
+        $sql = "SELECT COUNT(*)
+                FROM {$legacyTable}
+                WHERE `object_type` = 'notification_pref'
+                  AND (`notification_type` IS NULL OR `notification_type` NOT IN ({$placeholders}))";
+
+        return (int)$wpdb->get_var($wpdb->prepare($sql, $keys));
+    }
+
+    /**
      * Continuation entry point. Deliberately not gated on the plugin's db-version
      * option: boot/app.php writes that as soon as DBMigrator::run() returns, so a
      * backfill that deferred work would never be reached through the migrator again.
@@ -372,12 +445,22 @@ class NotificationPrefMigrator
     /**
      * @return void
      */
-    /**
-     * @return void
-     */
     private static function markComplete()
     {
         update_option(self::DONE_OPTION, 'yes', false);
         delete_option(self::CURSOR_OPTION);
+
+        /*
+         * Drop any aggregate computed while this table was still filling up.
+         *
+         * NotificationPref::hasAnyEnabled() reads a denormalized option and only
+         * the preference write path refreshes it, so a "nobody has the digest on"
+         * answer derived from a partial table would outlive the migration that
+         * made it wrong - and the hourly scheduler unschedules the digest on it.
+         * Deleting the option rather than recomputing it here keeps the migration
+         * off the read path: the next call recomputes from a table that is now
+         * whole.
+         */
+        delete_option(NotificationPref::AGGREGATE_OPTION);
     }
 }

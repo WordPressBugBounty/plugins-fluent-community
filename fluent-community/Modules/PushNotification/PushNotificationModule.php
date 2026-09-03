@@ -10,6 +10,11 @@ use FluentCommunity\Framework\Support\Arr;
 
 class PushNotificationModule
 {
+    const SETUP_NOT_INSTALLED = 'not_installed';
+    const SETUP_DISABLED = 'disabled';
+    const SETUP_INCOMPLETE = 'incomplete';
+    const SETUP_READY = 'ready';
+
     const PROMPT_PLACEMENTS = ['feed_sidebar','profile_notification_prefs','profile_sidebar','notification_popover'];
 
     const COMMENT_ACTIONS = [
@@ -21,12 +26,37 @@ class PushNotificationModule
 
     public static function isFluentNotifyActive()
     {
+        return self::getSetupState() === self::SETUP_READY;
+    }
+
+    /**
+     * Which step of the FluentNotify setup is still outstanding, so the settings
+     * screen can say what to do rather than only that something is missing.
+     *
+     * @return string One of the SETUP_* constants.
+     */
+    public static function getSetupState()
+    {
         if (!defined('FLUENT_NOTIFY_PLUGIN_VERSION')) {
-            return false;
+            return self::SETUP_NOT_INSTALLED;
         }
 
-        return \FluentNotify\App\Services\Helper::isEnabled()
-            && \FluentNotify\App\Services\Helper::isConfigComplete();
+        if (!\FluentNotify\App\Services\Helper::isEnabled()) {
+            return self::SETUP_DISABLED;
+        }
+
+        if (!\FluentNotify\App\Services\Helper::isConfigComplete()) {
+            return self::SETUP_INCOMPLETE;
+        }
+
+        return self::SETUP_READY;
+    }
+
+    public static function getSettingsUrl()
+    {
+        // FluentNotify picks hash or history routing at runtime; the fragment is
+        // ignored under history routing, which lands on its dashboard instead.
+        return admin_url('admin.php?page=fluent-notify#/settings');
     }
 
     public static function isAvailable()

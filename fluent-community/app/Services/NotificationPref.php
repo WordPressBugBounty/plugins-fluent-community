@@ -5,6 +5,7 @@ namespace FluentCommunity\App\Services;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\NotificationPreference;
 use FluentCommunity\App\Models\Space;
+use FluentCommunity\Database\Migrations\NotificationPrefMigrator;
 use FluentCommunity\Framework\Support\Arr;
 
 /**
@@ -155,6 +156,21 @@ class NotificationPref
         Utility::setCache($cacheKey, $prefs, 86400 * 30);
 
         return $prefs;
+    }
+
+    /**
+     * Is fcom_notification_prefs the whole truth yet?
+     *
+     * False while the backfill still has rows to copy. On a large site that is a
+     * normal state, not an error one: maybeBackfillFromLegacy() gives up after 15
+     * seconds and resumes through Action Scheduler, so the table can sit partly
+     * filled for minutes while the migration is working correctly.
+     *
+     * @return bool
+     */
+    private static function backfillIsComplete()
+    {
+        return (bool)get_option(NotificationPrefMigrator::DONE_OPTION);
     }
 
     /**
@@ -510,7 +526,21 @@ class NotificationPref
                 ->exists();
         }
 
-        update_option(self::AGGREGATE_OPTION, $aggregates, false);
+        /*
+         * Persisted only once the table is whole.
+         *
+         * This option is a cache with no expiry and one writer - the preference
+         * write path - so whatever lands here is not revisited until some member
+         * happens to save their preferences. Computed mid-backfill it says "nobody
+         * has the digest on", and Scheduler::checkDailyDigestSchedule() unschedules
+         * the digest on that answer - an unschedule that would then outlive the
+         * migration that made it wrong. Skipping the write costs one indexed
+         * EXISTS per call for the duration of the backfill; markComplete() clears
+         * the option, so the first read afterwards recomputes and stores.
+         */
+        if (self::backfillIsComplete()) {
+            update_option(self::AGGREGATE_OPTION, $aggregates, false);
+        }
 
         return $aggregates;
     }
