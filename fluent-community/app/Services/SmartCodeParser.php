@@ -144,37 +144,73 @@ class SmartCodeParser
         if ($transformer && is_string($transformer) && $value) {
             switch ($transformer) {
                 case 'trim':
-                    return trim($value);
+                    $value = trim($value);
+                    break;
                 case 'ucfirst':
-                    return ucfirst($value);
+                    $value = ucfirst($value);
+                    break;
                 case 'strtolower':
-                    return strtolower($value);
+                    $value = strtolower($value);
+                    break;
                 case 'strtoupper':
-                    return strtoupper($value);
+                    $value = strtoupper($value);
+                    break;
                 case 'ucwords':
-                    return ucwords($value);
+                    $value = ucwords($value);
+                    break;
                 case 'concat_first': // usage: {{contact.first_name||concat_first|Hi
                     if (isset($valueKeys[3])) {
                         $value = trim($valueKeys[3] . ' ' . $value);
                     }
-                    return $value;
+                    break;
                 case 'concat_last': // usage: {{contact.first_name||concat_last|, => FIRST_NAME,
                     if (isset($valueKeys[3])) {
                         $value = trim($value . '' . $valueKeys[3]);
                     }
-                    return $value;
+                    break;
                 case 'show_if': // usage {{contact.first_name||show_if|First name exist
                     if (isset($valueKeys[3])) {
                         $value = $valueKeys[3];
                     }
-                    return $value;
-                default:
-                    return $value;
+                    break;
             }
         }
 
-        return $value;
+        return $this->escapeValueForContext($value, $dataKey, $valueKey);
+    }
 
+    /**
+     * Smartcode values are substituted into lockscreen/lesson/email HTML *after*
+     * that content has passed through wp_kses / do_blocks, so a resolved scalar
+     * carrying markup would otherwise bypass sanitisation. Escape ordinary
+     * values for the HTML context. The few branches that intentionally build a
+     * trusted fragment (photo_html, name_with_url, section url) already escape
+     * their own interpolated parts, so they are left untouched, and values from
+     * third-party group callbacks are the extension's responsibility.
+     */
+    protected function escapeValueForContext($value, $dataKey, $valueKey)
+    {
+        if (!static::$isHtml || !is_string($value) || $value === '') {
+            return $value;
+        }
+
+        $knownGroups = ['site', 'user', 'community', 'section', 'course'];
+        if (!in_array($dataKey, $knownGroups, true)) {
+            return $value;
+        }
+
+        $trustedHtml = [
+            'user'      => ['photo_html'],
+            'community' => ['name_with_url'],
+            'section'   => ['url'],
+        ];
+
+        $baseKey = strtok($valueKey, '.'); // "photo_html.50px" -> "photo_html"
+        if (in_array($baseKey, Arr::get($trustedHtml, $dataKey, []), true)) {
+            return $value;
+        }
+
+        return esc_html($value);
     }
 
     protected function getWpValue($valueKey, $defaultValue)
@@ -227,6 +263,20 @@ class SmartCodeParser
         $wpUser = $userModel->getWpUser();
         $valueKeys = explode('.', $valueKey);
         if (count($valueKeys) == 1) {
+            // Smartcodes are resolved against the *viewer* and can be authored by
+            // space/course/page admins, so only a fixed set of non-sensitive
+            // profile fields may be read. Never expose user_pass,
+            // user_activation_key, session tokens or capability meta.
+            $allowedFields = apply_filters('fluent_community/smartcode/user_fields', [
+                'ID', 'first_name', 'last_name', 'nickname', 'display_name',
+                'user_email', 'user_login', 'user_nicename', 'user_url',
+                'description', 'user_registered'
+            ]);
+
+            if (!in_array($valueKey, $allowedFields, true)) {
+                return $defaultValue;
+            }
+
             $value = $wpUser->get($valueKey);
             if (!$value) {
                 return $defaultValue;
@@ -252,6 +302,16 @@ class SmartCodeParser
         }
 
         if ($customKey == 'meta') {
+            // No first-party template reads user meta through smartcodes, and the
+            // viewer's own meta (session_tokens, capability keys, reset keys,
+            // any _-prefixed value) must never leak into author-controlled
+            // content. Resolve only meta keys a site has explicitly allowed.
+            $allowedMetaKeys = apply_filters('fluent_community/smartcode/user_meta_keys', []);
+
+            if (strpos($customProperty, '_') === 0 || !in_array($customProperty, $allowedMetaKeys, true)) {
+                return $defaultValue;
+            }
+
             $metaValue = get_user_meta($wpUser->ID, $customProperty, true);
             if (!$metaValue) {
                 return $defaultValue;

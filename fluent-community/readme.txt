@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.10.0
+Stable tag: 2.10.01
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,9 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.10.01 (Date: Sep 14, 2026) =
+- Fixed: Broken Layout on the FluentCommunity Page Template
 
 = 2.10.0 (Date: Sep 14, 2026) =
 - Introduced: Static Pages for Spaces

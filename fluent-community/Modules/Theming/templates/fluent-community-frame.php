@@ -28,7 +28,7 @@ $fluentCommunityThemeName = get_option('template');
             <div class="fhr_content">
                 <div class="fhr_home">
                     <div class="feed_layout">
-                        <div class="spaces">
+                        <div class="spaces fcom_space_list">
                             <div id="fluent_community_sidebar_menu" class="space_contents">
                                 <?php do_action('fluent_community/portal_sidebar', 'wp'); ?>
                             </div>
