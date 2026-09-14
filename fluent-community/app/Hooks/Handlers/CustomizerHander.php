@@ -115,7 +115,7 @@ class CustomizerHander
             foreach ($jsFiles as $file) {
                 ?>
                 <script type="module"
-                        src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>"
+                        src="<?php echo esc_url(Vite::versionedUrl($file['url'])); ?>"
                         defer="defer"></script>
                 <?php
             }

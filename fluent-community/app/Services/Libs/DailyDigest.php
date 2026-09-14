@@ -209,7 +209,7 @@ class DailyDigest
                                 <td style="font-family: Arial, sans-serif; font-size: 16px;color: #3c434a; padding-left: 5px; vertical-align: middle;">
                                     <a style="color: #3c434a; text-decoration: none;" target="_blank"
                                        href="<?php echo esc_url($permalink); ?>">
-                                        <?php echo wp_kses_post($notification->content); ?>
+                                        <?php echo wp_kses_post((string) $notification->content); ?>
                                     </a>
                                     <p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-top: 5px;">
                                         <?php /* translators: %s is replaced by the time ago */ ?>

@@ -1,4 +1,49 @@
 {
+  "_BgImageUpload.js": {
+    "file": "BgImageUpload.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "_vue.js",
+      "_emoji-picker.js"
+    ]
+  },
+  "_CustomizerShell.js": {
+    "file": "CustomizerShell.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "_vue.js",
+      "_emoji-picker.js"
+    ]
+  },
+  "_FluentDnD.js": {
+    "file": "FluentDnD.js",
+    "imports": [
+      "_vue.js",
+      "_emoji-picker.js"
+    ]
+  },
+  "_FullEditorFrame.js": {
+    "file": "FullEditorFrame.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "_vue.js",
+      "_emoji-picker.js"
+    ]
+  },
+  "__MenuGroupSettings.js": {
+    "file": "_MenuGroupSettings.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_FluentDnD.js",
+      "_vue.js",
+      "_emoji-picker.js"
+    ]
+  },
   "_dayjs.js": {
     "file": "dayjs.js"
   },
@@ -6,7 +51,7 @@
     "file": "element-plus.js",
     "imports": [
       "_vue.js",
-      "_lodash.js",
+      "_fcom-utils.js",
       "_vendor.js",
       "_dayjs.js"
     ]
@@ -17,20 +62,20 @@
       "_vue.js"
     ]
   },
-  "_index6.js": {
-    "file": "index6.js"
-  },
-  "_lodash.js": {
-    "file": "lodash.js",
+  "_fcom-utils.js": {
+    "file": "fcom-utils.js",
     "imports": [
       "_dayjs.js"
     ]
+  },
+  "_index6.js": {
+    "file": "index6.js"
   },
   "_milkdown.js": {
     "file": "milkdown.js",
     "imports": [
       "_vendor.js",
-      "_lodash.js",
+      "_fcom-utils.js",
       "_vue.js"
     ]
   },
@@ -63,6 +108,42 @@
   "_vue.js": {
     "file": "vue.js"
   },
+  "src/Modules/Common/ManagePaywalls.vue": {
+    "file": "ManagePaywalls.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/ManagePaywalls.vue"
+  },
+  "src/Modules/Common/ManageSpaceLinks.vue": {
+    "file": "ManageSpaceLinks.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "__MenuGroupSettings.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "src/app.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js",
+      "_FluentDnD.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Common/ManageSpaceLinks.vue"
+  },
   "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts": {
     "file": "index2.js",
     "imports": [
@@ -72,7 +153,7 @@
       "_milkdown.js",
       "_vue.js",
       "_dayjs.js",
-      "_lodash.js"
+      "_fcom-utils.js"
     ],
     "isDynamicEntry": true,
     "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts"
@@ -85,7 +166,7 @@
       "_vendor.js",
       "_vue.js",
       "_dayjs.js",
-      "_lodash.js"
+      "_fcom-utils.js"
     ],
     "isDynamicEntry": true,
     "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts"
@@ -98,7 +179,7 @@
       "_vendor.js",
       "_vue.js",
       "_dayjs.js",
-      "_lodash.js"
+      "_fcom-utils.js"
     ],
     "isDynamicEntry": true,
     "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts"
@@ -109,7 +190,7 @@
       "_index6.js",
       "_milkdown.js",
       "_vendor.js",
-      "_lodash.js",
+      "_fcom-utils.js",
       "_dayjs.js",
       "_vue.js"
     ],
@@ -125,10 +206,168 @@
       "_milkdown.js",
       "_vue.js",
       "_dayjs.js",
-      "_lodash.js"
+      "_fcom-utils.js"
     ],
     "isDynamicEntry": true,
     "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts"
+  },
+  "src/Modules/Feeds/Customizer/FeedSettingsRoute.vue": {
+    "file": "FeedSettingsRoute.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "_CustomizerShell.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Feeds/Customizer/FeedSettingsRoute.vue"
+  },
+  "src/Modules/Feeds/Parts/ManageFeedLinks.vue": {
+    "file": "ManageFeedLinks.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "__MenuGroupSettings.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "src/app.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js",
+      "_FluentDnD.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Feeds/Parts/ManageFeedLinks.vue"
+  },
+  "src/Modules/Feeds/Parts/WelcomeBannerConfig.vue": {
+    "file": "WelcomeBannerConfig.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_BgImageUpload.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Feeds/Parts/WelcomeBannerConfig.vue"
+  },
+  "src/Modules/Space/Customizer/SpaceLockscreen.vue": {
+    "file": "SpaceLockscreen.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "_BgImageUpload.js",
+      "src/app.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_FullEditorFrame.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/Customizer/SpaceLockscreen.vue"
+  },
+  "src/Modules/Space/Customizer/SpaceSettingsRoute.vue": {
+    "file": "SpaceSettingsRoute.js",
+    "imports": [
+      "src/app.js",
+      "_CustomizerShell.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_vue-router.js",
+      "_element-plus.js",
+      "_fcom-utils.js",
+      "_dayjs.js",
+      "_vendor.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/Customizer/SpaceSettingsRoute.vue"
+  },
+  "src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue": {
+    "file": "SpaceGeneralTab.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue"
+  },
+  "src/Modules/Space/Pages/ManageSpacePages.vue": {
+    "file": "ManageSpacePages.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_FluentDnD.js",
+      "_FullEditorFrame.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/Pages/ManageSpacePages.vue"
+  },
+  "src/Modules/Space/Pages/ViewSpacePage.vue": {
+    "file": "ViewSpacePage.js",
+    "imports": [
+      "_element-plus.js",
+      "_dayjs.js",
+      "src/app.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_fcom-utils.js",
+      "_vendor.js",
+      "_vue-router.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/Pages/ViewSpacePage.vue"
+  },
+  "src/Modules/Space/SpaceNotFound.vue": {
+    "file": "SpaceNotFound.js",
+    "imports": [
+      "src/app.js",
+      "_vue.js",
+      "_emoji-picker.js",
+      "_vue-router.js",
+      "_element-plus.js",
+      "_fcom-utils.js",
+      "_dayjs.js",
+      "_vendor.js",
+      "_pinia.js",
+      "_milkdown.js"
+    ],
+    "isDynamicEntry": true,
+    "src": "src/Modules/Space/SpaceNotFound.vue"
   },
   "src/app.js": {
     "dynamicImports": [
@@ -136,7 +375,18 @@
       "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts",
       "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts",
       "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts"
+      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts",
+      "src/Modules/Feeds/Customizer/FeedSettingsRoute.vue",
+      "src/Modules/Feeds/Parts/WelcomeBannerConfig.vue",
+      "src/Modules/Feeds/Parts/ManageFeedLinks.vue",
+      "src/Modules/Space/Customizer/SpaceSettingsRoute.vue",
+      "src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue",
+      "src/Modules/Common/ManagePaywalls.vue",
+      "src/Modules/Space/Customizer/SpaceLockscreen.vue",
+      "src/Modules/Common/ManageSpaceLinks.vue",
+      "src/Modules/Space/Pages/ManageSpacePages.vue",
+      "src/Modules/Space/Pages/ViewSpacePage.vue",
+      "src/Modules/Space/SpaceNotFound.vue"
     ],
     "file": "app.js",
     "imports": [
@@ -147,7 +397,7 @@
       "_pinia.js",
       "_vendor.js",
       "_emoji-picker.js",
-      "_lodash.js",
+      "_fcom-utils.js",
       "_milkdown.js"
     ],
     "isEntry": true,

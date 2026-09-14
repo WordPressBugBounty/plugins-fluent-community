@@ -110,7 +110,7 @@ $fluentCommunityPortal = $portal ?? [];
 <?php do_action('fluent_community/headless/before_js_loaded', $fluentCommunityScope); ?>
 
 <?php foreach ($fluentCommunityJsFiles as $fluentCommunityFile): ?>
-    <script type="module" src="<?php echo esc_url($fluentCommunityFile); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+    <script type="module" src="<?php echo esc_url(\FluentCommunity\App\Vite::versionedUrl($fluentCommunityFile)); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
 <?php endforeach; ?>
 
 <?php if (!empty($load_wp)) { wp_footer(); } ?>

@@ -331,105 +331,110 @@ class OnboardingService
         }
     }
 
-    /**
-     * Install and activate a plugin. Resolves the package from wordpress.org
-     * unless $downloadUrl is given, for plugins hosted outside the repo.
-     */
-    public static function backgroundInstaller($plugin_to_install, $downloadUrl = null)
+    public static function backgroundInstaller($plugin_to_install)
     {
-        if (empty($plugin_to_install['repo-slug'])) {
-            return;
-        }
+        if (!empty($plugin_to_install['repo-slug'])) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            WP_Filesystem();
 
-        WP_Filesystem();
+            $skin = new \Automatic_Upgrader_Skin();
+            $upgrader = new \WP_Upgrader($skin);
+            $installed_plugins = array_reduce(array_keys(\get_plugins()), array(self::class, 'associate_plugin_file'), array());
+            $plugin_slug = $plugin_to_install['repo-slug'];
+            $plugin_file = isset($plugin_to_install['file']) ? $plugin_to_install['file'] : $plugin_slug . '.php';
+            $installed = false;
+            $activate = false;
 
-        $installedPlugins = array_reduce(array_keys(\get_plugins()), array(self::class, 'associate_plugin_file'), array());
-
-        $pluginSlug = $plugin_to_install['repo-slug'];
-        $pluginFile = isset($plugin_to_install['file']) ? $plugin_to_install['file'] : $pluginSlug . '.php';
-        $isInstalled = isset($installedPlugins[$pluginFile]);
-
-        if ($isInstalled) {
-            $needsActivation = !is_plugin_active($installedPlugins[$pluginFile]);
-        } else {
-            $upgrader = new \WP_Upgrader(new \Automatic_Upgrader_Skin());
-
-            // The upgrader prints progress markup that would corrupt the response.
-            ob_start();
-
-            try {
-                $package = $downloadUrl;
-
-                if (!$package) {
-                    $information = plugins_api('plugin_information', array(
-                        'slug'   => $pluginSlug,
-                        'fields' => array(
-                            'short_description' => false,
-                            'sections'          => false,
-                            'requires'          => false,
-                            'rating'            => false,
-                            'ratings'           => false,
-                            'downloaded'        => false,
-                            'last_updated'      => false,
-                            'added'             => false,
-                            'tags'              => false,
-                            'homepage'          => false,
-                            'donate_link'       => false,
-                            'author_profile'    => false,
-                            'author'            => false,
-                        ),
-                    ));
-                    if (is_wp_error($information)) {
-                        throw new \Exception(wp_kses_post($information->get_error_message()));
-                    }
-
-                    $package = $information->download_link;
-                }
-
-                $download = $upgrader->download_package($package);
-                if (is_wp_error($download)) {
-                    throw new \Exception(wp_kses_post($download->get_error_message()));
-                }
-
-                $workingDir = $upgrader->unpack_package($download, true);
-                if (is_wp_error($workingDir)) {
-                    throw new \Exception(wp_kses_post($workingDir->get_error_message()));
-                }
-
-                $installed = $upgrader->install_package(array(
-                    'source'                      => $workingDir,
-                    'destination'                 => WP_PLUGIN_DIR,
-                    'clear_destination'           => false,
-                    'abort_if_destination_exists' => false,
-                    'clear_working'               => true,
-                    'hook_extra'                  => array(
-                        'type'   => 'plugin',
-                        'action' => 'install',
-                    ),
-                ));
-                if (is_wp_error($installed)) {
-                    throw new \Exception(wp_kses_post($installed->get_error_message()));
-                }
-            } finally {
-                ob_end_clean();
+            // See if the plugin is installed already.
+            if (isset($installed_plugins[$plugin_file])) {
+                $installed = true;
+                $activate = !is_plugin_active($installed_plugins[$plugin_file]);
             }
 
-            $needsActivation = true;
-        }
+            // Install this thing!
+            if (!$installed) {
+                // Suppress feedback.
+                ob_start();
 
-        wp_clean_plugins_cache();
+                try {
+                    $plugin_information = plugins_api(
+                        'plugin_information',
+                        array(
+                            'slug'   => $plugin_slug,
+                            'fields' => array(
+                                'short_description' => false,
+                                'sections'          => false,
+                                'requires'          => false,
+                                'rating'            => false,
+                                'ratings'           => false,
+                                'downloaded'        => false,
+                                'last_updated'      => false,
+                                'added'             => false,
+                                'tags'              => false,
+                                'homepage'          => false,
+                                'donate_link'       => false,
+                                'author_profile'    => false,
+                                'author'            => false,
+                            ),
+                        )
+                    );
 
-        if (!$needsActivation) return;
+                    if (is_wp_error($plugin_information)) {
+                        throw new \Exception(wp_kses_post($plugin_information->get_error_message()));
+                    }
 
-        $activated = activate_plugin($isInstalled ? $installedPlugins[$pluginFile] : $pluginSlug . '/' . $pluginFile);
+                    $package = $plugin_information->download_link;
+                    $download = $upgrader->download_package($package);
 
-        if (is_wp_error($activated)) {
-            throw new \Exception(wp_kses_post($activated->get_error_message()));
+                    if (is_wp_error($download)) {
+                        throw new \Exception(wp_kses_post($download->get_error_message()));
+                    }
+
+                    $working_dir = $upgrader->unpack_package($download, true);
+
+                    if (is_wp_error($working_dir)) {
+                        throw new \Exception(wp_kses_post($working_dir->get_error_message()));
+                    }
+
+                    $result = $upgrader->install_package(
+                        array(
+                            'source'                      => $working_dir,
+                            'destination'                 => WP_PLUGIN_DIR,
+                            'clear_destination'           => false,
+                            'abort_if_destination_exists' => false,
+                            'clear_working'               => true,
+                            'hook_extra'                  => array(
+                                'type'   => 'plugin',
+                                'action' => 'install',
+                            ),
+                        )
+                    );
+
+                    if (is_wp_error($result)) {
+                        throw new \Exception(wp_kses_post($result->get_error_message()));
+                    }
+
+                    $activate = true;
+                } finally {
+                    // Discard feedback.
+                    ob_end_clean();
+                }
+            }
+
+            wp_clean_plugins_cache();
+
+            // Activate this thing.
+            if ($activate) {
+                $result = activate_plugin($installed ? $installed_plugins[$plugin_file] : $plugin_slug . '/' . $plugin_file);
+
+                if (is_wp_error($result)) {
+                    throw new \Exception(wp_kses_post($result->get_error_message()));
+                }
+            }
         }
     }
 

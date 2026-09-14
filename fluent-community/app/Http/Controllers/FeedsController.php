@@ -19,6 +19,7 @@ use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 
 class FeedsController extends Controller
 {
@@ -725,9 +726,10 @@ class FeedsController extends Controller
         if (isset($data['is_sticky'])) {
             $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
             if ($data['is_sticky'] && $feed->space_id) {
-                // remove all the sticky posts from the space
+                // toBase() keeps the type scope but skips the Orm update()'s updated_at stamp, which would bump the post being un-stuck.
                 Feed::where('space_id', $feed->space_id)
                     ->where('is_sticky', 1)
+                    ->toBase()
                     ->update(['is_sticky' => 0]);
             }
         }
@@ -742,6 +744,11 @@ class FeedsController extends Controller
             $feed->fill($data);
             $dirty = $feed->getDirty();
             if ($dirty) {
+                // Only a real list/unlist transition is activity, so read $dirty, not the request.
+                if (!array_key_exists('status', $dirty)) {
+                    $feed->timestamps = false;
+                }
+
                 $feed->save();
                 do_action('fluent_community/feed/updated', $feed, $dirty);
             }
@@ -1277,9 +1284,33 @@ class FeedsController extends Controller
             ->limit($limit)
             ->get();
 
+        $commentIds = [];
+        foreach ($notifications as $notification) {
+            if (!in_array($notification->action, PushNotificationModule::PUSHED_ACTIONS, true)) {
+                continue;
+            }
+
+            $commentIds[] = (int)$notification->object_id;
+            $commentIds[] = (int)Arr::get((array)$notification->route, 'query.comment_id');
+        }
+
+        $pushedCommentIds = PushNotificationModule::getPushedCommentIds(
+            $userId,
+            array_values(array_filter(array_unique($commentIds)))
+        );
+
         $items = [];
 
         foreach ($notifications as $notification) {
+            $wasPushed = in_array($notification->action, PushNotificationModule::PUSHED_ACTIONS, true)
+                && (in_array((int)$notification->object_id, $pushedCommentIds, true)
+                    || in_array((int)Arr::get((array)$notification->route, 'query.comment_id'), $pushedCommentIds, true));
+
+            // The push already told this member; a toast would say it twice.
+            if ($wasPushed) {
+                continue;
+            }
+
             $xprofile = $notification->xprofile;
 
             $items[] = [

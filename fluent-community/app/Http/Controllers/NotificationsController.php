@@ -90,7 +90,7 @@ class NotificationsController extends Controller
 
     public function markAsReadByFeedId(Request $request, $feedId)
     {
-        $feed = Feed::findOrfail($feedId);
+        $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
 
         NotificationSubscriber::whereHas('notification', function ($query) use ($feed) {
             return $query->where('feed_id', $feed->id);

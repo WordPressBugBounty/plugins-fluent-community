@@ -71,6 +71,58 @@ class FeedsHelper
         return ['published', 'unlisted'];
     }
 
+    /**
+     * Row types that opt IN to comments through meta.enable_comments, mapped to the value
+     * assumed when the key is absent.
+     *
+     * A feed post uses the opposite convention - meta.comments_disabled, absent meaning on -
+     * so it is deliberately not listed here and falls through to the permissive default.
+     *
+     * The fallbacks match each model's getDefaultMeta(): a lesson written before the
+     * setting existed keeps its thread, a page does not. Guessing one value for both
+     * would silently switch off every legacy lesson discussion.
+     *
+     * @return array<string, string>
+     */
+    public static function getOptInCommentTypes()
+    {
+        return apply_filters('fluent_community/opt_in_comment_types', [
+            'course_lesson' => 'yes',
+            'space_page'    => 'no',
+        ]);
+    }
+
+    /**
+     * Whether a row accepts comments at all, by its own settings.
+     *
+     * This is the setting check only - it says nothing about who the current user is.
+     * Space membership and the course level kill switch are separate, in
+     * CommentsController::verifySpacePermission().
+     *
+     * Both the read and the write path go through here so they cannot disagree. They used
+     * to: the write path only ever read meta.comments_disabled, which pages and lessons
+     * do not set, so a POST landed a comment on a page whose thread the UI was hiding.
+     *
+     * @param  \FluentCommunity\App\Models\Feed $feed
+     * @return bool
+     */
+    public static function commentsEnabled($feed)
+    {
+        $meta = $feed->meta;
+
+        if (Arr::get($meta, 'comments_disabled') === 'yes') {
+            return false;
+        }
+
+        $optIn = self::getOptInCommentTypes();
+
+        if (isset($optIn[$feed->type])) {
+            return Arr::get($meta, 'enable_comments', $optIn[$feed->type]) === 'yes';
+        }
+
+        return true;
+    }
+
     public static function getLastFeedId()
     {
         $lastItem = Feed::where('status', 'published')
@@ -560,7 +612,7 @@ class FeedsHelper
 
     public static function sanitizeAndValidateData($data)
     {
-        $message = CustomSanitizer::unslashMarkdown(trim(Arr::get($data, 'message')));
+        $message = CustomSanitizer::unslashMarkdown(trim((string) Arr::get($data, 'message', '')));
 
         // Decode HTML entities and strip all whitespace for validation
         $messageForValidation = html_entity_decode($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -1076,6 +1128,22 @@ class FeedsHelper
 
         $spaceSettings = $feed->space ? $feed->space->settings : [];
         $feed->default_comment_sort_by = Arr::get($spaceSettings, 'default_comment_sort_by', '');
+
+        // Feed::withPublicRelations() eager-loads the space with its raw settings, and
+        // those settings carry links scoped to logged-in members or to specific
+        // memberships. BaseSpace::formatSpaceData() filters them for the space
+        // endpoints; nothing filtered them here, so every feed response handed all of
+        // a space's links - titles and URLs - to any caller, anonymous included.
+        if ($feed->space && Arr::get($spaceSettings, 'links')) {
+            $currentUser = Helper::getCurrentUser();
+
+            $spaceSettings['links'] = Helper::filterAccessibleLinks(
+                Arr::get($spaceSettings, 'links', []),
+                $currentUser ? $currentUser : null
+            );
+
+            $feed->space->settings = $spaceSettings;
+        }
 
         self::setCurrentRelatedUserId($feed->user_id);
 

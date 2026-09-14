@@ -236,17 +236,17 @@ class MediaController extends Controller
         }
         $mediaId = intval($request->get('media_id'));
         $instanceKey = sanitize_key($request->get('player_instance_key'));
-        $shareUrl = esc_url_raw($request->get('share_url'));
+        $shareUrl = esc_url_raw((string) $request->get('share_url', ''));
         $media = Media::find($mediaId);
         if (!$media) {
             // Non-DB media (external embed / share URL) from a synthetic hash id: build from
             // allowlisted scalars only. Never trust request `settings`/`layers` — accepting
             // them lets an anon caller inject shortcode layers into FluentPlayer's renderer.
             $media = (object) [
-                'url'       => esc_url_raw($request->get('url')),
+                'url'       => esc_url_raw((string) $request->get('url', '')),
                 'title'     => sanitize_text_field($request->get('title')),
-                'image'     => esc_url_raw($request->get('image')),
-                'share_url' => esc_url_raw($request->get('share_url')),
+                'image'     => esc_url_raw((string) $request->get('image', '')),
+                'share_url' => esc_url_raw((string) $request->get('share_url', '')),
                 'provider'  => sanitize_text_field($request->get('provider')),
                 'type'      => sanitize_text_field($request->get('type')),
             ];

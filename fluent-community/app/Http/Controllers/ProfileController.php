@@ -76,7 +76,7 @@ class ProfileController extends Controller
 
         if ($isOwn || $isAdmin) {
             $enableUserSync = Utility::getPrivacySetting('enable_user_sync') === 'yes';
-            $nameArray = explode(' ', trim($xprofile->display_name));
+            $nameArray = explode(' ', trim((string) $xprofile->display_name));
             $xprofileFirstName = array_shift($nameArray);
             $xprofileLastName = implode(' ', $nameArray);
 
@@ -206,7 +206,7 @@ class ProfileController extends Controller
         if (isset($updateData['avatar'])) {
 
             if ($xprofile->hasCustomAvatar()) {
-                $deletedMedias[] = $xprofile->attributes['avatar'];
+                $deletedMedias[] = Arr::get($xprofile->getAttributes(), 'avatar');
             }
 
             $xprofile->avatar = $updateData['avatar'];
@@ -356,8 +356,8 @@ class ProfileController extends Controller
 
         $updateData['display_name'] = trim(sanitize_text_field(Arr::get($data, 'first_name') . ' ' . Arr::get($data, 'last_name')));
 
-        $updateData['short_description'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim(Arr::get($data, 'short_description'))));
-        $meta['website'] = sanitize_url(Arr::get($data, 'website'));
+        $updateData['short_description'] = CustomSanitizer::unslashMarkdown(sanitize_textarea_field(trim((string) Arr::get($data, 'short_description', ''))));
+        $meta['website'] = sanitize_url((string) Arr::get($data, 'website', ''));
         $meta['headline'] = sanitize_text_field(trim(Arr::get($data, 'headline', '')));
         $socialLinks = Arr::get($data, 'social_links', []);
 

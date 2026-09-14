@@ -29,7 +29,16 @@ class CommentsController extends Controller
             ], 404);
         }
 
-        $canViewComments = apply_filters('fluent_community/can_view_comments_' . $feed->type, true, $feed);
+        /*
+         * The row's own setting is the default the filter gets handed, rather than a bare
+         * true. Before this, meta.enable_comments was read nowhere on this path, so a page
+         * with comments switched off still served its thread to anyone who asked for it.
+         */
+        $canViewComments = apply_filters(
+            'fluent_community/can_view_comments_' . $feed->type,
+            FeedsHelper::commentsEnabled($feed),
+            $feed
+        );
 
         if (!$canViewComments) {
             return [
@@ -432,7 +441,7 @@ class CommentsController extends Controller
 
     private function validateCommentText($data)
     {
-        $text = trim(Arr::get($data, 'comment'));
+        $text = trim((string) Arr::get($data, 'comment', ''));
         $text = CustomSanitizer::unslashMarkdown($text);
 
         // Decode HTML entities (e.g., &#x20; for space) and strip all whitespace for validation
@@ -461,7 +470,7 @@ class CommentsController extends Controller
 
     private function verifyCreateCommentPermission($feed)
     {
-        if (Arr::get($feed->meta, 'comments_disabled') === 'yes') {
+        if (!FeedsHelper::commentsEnabled($feed)) {
             throw new \Exception(esc_html__('Comments are disabled for this post', 'fluent-community'));
         }
 

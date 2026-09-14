@@ -219,9 +219,12 @@ class AdminController extends Controller
             'push_settings'  => Utility::getPushNotificationSettings(),
             'push_available' => PushNotificationModule::isFluentNotifyActive(),
             'push_setup'     => [
-                'state'        => PushNotificationModule::getSetupState(),
-                'settings_url' => PushNotificationModule::getSettingsUrl(),
-                'can_install'  => current_user_can('install_plugins')
+                'state'          => PushNotificationModule::getSetupState(),
+                'settings_url'   => PushNotificationModule::getSettingsUrl(),
+                'can_install'    => current_user_can('install_plugins'),
+                'can_activate'   => current_user_can('activate_plugins'),
+                'has_installer'  => (bool)has_action('fluent_community/install_fluent_notify_plugin'),
+                'learn_more_url' => 'https://fluentnotify.com'
             ]
         ];
 

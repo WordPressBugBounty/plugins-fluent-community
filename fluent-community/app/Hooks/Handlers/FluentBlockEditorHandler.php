@@ -10,23 +10,38 @@ use FluentCommunity\Modules\Course\Model\CourseLesson;
 
 class FluentBlockEditorHandler
 {
+    /**
+     * Extra fcomEditorVars entries contributed by whoever answered the
+     * fluent_community/block_editor_context filter. Stashed in renderCustomEditor()
+     * and merged in gutenberg_editor_scripts_and_styles(), which runs later in the
+     * same request off the wp_enqueue_scripts callback registered below.
+     *
+     * @var array
+     */
+    private $contextEditorVars = [];
+
     public function register()
     {
         add_action('init', function () {
 
-            register_post_type('fcom-dummy', [
-                'label'        => 'Lesson',
-                'public'       => false,
-                'show_in_rest' => true,
-                'supports'     => ['title', 'editor', 'thumbnail'],
+            $editorPostTypes = apply_filters('fluent_community/block_editor_post_types', [
+                'fcom-dummy'      => [
+                    'label'        => 'Lesson',
+                    'public'       => false,
+                    'show_in_rest' => true,
+                    'supports'     => ['title', 'editor', 'thumbnail'],
+                ],
+                'fcom-lockscreen' => [
+                    'label'        => 'Lockscreen',
+                    'public'       => false,
+                    'show_in_rest' => true,
+                    'supports'     => ['editor'],
+                ],
             ]);
 
-            register_post_type('fcom-lockscreen', [
-                'label'        => 'Lockscreen',
-                'public'       => false,
-                'show_in_rest' => true,
-                'supports'     => ['editor'],
-            ]);
+            foreach ($editorPostTypes as $editorPostType => $editorPostTypeArgs) {
+                register_post_type($editorPostType, $editorPostTypeArgs);
+            }
 
             if (!isset($_REQUEST['fluent_community_block_editor'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 return;
@@ -102,6 +117,28 @@ class FluentBlockEditorHandler
             }
         }
 
+        /*
+         * Extension point for editor contexts registered outside this plugin (the pro
+         * Space Pages module uses it). Handlers matching $context return their own
+         * access decision, post type and the content to seed the simulated post with.
+         */
+        $contextConfig = apply_filters('fluent_community/block_editor_context', [
+            'has_access'  => $hasAccess,
+            'post_type'   => $postType,
+            'has_content' => false,
+            'title'       => '',
+            'content'     => '',
+        ], $context, $data);
+
+        $hasAccess = !empty($contextConfig['has_access']);
+
+        $this->contextEditorVars = (array)Arr::get($contextConfig, 'editor_vars', []);
+
+        $contextPostType = Arr::get($contextConfig, 'post_type');
+        if ($contextPostType) {
+            $postType = $contextPostType;
+        }
+
         if (!$hasAccess) {
             echo '<h3 style="padding: 100px; text-align: center;">' . esc_html__('Sorry, you do not have access to this page.', 'fluent-community') . '</h3>';
             exit(200);
@@ -134,6 +171,10 @@ class FluentBlockEditorHandler
         if ($lesson) {
             $post->post_title = $lesson->title;
             $post->post_content = $lesson->message ?: '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
+        } elseif (!empty($contextConfig['has_content'])) {
+            $contextContent = Arr::get($contextConfig, 'content');
+            $post->post_title = Arr::get($contextConfig, 'title', '');
+            $post->post_content = $contextContent ? $contextContent : '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         }
 
         // renderPage() exits during admin_init and manually fires wp_enqueue_scripts in
@@ -300,10 +341,10 @@ class FluentBlockEditorHandler
 
         wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', ['react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins'], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
         wp_localize_script('fcom_editor_custom', 'fcomEditorI18n', $this->getEditorI18nStrings());
-        wp_localize_script('fcom_editor_custom', 'fcomEditorVars', [
+        wp_localize_script('fcom_editor_custom', 'fcomEditorVars', array_merge([
             'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold(),
             'can_unfiltered_html'          => current_user_can('unfiltered_html') ? 'yes' : 'no',
-        ]);
+        ], $this->contextEditorVars));
     }
 
     private function getEditorI18nStrings()
@@ -355,6 +396,30 @@ class FluentBlockEditorHandler
             "User's Email"                                                          => __("User's Email", 'fluent-community'),
             "User's photo HTML"                                                     => __("User's photo HTML", 'fluent-community'),
             'Profile Link'                                                          => __('Profile Link', 'fluent-community'),
+            // Space page settings panel
+            'Who can view this page'                                                => __('Who can view this page', 'fluent-community'),
+            'Everyone who can view the space'                                       => __('Everyone who can view the space', 'fluent-community'),
+            'Space members only'                                                    => __('Space members only', 'fluent-community'),
+            'URL Slug'                                                              => __('URL Slug', 'fluent-community'),
+            'Changing the slug will break existing links to this page.'             => __('Changing the slug will break existing links to this page.', 'fluent-community'),
+            'Show in space menu'                                                    => __('Show in space menu', 'fluent-community'),
+            'Menu Label'                                                            => __('Menu Label', 'fluent-community'),
+            'Leave empty to use the page title.'                                    => __('Leave empty to use the page title.', 'fluent-community'),
+            'SEO'                                                                   => __('SEO', 'fluent-community'),
+            'SEO Description'                                                       => __('SEO Description', 'fluent-community'),
+            'Used for search engines and link previews'                             => __('Used for search engines and link previews', 'fluent-community'),
+            // Space page layout picker. The template labels and descriptions are
+            // localized by whoever registers them (SpacePageHelper::getLayoutTemplates
+            // in pro); only the fallback names used when pro is absent live here.
+            'Page Layout'                                                           => __('Page Layout', 'fluent-community'),
+            'Show the page title'                                                   => __('Show the page title', 'fluent-community'),
+            'Show the featured image'                                               => __('Show the featured image', 'fluent-community'),
+            'The title stays editable here and still names the page in the menu.'   => __('The title stays editable here and still names the page in the menu.', 'fluent-community'),
+            'The image still appears in search results and link previews.'          => __('The image still appears in search results and link previews.', 'fluent-community'),
+            'Standard'                                                              => __('Standard', 'fluent-community'),
+            'Classic'                                                               => __('Classic', 'fluent-community'),
+            'Full Width'                                                            => __('Full Width', 'fluent-community'),
+            'Unified'                                                               => __('Unified', 'fluent-community'),
         ];
 
         return apply_filters('fluent_community/editor_i18n_strings', $strings);

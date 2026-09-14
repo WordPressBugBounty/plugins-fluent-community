@@ -16,6 +16,7 @@ class AdminTransStrings
             'Almost done, just a few more seconds...' => __('Almost done, just a few more seconds...', 'fluent-community'),
             'Are you sure you want to change the URL of your portal to' => __('Are you sure you want to change the URL of your portal to', 'fluent-community'),
             'Back' => __('Back', 'fluent-community'),
+            'Back to Settings' => __('Back to Settings', 'fluent-community'),
             'Basic' => __('Basic', 'fluent-community'),
             'Basic Settings of your portal' => __('Basic Settings of your portal', 'fluent-community'),
             'Blank' => __('Blank', 'fluent-community'),

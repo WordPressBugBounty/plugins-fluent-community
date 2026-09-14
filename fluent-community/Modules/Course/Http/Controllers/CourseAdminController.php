@@ -86,7 +86,7 @@ class CourseAdminController extends Controller
             'parent_id'   => $request->get('parent_id') ?: null, // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
             'title'       => $request->getSafe('title', 'sanitize_text_field'),
             'privacy'     => $request->get('privacy'),
-            'description' => wp_kses_post($request->get('description')),
+            'description' => wp_kses_post((string) $request->get('description', '')),
             'status'      => $request->get('status', 'draft'),
             'settings'    => [
                 'course_type'                    => $request->get('course_type'),
@@ -95,7 +95,7 @@ class CourseAdminController extends Controller
                 'disable_comments'               => $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no',
                 'hide_members_count'             => $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no',
                 'course_layout'                  => $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic',
-                'course_details'                 => CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details'))),
+                'course_details'                 => CustomSanitizer::unslashMarkdown(trim((string) $request->get('settings.course_details', ''))),
                 'hide_instructor_view'           => $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no',
                 'show_instructor_students_count' => $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no',
                 'sequential_lesson_order'        => $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no',
@@ -230,7 +230,7 @@ class CourseAdminController extends Controller
         $courseData = [
             'title'       => $request->getSafe('title', 'sanitize_text_field'),
             'privacy'     => $request->get('privacy'),
-            'description' => wp_kses_post($request->get('description')),
+            'description' => wp_kses_post((string) $request->get('description', '')),
             'status'      => $request->get('status'),
             'cover_photo' => $request->getSafe('cover_photo', 'sanitize_url'),
             'parent_id'   => $request->get('parent_id') ?: null, // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
@@ -304,7 +304,7 @@ class CourseAdminController extends Controller
         $existingSettings['show_paywalls'] = $request->get('settings.show_paywalls') === 'yes' ? 'yes' : 'no';
         $existingSettings['show_welcome_banner'] = $request->get('settings.show_welcome_banner') === 'yes' ? 'yes' : 'no';
         $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
-        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim($request->get('settings.course_details')));
+        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim((string) $request->get('settings.course_details', '')));
         $existingSettings['sequential_lesson_order'] = $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no';
 
         if ($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
@@ -384,6 +384,8 @@ class CourseAdminController extends Controller
             $newTopic->space_id = $newCourse->id;
             $newTopic->save();
 
+            do_action('fluent_community/section/created', $newTopic, $newCourse);
+
             foreach ($topic->lessons as $lesson) {
                 /** @var CourseLesson $lesson */
                 $newLesson = $lesson->replicate();
@@ -391,6 +393,8 @@ class CourseAdminController extends Controller
                 $newLesson->parent_id = $newTopic->id;
                 $newLesson->save();
                 CourseHelper::copyLessonDocuments($lesson, $newLesson);
+
+                do_action('fluent_community/lesson/created', $newLesson, $newTopic);
             }
         }
 
@@ -736,7 +740,7 @@ class CourseAdminController extends Controller
             'status'   => 'published',
         ];
 
-        Course::findOrFail($courseId);
+        $course = Course::findOrFail($courseId);
 
         $latestPriority = CourseTopic::where('type', 'course_section')->where('space_id', $courseId)->max('priority');
 
@@ -745,6 +749,8 @@ class CourseAdminController extends Controller
         $section = CourseTopic::create($sectionData);
 
         $section->load('lessons');
+
+        do_action('fluent_community/section/created', $section, $course);
 
         return [
             'message' => __('Section has been created successfully.', 'fluent-community'),
@@ -869,6 +875,8 @@ class CourseAdminController extends Controller
         $newSection->priority = (int) $latestPriority + 1;
         $newSection->save();
 
+        do_action('fluent_community/section/created', $newSection, $toCourse);
+
         $originalLessons = CourseLesson::where('parent_id', $originalSection->id)->get();
         foreach ($originalLessons as $lesson) {
             /** @var CourseLesson $lesson */
@@ -877,6 +885,8 @@ class CourseAdminController extends Controller
             $newLesson->parent_id = $newSection->id;
             $newLesson->save();
             CourseHelper::copyLessonDocuments($lesson, $newLesson);
+
+            do_action('fluent_community/lesson/created', $newLesson, $newSection);
         }
 
         $newSection->load('lessons');
@@ -990,6 +1000,8 @@ class CourseAdminController extends Controller
 
         $lesson = CourseLesson::findOrFail($lesson->id);
 
+        do_action('fluent_community/lesson/created', $lesson, $topic);
+
         return [
             'message' => __('Lesson has been created successfully.', 'fluent-community'),
             'lesson'  => $lesson,
@@ -1069,6 +1081,10 @@ class CourseAdminController extends Controller
             $lesson->save();
             $isNewlyPublished = $lesson->status === 'published' && $previousStatus !== 'published';
             do_action('fluent_community/lesson/updated', $lesson, $dirtyFields, $isNewlyPublished);
+
+            if ($isNewlyPublished) {
+                do_action('fluent_community/lesson/published', $lesson);
+            }
         }
 
         do_action('fluent_community/lesson/additional_media_updated', $request->all(), $lesson, $updateData);
@@ -1087,6 +1103,8 @@ class CourseAdminController extends Controller
             ->where('id', $lessionId)
             ->firstOrFail();
 
+        $previousStatus = $lesson->status;
+
         $acceptedFields = [ 'title', 'status', 'slug' ];
 
         // empty title/slug/status must not overwrite, but a literal "0" is a valid value
@@ -1102,7 +1120,14 @@ class CourseAdminController extends Controller
         }
 
         if (isset($lessonData['slug'])) {
-            $lessonData['slug'] = sanitize_title($lessonData['slug']);
+            // sanitize_title() alone let an author set a slug already taken by a
+            // sibling lesson, which getLessonBySlug() then resolves arbitrarily.
+            $lessonData['slug'] = CourseLesson::uniqueSlug(
+                $lessonData['slug'],
+                $lesson->space_id,
+                $lesson->id,
+                Arr::get($lessonData, 'title', $lesson->title)
+            );
         }
 
         if (isset($lessonData['status']) && !in_array($lessonData['status'], ['draft', 'published', 'archived'], true)) {
@@ -1122,8 +1147,17 @@ class CourseAdminController extends Controller
 
         if (!empty($lessonData)) {
             $lesson->fill($lessonData);
-            if ($lesson->isDirty()) {
+            $dirtyFields = $lesson->getDirty();
+
+            if ($dirtyFields) {
                 $lesson->save();
+
+                $isNewlyPublished = $lesson->status === 'published' && $previousStatus !== 'published';
+                do_action('fluent_community/lesson/updated', $lesson, $dirtyFields, $isNewlyPublished);
+
+                if ($isNewlyPublished) {
+                    do_action('fluent_community/lesson/published', $lesson);
+                }
             }
         }
 
@@ -1200,6 +1234,7 @@ class CourseAdminController extends Controller
 
         CourseHelper::copyLessonDocuments($lesson, $newLesson);
 
+        do_action('fluent_community/lesson/created', $newLesson, $newLesson->topic);
         do_action('fluent_community/lesson/duplicated', $newLesson, $lesson);
 
         return [

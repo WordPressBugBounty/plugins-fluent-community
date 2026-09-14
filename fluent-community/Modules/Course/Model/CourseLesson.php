@@ -140,19 +140,54 @@ class CourseLesson extends Model
         ];
     }
 
-    protected static function generateNewSlug($newModel)
+    /**
+     * A lesson slug only has to be unique among the lessons of one course.
+     *
+     * A lesson is read at course/{courseSlug}/lessons/{lessonSlug} and
+     * CourseController::getLessonBySlug() looks it up with a space_id filter, so the
+     * same slug in two courses never competes. The type global scope keeps this off
+     * the other row types sharing fcom_posts.
+     *
+     * Every write path goes through here - the creating hook below for generated
+     * slugs, CourseAdminController::patchLesson() for author supplied ones. A
+     * collision gets a -{time()} suffix.
+     *
+     * @param string $slug
+     * @param int|null $courseId the owning course, fcom_posts.space_id
+     * @param int|null $ignoreId the lesson being renamed, so it can keep its own slug
+     * @param string $fallbackTitle used when $slug sanitizes down to nothing
+     * @return string
+     */
+    public static function uniqueSlug($slug, $courseId, $ignoreId = null, $fallbackTitle = '')
     {
-        $slug = Utility::slugify($newModel->title, 'lesson-' . time());
+        $slug = sanitize_title($slug);
 
-        // check if the slug is available for this type
-        $exist = self::where('slug', $slug)
-            ->exists();
+        if (!$slug) {
+            $slug = Utility::slugify($fallbackTitle, 'lesson-' . time());
+        }
 
-        if ($exist) {
+        $query = self::where('slug', $slug);
+
+        if ($courseId) {
+            $query->where('space_id', $courseId);
+        } else {
+            $query->whereNull('space_id');
+        }
+
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        if ($query->exists()) {
             $slug = $slug . '-' . time();
         }
 
         return $slug;
+    }
+
+    protected static function generateNewSlug($newModel)
+    {
+        return self::uniqueSlug('', $newModel->space_id, null, $newModel->title);
     }
 
     public function topic()

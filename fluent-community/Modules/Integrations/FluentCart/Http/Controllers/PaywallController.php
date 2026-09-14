@@ -141,7 +141,7 @@ class PaywallController extends Controller
 
     public function searchProduct(Request $request)
     {
-        $search = trim($request->getSafe('search'));
+        $search = trim((string) $request->getSafe('search', 'sanitize_text_field', ''));
 
         $products = Product::query()
             ->select('ID', 'post_title')

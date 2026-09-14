@@ -141,29 +141,28 @@ class Scheduler
 
     private function getNextOccurrenceTimestamp($dayname, $time)
     {
-        // Ensure dayname is lowercase and valid
         $dayname = strtolower($dayname);
         $valid_days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        if (!in_array($dayname, $valid_days)) {
+        if (!in_array($dayname, $valid_days, true)) {
             return false;
         }
 
-        // Get current time in WordPress timezone
         $current = current_datetime();
+        $currentDay = strtolower($current->format('l'));
+        $target = new \DateTime($current->format('Y-m-d') . ' ' . $time, wp_timezone());
 
-        // Create target DateTime with "next" modifier in WordPress timezone
-        $target = new \DateTime('next ' . $dayname . ' ' . $time, wp_timezone());
+        $currentDayIndex = array_search($currentDay, $valid_days, true);
+        $targetDayIndex = array_search($dayname, $valid_days, true);
+        $dayOffset = ($targetDayIndex - $currentDayIndex + 7) % 7;
 
-        $targetDate = $target->format('Ymd');
-        $currentDate = $current->format('Ymd');
-
-        // If it's the same day and time has passed, move to next week
-        if ($targetDate === $currentDate || $currentDate > $targetDate) {
+        if ($dayOffset) {
+            $target->modify('+' . $dayOffset . ' days');
+        } elseif ($target <= $current) {
             $target->modify('+7 days');
         }
 
-        // Switch to UTC timezone and get timestamp
         $target->setTimezone(new \DateTimeZone('UTC'));
+
         return $target->getTimestamp();
     }
 

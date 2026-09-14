@@ -106,6 +106,17 @@ class Feed extends Model
 
     public static $scopeType = 'text';
 
+    /**
+     * The types a /post/{slug} URL can serve.
+     *
+     * fcom_posts is shared: it also holds course_lesson, course_section and
+     * space_page rows, and each of those owns a different route. Any lookup that
+     * drops the type global scope to reach image and article posts must narrow to
+     * this list, or a feed URL can answer with a lesson or a page that happens to
+     * share the slug. Add a new feed shape here when one is introduced.
+     */
+    public static $feedViewTypes = ['text', 'image', 'article'];
+
     public static function boot()
     {
         parent::boot();
@@ -156,7 +167,7 @@ class Feed extends Model
             $title = mb_substr($title, 0, 40, 'UTF-8');
         } else {
             // get the first 25 char from the message
-            $title = mb_substr($newModel->message, 0, 40, 'UTF-8');
+            $title = mb_substr((string) $newModel->message, 0, 40, 'UTF-8');
         }
 
         $title = Helper::normalizeToAscii($title);

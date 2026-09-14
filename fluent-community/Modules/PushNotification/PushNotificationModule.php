@@ -5,12 +5,12 @@ namespace FluentCommunity\Modules\PushNotification;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\NotificationPref;
-use FluentCommunity\App\Services\OnboardingService;
 use FluentCommunity\Framework\Support\Arr;
 
 class PushNotificationModule
 {
     const SETUP_NOT_INSTALLED = 'not_installed';
+    const SETUP_INACTIVE = 'inactive';
     const SETUP_DISABLED = 'disabled';
     const SETUP_INCOMPLETE = 'incomplete';
     const SETUP_READY = 'ready';
@@ -23,6 +23,8 @@ class PushNotificationModule
         'fluent_community/notification/comment/notifed_to_thread_commetenter',
         'fluent_community/notification/comment/notifed_to_other_users'
     ];
+
+    const PUSHED_ACTIONS = ['comment_added', 'child_comment_added', 'mention_added'];
 
     public static function isFluentNotifyActive()
     {
@@ -38,6 +40,12 @@ class PushNotificationModule
     public static function getSetupState()
     {
         if (!defined('FLUENT_NOTIFY_PLUGIN_VERSION')) {
+            // The files can be there while the plugin is deactivated, which needs
+            // activating rather than another download.
+            if (file_exists(WP_PLUGIN_DIR . '/fluent-notify/fluent-notify.php')) {
+                return self::SETUP_INACTIVE;
+            }
+
             return self::SETUP_NOT_INSTALLED;
         }
 
@@ -66,16 +74,26 @@ class PushNotificationModule
         return self::isFluentNotifyActive() && $pushEnabledInCommunity;
     }
 
+    public static function getPushedCommentIds($userId, $commentIds)
+    {
+        if (!$userId || !$commentIds || !class_exists('\FluentNotify\App\Models\NotificationLog')) {
+            return [];
+        }
+
+        $pushed = \FluentNotify\App\Models\NotificationLog::query()
+            ->join('fn_subscriptions', 'fn_subscriptions.id', '=', 'fn_notifications.subscription_id')
+            ->where('fn_subscriptions.user_id', $userId)
+            ->where('fn_notifications.source', 'community_comment')
+            ->whereIn('fn_notifications.source_id', $commentIds)
+            ->whereNotIn('fn_notifications.status', ['fcm_failed', 'fcm_skipped'])
+            ->pluck('fn_notifications.source_id')
+            ->toArray();
+
+        return array_values(array_unique(array_map('intval', $pushed)));
+    }
+
     public function register()
     {
-        add_action('fluent_community/install_fluent_notify_plugin', function () {
-            OnboardingService::backgroundInstaller([
-                'name'      => 'Fluent Notify',
-                'repo-slug' => 'fluent-notify',
-                'file'      => 'fluent-notify.php'
-            ], 'https://fluentapi.wpmanageninja.com/addons/download/fluent-notify/1.0.0.zip');
-        });
-
         if (!self::isAvailable()) return;
 
         foreach (self::COMMENT_ACTIONS as $action) {
@@ -175,13 +193,17 @@ class PushNotificationModule
                 $content = \sprintf(__('Comment by %1$s on %2$s', 'fluent-community'), $commenter, $feedTitle);
         endswitch;
 
-        $feedPermalik = $feed->getPermalink() . '?comment_id=' . $comment->id;
+        $actionUrl = add_query_arg([
+            'comment_id' => $comment->id,
+            'fcom_pn'    => 'true',
+            'feed_id'    => $feed->id,
+        ], $feed->getPermalink());
 
         do_action('fluent_notify/schedule_notifications', $userIds, [
             'user_ids'   => $userIds,
             'title'      => $title,
             'message'    => $content,
-            'action_url' => $feedPermalik,
+            'action_url' => $actionUrl,
             'icon'       => $xprofile->avatar,
             'source'     => 'community_comment',
             'source_id'  => $comment->id,

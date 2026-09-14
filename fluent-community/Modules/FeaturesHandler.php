@@ -3,6 +3,7 @@
 namespace FluentCommunity\Modules;
 
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Vite;
 use FluentCommunity\Framework\Foundation\Application;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -39,7 +40,7 @@ class FeaturesHandler
                         var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
                     </script>
                     <?php } ?>
-                    <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+                    <script type="module" src="<?php echo esc_url(Vite::versionedUrl($file['url'])); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
                     <?php
             }
         });
@@ -59,7 +60,7 @@ class FeaturesHandler
             $jsFiles = Arr::get($data, 'js_files', []);
             foreach ($jsFiles as $file) {
                 ?>
-                <script type="module" src="<?php echo esc_url($file['url']); ?>?version=<?php echo esc_attr(FLUENT_COMMUNITY_PLUGIN_VERSION); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+                <script type="module" src="<?php echo esc_url(Vite::versionedUrl($file['url'])); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
                 <?php
             }
         });
@@ -92,7 +93,7 @@ class FeaturesHandler
         }
 
         global $wp_embed, $wp_scripts;
-        $url = sanitize_url(wp_unslash($_GET['url'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $url = sanitize_url(wp_unslash($_GET['url'] ?? '')); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         $request = \FluentCommunity\App\App::make('request');
 

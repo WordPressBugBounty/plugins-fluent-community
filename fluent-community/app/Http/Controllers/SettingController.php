@@ -284,12 +284,6 @@ class SettingController extends Controller
 
     public function installPlugin(Request $request)
     {
-        if (!current_user_can('install_plugins')) {
-            return $this->sendError([
-                'message' => __('You do not have permission to install plugins', 'fluent-community')
-            ]);
-        }
-
         $pluginSlug = $request->get('plugin');
 
         $addons = $this->getAddons();
@@ -299,6 +293,37 @@ class SettingController extends Controller
         }
 
         $details = $addons[$pluginSlug];
+
+        $pluginFile = $pluginSlug . '/' . $pluginSlug . '.php';
+
+        // Already on disk but deactivated: that is an activation, so it answers to
+        // activate_plugins and needs no download.
+        if (!$details['is_repo'] && $this->isPluginInstalled($pluginFile)) {
+            if (!current_user_can('activate_plugins')) {
+                return $this->sendError(['message' => __('You do not have permission to activate plugins', 'fluent-community')]);
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+            if (!is_plugin_active($pluginFile)) {
+                $activated = activate_plugin($pluginFile);
+
+                if (is_wp_error($activated)) {
+                    return $this->sendError(['message' => wp_kses_post($activated->get_error_message())]);
+                }
+            }
+
+            return [
+                'message'      => __('Plugin has been activated Successfully', 'fluent-community'),
+                'is_installed' => true
+            ];
+        }
+
+        if (!current_user_can('install_plugins')) {
+            return $this->sendError([
+                'message' => __('You do not have permission to install plugins', 'fluent-community')
+            ]);
+        }
 
         if ($details['is_repo']) {
             $plugin = [
@@ -312,24 +337,33 @@ class SettingController extends Controller
                 return $this->sendError(['message' => $e->getMessage()]);
             }
         } else {
+            $installHook = '';
+
             if ($pluginSlug == 'fluent-messaging') {
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
                     return $this->sendError(['message' => __('FluentMessaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community')]);
                 }
-                do_action('fluent_community/install_messaging_plugin');
+                $installHook = 'fluent_community/install_messaging_plugin';
             } else if ($pluginSlug == 'fluent-player') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
                     return $this->sendError(['message' => __('FluentPlayer requires the pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community')]);
                 }
 
-                do_action('fluent_community/install_fluent_player_plugin');
+                $installHook = 'fluent_community/install_fluent_player_plugin';
             } else if ($pluginSlug == 'fluent-notify') {
-                try {
-                    do_action('fluent_community/install_fluent_notify_plugin');
-                } catch (\Exception $e) {
-                    return $this->sendError(['message' => $e->getMessage()]);
-                }
+                $installHook = 'fluent_community/install_fluent_notify_plugin';
+            }
+
+            if (!$installHook || !has_action($installHook)) {
+                return $this->sendError(['message' => __('This plugin can not be installed from here. Please install it manually.', 'fluent-community')]);
+            }
+
+            try {
+                // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- every assigned value is a literal fluent_community/ prefixed hook, guarded above
+                do_action($installHook);
+            } catch (\Exception $e) {
+                return $this->sendError(['message' => $e->getMessage()]);
             }
         }
 

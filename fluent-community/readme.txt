@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.1
+Stable tag: 2.10.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,35 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.10.0 (Date: Sep 14, 2026) =
+- Introduced: Static Pages for Spaces
+- Introduced: Server-Rendered Portal Pages for Search Engines
+- Added: Navigation Guards for Unsaved Page Edits
+- Added: Action Hooks for Lesson and Section Create and Publish
+- Added: Filter to Adjust Resolved Portal Head Meta
+- Added: Mark Notifications Read on Push Click
+- Improved: Guided FluentNotify Setup From the Push Settings Drawer
+- Improved: In-App Toast Skipped When a Push Is Delivered
+- Improved: Mobile Toast Slides In From the Top
+- Improved: Space, Course and Feed Settings as Real Vue Routes
+- Improved: Dark Mode Styling Keyed off data-color-mode
+- Improved: Space Header Menu on Mobile and Active Link State
+- Improved: Query Counts in Pages Manager and Server-Rendered Views
+- Improved: Popular Day and Time Analytics Aggregation
+- Security: Space Link Scoping and Page Endpoint Validation
+- Fixed: Scheduled Post Time in Localised Formats
+- Fixed: Posts Bumped to the Top After Pin, Moderation and Report Actions
+- Fixed: Empty Notification Preference Row When Push Is Unavailable
+- Fixed: Toast Dropped for an Event Without a Push
+- Fixed: Untranslatable Strings in the Community UI
+- Fixed: Uploaded Videos Rendering as a Plain Link
+- Fixed: Course Lessons Not Scrolling Back Up in the iOS App
+- Fixed: Stale In-Memory Space Copy After Cache Invalidation
+- Fixed: Null to String Deprecation Notices on PHP 8.1 and Later
+- Fixed: Same-Day Daily Digest Scheduling
+- Fixed: Quiz Submission With No Enabled Questions
+- Fixed: WordPress Plugin Check Compliance for Shipped Files
 
 = 2.9.1 (Date: Sep 04, 2026) =
 - Hotfix: Notification Prefs Cache Not Updating on Pref Change

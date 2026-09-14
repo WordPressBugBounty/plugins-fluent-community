@@ -115,6 +115,23 @@ class Vite
         return false;
     }
 
+    /**
+     * Build the URL an entry script is loaded with from HTML.
+     *
+     * The build rewrites every inter-chunk import to `<chunk>.js?ver=<version>`
+     * (see src/dev/version-plugin.js), and wp_enqueue_script() emits the same
+     * `?ver=` key. HTML script tags must match it exactly: to the browser
+     * `app.js?version=x` and `app.js?ver=x` are two different modules, so a
+     * mismatch evaluates the whole app a second time and remounts it.
+     *
+     * @param string $url
+     * @return string
+     */
+    public static function versionedUrl($url)
+    {
+        return $url . '?ver=' . FLUENT_COMMUNITY_PLUGIN_VERSION;
+    }
+
     public static function getAssetsUrl()
     {
         if (!self::isDev()) {

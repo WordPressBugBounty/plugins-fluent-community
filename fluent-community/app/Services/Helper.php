@@ -1350,6 +1350,28 @@ class Helper
         return $menuGroups;
     }
 
+    /**
+     * Drop the links the given user may not see.
+     *
+     * Space links carry their own privacy, so every place that hands a space's settings
+     * to a client has to filter them. Doing that inline is how the feed endpoints came
+     * to skip it, so both call sites go through here.
+     *
+     * @param array $links
+     * @param \FluentCommunity\App\Models\User|null $currentUser
+     * @return array
+     */
+    public static function filterAccessibleLinks($links, $currentUser = null)
+    {
+        if (!$links || !is_array($links)) {
+            return [];
+        }
+
+        return array_values(array_filter($links, function ($link) use ($currentUser) {
+            return self::isLinkAccessible($link, $currentUser);
+        }));
+    }
+
     public static function isLinkAccessible($link, $currentUser = null)
     {
         $isEnabled = Arr::get($link, 'enabled', 'yes') === 'yes';
@@ -1863,13 +1885,13 @@ class Helper
         ]);
 
         ?>
-        <a data-fcom-tip="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
-           title="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
+        <a data-fcom-hint="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
            href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
             echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
         } ?>>
             <?php $renderIcon && self::printLinkIcon($link, $fallback); ?>
-            <span class="community_name"><?php echo wp_kses_post(Arr::get($link, 'title')); ?></span>
+            <?php // The native title sits on the label span (not the anchor) so it can not duplicate the link's accessible name for screen readers. ?>
+            <span class="community_name" title="<?php echo esc_attr(Arr::get($link, 'title')); ?>"><?php echo wp_kses_post((string) Arr::get($link, 'title', '')); ?></span>
             <?php if (Arr::get($link, 'show_lock')) : ?>
                 <span class="fcom_space_lock">
                     <i class="el-icon">

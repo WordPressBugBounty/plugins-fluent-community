@@ -23,6 +23,15 @@ use FluentCommunity\Modules\Course\Model\CourseLesson;
 
 class PortalHandler
 {
+    /**
+     * Route + model resolved while building the head meta, handed to the view so
+     * `fluent_community/portal_content_pre_render` listeners can render a
+     * server-side first paint without querying for the same record again.
+     *
+     * @var array{route: string, model: mixed}|array
+     */
+    protected $preRenderContext = [];
+
     protected $currentPath = '';
 
     protected $slug = null;
@@ -64,7 +73,9 @@ class PortalHandler
         }, 1);
 
         add_action('fluent_community/portal_html', function () {
-            App::make('view')->render('portal.portal');
+            App::make('view')->render('portal.portal', [
+                'preRenderContext' => $this->preRenderContext,
+            ]);
         });
 
         add_action('fluent_community/portal_header', function ($context) {
@@ -119,7 +130,7 @@ class PortalHandler
                     ?>
                     <div style="display: flex;justify-content: space-between;" class="fcom_admin_menu">
                         <?php if (!defined('FLUENT_COMMUNITY_PRO')): ?>
-                            <a title="Upgrade to Pro" target="_blank" rel="noopener" class="fcom_inline_icon_link_item"
+                            <a target="_blank" rel="noopener" class="fcom_inline_icon_link_item"
                                href="<?php echo esc_url(Utility::getProUpgradeUrl('sidebar_cta')) ?>">
                                 <span class="el-icon">
                                     <svg width="126" height="125" viewBox="0 0 126 125" fill="none"><rect x="0.22139"
@@ -153,7 +164,7 @@ class PortalHandler
                                 <span><?php esc_html_e('Upgrade', 'fluent-community'); ?></span>
                             </a>
                         <?php else: ?>
-                            <a title="Go to /wp-admin" aria-label="<?php echo esc_attr__('Go to WordPress admin', 'fluent-community'); ?>" class="fcom_inline_icon_link_item fcom_wp_admin_link"
+                            <a aria-label="<?php echo esc_attr__('Go to WordPress admin', 'fluent-community'); ?>" class="fcom_inline_icon_link_item fcom_wp_admin_link"
                                href="<?php echo esc_url(admin_url()); ?>">
                                 <span class="el-icon">
                                     <svg viewBox="0 0 122.52 122.523"><g fill="currentColor">
@@ -171,7 +182,9 @@ class PortalHandler
                                 </span>
                             </a>
                         <?php endif; ?>
-                        <a title="Portal Settings" class="fcom_inline_icon_link_item"
+                        <?php // The label text is hidden while the sidebar is collapsed, so the link carries its own name. ?>
+                        <a class="fcom_inline_icon_link_item"
+                           aria-label="<?php echo esc_attr__('Settings', 'fluent-community'); ?>"
                            href="<?php echo esc_url(Helper::baseUrl('admin/settings')); ?>">
                             <span class="el-icon">
                                 <svg viewBox="0 0 1024 1024" data-v-d2e47025="">
@@ -883,6 +896,14 @@ class PortalHandler
         $data = $this->getAppData();
         $data = $this->maybePushDynamicMetaData($data);
 
+        /**
+         * Lets a listener adjust the resolved head meta (canonical_url, title,
+         * description, json_ld) with knowledge the handler does not have - for
+         * example a pre-renderer that paints ?page=N of a space listing and needs
+         * the canonical to point at that page rather than at page one.
+         */
+        $data = apply_filters('fluent_community/portal_page_meta', $data, $this->currentPath, $this->preRenderContext);
+
         $data['isHeadless'] = Helper::isHeadless();
 
         if (!$data['isHeadless']) {
@@ -925,8 +946,7 @@ class PortalHandler
         foreach ($jsFiles as $fileName => $jsFile) {
             wp_enqueue_script($fileName, $jsFile['url'], $jsFile['deps'], FLUENT_COMMUNITY_PLUGIN_VERSION, [
                 'in_footer' => true,
-                'strategy'  => 'defer',
-                'type'      => 'module'
+                'strategy'  => 'defer'
             ]);
         }
 
@@ -1075,6 +1095,12 @@ class PortalHandler
                     // matches the URL the sitemap submits, so tab variants consolidate onto it
                     $data['canonical_url'] = $space->getPermalink();
 
+                    $this->preRenderContext = [
+                        'route' => $dynamicRoute,
+                        'model' => $space,
+                        'path'  => $this->currentPath,
+                    ];
+
                     if ($dynamicRoute == 'course_view') {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
@@ -1108,10 +1134,12 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $postSlug = end($uriParts);
-                // Keeps the type scope, so course lessons sharing fcom_posts are not
-                // described here.
-                $feed = Feed::query()->where('slug', $postSlug)
+                // Scopes are dropped to reach image and article posts, so the type
+                // has to be narrowed by hand - see Feed::$feedViewTypes.
+                $feed = Feed::query()->withoutGlobalScopes()
+                    ->whereIn('type', Feed::$feedViewTypes)
                     ->where('status', 'published')
+                    ->where('slug', $postSlug)
                     ->with([
                         'xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
@@ -1156,6 +1184,12 @@ class PortalHandler
                     }
                 }
 
+                $this->preRenderContext = [
+                    'route' => 'feed_view',
+                    'model' => $feed,
+                    'path'  => $this->currentPath,
+                ];
+
                 $data['json_ld'] = apply_filters('fluent_community/feed_view_json_ld', [], $feed, $data);
             }
             return $data;
@@ -1170,14 +1204,10 @@ class PortalHandler
                 return $data;
             }
 
-            $lesson = CourseLesson::query()->where('slug', $lessonSlug)->where('status', 'published')->first();
-
-            if (!$lesson) {
-                return $data;
-            }
-
+            // Resolve the course first: lesson slugs are only unique within one, so a
+            // slug-first lookup would answer with whichever course was created first
+            // and then fail the course comparison, costing the real lesson its metadata.
             $course = BaseSpace::query()->onlyMain()
-                ->where('id', $lesson->space_id)
                 ->where('slug', $courseSlug)
                 ->where('status', 'published')
                 ->where('privacy', 'public')
@@ -1187,10 +1217,22 @@ class PortalHandler
                 return $data;
             }
 
+            $lesson = CourseLesson::query()
+                ->where('space_id', $course->id)
+                ->where('slug', $lessonSlug)
+                ->where('status', 'published')
+                ->first();
+
+            if (!$lesson) {
+                return $data;
+            }
+
             $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
             $data['og_title'] = esc_html($lesson->title);
             $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
             $data['canonical_url'] = $lesson->getPermalink();
+
+            $data['json_ld'] = apply_filters('fluent_community/lesson_view_json_ld', [], $lesson, $course, $data);
 
             return $data;
         }

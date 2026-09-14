@@ -666,11 +666,7 @@ class BaseSpace extends Model
 
         $spaceSettings = $this->settings;
 
-        $spaceLinks = Arr::get($spaceSettings, 'links', []);
-
-        $spaceSettings['links'] = array_values(array_filter($spaceLinks, function ($item) use ($user) {
-            return Helper::isLinkAccessible($item, $user);
-        }));
+        $spaceSettings['links'] = Helper::filterAccessibleLinks(Arr::get($spaceSettings, 'links', []), $user);
 
         $this->settings = $spaceSettings;
 

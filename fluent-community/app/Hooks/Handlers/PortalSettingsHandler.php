@@ -185,8 +185,7 @@ class PortalSettingsHandler
 
         wp_enqueue_script('fluent_community_onboarding', Vite::getDynamicSrcUrl('Onboarding/onboarding.js'), ['jquery'], FLUENT_COMMUNITY_PLUGIN_VERSION, [
             'in_footer' => true,
-            'strategy'  => 'defer',
-            'type'      => 'module'
+            'strategy'  => 'defer'
         ]);
 
         wp_localize_script('fluent_community_onboarding', 'fluentComAdmin', [
