@@ -74,6 +74,19 @@ class SpacePolicy extends BasePolicy
         return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
     }
 
+    /**
+     * The manager listing exposes disabled and hidden rows, so it is not a plain portal read.
+     */
+    public function getPrimaryMenu(Request $request, $slug)
+    {
+        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+    }
+
+    public function updatePrimaryMenu(Request $request, $slug)
+    {
+        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+    }
+
     public function deleteBySlug(Request $request, $slug)
     {
         return $this->canManageCommunity($request, Space::where('slug', $slug)->first());

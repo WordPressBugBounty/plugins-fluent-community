@@ -714,6 +714,7 @@ class Feed extends Model
     {
         $this->comments_count = Comment::where('post_id', $this->id)
             ->where('type', 'comment')
+            ->where('status', 'published')
             ->count();
 
         $this->reactions_count = Reaction::where('object_type', 'feed')->where('type', 'like')

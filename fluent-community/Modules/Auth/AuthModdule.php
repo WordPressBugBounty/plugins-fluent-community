@@ -29,6 +29,17 @@ class AuthModdule
         add_action('wp_ajax_nopriv_fcom_user_login_form', [$this, 'handleUserLogin']);
         add_action('wp_ajax_fcom_user_login_form', [$this, 'handleUserLogin']);
 
+        /*
+         * Declared here rather than where the auth screen renders, because the form that
+         * screen draws posts back to admin-ajax and that is a different request: nothing
+         * survives into it but what the browser sent. FluentAuth answers those posts only
+         * for a host it already knows about.
+         *
+         * `is_fcom_auth` is the field the login form has always carried; FluentAuth's own
+         * signed marker travels on the rest.
+         */
+        AuthHelper::registerWithFluentAuth();
+
         add_filter('fluent_auth/login_redirect_url', function ($redirectUrl, $user) {
             if (empty($_REQUEST['is_fcom_auth']) || empty($_REQUEST['fcom_redirect'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 return $redirectUrl;
@@ -190,6 +201,16 @@ class AuthModdule
                 $targetForm = 'accept_invitation';
             }
         }
+
+        /*
+         * Hand the screen to FluentAuth before asking whether it is available: adopting
+         * is what makes it so. Its front end forms sit behind a site setting meant for
+         * whether an editor may drop the shortcode into a page, and reading that as
+         * "may this portal use FluentAuth" is what used to drop us onto a login form of
+         * our own while FluentAuth went on injecting magic login and enforcing a second
+         * factor against a DOM it no longer recognised.
+         */
+        AuthHelper::adoptFluentAuth();
 
         $isFluentAuth = AuthHelper::isFluentAuthAvailable();
         if (!$isFluentAuth && $targetForm == 'reset_password') {
@@ -450,6 +471,7 @@ class AuthModdule
         }
 
         $data['email'] = sanitize_email($data['email']);
+        $data['full_name'] = sanitize_text_field(Arr::get($data, 'full_name', ''));
 
         $validations = [
             'full_name'     => 'required|max:100|string',

@@ -26,13 +26,13 @@ class FluentBlockEditorHandler
 
             $editorPostTypes = apply_filters('fluent_community/block_editor_post_types', [
                 'fcom-dummy'      => [
-                    'label'        => 'Lesson',
+                    'label'        => __('Lesson', 'fluent-community'),
                     'public'       => false,
                     'show_in_rest' => true,
                     'supports'     => ['title', 'editor', 'thumbnail'],
                 ],
                 'fcom-lockscreen' => [
-                    'label'        => 'Lockscreen',
+                    'label'        => __('Lock Screen', 'fluent-community'),
                     'public'       => false,
                     'show_in_rest' => true,
                     'supports'     => ['editor'],
@@ -365,7 +365,15 @@ class FluentBlockEditorHandler
             'Failed to fetch embed. Please check the URL.'                          => __('Failed to fetch embed. Please check the URL.', 'fluent-community'),
             'Video thumbnail'                                                       => __('Video thumbnail', 'fluent-community'),
             'Media embedded successfully'                                           => __('Media embedded successfully', 'fluent-community'),
-            'Edit media'                                                            => __('Edit media', 'fluent-community'),
+            '+ Add Media'                                                           => __('+ Add Media', 'fluent-community'),
+            'Add Media'                                                             => __('Add Media', 'fluent-community'),
+            'Edit Media'                                                            => __('Edit Media', 'fluent-community'),
+            'Oembed URL'                                                            => __('Oembed URL', 'fluent-community'),
+            'Video URL'                                                             => __('Video URL', 'fluent-community'),
+            'Supports Vimeo, YouTube, Wistia and more'                              => __('Supports Vimeo, YouTube, Wistia and more', 'fluent-community'),
+            'Embedding…'                                                            => __('Embedding…', 'fluent-community'),
+            'Cancel'                                                                => __('Cancel', 'fluent-community'),
+            'Remove'                                                                => __('Remove', 'fluent-community'),
             'Oembed'                                                                => __('Oembed', 'fluent-community'),
             'Custom HTML'                                                           => __('Custom HTML', 'fluent-community'),
             'Custom HTML Code'                                                      => __('Custom HTML Code', 'fluent-community'),

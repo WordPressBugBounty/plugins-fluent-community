@@ -17,13 +17,6 @@
       "_emoji-picker.js"
     ]
   },
-  "_FluentDnD.js": {
-    "file": "FluentDnD.js",
-    "imports": [
-      "_vue.js",
-      "_emoji-picker.js"
-    ]
-  },
   "_FullEditorFrame.js": {
     "file": "FullEditorFrame.js",
     "imports": [
@@ -38,8 +31,8 @@
     "imports": [
       "_element-plus.js",
       "_dayjs.js",
+      "_vendor.js",
       "src/app.js",
-      "_FluentDnD.js",
       "_vue.js",
       "_emoji-picker.js"
     ]
@@ -125,24 +118,23 @@
     "isDynamicEntry": true,
     "src": "src/Modules/Common/ManagePaywalls.vue"
   },
-  "src/Modules/Common/ManageSpaceLinks.vue": {
-    "file": "ManageSpaceLinks.js",
+  "src/Modules/Common/ManageSpaceMenu.vue": {
+    "file": "ManageSpaceMenu.js",
     "imports": [
       "_element-plus.js",
       "_dayjs.js",
+      "src/app.js",
       "__MenuGroupSettings.js",
       "_vue.js",
       "_emoji-picker.js",
       "_fcom-utils.js",
       "_vendor.js",
-      "src/app.js",
       "_vue-router.js",
       "_pinia.js",
-      "_milkdown.js",
-      "_FluentDnD.js"
+      "_milkdown.js"
     ],
     "isDynamicEntry": true,
-    "src": "src/Modules/Common/ManageSpaceLinks.vue"
+    "src": "src/Modules/Common/ManageSpaceMenu.vue"
   },
   "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts": {
     "file": "index2.js",
@@ -238,8 +230,7 @@
       "src/app.js",
       "_vue-router.js",
       "_pinia.js",
-      "_milkdown.js",
-      "_FluentDnD.js"
+      "_milkdown.js"
     ],
     "isDynamicEntry": true,
     "src": "src/Modules/Feeds/Parts/ManageFeedLinks.vue"
@@ -321,13 +312,12 @@
     "imports": [
       "_element-plus.js",
       "_dayjs.js",
+      "_vendor.js",
       "src/app.js",
-      "_FluentDnD.js",
       "_FullEditorFrame.js",
       "_vue.js",
       "_emoji-picker.js",
       "_fcom-utils.js",
-      "_vendor.js",
       "_vue-router.js",
       "_pinia.js",
       "_milkdown.js"
@@ -383,7 +373,7 @@
       "src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue",
       "src/Modules/Common/ManagePaywalls.vue",
       "src/Modules/Space/Customizer/SpaceLockscreen.vue",
-      "src/Modules/Common/ManageSpaceLinks.vue",
+      "src/Modules/Common/ManageSpaceMenu.vue",
       "src/Modules/Space/Pages/ManageSpacePages.vue",
       "src/Modules/Space/Pages/ViewSpacePage.vue",
       "src/Modules/Space/SpaceNotFound.vue"

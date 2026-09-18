@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.10.01
+Stable tag: 2.11.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -291,8 +291,30 @@ OR
 
 == Changelog ==
 
+= 2.11.0 (Date: Sep 18, 2026) =
+- Introduced: Space Menu Manager with Drag-and-Drop Ordering
+- Added: Fill in the Blank, Ordering, and Matching Quiz Questions
+- Added: Written Answer Quiz Questions with Open or Exact-Match Grading
+- Added: One-by-One Quiz Layout with Progress Bar
+- Added: Shuffle Option for Quiz Questions and Answers
+- Added: Per-Question Explanations for Quizzes
+- Added: Course Progress Restart for Students and Admins
+- Added: Filter to Override Space Permalink
+- Improved: Compatibility with the Latest FluentAuth Login Flow
+- Improved: Space Settings Layout and Menu Preview
+- Improved: Course Module Layout on Mobile
+- Improved: Notification Count Updates Instantly
+- Improved: Radio Buttons Follow the Theme Color
+- Fixed: Embedded Videos Blocked by WAF XSS Rules
+- Fixed: Custom SVG Icons Hidden for Guests
+- Fixed: Space Page Title Overwriting the Post Title
+- Fixed: Comment Count Drift After Moderation
+- Fixed: Untranslatable Block Editor and Space Page Labels
+- Fixed: Lesson Video Shrinking on Course Lesson Pages
+
 = 2.10.01 (Date: Sep 14, 2026) =
 - Fixed: Broken Layout on the FluentCommunity Page Template
+- Security: Output Escaping and Content Access Hardening
 
 = 2.10.0 (Date: Sep 14, 2026) =
 - Introduced: Static Pages for Spaces
@@ -957,183 +979,6 @@ OR
 - BuddyBoss & BuddyPress Migration Support for Media
 - Improved Database Queries for Feeds
 - Accessibility support for top menu bar
-
-= 1.2.0 (Date: Mar 06, 2025) =
-- Introduced Content Moderation Feature
-- Integrated BunnyCDN
-- Added Incoming Webhook
-- Added Social Links Customizations!
-- Added Search and Sort Options in Space and Course List
-- Added Profile Section To FluentCRM
-- Added Last Seen as Privacy Settings!
-- Resolved Image Rotation Issues!
-- Fixed File Upload Bug
-- Fixed Welcome Banner Style Issue
-- Fixed Avatar Not Generating for Other Language
-- Fixed User Badge Border Color Inconsistency
-- Fixed Create Space Group Showing Exiting Group Data
-- Fixed Profile Dropdown Icon Style Issue
-- Fixed User Document Download Issue
-- Fixed Issue with Daily Digest Email
-
-= 1.1.23 (Date: Feb 05, 2025) =
-- Added Missing Translation
-- Added Space Select Option
-- Fixed Leaderboard CSS Glitch
-- Fixed Warning Showing for Logged-out Users
-
-= 1.1.22 (Date: Feb 04, 2025) =
-- New: Reporting and Analytics Overview
-- New: Integration with Paymattic
-- New: Allow Users to Leave/Join Group Chat
-- Improvement: Multiple Media Upload Support in Post Comment
-- Added Pagination for Space and Course Lists
-- Added Options to Edit and Delete Space in Space Group Settings
-- Duplicate Post Validation Limited to Current Space
-- Resolved: Video Embed Issue with Custom HTML
-- Resolved Space Remove from Group Issue
-- Fixed: Login Button Label Not Updating Issue
-- Fixed: Group Space Menu Visibility for Public
-- Fixed: Space Permission Handling Issue
-- Fixed: Flags Emoji Saving Issue
-- Fixed Slug Not Updating Issue
-
-= 1.1.21 (Date: Jan 21, 2025) =
-- Hotfix: mention html fixed
-
-= 1.1.20 (Date: Jan 21, 2025) =
-- New: Migration support for BuddyPress
-- New: Migration support for BuddyBoss
-- New: Added ability to change the space for a post
-- New: Terms and Conditions field customization option
-- Added exclude users from leaderboard
-- Added option to remove users from selected lists
-- Added multisite compatibility for users
-- Added space permission control
-- Added missing translation strings
-- Resolved posting without space selection issue
-- Fixed login/signup background style not rendering
-- Fixed permalink issue in course comments
-- Fixed media storage issue with Amazon S3 region
-- Fixed course document permission issue
-- Fixed profile status update issue in CRM action
-- Addressed numeric emoji saving issue
-- Resolved invalid media image error
-- Improved loading style
-- Improve UI/UX
-
-= 1.1.17 (Date: Dec 17, 2024) =
-- New: Post Sharing Card when sharing community post on the feed
-- Added Missing Translations
-- Added Soundcloud support for oEmbed
-- Added Fallback slug generation for non-latin characters
-- Fixed @everyone tag issues
-- Fixed Styling issue for color customizations
-- Fixed Open Graph Image issue
-
-= 1.1.15 (Date: Dec 16, 2024) =
-- NEW: Secure Docoments Feature for Spaces
-- NEW: Secure Documents Feature for Course Lesson
-- NEW: Added new member list / grid layout
-- NEW: Invitation Links for Spaces
-- NEW: Rebust Access Management with FluentCRM tags
-- NEW: Improved Auth Pages UI & UX & better integration with FluentAuth
-- NEW: FluentCRM triggers for Course / Space left
-- NEW: Contextual Smartcode for FluentCRM Automation
-- Course Editor Mobile UI Issues Fixed
-- Fixed Permission Issues with Moderartors / Course Creators
-- Fixed Gravatar API Issues
-- Fixed: everyone tag issues
-- i18n Improvements
-
-= 1.1.12 (Date: Dec 02, 2024) =
-- Added Option to disable Gravatar Profile Image
-- You can now add Multiple Badges to a User
-- Notification Type Icons added
-- [FluentCRM Automation] - Add or Remove Badge on FluentCRM Automation Action
-- [FluentCRM Bulk Actions] - Add Or Remove Badge on FluentCRM Bulk Actions
-- Improved UX for Post Popup
-- Disable Comments on courses globally
-- Course Progress Bar added to lesson view
-- Add Option to Hide Students Count from Course Listings
-- You can now create Space without any group
-- Improved Slug Generation for non-latin characters
-- Space & Group menu management improved
-- Bug Fixes and Improvements suggested by community users
-
-= 1.1.11 (Date: Nov 27, 2024) =
-- Added Modal View for each post (Configurable)
-- Single Post view is now blazing fast
-- Courses now can be added without any Menu Group
-- Login and Signup Page Customization Improved
-- Post Slug issue fixed for non-latins characters
-- Space and Course Slug can be edited now
-- Fixed course URL issue when using custom slug
-- Added Topics as a required field for Posts (Configurable)
-- Added Option to edit user email from profile
-- Improved UI & UX
-
-= 1.1.10 (Date: Nov 20, 2024) =
-- (Hot fix) Fixed Login issue
-
-= 1.1.0 (Date: Nov 20, 2024) =
-- Improved FluentCRM Integration
-- Added Direct Integration with Fluent Forms
-- Styling & UX Improvements
-- Added Login and Signup Page Customization
-- Added Remove From Space Option from user profile
-- Added MySQL Lite Support
-
-= 1.0.99 (Date: Nov 19, 2024) =
-- Hotfix: User Registration Issue Fixed
-
-= 1.0.98 (Date: Nov 18, 2024) =
-- Added Color Schema Customization
-- Improved UI & UX
-- Improved FluentCRM Integration
-- Added more privacy Settings
-- Translation Improvement
-
-= 1.0.97 (Date: Nov 14, 2024) =
-- Fixed Portal Slug Issue on activation
-
-= 1.0.96 (Date: Nov 14, 2024) =
-- Improved Data Cleanup for old logs
-- Fixed Topics Edit Issues
-- Imptoved UI & UX in various Pages
-- Fixed Badge Delete issues
-- Improved Feeds Edit Form - Now you can edit topics and media as well
-- Email Digest & Notification Emails improvement
-- Added Option to hide members count from spaces
-- Improved Roles and Permissions
-- Comments sorting is now presistent
-- Added option to use custom Login/Signup URL
-- Translation and Different String Labels Improvements
-
-= 1.0.95 (Date: Nov 12, 2024) =
-- Added Community Privacy Settings. Now you can disable global profile listing and restrict profile listing on specific spaces
-- Fixed various Styling issues
-- Tagging users is now improved
-- Improved UI across the Community Feed Inteface
-- Fixed various issues with the Course UI
-
-
-= 1.0.94 (Date: Nov 08, 2024) =
-- Hotfix: Fixed Post Delete DB issue
-
-= 1.0.93 (Date: Nov 08, 2024) =
-- UI Improvements
-- Fixed Topics Delete Issue
-- Fixed Bulk Delete Issues on background
-- Course Content issues fixed
-
-= 1.0.92 (Date: Nov 07, 2024) =
-- Fixed Styling issues
-- Fixed FluentCRM Integration Issues
-- Added RTL Support
-
-= 1.0.90 (Date: Nov 07, 2024) =
-– Init the all in one community plugin
 
 == Upgrade Notice ==
 - This is the first version of the plugin

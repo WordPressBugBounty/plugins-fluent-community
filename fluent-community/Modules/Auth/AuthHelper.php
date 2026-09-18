@@ -139,13 +139,86 @@ class AuthHelper
         return $user;
     }
 
+    /**
+     * The slug this plugin is known by inside FluentAuth.
+     */
+    const FLUENT_AUTH_HOST = 'fluent-community';
+
+    /**
+     * Whether FluentAuth's login stack is usable on this screen.
+     *
+     * Note the order this has to be asked in: adoptFluentAuth() is what makes the answer
+     * yes on a site whose shortcode setting is off, so the auth screen adopts first and
+     * asks second. Everywhere else - a plugin wondering whether the portal is running
+     * FluentAuth's forms - the question stands on its own.
+     */
     public static function isFluentAuthAvailable()
     {
-        if (defined('FLUENT_AUTH_VERSION') && FLUENT_AUTH_VERSION) {
-            return (new \FluentAuth\App\Hooks\Handlers\CustomAuthHandler())->isEnabled();
+        if (!defined('FLUENT_AUTH_VERSION') || !FLUENT_AUTH_VERSION) {
+            return false;
         }
 
-        return false;
+        return (new \FluentAuth\App\Hooks\Handlers\CustomAuthHandler())->isEnabled();
+    }
+
+    /**
+     * Tells FluentAuth this plugin exists, so it recognises the admin-ajax posts our
+     * auth screen makes later. Cheap enough to run on every request, which is what it
+     * has to do - the form post is a request of its own.
+     *
+     * @return void
+     */
+    public static function registerWithFluentAuth()
+    {
+        if (!self::hasFluentAuthBridge()) {
+            return;
+        }
+
+        \FluentAuth\App\Services\LoginBridge::register(
+            self::FLUENT_AUTH_HOST,
+            'is_fcom_auth',
+            /*
+             * Our own login endpoint. Unreachable while the portal renders FluentAuth's
+             * form, but a site that filters the adoption back off falls through to it,
+             * and this is what keeps the second factor arriving as a form there rather
+             * than as the error message handleUserLogin() would otherwise print.
+             */
+            ['fcom_user_login_form']
+        );
+    }
+
+    /**
+     * Hands the screen being rendered to FluentAuth: its shortcodes render here even
+     * where the site has the front end forms switched off, its assets load, and its
+     * endpoints answer the posts this screen's forms make.
+     *
+     * @return bool whether FluentAuth took it
+     */
+    public static function adoptFluentAuth()
+    {
+        if (!self::hasFluentAuthBridge()) {
+            return false;
+        }
+
+        \FluentAuth\App\Services\LoginBridge::adopt([
+            'host' => self::FLUENT_AUTH_HOST
+        ]);
+
+        return true;
+    }
+
+    /**
+     * @return bool whether the installed FluentAuth is new enough to be adopted
+     */
+    private static function hasFluentAuthBridge()
+    {
+        // FluentAuth's autoloader requires the mapped file unconditionally, so probing
+        // for a class an older release does not ship is a fatal error, not a false.
+        return defined('FLUENT_AUTH_VERSION')
+            && FLUENT_AUTH_VERSION
+            && defined('FLUENT_AUTH_PLUGIN_PATH')
+            && file_exists(FLUENT_AUTH_PLUGIN_PATH . 'app/Services/LoginBridge.php')
+            && class_exists('\FluentAuth\App\Services\LoginBridge');
     }
 
     public static function getTermsText()

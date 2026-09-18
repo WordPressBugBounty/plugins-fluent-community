@@ -7,7 +7,7 @@ namespace Composer\Autoload;
 class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
 {
     public static $files = array (
-        '5acfa953fb947d9c094f156813b35f4f' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/mbstring-loader.php',
+        '6c475849da538134242f5be99200fc96' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Polyfills/loader.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -130,6 +130,7 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Services\\ProfileHelper' => __DIR__ . '/../..' . '/app/Services/ProfileHelper.php',
         'FluentCommunity\\App\\Services\\RemoteUrlParser' => __DIR__ . '/../..' . '/app/Services/RemoteUrlParser.php',
         'FluentCommunity\\App\\Services\\SmartCodeParser' => __DIR__ . '/../..' . '/app/Services/SmartCodeParser.php',
+        'FluentCommunity\\App\\Services\\SpaceMenuService' => __DIR__ . '/../..' . '/app/Services/SpaceMenuService.php',
         'FluentCommunity\\App\\Services\\TransStrings' => __DIR__ . '/../..' . '/app/Services/TransStrings.php',
         'FluentCommunity\\App\\Services\\UploadHelper' => __DIR__ . '/../..' . '/app/Services/UploadHelper.php',
         'FluentCommunity\\App\\Vite' => __DIR__ . '/../..' . '/app/Vite.php',
@@ -362,7 +363,6 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Support\\JsonableInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/JsonableInterface.php',
         'FluentCommunity\\Framework\\Support\\LazyCollection' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/LazyCollection.php',
         'FluentCommunity\\Framework\\Support\\Locale' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Locale.php',
-        'FluentCommunity\\Framework\\Support\\MBString\\Mbstring' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MBString/Mbstring.php',
         'FluentCommunity\\Framework\\Support\\MacroableTrait' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MacroableTrait.php',
         'FluentCommunity\\Framework\\Support\\Mail' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Mail.php',
         'FluentCommunity\\Framework\\Support\\MathException' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/MathException.php',
@@ -372,8 +372,10 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Framework\\Support\\Number' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Number.php',
         'FluentCommunity\\Framework\\Support\\Once' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Once.php',
         'FluentCommunity\\Framework\\Support\\Path' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Path.php',
+        'FluentCommunity\\Framework\\Support\\Pipe' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Pipe.php',
         'FluentCommunity\\Framework\\Support\\Pipeline' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Pipeline.php',
         'FluentCommunity\\Framework\\Support\\Pluralizer' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Pluralizer.php',
+        'FluentCommunity\\Framework\\Support\\Polyfills\\MBString\\Mbstring' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Polyfills/MBString/Mbstring.php',
         'FluentCommunity\\Framework\\Support\\Reflector' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Reflector.php',
         'FluentCommunity\\Framework\\Support\\ReflectsClosures' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/ReflectsClosures.php',
         'FluentCommunity\\Framework\\Support\\Sanitizer' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Support/Sanitizer.php',

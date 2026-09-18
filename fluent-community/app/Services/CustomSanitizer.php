@@ -103,16 +103,30 @@ class CustomSanitizer
             'desc'           => [],
         ];
 
+        // Browsers accept bare "&" and HTML named entities in inline SVG, but strict XML parsing rejects them
+        $svg_content = preg_replace('/&(?!#?[a-zA-Z0-9]+;)/', '&amp;', $svg_content);
+        $svg_content = preg_replace_callback('/&([a-zA-Z][a-zA-Z0-9]*);/', function ($matches) {
+            $decoded = html_entity_decode($matches[0], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            if ($decoded === $matches[0]) {
+                return '';
+            }
+
+            return htmlspecialchars($decoded, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        }, $svg_content);
+
         // Load the SVG string into a DOMDocument and discard errors for malformed XML
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
-        $dom->loadXML($svg_content);
+        $loaded = $dom->loadXML($svg_content);
         libxml_clear_errors();
 
-        if ($dom->documentElement) {
-            // Sanitize by removing unwanted tags and attributes
-            self::sanitizeNode($dom->documentElement, $allowed_tags);
+        if (!$loaded || !$dom->documentElement) {
+            return '';
         }
+
+        // Sanitize by removing unwanted tags and attributes
+        self::sanitizeNode($dom->documentElement, $allowed_tags);
 
         return $dom->saveXML($dom->documentElement);
     }
@@ -332,6 +346,150 @@ class CustomSanitizer
         }
 
         return array_filter($item);
+    }
+
+    /**
+     * @param array $items
+     * @return array
+     */
+    public static function sanitizeSpaceMenuItems($items)
+    {
+        $sanitized = [];
+        $seen = [];
+
+        foreach ((array)$items as $item) {
+            $menuItem = self::sanitizeSpaceMenuItem($item);
+
+            if (!$menuItem || isset($seen[$menuItem['slug']])) {
+                continue;
+            }
+
+            $seen[$menuItem['slug']] = true;
+            $sanitized[] = $menuItem;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * One row of a space's primary menu. Returns null for a row that cannot be rendered — no
+     * slug, a custom row with no label, or a destination that survived neither the protocol
+     * allowlist nor the page lookup.
+     *
+     * @param array $item
+     * @return array|null
+     */
+    public static function sanitizeSpaceMenuItem($item)
+    {
+        // `parent` is accepted and stored but nothing renders it yet. It holds a sibling row's
+        // slug for the one-level sub-menu, and keeping it on the write path now means that
+        // feature is additive rather than a migration of everyone's stored menu.
+        $validKeys = [
+            'slug', 'title', 'enabled', 'new_tab', 'emoji', 'icon_image', 'shape_svg',
+            'permalink', 'page_slug', 'link_type', 'privacy', 'membership_ids', 'is_custom', 'parent',
+        ];
+
+        $item = Arr::only((array)$item, $validKeys);
+
+        $isCustom = Arr::get($item, 'is_custom') === 'yes';
+
+        $slug = Utility::slugify(Arr::get($item, 'slug', ''));
+
+        if ($isCustom) {
+            // Force the prefix so a custom row's slug can never hijack a real tab's slug.
+            if (strpos($slug, 'fcom_custom_') !== 0) {
+                $slug = 'fcom_custom_' . ($slug ?: substr(md5(wp_generate_password(12, false)), 0, 10));
+            }
+        } elseif (!$slug) {
+            return null;
+        }
+
+        $sanitized = [
+            'slug'      => $slug,
+            'title'     => sanitize_text_field(Arr::get($item, 'title', '')),
+            'enabled'   => Arr::get($item, 'enabled') === 'no' ? 'no' : 'yes',
+            'is_custom' => $isCustom ? 'yes' : 'no',
+            'parent'    => sanitize_title(Arr::get($item, 'parent', '')),
+        ];
+
+        $emoji = self::sanitizeEmoji(Arr::get($item, 'emoji', ''));
+
+        if ($emoji) {
+            $sanitized['emoji'] = $emoji;
+        }
+
+        $shapeSvg = self::sanitizeSvg(Arr::get($item, 'shape_svg', ''));
+
+        if ($shapeSvg) {
+            $sanitized['shape_svg'] = $shapeSvg;
+        }
+
+        $iconImage = Arr::get($item, 'icon_image');
+
+        if ($iconImage) {
+            $media = Helper::getMediaFromUrl($iconImage);
+
+            if ($media) {
+                $media->update([
+                    'is_active'     => true,
+                    'user_id'       => get_current_user_id(),
+                    'object_source' => 'general',
+                ]);
+                $sanitized['icon_image'] = $media->public_url;
+            } else {
+                $sanitized['icon_image'] = sanitize_url($iconImage);
+            }
+        }
+
+        $privacy = Arr::get($item, 'privacy');
+
+        if (!in_array($privacy, ['public', 'logged_in', 'logged_out_only', 'members_only'], true)) {
+            $privacy = 'public';
+        }
+
+        $sanitized['privacy'] = $privacy;
+
+        if ($privacy === 'members_only') {
+            $membershipIds = array_map('intval', (array)Arr::get($item, 'membership_ids', []));
+            $sanitized['membership_ids'] = array_values(array_filter($membershipIds));
+        }
+
+        if (!$isCustom) {
+            return $sanitized;
+        }
+
+        if (!$sanitized['title']) {
+            return null;
+        }
+
+        $linkType = Arr::get($item, 'link_type') === 'space_page' ? 'space_page' : 'url';
+        $sanitized['link_type'] = $linkType;
+
+        if ($linkType === 'space_page') {
+            $pageSlug = sanitize_title(Arr::get($item, 'page_slug', ''));
+
+            if (!$pageSlug) {
+                return null;
+            }
+
+            $sanitized['page_slug'] = $pageSlug;
+            $sanitized['new_tab'] = 'no';
+
+            return $sanitized;
+        }
+
+        // sanitize_url drops everything outside WordPress's protocol allowlist, so a
+        // javascript: destination comes back empty and the row is discarded.
+        $permalink = sanitize_url(Arr::get($item, 'permalink', ''));
+
+        if (!$permalink) {
+            return null;
+        }
+
+        $sanitized['permalink'] = $permalink;
+        $sanitized['new_tab'] = Arr::get($item, 'new_tab') === 'yes' ? 'yes' : 'no';
+
+        return $sanitized;
     }
 
     public static function sanitizeRichText($content, $print = false)

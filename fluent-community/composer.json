@@ -21,7 +21,7 @@
         }
     ],
     "require": {
-        "wpfluent/framework": "^2.10",
+        "wpfluent/framework": "^2.12",
         "woocommerce/action-scheduler": "^3.9"
     },
     "require-dev": {

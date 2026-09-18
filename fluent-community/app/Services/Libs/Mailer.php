@@ -73,6 +73,13 @@ class Mailer
 
     public function to($email, $name = '')
     {
+        // wp_mail() splits a To string on commas, so a display name carrying a
+        // comma/semicolon injects extra recipients; angle brackets/quotes reframe
+        // the address and CR/LF inject headers. Strip them before building it.
+        if ($name) {
+            $name = trim(preg_replace('/[,;<>"\r\n\t]+/', ' ', $name));
+        }
+
         if ($name) {
             $this->to = $name . ' <' . $email . '>';
         } else {
@@ -125,20 +132,25 @@ class Mailer
             $headers[] = 'Content-Type: text/plain; charset=UTF-8';
         }
 
+        // A CR/LF in any header value starts an attacker-controlled header line.
+        $stripCrlf = function ($value) {
+            return str_replace(["\r", "\n"], '', $value);
+        };
+
         if ($this->from) {
-            $headers[] = 'From: ' . $this->from;
+            $headers[] = 'From: ' . $stripCrlf($this->from);
         }
 
         if ($this->cc) {
-            $headers[] = 'Cc: ' . implode(',', $this->cc);
+            $headers[] = 'Cc: ' . $stripCrlf(implode(',', $this->cc));
         }
 
         if ($this->bcc) {
-            $headers[] = 'Bcc: ' . implode(',', $this->bcc);
+            $headers[] = 'Bcc: ' . $stripCrlf(implode(',', $this->bcc));
         }
 
         if ($this->replyTo) {
-            $headers[] = 'Reply-To: ' . $this->replyTo;
+            $headers[] = 'Reply-To: ' . $stripCrlf($this->replyTo);
         }
 
         return wp_mail($this->to, $this->subject, $this->body, $headers);

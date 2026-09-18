@@ -436,16 +436,20 @@ class CourseHelper
         ];
 
         if ($lesson->isQuizType()) {
-            $quizFields = ['quiz_questions', 'passing_score', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
+            $quizFields = ['quiz_questions', 'passing_score', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions', 'layout'];
             $validFields = wp_parse_args($validFields, $quizFields);
         }
 
         $meta = Arr::only($meta, $validFields);
 
-        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'require_video_completion', 'auto_complete_on_video_end', 'enable_passing_score', 'enforce_passing_score', 'hide_result'];
+        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'require_video_completion', 'auto_complete_on_video_end', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions'];
 
         foreach ($yesNoFields as $field) {
             $meta[$field] = Arr::get($meta, $field, 'no') == 'yes' ? 'yes' : 'no';
+        }
+
+        if ($lesson->isQuizType()) {
+            $meta['layout'] = Arr::get($meta, 'layout') === 'one_by_one' ? 'one_by_one' : 'all';
         }
 
         if (Arr::get($meta, 'enable_media') == 'yes') {

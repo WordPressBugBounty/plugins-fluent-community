@@ -30,6 +30,7 @@ class Space extends BaseSpace
             'show_paywalls'           => 'no',
             'og_image'                => '',
             'links'                   => [],
+            'primary_menu'            => [],
             'document_library'        => 'no',
             'document_access'         => 'members_only',
             'media_gallery'           => 'no',

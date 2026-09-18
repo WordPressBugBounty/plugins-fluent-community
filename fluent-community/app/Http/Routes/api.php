@@ -26,6 +26,9 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
 
     $router->post('/{spaceSlug}/links', 'SpaceController@updateLinks')->alphaNumDash('spaceSlug');
 
+    $router->get('/{spaceSlug}/primary-menu', 'SpaceController@getPrimaryMenu')->alphaNumDash('spaceSlug');
+    $router->post('/{spaceSlug}/primary-menu', 'SpaceController@updatePrimaryMenu')->alphaNumDash('spaceSlug');
+
     $router->get('/users/search', 'SpaceController@getOtherUsers');
     $router->get('/discover', 'SpaceController@discover');
     $router->get('/all-spaces', 'SpaceController@getAllSpaces');

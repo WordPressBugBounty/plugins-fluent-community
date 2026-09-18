@@ -145,7 +145,11 @@ class CommentsController extends Controller
             }
 
             $newComment = Comment::create($commentData);
-            Feed::withoutGlobalScopes()->where('id', $feed->id)->increment('comments_count');
+
+            // A held comment is not visible yet, so it must not be counted until it is approved.
+            if ($newComment->status === 'published') {
+                Feed::withoutGlobalScopes()->where('id', $feed->id)->increment('comments_count');
+            }
 
             return $newComment;
         });
@@ -156,7 +160,9 @@ class CommentsController extends Controller
             ]);
         }
 
-        $feed->comments_count = $feed->comments_count + 1;
+        if ($comment->status === 'published') {
+            $feed->comments_count = $feed->comments_count + 1;
+        }
 
 
         // Merge and save all media in one loop
@@ -614,7 +620,9 @@ class CommentsController extends Controller
 
         $comment->delete();
 
-        $feed->comments_count = Comment::where('post_id', $feed->id)->count();
+        $feed->comments_count = Comment::where('post_id', $feed->id)
+            ->where('status', 'published')
+            ->count();
         $feed->timestamps = false; // Don't update the updated_at timestamp
         $feed->save();
 

@@ -7,6 +7,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\LockscreenService;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\SpaceMenuService;
 use FluentCommunity\Framework\Support\Arr;
 
 /**
@@ -307,6 +308,7 @@ class BaseSpace extends Model
 
             $exisitingSetting = $this->settings;
             $settings['links'] = Arr::get($exisitingSetting, 'links', []);
+            $settings[SpaceMenuService::SETTINGS_KEY] = Arr::get($exisitingSetting, SpaceMenuService::SETTINGS_KEY, []);
 
             if (isset($settings['og_image'])) {
                 $ogImageUrl = Arr::get($settings, 'og_image');
@@ -494,24 +496,28 @@ class BaseSpace extends Model
         return $this->updateCustomMeta('lockscreen_settings', $settingFields);
     }
 
+    /**
+     * Sidebar links, emails, invitations, canonical URLs and API payloads all resolve
+     * through here, so the filter moves every one of them together.
+     *
+     * @return string
+     */
     public function getPermalink()
     {
+        $permalink = Helper::baseUrl('/');
+
         if ($this->type == 'community') {
-            return Helper::baseUrl('space/' . $this->slug . '/home');
-        }
-
-        if ($this->type == 'course') {
-            return Helper::baseUrl('course/' . $this->slug . '/lessons');
-        }
-
-        if ($this->type == 'sidebar_link') {
-            $permalink = Arr::get($this->settings, 'permalink');
-            if ($permalink) {
-                return $permalink;
+            $permalink = Helper::baseUrl('space/' . $this->slug . '/home');
+        } elseif ($this->type == 'course') {
+            $permalink = Helper::baseUrl('course/' . $this->slug . '/lessons');
+        } elseif ($this->type == 'sidebar_link') {
+            $customLink = Arr::get($this->settings, 'permalink');
+            if ($customLink) {
+                $permalink = $customLink;
             }
         }
 
-        return Helper::baseUrl('/');
+        return apply_filters('fluent_community/space_permalink', $permalink, $this);
     }
 
     public function getLockscreen()
@@ -638,25 +644,7 @@ class BaseSpace extends Model
         $this->membership = $this->getMembership($userId);
         $this->topics = Utility::getTopicsBySpaceId($this->id);
 
-        $headerLinks = [
-            [
-                'title' => __('Posts', 'fluent-community'),
-                'route' => [
-                    'name' => 'space_feeds',
-                ],
-            ],
-        ];
-
-        if (Arr::get($this->permissions, 'can_view_members')) {
-            $headerLinks[] = [
-                'title' => __('Members', 'fluent-community'),
-                'route' => [
-                    'name' => 'space_members',
-                ],
-            ];
-        }
-
-        $this->header_links = apply_filters('fluent_community/space_header_links', $headerLinks, $this);
+        $this->header_links = SpaceMenuService::getMenuLinks($this, $user);
 
         if ($this->isAdmin($userId, true)) {
             return $this;

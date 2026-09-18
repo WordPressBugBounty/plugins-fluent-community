@@ -9,6 +9,7 @@ use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\SpaceMenuService;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
@@ -792,6 +793,59 @@ class SpaceController extends Controller
         return [
             'message' => __('Links have been updated for the space', 'fluent-community'),
             'links'   => $links
+        ];
+    }
+
+    public function getPrimaryMenu(Request $request, $slug)
+    {
+        $space = Space::where('slug', $slug)->first();
+
+        if (!$space) {
+            return $this->sendError([
+                'message' => __('Space not found', 'fluent-community'),
+            ]);
+        }
+
+        // Lighter than formatSpaceData(), but listeners like fcom-chat need membership too.
+        $user = $this->getUser();
+        $space->permissions = $space->getUserPermissions($user);
+        $space->membership = $space->getMembership($user ? $user->ID : null);
+
+        return [
+            'menu_items' => SpaceMenuService::getManagerItems($space),
+        ];
+    }
+
+    public function updatePrimaryMenu(Request $request, $slug)
+    {
+        $space = Space::where('slug', $slug)->first();
+
+        if (!$space) {
+            return $this->sendError([
+                'message' => __('Space not found', 'fluent-community'),
+            ]);
+        }
+
+        $incoming = $request->get('menu_items', []);
+
+        if (!is_array($incoming)) {
+            return $this->sendError([
+                'message' => __('Menu items must be a list.', 'fluent-community'),
+            ], 422);
+        }
+
+        $menuItems = CustomSanitizer::sanitizeSpaceMenuItems($incoming);
+
+        SpaceMenuService::storeMenu($space, $menuItems);
+
+        // No re-fetch needed — unlike formatSpaceData(), this doesn't make $space unsaveable.
+        $user = $this->getUser();
+        $space->permissions = $space->getUserPermissions($user);
+        $space->membership = $space->getMembership($user ? $user->ID : null);
+
+        return [
+            'message'    => __('Menu has been updated for the space', 'fluent-community'),
+            'menu_items' => SpaceMenuService::getManagerItems($space),
         ];
     }
 

@@ -67,7 +67,7 @@ $fluentCommunityThemeColor = $theme_color ?? '';
     <style id="fcom_css_vars">
         <?php echo esc_html(\FluentCommunity\App\Functions\Utility::getColorCssVariables()); ?>
         .dark body .el-dialog {
-            --el-dialog-bg-color: #2B2E33;
+            --el-dialog-bg-color: var(--fcom-secondary-bg, #2B2E33);
         }
     </style>
 

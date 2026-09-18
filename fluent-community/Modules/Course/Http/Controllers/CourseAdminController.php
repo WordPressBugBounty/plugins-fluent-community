@@ -608,7 +608,11 @@ class CourseAdminController extends Controller
             ]);
         }
 
-        CourseHelper::resetCourseProgress($courseId, (int) $studentId);
+        if (!CourseHelper::resetCourseProgress($courseId, (int) $studentId)) {
+            return $this->sendError([
+                'message' => __("Student's progress could not be reset. Please try again.", 'fluent-community'),
+            ]);
+        }
 
         return [
             'message' => __("Student's progress has been reset.", 'fluent-community'),

@@ -78,17 +78,19 @@ class RateLimitHandler
             return;
         }
 
+        // Without a persistent object cache the per-user counter would pile up as
+        // rows in wp_options, so the limit is only enforced when one is present.
+        if (!wp_using_ext_object_cache()) {
+            return;
+        }
+
         $limitPerMinute = apply_filters('fluent_community/rate_limit/oembed_per_minute', 20);
 
-        if (wp_using_ext_object_cache()) {
-            $cacheKey = 'oembed_rate_limit_' . $user->ID;
-            wp_cache_add($cacheKey, 0, 'fluent-community', MINUTE_IN_SECONDS);
-            $previewCount = (int) wp_cache_incr($cacheKey, 1, 'fluent-community');
-        } else {
-            $transientKey = 'fcom_oembed_rate_limit_' . $user->ID;
-            $previewCount = (int) get_transient($transientKey) + 1;
-            set_transient($transientKey, $previewCount, MINUTE_IN_SECONDS);
-        }
+        // Transients rather than wp_cache_incr(): some managed hosts run Redis behind an
+        // ACL that denies INCRBY, and the Redis Object Cache drop-in dies on that error.
+        $transientKey = 'fcom_oembed_rate_limit_' . $user->ID;
+        $previewCount = (int) get_transient($transientKey) + 1;
+        set_transient($transientKey, $previewCount, MINUTE_IN_SECONDS);
 
         if ($previewCount > $limitPerMinute) {
             throw new \Exception(esc_html__('You have reached the limit of link previews. Please try after some time', 'fluent-community'));
