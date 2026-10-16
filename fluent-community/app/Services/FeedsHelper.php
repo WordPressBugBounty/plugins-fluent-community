@@ -934,13 +934,11 @@ class FeedsHelper
                     return [$data, $uplaodedDocs];
                 }
 
-                $mediaPreview = array_filter(Arr::get($requestData, 'media', []));
+                // Moderators are trusted to embed, not to bypass sanitization: html goes
+                // through the oembed allowlist and url/image must be http(s).
+                $mediaPreview = array_filter(Helper::sanitizeMediaPreview(Arr::get($requestData, 'media', [])));
 
-                // Moderators are trusted to embed, not to bypass sanitization: the markup
-                // still goes through the same allowlist the oembed branch below uses.
                 if (!empty($mediaPreview['html'])) {
-                    $mediaPreview['html'] = RemoteUrlParser::sanitizeOembedHtml($mediaPreview['html']);
-
                     // Keep only if a usable <iframe> survived; else it renders as junk.
                     if (stripos($mediaPreview['html'], '<iframe') === false) {
                         unset($mediaPreview['html']);

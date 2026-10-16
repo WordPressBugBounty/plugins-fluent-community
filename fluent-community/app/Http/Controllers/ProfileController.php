@@ -277,10 +277,11 @@ class ProfileController extends Controller
 
         if ($currentUser->isCommunityModerator()) {
             $updateData['is_verified'] = Arr::get($data, 'is_verified') ? 1 : 0;
-            $updateData['status'] = Arr::get($data, 'status', 'active');
+            $status = Arr::get($data, 'status');
+            $updateData['status'] = in_array($status, XProfile::STATUSES, true) ? $status : $xProfile->status;
             $userName = Arr::get($data, 'username');
 
-            if (user_can($xProfile->user_id, 'list_users')) {
+            if (user_can($xProfile->user_id, 'list_users') && $xProfile->status !== '') {
                 $updateData['status'] = 'active';
             }
 
@@ -300,7 +301,7 @@ class ProfileController extends Controller
                     ]);
                 }
 
-                $userExist = get_user_by('user_login', $userName);
+                $userExist = get_user_by('login', $userName);
 
                 if ($userExist && $userExist->ID != $xProfile->user_id) {
                     return $this->sendError([
@@ -319,7 +320,7 @@ class ProfileController extends Controller
                 $definedBadges = (array) Utility::getOption('user_badges', []);
                 $meta['badge_slug'] = array_values(array_intersect($badgeSlug, array_keys($definedBadges)));
             }
-        } else if (Utility::getPrivacySetting('can_customize_username')) {
+        } else if (Utility::getPrivacySetting('can_customize_username') === 'yes') {
             $userName = Arr::get($data, 'username');
 
             if ($xProfile->username != $userName) {
@@ -333,6 +334,14 @@ class ProfileController extends Controller
                 if (XProfile::where('username', $userName)->where('user_id', '!=', $xProfile->user_id)->exists()) {
                     return $this->sendError([
                         'message' => __('Community Username already taken by someone else', 'fluent-community')
+                    ]);
+                }
+
+                $userExist = get_user_by('login', $userName);
+
+                if ($userExist && (int) $userExist->ID !== (int) $xProfile->user_id) {
+                    return $this->sendError([
+                        'message' => __('Username already taken by someone else. Please use a different username.', 'fluent-community')
                     ]);
                 }
 
@@ -402,8 +411,13 @@ class ProfileController extends Controller
         $xProfile->fill($updateData);
         $xProfile->save();
 
+        $isOwn = $xProfile->user_id == get_current_user_id();
+        $canEditUser = current_user_can('edit_user', $xProfile->user_id);
+
         // Let's update the user's details
-        $xProfile->user->updateCustomData($updateData);
+        if ($isOwn || $canEditUser) {
+            $xProfile->user->updateCustomData($updateData);
+        }
         $xProfile->compilation_score = $xProfile->getCompletionScore();
 
         if ($userNameChanged) {
@@ -414,8 +428,7 @@ class ProfileController extends Controller
             ];
         }
 
-        $isOwn = $xProfile->user_id == get_current_user_id();
-        $canEditUsers = current_user_can('edit_users');
+        $canEditUsers = current_user_can('edit_users') && $canEditUser;
         if ($canEditUsers || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn)) {
             $emailAddress = Arr::get($data, 'email');
 
@@ -485,9 +498,9 @@ class ProfileController extends Controller
         $newPassword     = (string) Arr::get($data, 'new_password');
         $confirmPassword = (string) Arr::get($data, 'confirm_password');
 
-        if (strlen($newPassword) < 4) {
+        if (strlen($newPassword) < 8) {
             return $this->sendError([
-                'message' => __('New password must be at least 4 characters long', 'fluent-community')
+                'message' => __('New password must be at least 8 characters long', 'fluent-community')
             ]);
         }
 
@@ -505,11 +518,25 @@ class ProfileController extends Controller
 
         $user = get_user_by('id', $xProfile->user_id);
 
+        // Throttle failed current-password checks so a hijacked session can't brute-force it.
+        // Owner-only endpoint, so nobody else can trigger this lock.
+        $attemptsKey = 'fcom_pwd_change_fails_' . $xProfile->user_id;
+        $failedAttempts = (int) get_transient($attemptsKey);
+
+        if ($failedAttempts >= 5) {
+            return $this->sendError([
+                'message' => __('Too many failed attempts. Please try again later', 'fluent-community')
+            ]);
+        }
+
         if (!$user || !wp_check_password($currentPassword, $user->user_pass, $user->ID)) {
+            set_transient($attemptsKey, $failedAttempts + 1, 15 * MINUTE_IN_SECONDS);
             return $this->sendError([
                 'message' => __('Your current password is incorrect', 'fluent-community')
             ]);
         }
+
+        delete_transient($attemptsKey);
 
         wp_set_password($newPassword, $user->ID);
 

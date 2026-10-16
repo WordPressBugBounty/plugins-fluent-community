@@ -590,7 +590,10 @@ class FeedsController extends Controller
             $data['space_id'] = $newSpaceId;
 
             \FluentCommunity\App\Models\Activity::where('feed_id', $existingFeed->id)
-                ->update(['space_id' => $newSpaceId]);
+                ->update([
+                    'space_id'  => $newSpaceId,
+                    'is_public' => $newSpace->isPublic() ? 1 : 0,
+                ]);
         } else if ($request->get('move_to_profile')) {
             if (!$user->hasPermissionOrInCurrentSpace('community_admin', $existingFeed->space)) {
                 return $this->sendError([
@@ -602,7 +605,7 @@ class FeedsController extends Controller
             $movingToProfile = true;
 
             \FluentCommunity\App\Models\Activity::where('feed_id', $existingFeed->id)
-                ->update(['space_id' => null]);
+                ->update([ 'space_id' => null, 'is_public' => 1 ]);
         }
 
         $data = apply_filters('fluent_community/feed/update_data', $data, $existingFeed);

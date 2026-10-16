@@ -411,17 +411,13 @@ class Bootstrap
     }
 
     /**
-     * media_preview.html is rendered with v-html in _MediaPreview.vue whenever the
-     * player itself cannot handle the media, so request-supplied markup has to go
-     * through the oembed allowlist before it is stored.
+     * The whole request-supplied media array is stored as media_preview. html is rendered
+     * with v-html and url/image with :href/:src in _MediaPreview.vue, so every field goes
+     * through the shared sanitizer (oembed allowlist for html, http(s)-only URLs) first.
      */
     private static function sanitizeMediaHtml($media)
     {
-        if (!empty($media['html'])) {
-            $media['html'] = \FluentCommunity\App\Services\RemoteUrlParser::sanitizeOembedHtml($media['html']);
-        }
-
-        return $media;
+        return \FluentCommunity\App\Services\Helper::sanitizeMediaPreview($media);
     }
 
     public function maybeUpdateUploadedMedia($uploadedMedias, $requestData)

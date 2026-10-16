@@ -51,10 +51,10 @@ class User extends Model
         'user_email',
     ];
 
-    public function scopeSearchBy($query, $search)
+    public function scopeSearchBy($query, $search, $fields = null)
     {
         if ($search) {
-            $fields = $this->searchable;
+            $fields = $fields ?: $this->searchable;
             $query->where(function ($query) use ($fields, $search) {
                 $query->where(array_shift($fields), 'LIKE', "%$search%");
                 foreach ($fields as $field) {
@@ -484,20 +484,29 @@ class User extends Model
         return '';
     }
 
+    // Live space ids for access checks: never reads or writes the cached meta
+    public function getAccessSpaceIds()
+    {
+        return $this->accessSpacesQuery()->pluck('id')->toArray();
+    }
+
+    private function accessSpacesQuery()
+    {
+        if (array_intersect($this->getCommunityRoles(), [ 'admin', 'moderator' ])) {
+            return BaseSpace::onlyMain();
+        }
+
+        return BaseSpace::onlyMain()->where(function ($spaceQuery) {
+            $spaceQuery->whereHas('members', function ($memberQuery) {
+                $memberQuery->where('user_id', $this->ID)
+                    ->where('status', 'active');
+            })->orWhere('privacy', 'public');
+        });
+    }
+
     public function cacheAccessSpaces()
     {
-        $globalRoles = $this->getCommunityRoles();
-
-        if (array_intersect($globalRoles, [ 'admin', 'moderator' ])) {
-            $spaces = BaseSpace::onlyMain()->get();
-        } else {
-            $spaces = BaseSpace::onlyMain()->where(function ($spaceQuery) {
-                $spaceQuery->whereHas('members', function ($memberQuery) {
-                    $memberQuery->where('user_id', $this->ID)
-                        ->where('status', 'active');
-                })->orWhere('privacy', 'public');
-            })->get();
-        }
+        $spaces = $this->accessSpacesQuery()->get();
 
         $spaceIds = $spaces->pluck('id')->toArray();
 

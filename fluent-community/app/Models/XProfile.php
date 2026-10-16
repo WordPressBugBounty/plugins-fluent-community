@@ -44,6 +44,8 @@ use FluentCrm\App\Models\Subscriber;
  */
 class XProfile extends Model
 {
+    const STATUSES = ['active', 'pending', 'blocked'];
+
     protected $table = 'fcom_xprofile';
 
     protected $guarded = [ 'id' ];

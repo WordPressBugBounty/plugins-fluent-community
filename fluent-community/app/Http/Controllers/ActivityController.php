@@ -30,13 +30,21 @@ class ActivityController extends Controller
             }
             
             $currentUserId = get_current_user_id();
-            $q->where('is_public', 1);
+            // Current space privacy, not is_public: the stored flag is only synced on privacy edits and post moves
+            $q->where(function ($q) {
+                $q->whereNull('space_id')
+                    ->orWhereHas('space', function ($q) {
+                        // Drop BaseSpace's type scope so course spaces count too
+                        $q->withoutGlobalScopes()->where('privacy', 'public');
+                    });
+            });
             if (!$currentUserId) {
                 return $q;
             }
 
-            $q->orWhere(function ($query) use ($currentUserId) {
-                $spaceIds = get_user_meta($currentUserId, '_fcom_space_ids', true);
+            $q->orWhere(function ($query) {
+                $user = Helper::getCurrentUser();
+                $spaceIds = $user ? $user->getAccessSpaceIds() : [];
                 if ($spaceIds) {
                     $query->whereIn('space_id', $spaceIds);
                     return $query;

@@ -6,7 +6,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
-use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\App\Services\Insights\Tracking\ActivityTracker;
 
 class ActivityMonitorHandler
 {
@@ -46,12 +46,6 @@ class ActivityMonitorHandler
 
     public function renewNonce()
     {
-        $ajax_nonce = Arr::get($_REQUEST, 'ajax_nonce'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-        if (!wp_verify_nonce($ajax_nonce, 'fluent_community_ajax_nonce')) {
-            wp_send_json(['message' => __('Invalid nonce', 'fluent-community')], 400);
-        }
-
         $currentProfile = Helper::getCurrentProfile();
         if (!$currentProfile) {
             wp_send_json(['message' => __('Invalid user', 'fluent-community')], 401);
@@ -70,7 +64,7 @@ class ActivityMonitorHandler
         $space = $feed->space_id ? $feed->space : null;
 
         if ($space) {
-            $isPublic = $space->privacy == 'public';
+            $isPublic = $space->isPublic();
         }
 
         $data = [
@@ -93,7 +87,7 @@ class ActivityMonitorHandler
         $space = $feed->space_id ? $feed->space : null;
 
         if ($space) {
-            $isPublic = $space->privacy == 'public';
+            $isPublic = $space->isPublic();
         }
 
         $data = [
@@ -127,5 +121,7 @@ class ActivityMonitorHandler
 
         $currentProfile->last_activity = current_time('mysql');
         $currentProfile->save();
+
+        ActivityTracker::recordVisit($currentProfile->user_id);
     }
 }

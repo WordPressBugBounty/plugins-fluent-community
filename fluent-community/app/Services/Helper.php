@@ -681,6 +681,17 @@ class Helper
     }
 
     /**
+     * Tag a notification email link so the portal marks the post's notifications read on landing.
+     */
+    public static function addNotificationReadMarker($url, $feedId, $args = [])
+    {
+        return $url . '?' . http_build_query(array_merge($args, [
+            'fcom_en' => 'true',
+            'feed_id' => (int) $feedId,
+        ]));
+    }
+
+    /**
      * Get the URL for a JavaScript route.
      *
      * @param array $route The route information.
@@ -767,13 +778,51 @@ class Helper
      */
     public static function sanitizeStoredMediaPreview($meta)
     {
-        if (empty($meta['media_preview']['html'])) {
+        if (empty($meta['media_preview']) || !is_array($meta['media_preview'])) {
             return $meta;
         }
 
-        $meta['media_preview']['html'] = RemoteUrlParser::sanitizeOembedHtml($meta['media_preview']['html']);
+        $meta['media_preview'] = self::sanitizeMediaPreview($meta['media_preview']);
 
         return $meta;
+    }
+
+    /**
+     * Sanitize every field of a media_preview array, not just its html.
+     *
+     * _MediaPreview.vue binds url to an <a :href> and image/thumbnail to :src, and Vue does
+     * not filter unsafe schemes, so those fields must be http(s) URLs by the time they are
+     * stored or rendered. Everything else is plain text.
+     *
+     * @param array $media
+     * @return array
+     */
+    public static function sanitizeMediaPreview($media)
+    {
+        if (!is_array($media)) {
+            return [];
+        }
+
+        $urlKeys = ['url', 'image', 'thumbnail', 'src', 'provider_url', 'content_url'];
+        $intKeys = ['media_id'];
+
+        foreach ($media as $key => $value) {
+            if ('html' === $key) {
+                $media[$key] = is_string($value) ? RemoteUrlParser::sanitizeOembedHtml($value) : '';
+            } else if (in_array($key, $urlKeys, true)) {
+                $media[$key] = is_string($value) ? esc_url_raw($value, ['http', 'https']) : '';
+            } else if (in_array($key, $intKeys, true)) {
+                $media[$key] = is_numeric($value) ? (int) $value : '';
+            } else if (is_array($value)) {
+                $media[$key] = self::sanitizeMediaPreview($value);
+            } else if (is_bool($value)) {
+                $media[$key] = $value;
+            } else {
+                $media[$key] = is_scalar($value) ? sanitize_text_field((string) $value) : '';
+            }
+        }
+
+        return $media;
     }
 
     /**
@@ -920,6 +969,12 @@ class Helper
 
                 if ($user && $space->isContentSpace()) {
                     $validSpace['unread_badge'] = self::getUnreadFeedsCounts($space->id);
+
+                    // Marks the spaces whose badge is live: only a joined space tracks the last visit.
+                    $membership = $space->getMembership($user->ID);
+                    if ($view && $membership && $membership->pivot->status === 'active') {
+                        $validSpace['link_classes'] = trim(Arr::get($validSpace, 'link_classes', '') . ' fcom_is_joined');
+                    }
                 }
 
                 if ($isComModerator && $space->type != 'course') {
@@ -970,36 +1025,129 @@ class Helper
         return apply_filters('fluent_community/menu_groups_for_user', $formattedGroups, $user);
     }
 
+    /**
+     * Unread posts per space, counted from the membership's `updated_at`, which holds the
+     * member's last visit (set by markSpaceSeen). A space not opened since the cut-over falls
+     * back to the user's last activity, so existing badges carry over.
+     */
     public static function getUnreadFeedsCounts($spaceId, $force = false)
     {
-        static $coutsCache = null;
-        if ($coutsCache !== null && !$force) {
-            return Arr::get((array)$coutsCache, $spaceId);
+        static $countsCache = null;
+        if ($countsCache !== null && !$force) {
+            return Arr::get($countsCache, $spaceId);
         }
 
-        $xprofile = self::getCurrentProfile();
+        $countsCache = [];
 
-        if (!$xprofile || !$xprofile->last_activity) {
+        $xprofile = self::getCurrentProfile();
+        if (!$xprofile) {
             return 0;
         }
 
-        $lastActivityDate = gmdate('Y-m-d H:i:s', strtotime($xprofile->last_activity) - 300);
+        $userId = $xprofile->user_id;
 
-        $lastActivityDate = apply_filters('fluent_community/last_activity_date_for_unread_feeds', $lastActivityDate, $xprofile);
-
-        $unreadCounts = Feed::query()
-            ->select('space_id', Utility::getApp('db')->raw('COUNT(*) as feed_count'))
-            ->where('status', 'published')
-            ->where('created_at', '>', $lastActivityDate)
-            ->groupBy('space_id')
-            ->get();
-
-        $coutsCache = [];
-        foreach ($unreadCounts as $unreadCount) {
-            $coutsCache[$unreadCount->space_id] = $unreadCount->feed_count > 10 ? '10+' : $unreadCount->feed_count;
+        $fallbackSince = null;
+        if ($xprofile->last_activity) {
+            $fallbackSince = gmdate('Y-m-d H:i:s', strtotime($xprofile->last_activity) - 300);
+            $fallbackSince = apply_filters('fluent_community/last_activity_date_for_unread_feeds', $fallbackSince, $xprofile);
         }
 
-        return Arr::get($coutsCache, $spaceId);
+        $seenSince = self::getSpaceSeenSince();
+
+        // Scan floor: the oldest cutoff among the user's spaces.
+        $cutoffs = [];
+        $seenTimes = Utility::getApp('db')->table('fcom_space_user')
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->pluck('updated_at')
+            ->toArray();
+
+        foreach ($seenTimes as $seenAt) {
+            $cutoffs[] = ($seenAt && $seenAt >= $seenSince) ? $seenAt : $fallbackSince;
+        }
+
+        $cutoffs = array_filter($cutoffs);
+        if (!$cutoffs) {
+            return 0;
+        }
+
+        // Posts older than this never count as unread. It bounds the scan for spaces a member
+        // has not opened in a long time; very large sites can lower it.
+        $maxDays = max(1, (int)apply_filters('fluent_community/unread_badge_max_days', 14, $xprofile));
+        $floor = max(min($cutoffs), gmdate('Y-m-d H:i:s', current_time('timestamp') - $maxDays * DAY_IN_SECONDS));
+
+        global $wpdb;
+
+        // DISTINCT: memberships are not unique per (space, user), and a duplicate row
+        // would otherwise count each post once per row.
+        $unreadCounts = Feed::query()
+            ->select('fcom_posts.space_id', Utility::getApp('db')->raw('COUNT(DISTINCT ' . $wpdb->prefix . 'fcom_posts.id) as feed_count'))
+            ->join('fcom_space_user', function ($join) use ($userId) {
+                $join->on('fcom_space_user.space_id', '=', 'fcom_posts.space_id')
+                    ->where('fcom_space_user.user_id', '=', $userId)
+                    ->where('fcom_space_user.status', '=', 'active');
+            })
+            ->where('fcom_posts.status', 'published')
+            ->where('fcom_posts.user_id', '!=', $userId)
+            ->where('fcom_posts.created_at', '>', $floor)
+            ->where(function ($query) use ($seenSince, $fallbackSince) {
+                $query->where(function ($seen) use ($seenSince) {
+                    $seen->where('fcom_space_user.updated_at', '>=', $seenSince)
+                        ->whereColumn('fcom_posts.created_at', '>', 'fcom_space_user.updated_at');
+                });
+
+                if ($fallbackSince) {
+                    $query->orWhere(function ($neverSeen) use ($seenSince, $fallbackSince) {
+                        $neverSeen->where(function ($notSeen) use ($seenSince) {
+                            $notSeen->whereNull('fcom_space_user.updated_at')
+                                ->orWhere('fcom_space_user.updated_at', '<', $seenSince);
+                        })->where('fcom_posts.created_at', '>', $fallbackSince);
+                    });
+                }
+            })
+            ->groupBy('fcom_posts.space_id')
+            ->get();
+
+        foreach ($unreadCounts as $unreadCount) {
+            $countsCache[$unreadCount->space_id] = $unreadCount->feed_count > 10 ? '10+' : $unreadCount->feed_count;
+        }
+
+        return Arr::get($countsCache, $spaceId);
+    }
+
+    /**
+     * Mark a space as read for a member: later posts count as unread again.
+     */
+    public static function markSpaceSeen($spaceId, $userId)
+    {
+        // Pin the cut-over first, so this visit is never older than it.
+        self::getSpaceSeenSince();
+
+        $updated = Utility::getApp('db')->table('fcom_space_user')
+            ->where('space_id', $spaceId)
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->update(['updated_at' => current_time('mysql')]);
+
+        return $updated > 0;
+    }
+
+    /**
+     * When `fcom_space_user.updated_at` started meaning "last visit". SpaceUserPivot no
+     * longer writes it, but older values are join or role-change times, so a membership
+     * whose updated_at is before this counts as never opened.
+     */
+    private static function getSpaceSeenSince()
+    {
+        $since = get_option(SpaceUserPivot::SEEN_SINCE_OPTION);
+        if ($since) {
+            return $since;
+        }
+
+        // add_option() keeps the first value if two requests race here.
+        add_option(SpaceUserPivot::SEEN_SINCE_OPTION, current_time('mysql'), '', 'yes');
+
+        return get_option(SpaceUserPivot::SEEN_SINCE_OPTION);
     }
 
     /**
@@ -1061,8 +1209,13 @@ class Helper
             return true;
         }
 
-        $userSpaces = $user->getSpaceIds();
-        return !!array_intersect($userSpaces, $accessIds);
+        // Live ids, memoized per request: this runs once per sidebar link
+        static $userSpaces = [];
+        if (!isset($userSpaces[$user->ID])) {
+            $userSpaces[$user->ID] = $user->getAccessSpaceIds();
+        }
+
+        return !!array_intersect($userSpaces[$user->ID], $accessIds);
     }
 
     public static function isAlreadyOnboarded()
@@ -1990,39 +2143,50 @@ class Helper
             return '127.0.0.1';
         }
 
-        $ipAddress = '';
-        if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-            $ipAddress = sanitize_text_field(wp_unslash($_SERVER["REMOTE_ADDR"]));
-            //If it's a valid Cloudflare request
-            if (self::isCfIp($ipAddress)) {
-                //Use the CF-Connecting-IP header.
-                $ipAddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP']));
-            }
-        } else if ($_SERVER['REMOTE_ADDR'] == '127.0.0.1') {
-            // most probably it's local reverse proxy
-            if (isset($_SERVER["HTTP_CLIENT_IP"])) {
-                $ipAddress = sanitize_text_field(wp_unslash($_SERVER["HTTP_CLIENT_IP"]));
-            } else if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $forwardedIp = trim(current(preg_split('/,/', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])))));
-                if (rest_is_ip_address($forwardedIp)) {
-                    $ipAddress = $forwardedIp;
-                }
-            }
-        }
-
-        if (!$ipAddress) {
-            $ipAddress = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
-        }
+        $ipAddress = self::resolveClientIp($_SERVER);
 
         $ipAddress = preg_replace('/^(\d+\.\d+\.\d+\.\d+):\d+$/', '\1', $ipAddress);
 
         $ipAddress = apply_filters('fluent_auth/user_ip', $ipAddress);
+
+        $ipAddress = sanitize_text_field(wp_unslash($ipAddress));
 
         if ($anonymize) {
             return wp_privacy_anonymize_ip($ipAddress);
         }
 
         return $ipAddress;
+    }
+
+    /**
+     * Pick the client address out of a request's server vars.
+     *
+     * Kept apart from getIp(), which caches its answer for the request, so the
+     * header-trust rules can be exercised one request shape at a time.
+     *
+     * @param array $serverData $_SERVER or an equivalent
+     * @return string
+     */
+    public static function resolveClientIp($serverData)
+    {
+        $remoteAddr = preg_replace('/^(\d+\.\d+\.\d+\.\d+):\d+$/', '\1', (string)Arr::get($serverData, 'REMOTE_ADDR'));
+        $cloudflareIp = (string)Arr::get($serverData, 'HTTP_CF_CONNECTING_IP');
+        $trustedProxies = (array)apply_filters('fluent_community/trusted_proxies', ['127.0.0.1']);
+
+        // A proxy appends the peer it saw, so only the right-most hop is reliable;
+        // anything to its left is whatever the client chose to send
+        $hops = explode(',', (string)Arr::get($serverData, 'HTTP_X_FORWARDED_FOR'));
+        $forwardedIp = rest_is_ip_address(trim(end($hops)));
+
+        if ($cloudflareIp && self::isCfIp($remoteAddr)) {
+            return $cloudflareIp;
+        }
+
+        if ($forwardedIp && in_array($remoteAddr, $trustedProxies, true)) {
+            return $forwardedIp;
+        }
+
+        return $remoteAddr;
     }
 
     /**
@@ -2175,7 +2339,8 @@ class Helper
     {
         $supportedParams = (array) apply_filters('fluent_community/portal_supported_query_params', [
             'customizer_panel',
-            'create_space'
+            'create_space',
+            'status'
         ]);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -2310,8 +2475,7 @@ class Helper
             'D' => 'ddd', // A textual representation of a day, three letters
             'j' => 'D',   // Day of the month without leading zeros
             'l' => 'dddd', // A full textual representation of the day of the week
-            'N' => 'E',   // ISO-8601 numeric representation of the day of the week
-            'S' => 'o',   // English ordinal suffix for the day of the month, 2 characters
+            'N' => '',    // Not supported in Day.js (ISO-8601 numeric day of the week)
             'w' => 'd',   // Numeric representation of the day of the week
             'z' => 'DDD', // The day of the year (starting from 0)
 
@@ -2378,6 +2542,15 @@ class Helper
                 $i++;
                 if ($i < strlen($phpFormat)) {
                     $dayjsFormat .= "[" . $phpFormat[$i] . "]";
+                }
+                continue;
+            }
+
+            // Day.js only has an ordinal for the day of month ("Do"), so "jS"/"dS" become "Do".
+            if ($char === 'S') {
+                $prev = $i > 0 ? $phpFormat[$i - 1] : '';
+                if ($prev === 'j' || $prev === 'd') {
+                    $dayjsFormat = substr($dayjsFormat, 0, -strlen($replacements[$prev])) . 'Do';
                 }
                 continue;
             }

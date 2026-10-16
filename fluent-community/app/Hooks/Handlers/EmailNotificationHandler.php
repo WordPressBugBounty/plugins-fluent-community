@@ -169,7 +169,7 @@ class EmailNotificationHandler
          * ##feed_permalink##
          * ##email_notification_url##
          */
-        $feedLink = $feed->getPermalink();
+        $feedLink = Helper::addNotificationReadMarker($feed->getPermalink(), $feed->id);
 
         $startTime = microtime(true);
         $maxSendPerSecond = 10; // max 10 emails per second
@@ -336,7 +336,7 @@ class EmailNotificationHandler
         $emailBody = $comment->getCommentHtml(true);
         $emailSubject = $comment->getEmailSubject($feed);
 
-        $feedPermalik = $feed->getPermalink() . '?comment_id=' . $comment->id;
+        $feedPermalink = Helper::addNotificationReadMarker($feed->getPermalink(), $feed->id, ['comment_id' => $comment->id]);
         $usersCount = count($users);
 
         $startTime = microtime(true);
@@ -355,7 +355,7 @@ class EmailNotificationHandler
                 '##feed_permalink##',
                 '##email_notification_url##'
             ], [
-                ProfileHelper::signUserUrlWithAuthHash($feedPermalik, $user->ID),
+                ProfileHelper::signUserUrlWithAuthHash($feedPermalink, $user->ID),
                 ProfileHelper::getSignedNotificationPrefUrl($user->ID)
             ], $emailBody);
 
@@ -461,7 +461,7 @@ class EmailNotificationHandler
         );
 
         $emailBody = $feed->getFeedHtml(true);
-        $feedPermalink = $feed->getPermalink();
+        $feedPermalink = Helper::addNotificationReadMarker($feed->getPermalink(), $feed->id);
 
         $startTime = microtime(true);
         $maxSendPerSecond = 10; // max 10 emails per second

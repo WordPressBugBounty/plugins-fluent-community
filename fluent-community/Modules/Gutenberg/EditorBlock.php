@@ -128,6 +128,12 @@ class EditorBlock
         $useBuildInTheme = $attributes['useBuildInTheme'] ?? false;
 
         do_action('fluent_community/enqueue_global_assets', $useBuildInTheme);
+
+        // Block templates render before wp_head, so frame head tags (PWA manifest etc.) can still land in <head>.
+        add_action('wp_head', function () {
+            do_action('fluent_community/template_header');
+        });
+
         $useFullWidth = $attributes['useFullWidth'] ?? true;
         $hideCommunityHeader = false;
         $className = Arr::get($attributes, 'className', '');

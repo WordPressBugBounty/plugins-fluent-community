@@ -11,6 +11,11 @@ class InvitationModule
     {
         (new InvitationHandler)->register();
         $this->initRouter($app);
+
+        add_filter('fluent_community/portal_vars', function ($vars) {
+            $vars['features']['has_invitation'] = true;
+            return $vars;
+        });
     }
 
     private function initRouter($app)

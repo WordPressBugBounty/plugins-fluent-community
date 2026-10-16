@@ -200,6 +200,11 @@ class CourseHelper
             return true;
         }
 
+        // Nothing to unmark: creating a row here would record the lesson as completed
+        if ($state !== 'completed') {
+            return true;
+        }
+
         Reaction::create([
             'user_id'     => $userId,
             'object_id'   => $lesson->id,
@@ -545,11 +550,7 @@ class CourseHelper
 
     public static function santizeLessonBody($body)
     {
-        if (current_user_can('unfiltered_html')) {
-            return $body;
-        }
-
-        return wp_kses_post($body);
+        return CustomSanitizer::santizeEditorBody($body);
     }
 
     public static function formatLessonData($course, $lesson, $user = null, $config = [])
@@ -566,7 +567,7 @@ class CourseHelper
                 $source = $lesson->message ?: $content;
 
                 if ($source) {
-                    $content = apply_filters('the_content', $source); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+                    $content = CustomSanitizer::renderEditorBody($source, $lesson->user_id);
                     if (function_exists('wp_style_engine_get_stylesheet_from_context')) {
                         $core_styles_keys = array('block-supports');
                         // Adds comment if code is prettified to identify core styles sections in debugging.
@@ -687,4 +688,25 @@ class CourseHelper
         return $emailComposer->getHtml();
     }
 
+    /**
+     * The same gate the lesson view applies: the section's unlock date first,
+     * then whatever lock the access filters add on top of it. $enrollment is
+     * passed in because every caller already holds it.
+     */
+    public static function canAccessLesson($lesson, $course, $user, $enrollment)
+    {
+        $section = $lesson->topic;
+        $isCourseAdmin = $course->isCourseAdmin($user);
+        $unlockDate = $section ? self::getSectionAccessDate($section, $course->getCourseType(), $enrollment) : '';
+        $hasSectionAccess = $enrollment && (!$unlockDate || strtotime($unlockDate) <= strtotime(current_time('mysql')));
+
+        $access = self::resolveLessonAccess($hasSectionAccess || $isCourseAdmin, $lesson, $course, $user, [
+            'enrollment'         => $enrollment,
+            'section'            => $section,
+            'is_admin'           => $isCourseAdmin,
+            'has_section_access' => $hasSectionAccess,
+        ]);
+
+        return !empty($access['can_view']);
+    }
 }

@@ -170,14 +170,7 @@ class Feed extends Model
             $title = mb_substr((string) $newModel->message, 0, 40, 'UTF-8');
         }
 
-        $title = Helper::normalizeToAscii($title);
-        $title = remove_accents($title);
-
-        $title = strtolower($title);
-        // only allow alphanumeric, dash, and underscore
-        $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
-
-        $title = sanitize_title($title, 'post-' . time());
+        $title = Utility::slugify($title, 'post-' . time());
 
         // check if the slug is already exists
         $slug = $title;
@@ -231,8 +224,17 @@ class Feed extends Model
             $in = [ 'post_content' ];
         }
 
+        // Match only comments the searcher could see in the comment list
+        $commentSearch = function ($q) use ($search) {
+            $q->where('message', 'LIKE', "%$search%")
+                ->byContentModerationAccessStatus(Helper::getCurrentUser())
+                ->whereHas('xprofile', function ($x) {
+                    $x->where('status', 'active');
+                });
+        };
+
         $fields = $this->searchable;
-        $query->where(function ($query) use ($fields, $search, $in) {
+        $query->where(function ($query) use ($fields, $search, $in, $commentSearch) {
             if (in_array('post_content', $in)) {
                 $query->where(array_shift($fields), 'LIKE', "%$search%");
                 foreach ($fields as $field) {
@@ -245,14 +247,10 @@ class Feed extends Model
                 });
 
                 if ($in && in_array('post_comments', $in)) {
-                    $query->orWhereHas('comments', function ($q) use ($search) {
-                        return $q->where('message', 'LIKE', "%$search%");
-                    });
+                    $query->orWhereHas('comments', $commentSearch);
                 }
             } elseif ($in && in_array('post_comments', $in)) {
-                $query->whereHas('comments', function ($q) use ($search) {
-                    return $q->where('message', 'LIKE', "%$search%");
-                });
+                $query->whereHas('comments', $commentSearch);
             }
         });
 
@@ -265,7 +263,8 @@ class Feed extends Model
             return $query->where(function ($subQuery) use ($userId) {
                 $subQuery->where('user_id', $userId)->orWhereNull('space_id')
                     ->orWhereHas('space', function ($q) use ($userId) {
-                        $spaceIds = get_user_meta($userId, '_fcom_space_ids', true);
+                        $user = User::find($userId);
+                        $spaceIds = $user ? $user->getAccessSpaceIds() : [];
                         if ($spaceIds) {
                             $q->whereIn('id', $spaceIds);
                             return $q;

@@ -49,6 +49,13 @@ class SpacePolicy extends BasePolicy
         return $xProfile && $xProfile->status == 'active';
     }
 
+    public function markSeen(Request $request)
+    {
+        $xProfile = Helper::getCurrentProfile(true);
+
+        return $xProfile && $xProfile->status == 'active';
+    }
+
     public function create(Request $request)
     {
         return $this->canManageCommunity($request, null);

@@ -5,6 +5,7 @@ namespace FluentCommunity\App\Http\Controllers;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
+use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\OnboardingService;
 use FluentCommunity\Framework\Http\Request\Request;
@@ -14,6 +15,11 @@ use FluentCommunity\Modules\Course\Model\Course;
 
 class SettingController extends Controller
 {
+    private $orderOptionKeys = [
+        'spaces'  => 'fluent_community_spaces_order',
+        'courses' => 'fluent_community_courses_order',
+    ];
+
     public function getFeatures()
     {
         $features = Utility::getFeaturesConfig();
@@ -142,6 +148,72 @@ class SettingController extends Controller
 
         return [
             'message' => __('Menu settings saved successfully.', 'fluent-community')
+        ];
+    }
+
+    /*
+     * Lists every space or course of the type regardless of the admin's own membership,
+     * so secret spaces and courses can be placed too and a save never drops them.
+     */
+    public function getOrderItems(Request $request)
+    {
+        $type = $request->getSafe('type', 'sanitize_text_field');
+        $optionKey = Arr::get($this->orderOptionKeys, $type);
+
+        if (!$optionKey) {
+            return $this->sendError([
+                'message' => __('Invalid order type.', 'fluent-community'),
+            ]);
+        }
+
+        $columns = [ 'id', 'title', 'privacy', 'status', 'logo', 'cover_photo', 'settings' ];
+        $query = $type === 'courses' ? Course::query()->select($columns) : Space::query()->select($columns);
+
+        // Only what the drawer rows draw: the avatar falls back from logo to emoji to shape.
+        $items = Utility::applyCustomOrder($query, $optionKey)->get()->map(function ($item) {
+            return [
+                'id'          => $item->id,
+                'title'       => $item->title,
+                'privacy'     => $item->privacy,
+                'status'      => $item->status,
+                'logo'        => $item->logo,
+                'cover_photo' => $item->cover_photo,
+                'settings'    => Arr::only((array) $item->settings, [ 'emoji', 'shape_svg' ]),
+            ];
+        });
+
+        return [
+            'items' => $items,
+        ];
+    }
+
+    public function saveOrder(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'type'  => 'required',
+        ]);
+
+        $type = $request->getSafe('type', 'sanitize_text_field');
+        $optionKey = Arr::get($this->orderOptionKeys, $type);
+
+        if (!$optionKey) {
+            return $this->sendError([
+                'message' => __('Invalid order type.', 'fluent-community')
+            ]);
+        }
+
+        $order = CustomSanitizer::sanitizeIdList($request->get('order', []));
+
+        $model = $type === 'courses' ? Course::class : Space::class;
+        $validIds = $order ? $model::query()->whereIn('id', $order)->pluck('id')->toArray() : [];
+        $order = array_values(array_intersect($order, $validIds));
+
+        Utility::updateOption($optionKey, $order);
+
+        return [
+            'message' => __('Order saved successfully.', 'fluent-community'),
+            'order'   => $order
         ];
     }
 
@@ -387,15 +459,18 @@ class SettingController extends Controller
         $settings = $request->get('settings', []);
 
         $yesNoFields = [
-            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout', 'collapse_sidebar_groups', 'hide_header_on_scroll', 'enable_sidebar_toggle'
+            'dark_mode', 'fixed_page_header', 'show_powered_by', 'show_post_modal', 'feed_link_on_sidebar', 'fixed_sidebar', 'icon_on_header_menu', 'disable_feed_layout', 'collapse_sidebar_groups', 'hide_header_on_scroll', 'enable_sidebar_toggle',
+            'disable_space_sort_by', 'disable_course_sort_by',
         ];
 
         foreach ($settings as $key => $value) {
             if (in_array($key, $yesNoFields)) {
                 $settings[$key] = $value == 'yes' ? 'yes' : 'no';
-            } else if ($key == 'default_theme_mode') {
+            } elseif (in_array($key, [ 'default_space_sort_by', 'default_course_sort_by' ], true)) {
+                $settings[$key] = in_array($value, [ 'custom', 'alphabetical', 'latest', 'oldest' ], true) ? $value : '';
+            } elseif ($key === 'default_theme_mode') {
                 $settings[$key] = in_array($value, ['light', 'dark', 'system'], true) ? $value : 'light';
-            } else if ($key == 'affiliate_id') {
+            } elseif ($key === 'affiliate_id') {
                 $settings[$key] = (int)$value;
                 if (!$settings[$key]) {
                     $settings[$key] = '';

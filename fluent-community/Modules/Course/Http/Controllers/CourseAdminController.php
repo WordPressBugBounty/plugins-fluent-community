@@ -71,7 +71,7 @@ class CourseAdminController extends Controller
         $this->validate($request->all(), [
             'title'       => 'required',
             'description' => 'required',
-            'privacy'     => 'required|in:public,private,secret',
+            'privacy'     => 'required|in:' . implode(',', BaseSpace::PRIVACY_TYPES),
             'course_type' => 'required|in:self_paced,structured,scheduled',
         ]);
 
@@ -126,14 +126,9 @@ class CourseAdminController extends Controller
 
         $slug = $request->get('slug');
 
-        $slug = $slug ? $slug : $courseData['title'];
-
-        $slug = preg_replace('/[^a-zA-Z0-9-_]/', '', $slug);
-
-        $slug = sanitize_title($slug, '');
+        $slug = Utility::slugify($slug ? $slug : $courseData['title']);
 
         if ($slug) {
-            $slug = Utility::slugify($slug);
             $exist = Course::where('slug', $slug)
                 ->exists();
 
@@ -219,7 +214,7 @@ class CourseAdminController extends Controller
         $this->validate($request->all(), [
             'title'       => 'required',
             'description' => 'required',
-            'privacy'     => 'required|in:public,private,secret',
+            'privacy'     => 'required|in:' . implode(',', BaseSpace::PRIVACY_TYPES),
             'status'      => 'required|in:draft,published,archived',
             'course_type' => 'required|in:self_paced,structured,scheduled',
             'created_by'  => 'exists:users,ID',

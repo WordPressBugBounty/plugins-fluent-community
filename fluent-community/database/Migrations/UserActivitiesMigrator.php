@@ -29,6 +29,7 @@ class UserActivitiesMigrator
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
                 INDEX `feed_id` (`feed_id`),
+                INDEX `space_id` (`space_id`),
                 INDEX `user_id` (`user_id`),
                 INDEX `action_name` (`action_name`)
             ) $charsetCollate;";

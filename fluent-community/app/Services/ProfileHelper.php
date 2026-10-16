@@ -234,10 +234,8 @@ class ProfileHelper
 
         $user = get_user_by('login', $userName);
 
-        if ($user) {
-            if ($targetUserId && $user->ID != $targetUserId) {
-                return false;
-            }
+        if ($user && (!$targetUserId || $user->ID != $targetUserId)) {
+            return false;
         }
 
         $xProfile = XProfile::where('username', $userName)
@@ -278,29 +276,41 @@ class ProfileHelper
             return $userName;
         }
 
+        $baseName = $userName;
+
         foreach ($fallbacks as $fallback) {
-            // only take alphanumeric characters and _ -
-            $fallback = preg_replace('/[^a-zA-Z0-9_-]/', '', $fallback);
-            $userName = CustomSanitizer::sanitizeUserName($fallback);
+            $fallback = CustomSanitizer::sanitizeUserName($fallback);
+            if (self::isUsernameAvailable($fallback, $userId)) {
+                return $fallback;
+            }
+
+            if (!$baseName) {
+                $baseName = $fallback;
+            }
+        }
+
+        // Numbered from the cleaned name, never the raw email part: that one can carry
+        // dots, a +tag or a non-Latin script, which WordPress rewrites or strips on insert
+        if (!$baseName) {
+            $baseName = 'member';
+        }
+
+        // Bounded: each check costs two queries, so a crowded base name must not turn
+        // one signup into an unbounded scan. Past 20, switch to random suffixes
+        for ($counter = 2; $counter <= 20; $counter++) {
+            if (self::isUsernameAvailable($baseName . $counter, $userId)) {
+                return $baseName . $counter;
+            }
+        }
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $userName = $baseName . strtolower(wp_generate_password(6, false, false));
             if (self::isUsernameAvailable($userName, $userId)) {
                 return $userName;
             }
         }
 
-        $userName = strtolower($emailParts[0]);
-
-        $finalUserName = $userName;
-        // loop until we find a unique username
-        $counter = 2;
-        while (!self::isUsernameAvailable($userName, $userId)) {
-            $userName = $finalUserName . $counter;
-            $counter++;
-            if ($counter % 100 === 0) {
-                $finalUserName = $finalUserName . $userId . '-';
-            }
-        }
-
-        return $userName;
+        return $baseName . strtolower(wp_generate_password(12, false, false));
     }
 
     public static function createWpUser(array $userData)

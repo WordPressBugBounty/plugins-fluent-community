@@ -43,16 +43,14 @@ class SpaceController extends Controller
 
         $slug = Arr::get($data, 'slug') ?: Arr::get($data, 'title');
 
-        $slug = preg_replace('/[^a-zA-Z0-9-_]/', '', $slug);
-
-        $data['slug'] = sanitize_title($slug, '');
+        $data['slug'] = Utility::slugify($slug);
         $data['title'] = sanitize_text_field(Arr::get($data, 'title'));
         $data['privacy'] = sanitize_text_field(Arr::get($data, 'privacy'));
 
         $this->validate($data, [
             'title'   => 'required',
             'slug'    => 'unique:fcom_spaces,slug',
-            'privacy' => 'required|in:public,private,secret'
+            'privacy' => 'required|in:' . implode(',', BaseSpace::PRIVACY_TYPES)
         ]);
 
         if (Arr::get($data, 'settings.topic_required') === 'yes' && !array_filter((array)Arr::get($data, 'topic_ids', []))) {
@@ -154,17 +152,23 @@ class SpaceController extends Controller
         $currentUser = $this->getUser();
         $type = $request->getSafe('type');
         $search = $request->getSafe('search');
-        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
+        $sortBy = Utility::getListingSort('space', $request->getSafe('sort_by', 'sanitize_text_field', ''));
 
-        $spaces = Space::with(['space_pivot' => function ($q) {
+        // A community moderator already reaches every space, so hiding the secret ones
+        // here only made the Spaces page disagree with the sidebar, feed and getBySlug().
+        $isModerator = $currentUser && $currentUser->hasCommunityModeratorAccess();
+
+        $query = Space::with(['space_pivot' => function ($q) {
             $q->where('user_id', get_current_user_id());
         }])
-            ->where(function ($q) {
-                $q->whereHas('space_pivot', function ($q) {
-                    $q->where('user_id', get_current_user_id())
-                        ->where('status', 'active');
-                })
-                    ->orWhereIn('privacy', ['public', 'private']);
+            ->when(!$isModerator, function ($q) {
+                $q->where(function ($q) {
+                    $q->whereHas('space_pivot', function ($q) {
+                        $q->where('user_id', get_current_user_id())
+                            ->where('status', 'active');
+                    })
+                        ->orWhereIn('privacy', ['public', 'private']);
+                });
             })
             ->when($type == 'joined', function ($q) {
                 $q->whereHas('space_pivot', function ($q) {
@@ -183,7 +187,11 @@ class SpaceController extends Controller
             ->when($sortBy == 'latest', function ($q) {
                 $q->orderBy('created_at', 'DESC');
             })
-            ->paginate();
+            ->when($sortBy == 'custom', function ($q) {
+                Utility::applyCustomOrder($q, 'fluent_community_spaces_order');
+            });
+
+        $spaces = $query->paginate();
 
         $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
 
@@ -555,6 +563,15 @@ class SpaceController extends Controller
         ];
     }
 
+    public function markSeen(Request $request, $slug)
+    {
+        $spaceId = BaseSpace::where('slug', $slug)->value('id');
+
+        return [
+            'success' => $spaceId && Helper::markSpaceSeen($spaceId, get_current_user_id())
+        ];
+    }
+
     public function deleteBySlug(Request $request, $slug)
     {
         $space = Space::where('slug', $slug)->first();
@@ -731,8 +748,10 @@ class SpaceController extends Controller
         }
 
         $selects = ['ID', 'display_name'];
+        $searchFields = ['display_name'];
         if ($isMod) {
             $selects[] = 'user_email';
+            $searchFields[] = 'user_email';
         }
 
         $userQuery = User::select(['ID'])
@@ -740,7 +759,7 @@ class SpaceController extends Controller
                 $q->where('space_id', $space->id);
             })
             ->limit(100)
-            ->searchBy($request->getSafe('search'));
+            ->searchBy($request->getSafe('search'), $searchFields);
 
         if (is_multisite()) {
             global $wpdb;

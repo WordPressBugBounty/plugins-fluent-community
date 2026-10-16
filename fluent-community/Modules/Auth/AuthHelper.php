@@ -266,14 +266,15 @@ class AuthHelper
                 'placeholder'       => __('Password', 'fluent-community'),
                 'label'             => __('Account Password', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_text_field'
+                // kept as typed, like WordPress core: a password is only ever hashed
+                'sanitize_callback' => ''
             ],
             'conf_password' => [
                 'type'              => 'password',
                 'placeholder'       => __('Password Confirmation', 'fluent-community'),
                 'label'             => __('Re-type Account Password', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_text_field'
+                'sanitize_callback' => ''
             ],
             'terms'         => [
                 'type'         => 'inline_checkbox',

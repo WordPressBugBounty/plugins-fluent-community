@@ -12,6 +12,7 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->put('/{spaceId}/by-id', 'SpaceController@patchById')->int('spaceId');
     $router->post('/{spaceSlug}/join', 'SpaceController@join')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/leave', 'SpaceController@leave')->alphaNumDash('spaceSlug');
+    $router->post('/{spaceSlug}/mark-seen', 'SpaceController@markSeen')->alphaNumDash('spaceSlug');
 
     $router->get('/{spaceSlug}/meta-settings', 'SpaceController@getMetaSettings')->alphaNumDash('spaceSlug');
 
@@ -110,9 +111,6 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('/push-settings', 'AdminController@getPushSettings');
     $router->post('/push-settings', 'AdminController@savePushSettings');
 
-    $router->get('/storage-settings', 'AdminController@getStorageSettings');
-    $router->post('/storage-settings', 'AdminController@updateStorageSettings');
-
     $router->get('/welcome-banner', 'AdminController@getWelcomeBannerSettings');
     $router->post('/welcome-banner', 'AdminController@updateWelcomeBannerSettings');
 
@@ -128,6 +126,9 @@ $router->prefix('admin')->withPolicy('AdminPolicy')->group(function ($router) {
 });
 
 $router->prefix('admin')->withPolicy('SuperAdminPolicy')->group(function ($router) {
+    $router->get('/storage-settings', 'AdminController@getStorageSettings');
+    $router->post('/storage-settings', 'AdminController@updateStorageSettings');
+
     $router->post('/on-boardings', 'AdminController@saveOnBoardingSettings');
     $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
 });
@@ -160,11 +161,20 @@ $router->prefix('options')->withPolicy('PortalPolicy')->group(function ($router)
     $router->get('/menu-items', 'OptionController@getMenuItems');
 });
 
+$router->prefix('insights')->withPolicy('InsightsPolicy')->group(function ($router) {
+    $router->get('/pages', 'InsightsController@pages');
+    $router->get('/pages/{page}', 'InsightsController@page')->alphaNumDash('page');
+    $router->get('/cards/{card}', 'InsightsController@card')->where('card', '[a-z0-9_.-]+');
+    $router->get('/cards/{card}/export', 'InsightsController@export')->where('card', '[a-z0-9_.-]+');
+});
+
 $router->prefix('settings')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('features', 'SettingController@getFeatures');
     $router->post('features', 'SettingController@setFeatures');
     $router->get('menu-settings', 'SettingController@getMenuSettings');
     $router->post('menu-settings', 'SettingController@saveMenuSettings');
+    $router->get('reorder', 'SettingController@getOrderItems');
+    $router->post('reorder', 'SettingController@saveOrder');
     $router->post('install_plugin', 'SettingController@installPlugin');
     $router->get('customization-settings', 'SettingController@getCustomizationSettings');
     $router->post('customization-settings', 'SettingController@updateCustomizationSettings');

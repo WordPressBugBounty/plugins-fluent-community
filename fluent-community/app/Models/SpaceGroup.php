@@ -118,8 +118,8 @@ class SpaceGroup extends Model
             $this->title = sanitize_text_field($data['title']);
         }
 
-        if (isset($data['privacy'])) {
-            $this->privacy = sanitize_text_field($data['privacy']);
+        if (isset($data['privacy']) && in_array($data['privacy'], BaseSpace::PRIVACY_TYPES, true)) {
+            $this->privacy = $data['privacy'];
         }
 
         $deletePhotos = array_filter($deletePhotos);

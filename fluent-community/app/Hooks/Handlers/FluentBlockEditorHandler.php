@@ -190,6 +190,8 @@ class FluentBlockEditorHandler
             wp_enqueue_style('admin-bar');
             wp_enqueue_style('l10n');
 
+            $this->preloadEditorRestData($post);
+
             wp_add_inline_script(
                 'wp-api-fetch',
                 \sprintf(
@@ -259,6 +261,88 @@ class FluentBlockEditorHandler
 
         // Disable Jetpack Blocks for now.
         add_filter('jetpack_gutenberg', '__return_false');
+    }
+
+    /**
+     * Inline the REST responses the editor fetches on startup, mirroring core's
+     * wp-admin/edit-form-blocks.php. Without this each one is a separate request that
+     * boots WordPress and every active plugin, in about five sequential waves.
+     * The simulated post itself is preloaded separately with the real lesson content.
+     *
+     * @param \WP_Post $post
+     */
+    private function preloadEditorRestData($post)
+    {
+        if (!function_exists('block_editor_rest_api_preload') || !class_exists('WP_Block_Editor_Context')) {
+            return;
+        }
+
+        block_editor_rest_api_preload(
+            $this->getEditorRestPreloadPaths($post),
+            new \WP_Block_Editor_Context([ 'post' => $post ])
+        );
+    }
+
+    private function getEditorRestPreloadPaths($post)
+    {
+        $postType = $post->post_type;
+        $restPath = rest_get_route_for_post($post);
+        $activeTheme = get_stylesheet();
+        $globalStylesId = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
+        $globalStylesContext = current_user_can('edit_theme_options') ? 'edit' : 'view';
+
+        $templateLookupSlug = 'single-' . $postType;
+        if (!empty($post->post_name)) {
+            $templateLookupSlug .= '-' . $post->post_name;
+        }
+
+        $paths = [
+            '/wp/v2/types?context=view',
+            '/wp/v2/taxonomies?context=view',
+            sprintf('/wp/v2/types/%s?context=edit', $postType),
+            '/wp/v2/users/me',
+            [ rest_get_route_for_post_type_items('attachment'), 'OPTIONS' ],
+            [ rest_get_route_for_post_type_items('page'), 'OPTIONS' ],
+            [ rest_get_route_for_post_type_items('wp_block'), 'OPTIONS' ],
+            [ rest_get_route_for_post_type_items('wp_template'), 'OPTIONS' ],
+            '/wp/v2/settings',
+            [ '/wp/v2/settings', 'OPTIONS' ],
+            '/wp/v2/global-styles/themes/' . $activeTheme . '?context=view',
+            '/wp/v2/global-styles/themes/' . $activeTheme . '/variations?context=view',
+            '/wp/v2/themes?context=edit&status=active',
+            [ '/wp/v2/global-styles/' . $globalStylesId, 'OPTIONS' ],
+            '/wp/v2/global-styles/' . $globalStylesId . '?context=' . $globalStylesContext,
+            '/wp/v2/block-patterns/categories',
+            // Field order must match the client request exactly (core-data entities.js).
+            '/?_fields=' . implode(',', [
+                'description',
+                'gmt_offset',
+                'home',
+                'image_max_bit_depth',
+                'image_sizes',
+                'image_size_threshold',
+                'image_strip_meta',
+                'name',
+                'site_icon',
+                'site_icon_url',
+                'site_logo',
+                'timezone_string',
+                'url',
+                'page_for_posts',
+                'page_on_front',
+                'show_on_front',
+            ]),
+            add_query_arg('slug', $templateLookupSlug, '/wp/v2/templates/lookup'),
+            '/wp/v2/templates/lookup?slug=front-page',
+            '/wp/v2/taxonomies?context=edit',
+            [ rest_get_route_for_post_type_items($postType), 'OPTIONS' ],
+        ];
+
+        if ($restPath) {
+            $paths[] = $restPath . '/autosaves?context=edit';
+        }
+
+        return $paths;
     }
 
     private function gutenberg_editor_scripts_and_styles($hook, $post)

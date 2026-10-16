@@ -19,6 +19,16 @@ class CourseModule
 
         // Add to Menu
         add_filter('fluent_community/main_menu_items', [$this, 'maybeRemoveCourseMenu']);
+
+        add_filter('fluent_community/insights/cards', [$this, 'registerInsightsCards']);
+    }
+
+    public function registerInsightsCards($cards)
+    {
+        $cards[] = new \FluentCommunity\Modules\Course\Services\Insights\CourseSummaryCard();
+        $cards[] = new \FluentCommunity\Modules\Course\Services\Insights\EnrollmentsCard();
+
+        return $cards;
     }
 
     public function maybeRemoveCourseMenu($items)

@@ -286,9 +286,24 @@ class AdminController extends Controller
             ]);
         }
 
-        $config = (array)$request->get('config', []);
+        $config = Arr::only((array)$request->get('config', []), [
+            'driver',
+            'access_key',
+            'secret_key',
+            'bucket',
+            'public_url',
+            'endpoint_url',
+            'account_id',
+            'sub_folder',
+            's3_endpoint'
+        ]);
+
+        foreach ($config as $key => $value) {
+            $config[$key] = in_array($key, ['public_url', 'endpoint_url'], true) ? sanitize_url($value) : sanitize_text_field($value);
+        }
 
         $driver = Arr::get($config, 'driver', 'local');
+        $config['driver'] = $driver;
 
         $validation = [
             'driver' => 'required'
@@ -325,6 +340,18 @@ class AdminController extends Controller
 
         if ($isRemote) {
             $previousConfig = \FluentCommunityPro\App\Modules\CloudStorage\StorageHelper::getConfig();
+            $usesStoredKeys = $config['access_key'] == 'FCOM_ENCRYPTED_DATA_KEY' || Arr::get($config, 'secret_key') == 'FCOM_ENCRYPTED_DATA_KEY';
+
+            if ($usesStoredKeys) {
+                foreach (['driver', 'bucket', 's3_endpoint', 'endpoint_url'] as $targetKey) {
+                    if ((string)Arr::get($config, $targetKey) !== (string)Arr::get($previousConfig, $targetKey)) {
+                        return $this->sendError([
+                            'message' => __('The storage location has changed. Please enter the access key and secret key again.', 'fluent-community')
+                        ]);
+                    }
+                }
+            }
+
             if ($config['access_key'] == 'FCOM_ENCRYPTED_DATA_KEY') {
                 $config['access_key'] = Arr::get($previousConfig, 'access_key');
             }
@@ -349,18 +376,6 @@ class AdminController extends Controller
                 ]);
             }
         }
-
-        $config = Arr::only($config, [
-            'driver',
-            'access_key',
-            'secret_key',
-            'bucket',
-            'public_url',
-            'endpoint_url',
-            'account_id',
-            'sub_folder',
-            's3_endpoint'
-        ]);
 
         if ($config['driver'] == 'local') {
             $config = [

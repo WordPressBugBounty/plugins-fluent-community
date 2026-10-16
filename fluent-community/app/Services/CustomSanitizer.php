@@ -704,10 +704,94 @@ class CustomSanitizer
 
     public static function santizeEditorBody($body)
     {
-        if (current_user_can('unfiltered_html')) {
-            return $body;
+        if (!current_user_can('unfiltered_html')) {
+            $body = wp_kses_post($body);
         }
 
-        return wp_kses_post($body);
+        if (!current_user_can('edit_posts')) {
+            $body = has_blocks($body) ? serialize_blocks(self::stripBlockShortcodes(parse_blocks($body))) : self::stripShortcodesFully($body);
+        }
+
+        return $body;
+    }
+
+    /**
+     * strip_shortcodes() unwraps an escaped [[tag]] into a live [tag] instead of
+     * removing it, so it runs until nothing changes.
+     */
+    private static function stripShortcodesFully($content)
+    {
+        do {
+            $previous = $content;
+            $content = strip_shortcodes($content);
+        } while ($content !== $previous);
+
+        return $content;
+    }
+
+    /**
+     * strip_shortcodes() skips HTML comments, which is where block attributes live,
+     * so each block's attributes and markup are stripped one by one.
+     */
+    private static function stripBlockShortcodes(array $blocks)
+    {
+        $strip = function ($value) {
+            return is_string($value) ? self::stripShortcodesFully($value) : $value;
+        };
+
+        foreach ($blocks as &$block) {
+            $attrs = (array)$block['attrs'];
+            array_walk_recursive($attrs, function (&$value) use ($strip) {
+                $value = $strip($value);
+            });
+
+            $block['attrs'] = $attrs;
+            $block['innerHTML'] = $strip($block['innerHTML']);
+            $block['innerContent'] = array_map($strip, $block['innerContent']);
+            $block['innerBlocks'] = self::stripBlockShortcodes($block['innerBlocks']);
+        }
+        unset($block);
+
+        return $blocks;
+    }
+
+    /**
+     * Renders editor content through the_content, running shortcodes only when the
+     * author holds edit_posts. Stripping the source alone is not enough: a dynamic
+     * block can decode a shortcode from its JSON attributes after the strip, so
+     * do_shortcode is unhooked for the render as well.
+     */
+    public static function renderEditorBody($content, $authorId)
+    {
+        if (user_can($authorId, 'edit_posts')) {
+            return apply_filters('the_content', $content); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+        }
+
+        $priority = has_filter('the_content', 'do_shortcode');
+
+        if ($priority !== false) {
+            remove_filter('the_content', 'do_shortcode', $priority);
+        }
+
+        try {
+            return apply_filters('the_content', strip_shortcodes($content)); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+        } finally {
+            if ($priority !== false) {
+                add_filter('the_content', 'do_shortcode', $priority);
+            }
+        }
+    }
+
+    public static function sanitizeIdList($input, $options = [])
+    {
+        if (!is_array($input)) {
+            return [];
+        }
+        $ids = array_values(array_filter(array_map('intval', $input)));
+        $unique = !array_key_exists('unique', $options) || $options['unique'];
+        if ($unique) {
+            $ids = array_values(array_unique($ids));
+        }
+        return $ids;
     }
 }

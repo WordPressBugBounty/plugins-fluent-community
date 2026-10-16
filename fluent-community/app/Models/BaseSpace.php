@@ -35,6 +35,8 @@ use FluentCommunity\Framework\Support\Arr;
  */
 class BaseSpace extends Model
 {
+    const PRIVACY_TYPES = ['public', 'private', 'secret'];
+
     protected $table = 'fcom_spaces';
 
     protected static $type = 'community';
@@ -95,6 +97,16 @@ class BaseSpace extends Model
                     'is_active' => 0,
                 ]);
         });
+
+        // Keep the stored activity flag in sync; covers both space and course privacy edits
+        static::updated(function ($space) {
+            if ($space->wasChanged('privacy') && in_array($space->type, [ 'community', 'course' ], true)) {
+                Activity::where('space_id', $space->id)
+                    ->update([
+                        'is_public' => $space->isPublic() ? 1 : 0,
+                    ]);
+            }
+        });
     }
 
     public function owner()
@@ -142,13 +154,19 @@ class BaseSpace extends Model
             return $query->where('privacy', 'public');
         }
 
-        $ids = get_user_meta($userId, '_fcom_space_ids', true);
+        $user = User::find($userId);
+        $ids = $user ? $user->getAccessSpaceIds() : [];
 
         if (!$ids) {
             return $query->where('privacy', 'public');
         }
 
         return $query->whereIn('id', $ids);
+    }
+
+    public function isPublic()
+    {
+        return $this->privacy === 'public';
     }
 
     public function scopeByUserAccess($query, $userId)
@@ -282,8 +300,8 @@ class BaseSpace extends Model
             $this->title = sanitize_text_field($data['title']);
         }
 
-        if (isset($data['privacy'])) {
-            $this->privacy = sanitize_text_field($data['privacy']);
+        if (isset($data['privacy']) && in_array($data['privacy'], self::PRIVACY_TYPES, true)) {
+            $this->privacy = $data['privacy'];
         }
 
         if (isset($data['parent_id'])) {
@@ -337,9 +355,7 @@ class BaseSpace extends Model
         }
 
         if (!empty($data['slug']) && $data['slug'] !== $this->slug) {
-            $newSlug = preg_replace('/[^a-zA-Z0-9-_]/', '', $data['slug']);
-
-            $newSlug = sanitize_title($newSlug);
+            $newSlug = Utility::slugify($data['slug']);
 
             if (empty($newSlug)) {
                 throw new \Exception('Invalid slug', 400);
@@ -610,16 +626,9 @@ class BaseSpace extends Model
             $title = static::$type . '-' . time();
         }
 
-        $title = Helper::normalizeToAscii($title);
-        $title = remove_accents($title);
-
-        $title = strtolower($title);
-
-        $title = trim(preg_replace('/[^a-z0-9-_]/', ' ', $title));
-
         $slugNum = self::withoutGlobalScopes()->where('type', static::$type)->count();
 
-        $title = sanitize_title($title, static::$type . '-' . $slugNum);
+        $title = Utility::slugify($title, static::$type . '-' . $slugNum);
 
         // check if the slug is already exists
         $slug = $title;

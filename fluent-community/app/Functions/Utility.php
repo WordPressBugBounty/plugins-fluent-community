@@ -15,6 +15,14 @@ use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 
 class Utility
 {
+    /**
+     * Memoised result of getPrivacySettings(). A property rather than a
+     * function-local static so updatePrivacySettings() can drop it.
+     *
+     * @var array|null
+     */
+    private static $privacySettings = null;
+
     public static function isDev()
     {
         static $isDev = null;
@@ -56,6 +64,51 @@ class Utility
 
             return $default;
         });
+    }
+
+    /**
+     * Orders a spaces/courses query by an admin-saved id list. Ids missing from the list
+     * (created after the last save) come first, newest on top, then the saved order.
+     */
+    public static function applyCustomOrder($query, $optionKey)
+    {
+        $ids = \FluentCommunity\App\Services\CustomSanitizer::sanitizeIdList(self::getOption($optionKey, []));
+
+        if (!$ids) {
+            return $query->orderBy('title', 'ASC')->orderBy('id', 'ASC');
+        }
+
+        return $query->orderByRaw('FIELD(id, ' . implode(',', $ids) . ') ASC')
+            ->orderBy('created_at', 'DESC')
+            ->orderBy('id', 'DESC');
+    }
+
+    /**
+     * The sort a Spaces (`space`) or Courses (`course`) listing should use: the admin's
+     * default when members can't change it or asked for something unknown.
+     */
+    public static function getListingSort($type, $requested)
+    {
+        return self::resolveListingSort(
+            $requested,
+            self::getCustomizationSetting('default_' . $type . '_sort_by'),
+            self::getCustomizationSetting('disable_' . $type . '_sort_by') === 'yes'
+        );
+    }
+
+    public static function resolveListingSort($requested, $defaultSort, $isLocked)
+    {
+        $allowed = [ 'custom', 'alphabetical', 'latest', 'oldest' ];
+
+        if (!in_array($defaultSort, $allowed, true)) {
+            $defaultSort = 'alphabetical';
+        }
+
+        if ($isLocked || !in_array($requested, $allowed, true)) {
+            return $defaultSort;
+        }
+
+        return $requested;
     }
 
     /**
@@ -221,6 +274,10 @@ class Utility
             'max_media_per_post'   => 4,
             'disable_feed_sort_by' => 'no',
             'default_feed_sort_by' => '',
+            'default_space_sort_by'  => '',
+            'disable_space_sort_by'  => 'no',
+            'default_course_sort_by' => '',
+            'disable_course_sort_by' => 'no',
             'collapse_sidebar_groups' => 'no',
             'hide_header_on_scroll'   => 'no',
             'enable_sidebar_toggle' => 'no'
@@ -257,10 +314,8 @@ class Utility
 
     public static function getPrivacySettings()
     {
-        static $settings;
-
-        if ($settings) {
-            return $settings;
+        if (self::$privacySettings) {
+            return self::$privacySettings;
         }
 
         $defaults = [
@@ -288,6 +343,8 @@ class Utility
             $settings['can_change_email'] = 'no';
             $settings['email_auto_login'] = 'no';
         }
+
+        self::$privacySettings = $settings;
 
         return $settings;
     }
@@ -356,6 +413,7 @@ class Utility
 
         self::updateOption('privacy_settings', $settings);
         self::forgetCache('privacy_settings');
+        self::$privacySettings = null;
 
         return $settings;
     }
@@ -1239,11 +1297,12 @@ class Utility
 
     public static function slugify($text, $fallback = '')
     {
-        $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $text);
+        $title = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', (string) $text);
+
+        // Locale rules first (de: ö → oe), then ICU for scripts remove_accents() skips
+        $title = remove_accents($title);
 
         $title = Helper::normalizeToAscii($title);
-
-        $title = remove_accents($title);
 
         $title = strtolower($title);
         // only allow alphanumeric, dash, and underscore
@@ -1260,15 +1319,20 @@ class Utility
         return sanitize_title($title, $fallback);
     }
 
-    public static function hasAnalyticsEnabled()
+    /**
+     * Insights depth: 'basic' (free: Overview and Courses) or 'full' (Pro
+     * registers the other pages).
+     *
+     * @return string basic|full
+     */
+    public static function insightsLevel()
     {
-        $defaultSettings = ['status' => 'no'];
+        /**
+         * @param string $level basic|full
+         */
+        $level = apply_filters('fluent_community/insights/level', 'basic');
 
-        $settings = apply_filters('fluent_community/features/analytics', $defaultSettings);
-
-        $status = Arr::get($settings, 'status');
-
-        return $status === 'yes';
+        return $level === 'full' ? 'full' : 'basic';
     }
 
     public static function getPortalSidebarData($scope = 'sidebar')

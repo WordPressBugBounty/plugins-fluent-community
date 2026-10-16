@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 (new \FluentCommunity\App\Hooks\Handlers\CleanupHandler())->register();
 (new \FluentCommunity\App\Hooks\Handlers\FluentBlockEditorHandler())->register();
 (new \FluentCommunity\App\Hooks\Handlers\LessonVideoGateHandler())->register();
+(new \FluentCommunity\App\Hooks\Handlers\InsightsTrackingHandler())->register();
 
 // Rate limit handler
 (new \FluentCommunity\App\Hooks\Handlers\RateLimitHandler())->register();

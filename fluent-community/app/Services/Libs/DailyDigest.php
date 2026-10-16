@@ -190,7 +190,12 @@ class DailyDigest
                cellspacing="0" cellpadding="0" border="0">
             <?php
             foreach ($notifications as $index => $notification):
-                $permalink = ProfileHelper::signUserUrlWithAuthHash(Helper::getUrlByJsRoute($notification->route), $this->user->ID);
+                $permalink = Helper::getUrlByJsRoute($notification->route);
+                // Only post and comment notifications link to a post
+                if ($notification->feed_id && in_array($notification->src_object_type, ['feed', 'comment'], true)) {
+                    $permalink = Helper::addNotificationReadMarker($permalink, $notification->feed_id);
+                }
+                $permalink = ProfileHelper::signUserUrlWithAuthHash($permalink, $this->user->ID);
                 $isLast = $totalCount == ($index + 1);
                 ?>
                 <tr>
@@ -202,7 +207,7 @@ class DailyDigest
                                 <td valign="top" style="border-radius: 50%; padding: 4px; vertical-align: top; height: 32px; width: 32px;">
                                     <a href="<?php echo esc_url($permalink); ?>">
                                         <img alt="<?php echo esc_html($notification->xprofile ? $notification->xprofile->display_name : ''); ?>"
-                                            src="<?php echo esc_url($notification->xprofile->avatar); ?>" height="32" width="32"
+                                            src="<?php echo esc_url($notification->xprofile ? $notification->xprofile->avatar : FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png'); ?>" height="32" width="32"
                                             style="border-radius: 50%; height: 32px; width: 32px; display: block;">
                                     </a>
                                 </td>

@@ -73,7 +73,7 @@ class AuthModdule
         }
 
         // Remove fcom_action and fcom_url_hash from the current url
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $currentUrl = home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $url = remove_query_arg(['fcom_action', 'fcom_url_hash'], $currentUrl);
         $this->redirectAndExit($url);
     }
@@ -238,7 +238,7 @@ class AuthModdule
             }
         }
 
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $currentUrl = home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         do_action('fluent_community/enqueue_global_assets', true);
         add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm, $inviation) {
@@ -390,6 +390,15 @@ class AuthModdule
             ], 403);
         }
 
+        // Rate-limit before any validation so the "already taken" responses can't be used to enumerate accounts.
+        $rateLimit = AuthHelper::isAuthRateLimit();
+
+        if (is_wp_error($rateLimit)) {
+            wp_send_json([
+                'message' => $rateLimit->get_error_message()
+            ], 422);
+        }
+
         $invitationToken = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : '';
         $hasValidInvitation = false;
         if ($invitationToken) {
@@ -441,15 +450,16 @@ class AuthModdule
             ], 422);
         }
 
-        $invitationToken = $request->get('invitation_token');
         $invitation = null;
         if ($invitationToken) {
-            $invitation = Invitation::where('message_rendered', $invitationToken)->first();
-            if (!$invitation) {
+            // Reuse the invitation validated above: an accepted or expired one must not skip email verification.
+            if (!$hasValidInvitation) {
                 wp_send_json([
                     'message' => __('Invalid invitation token', 'fluent-community')
                 ], 422);
             }
+
+            $invitation = $pendingInvitation;
 
             if ($invitation->message && $invitation->message != $data['email']) {
                 wp_send_json([
@@ -528,14 +538,6 @@ class AuthModdule
             $data['last_name'] = implode(' ', array_slice($nameParts, 1));
             unset($data['full_name']);
             $data = array_filter($data);
-        }
-
-        $rateLimit = AuthHelper::isAuthRateLimit();
-
-        if (is_wp_error($rateLimit)) {
-            wp_send_json([
-                'message' => $rateLimit->get_error_message()
-            ], 422);
         }
 
         // We need two-factor authentication here
@@ -731,7 +733,7 @@ class AuthModdule
         $isFluentAuth = AuthHelper::isFluentAuthAvailable();
         $loginSettings = AuthenticationService::getFormattedAuthSettings('login');
         $formSettings = Arr::get($loginSettings, 'form');
-        $currentUrl = home_url(add_query_arg($_GET, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $currentUrl = home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         /* translators: %s is replaced by the title of the site */
         $title = sprintf(__('Login to %s', 'fluent-community'), Arr::get($portalSettings, 'site_title'));
 
@@ -917,7 +919,7 @@ class AuthModdule
 
         add_action('fluent_community/before_registration_form', function ($frameData) {
             if (AuthHelper::isFluentAuthAvailable()) {
-                $currentUrl = esc_url(home_url(add_query_arg($_GET, $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $currentUrl = esc_url(home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
                 $titlePrefix = __('Signup with', 'fluent-community');
                 $html = do_shortcode('[fs_auth_buttons redirect="' . $currentUrl . '" title_prefix="' . $titlePrefix . ' " title=""]');

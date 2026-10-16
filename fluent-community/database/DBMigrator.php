@@ -7,6 +7,7 @@ use FluentCommunity\Database\Migrations\FeedMigrator;
 use FluentCommunity\Database\Migrations\FeedReactionsMigrator;
 use FluentCommunity\Database\Migrations\FeedSpaceMigrator;
 use FluentCommunity\Database\Migrations\FeedSpaceUserMigrator;
+use FluentCommunity\Database\Migrations\InsightsMigrator;
 use FluentCommunity\Database\Migrations\MediaArchiveMigrator;
 use FluentCommunity\Database\Migrations\MetaMigrator;
 use FluentCommunity\Database\Migrations\NotificationPrefMigrator;
@@ -53,5 +54,6 @@ class DBMigrator
         TermFeedMigrator::migrate();
         MediaArchiveMigrator::migrate();
         XProfileMigrator::migrate();
+        InsightsMigrator::migrate();
     }
 }

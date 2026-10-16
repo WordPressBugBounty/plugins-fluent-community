@@ -526,11 +526,17 @@ class PortalHandler
                 'default_feed_layout'     => Utility::getCustomizationSetting('default_feed_layout'),
                 'disable_feed_sort_by'    => Utility::getCustomizationSetting('disable_feed_sort_by'),
                 'default_feed_sort_by'    => Utility::getCustomizationSetting('default_feed_sort_by'),
+                'default_space_sort_by'   => Utility::getListingSort('space', ''),
+                'disable_space_sort_by'   => Utility::getCustomizationSetting('disable_space_sort_by'),
+                'has_space_custom_order'  => (bool) Utility::getOption('fluent_community_spaces_order', []),
+                'default_course_sort_by'  => Utility::getListingSort('course', ''),
+                'disable_course_sort_by'  => Utility::getCustomizationSetting('disable_course_sort_by'),
+                'has_course_custom_order' => (bool) Utility::getOption('fluent_community_courses_order', []),
                 'video_embeder'           => apply_filters('fluent_community/has_video_embeder', true),
                 'has_inline_image_upload' => apply_filters('fluent_community/has_inline_image_upload', 'yes'),
                 'has_topics'              => !!Utility::getTopics(),
                 'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
-                'has_analytics'           => Utility::hasAnalyticsEnabled(),
+                'insights_level'          => Utility::insightsLevel(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
             ],
             'route_classes'              => array_filter([
@@ -547,6 +553,8 @@ class PortalHandler
             'unread_notification_count'  => $userModel ? $userModel->getUnreadNotificationCount() : 0,
             'unread_feed_ids'            => $userModel ? $userModel->getUnreadNotificationFeedIds() : [],
             'date_offset'                => time() - current_time('timestamp'),
+            'site_timezone'              => wp_timezone_string(),
+            'start_of_week'              => (int)get_option('start_of_week', 1),
             'date_formatter'             => Helper::getDateFormatter(true),
             'time_formatter'             => Helper::getTimeFormatter(true),
             'date_time_formatter'        => Helper::getDateFormatter(true) . ' ' . Helper::getTimeFormatter(true),
@@ -572,6 +580,7 @@ class PortalHandler
                 'monthsShort'        => __('Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec', 'fluent-community'),
                 /* translators: weekday min Please keep the serial and format*/
                 'weekdaysMin'        => __('Su_Mo_Tu_We_Th_Fr_Sa', 'fluent-community'),
+                'start_of_week'      => (int) get_option('start_of_week', 0),
                 'relativeTime'       => [
                     /* translators: Relative Date Formats. Please do not alter %s*/
                     'future' => __('in %s', 'fluent-community'),
@@ -840,10 +849,9 @@ class PortalHandler
                 $authUrl = $adminAuthUrl;
             } else {
                 $adminAuthUrl = '';
-                $parsedUrl    = wp_parse_url(home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $parsedUrl    = wp_parse_url(home_url(add_query_arg(urlencode_deep(wp_unslash($_REQUEST)), $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 $redirectPath = ($parsedUrl['path'] ?? '/') . (!empty($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
-                $internalUrl  = $this->getAuthUrl();
-                $authUrl      = $internalUrl ? add_query_arg(['redirect_to' => $redirectPath], $internalUrl) : wp_login_url($redirectPath);
+                $authUrl      = $this->getLoginRedirectUrl($redirectPath);
             }
 
             do_action('fluent_community/portal/not_logged_in', $authUrl);
@@ -1354,6 +1362,16 @@ class PortalHandler
     protected function getAuthUrl()
     {
         return apply_filters('fluent_community/auth/login_url', Helper::getAuthUrl());
+    }
+
+    /**
+     * Encoded, so a return path with several query args (e.g. a notification email link) survives login.
+     */
+    protected function getLoginRedirectUrl($redirectPath)
+    {
+        $internalUrl = $this->getAuthUrl();
+
+        return $internalUrl ? add_query_arg(['redirect_to' => rawurlencode($redirectPath)], $internalUrl) : wp_login_url($redirectPath);
     }
 
     public function viewErrorPage($title, $message = '', $showBtn = true, $btnData = [])

@@ -15,7 +15,6 @@ class InvitationController extends Controller
     public function getInvitations(Request $request)
     {
         $user = $this->getUser(true);
-        $isMod = $user->isCommunityModerator();
         $spaceId = intval($request->get('space_id'));
 
         $space = Space::findOrFail($spaceId);
@@ -26,19 +25,13 @@ class InvitationController extends Controller
             $status = '';
         }
 
-        $inviatations = Invitation::where('user_id', $user->ID)
+        $inviatations = Invitation::where('post_id', $spaceId)
             ->when($status, function ($query) use ($status) {
                 $query->where('status', $status);
             })
             ->with(['xprofile' => function ($query) {
                 $query->select(ProfileHelper::getXProfilePublicFields());
             }])
-            ->when(!$isMod, function ($query) use ($user) {
-                $query->where('user_id', $user->ID);
-            })
-            ->when($spaceId, function ($query) use ($spaceId) {
-                $query->where('post_id', $spaceId);
-            })
             ->orderBy('id', 'desc')
             ->paginate();
 
@@ -50,7 +43,7 @@ class InvitationController extends Controller
 
         return [
             'invitations' => $inviatations,
-            'is_mod'      => $isMod
+            'is_mod'      => true
         ];
     }
 

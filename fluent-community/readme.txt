@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.11.0
+Stable tag: 2.12.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,39 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.12.0 (Date: Oct 16, 2026) =
+- Introduced: Insights Reporting for Members, Content and Courses
+- Added: Custom Ordering for Spaces and Courses via a Re-arrange Drawer
+- Added: Default and Locked Sort Options for Spaces and Courses
+- Added: Email Notification Links Mark Their Notification as Read
+- Improved: Realtime Space Unread Badges for Joined Spaces
+- Improved: Unread Badge Window Raised to 14 Days with a Filter
+- Improved: PWA Pull to Refresh Feels More Natural on iOS
+- Improved: Space Membership Schema and Indexes for Faster Filtering
+- Improved: BunnyCDN Uploads Streamed From Disk
+- Improved: Faster Block Editor Startup
+- Security: Access, Shortcode and Signup Hardening Across the Portal
+- Fixed: Activity Feed Showing Posts From Spaces a Member Left Behind
+- Fixed: Activity From Public Courses Hidden From Visitors
+- Fixed: Deleted Posts Lingering in Feeds, Counts and Pinned Slots
+- Fixed: Return Link Lost or Mangled After Portal Login
+- Fixed: Dates and Calendars Ignoring WordPress Date and Week Settings
+- Fixed: Session Ending After a Long-Idle Tab Renewed Its Nonce
+- Fixed: Mention Popup Drifting Off-Screen in Long Posts
+- Fixed: Umlauts Dropped From New Space, Course and Post URLs
+- Fixed: Feed Search Matching Hidden Comments
+- Fixed: Space Header Tabs Wrapping or Staying Hidden After Resize
+- Fixed: Secret Spaces Hidden From Admins on the Spaces Page
+- Fixed: Space Moderators Could Not See Invitations
+- Fixed: Locked Lessons Could Be Marked Complete
+- Fixed: Course Breadcrumb and Menu Links Not Opening in a New Tab
+- Fixed: Pinned Post Shown Twice After a Comment
+- Fixed: Space Admins Losing Post Options on Return
+- Fixed: Signup Passwords Altered Before Saving
+- Fixed: iOS App Documents Opening With No Way Back
+- Fixed: Required Fields Blocking Admin Profile Edits
+- Fixed: Cloud Media Deleted or Signed Through the Wrong Provider
 
 = 2.11.0 (Date: Sep 18, 2026) =
 - Introduced: Space Menu Manager with Drag-and-Drop Ordering

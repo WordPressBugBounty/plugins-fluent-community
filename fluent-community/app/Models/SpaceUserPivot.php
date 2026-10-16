@@ -8,16 +8,30 @@ use FluentCommunity\App\Models\XProfile;
 
 class SpaceUserPivot extends Model
 {
+    /**
+     * `updated_at` holds the member's last visit to the space (see Helper::markSpaceSeen),
+     * so membership saves must not move it.
+     */
+    const UPDATED_AT = null;
+
+    /**
+     * Option holding when `updated_at` started meaning "last visit".
+     */
+    const SEEN_SINCE_OPTION = 'fluent_community_space_seen_since';
+
     protected $table = 'fcom_space_user';
 
     protected $guarded = ['id'];
+
+    // The last visit is private: the members API returns these rows to other members.
+    protected $hidden = [ 'updated_at' ];
 
     protected $fillable = [
         'space_id',
         'user_id',
         'status',
         'role',
-        'meta'
+        'meta',
     ];
 
     public function scopeBySpace($query, $spaceId)

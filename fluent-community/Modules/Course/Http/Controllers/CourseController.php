@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Course\Http\Controllers;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Http\Controllers\Controller;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\Helper;
@@ -26,9 +27,9 @@ class CourseController extends Controller
         $search = $request->getSafe('search');
         $topicSlug = $request->getSafe('topic_slug');
         $isEnrolled = $request->getSafe('type') == 'enrolled';
-        $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'alphabetical');
+        $sortBy = Utility::getListingSort('course', $request->getSafe('sort_by', 'sanitize_text_field', ''));
 
-        $courses = Course::searchBy($search)
+        $query = Course::searchBy($search)
             ->where(function ($q) use ($isCourseCreator, $isEnrolled, $user) {
                 if ($isCourseCreator && !$isEnrolled) {
                     $q->where('status', 'published')
@@ -54,7 +55,11 @@ class CourseController extends Controller
             ->when($sortBy == 'latest', function ($q) {
                 $q->orderBy('created_at', 'DESC');
             })
-            ->paginate();
+            ->when($sortBy == 'custom', function ($q) {
+                Utility::applyCustomOrder($q, 'fluent_community_courses_order');
+            });
+
+        $courses = $query->paginate();
 
         foreach ($courses as $course) {
             $course->isEnrolled = CourseHelper::isEnrolled($course->id);
@@ -414,6 +419,15 @@ class CourseController extends Controller
             ]);
         }
 
+        // A locked lesson has no content to work through, so its completion state
+        // cannot be changed either - note that marking one "incomplete" also creates
+        // a completion row when none exists yet, so both states have to be gated
+        if (!CourseHelper::canAccessLesson($lesson, $course, $this->getUser(), CourseHelper::getCourseEnrollment($courseId))) {
+            return $this->sendError([
+                'message' => __('This lesson is locked.', 'fluent-community'),
+            ]);
+        }
+
         $isAllowed = apply_filters('fluent_community/is_allowed_to_complete_lesson', true, $lesson, $state);
 
         if (!$isAllowed) {
@@ -468,6 +482,13 @@ class CourseController extends Controller
         if (!$lesson) {
             return $this->sendError([
                 'message' => __('Lesson is not on published state.', 'fluent-community')
+            ]);
+        }
+
+        // Watch progress feeds the completion gate, so a locked lesson cannot record it either
+        if (!CourseHelper::canAccessLesson($lesson, $course, $this->getUser(), CourseHelper::getCourseEnrollment($courseId))) {
+            return $this->sendError([
+                'message' => __('This lesson is locked.', 'fluent-community'),
             ]);
         }
 

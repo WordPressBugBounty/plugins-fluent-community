@@ -57,7 +57,7 @@ class SmartCodeParser
         }
 
         if (static::$isHtml) {
-            $string = $this->resolveHrefPlaceholders($string);
+            $string = $this->resolveUrlPlaceholders($string);
         }
 
         return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) {
@@ -66,18 +66,26 @@ class SmartCodeParser
     }
 
     /**
-     * Resolve placeholders inside href="..." attributes to raw URLs.
-     * Prevents nested anchors when URL smartcodes auto-wrap in HTML mode.
+     * Resolve placeholders inside URL attributes to raw URLs. Prevents nested
+     * anchors when URL smartcodes auto-wrap in HTML mode.
+     *
+     * Substitution runs after wp_kses, so esc_url() here is the only scheme
+     * check a resolved URL gets — esc_html() would let javascript: through.
+     * Covering the whole kses URI set keeps that true if the allowlist widens.
      */
-    protected function resolveHrefPlaceholders($string)
+    protected function resolveUrlPlaceholders($string)
     {
+        $attributes = implode('|', array_map(function ($attribute) {
+            return preg_quote($attribute, '/');
+        }, wp_kses_uri_attributes()));
+
         return preg_replace_callback(
-            '/(?<![a-zA-Z-])href\s*=\s*(["\'])([^"\']*(?:\{\{|##)[^"\']*)\1/i',
+            '/(?<![a-zA-Z-])(' . $attributes . ')\s*=\s*(["\'])([^"\']*(?:\{\{|##)[^"\']*)\2/i',
             function ($m) {
                 static::$isHtml = false;
-                $resolved = $this->parseShortcode($m[2]);
+                $resolved = $this->parseShortcode($m[3]);
                 static::$isHtml = true;
-                return 'href=' . $m[1] . esc_url($resolved) . $m[1];
+                return $m[1] . '=' . $m[2] . esc_url($resolved) . $m[2];
             },
             $string
         );

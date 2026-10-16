@@ -4,6 +4,7 @@ namespace FluentCommunity\App\Http\Controllers;
 
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\BaseSpace;
+use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\Helper;
@@ -57,6 +58,15 @@ class MembersController extends Controller
             if ($space) {
                 $members = $members->whereHas('spaces', function ($query) use ($space) {
                     $query->withoutGlobalScopes()->where('space_id', $space->id);
+                });
+            } else if (!$canAccess) {
+                $sharedSpaceIds = SpaceUserPivot::where('user_id', get_current_user_id())
+                    ->where('status', 'active')
+                    ->pluck('space_id')
+                    ->toArray();
+
+                $members = $members->whereHas('spaces', function ($query) use ($sharedSpaceIds) {
+                    $query->withoutGlobalScopes()->whereIn('space_id', $sharedSpaceIds);
                 });
             }
 
@@ -149,9 +159,7 @@ class MembersController extends Controller
         $xProfile = XProfile::findOrFail($userId);
 
         $newStatus = $request->getSafe('status', 'sanitize_text_field');
-        $validStatuses = ['active', 'pending', 'blocked'];
-
-        if (in_array($newStatus, $validStatuses)) {
+        if (in_array($newStatus, XProfile::STATUSES, true)) {
             $xProfile->status = $newStatus;
             $xProfile->save();
         }
