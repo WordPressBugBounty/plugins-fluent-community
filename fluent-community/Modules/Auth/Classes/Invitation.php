@@ -53,6 +53,7 @@ class Invitation extends Model
         'parent_id',
         'content_type',
         'is_sticky',
+        'message_rendered',
     ];
 
     public static function boot()
@@ -113,7 +114,7 @@ class Invitation extends Model
             $spaceRole = $user->getSpaceRole(BaseSpace::findOrFail($spaceId));
             $query->where('post_id', $spaceId);
 
-            if (!in_array($spaceRole, [ 'admin', 'moderator' ])) {
+            if (!in_array($spaceRole, [ 'admin', 'moderator' ], true)) {
                 $query->where('user_id', $user->ID);
             }
         } elseif (!$user->isCommunityModerator()) {
@@ -170,10 +171,10 @@ class Invitation extends Model
     public function isValid()
     {
         if ($this->message) {
-            return $this->status == 'pending';
+            return $this->status === 'pending';
         }
 
-        if ($this->status != 'active') {
+        if ($this->status !== 'active') {
             return false;
         }
 

@@ -29,7 +29,7 @@ class Notification extends Model
 
     protected $primaryKey = 'id';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'feed_id',
@@ -38,7 +38,7 @@ class Notification extends Model
         'src_object_type',
         'action',
         'route',
-        'content'
+        'content',
     ];
 
     public static function boot()
@@ -104,7 +104,7 @@ class Notification extends Model
                 'notification_type' => 'web',
                 'created_at'        => $currentDateTime,
                 'updated_at'        => $currentDateTime,
-                'is_read'           => 0
+                'is_read'           => 0,
             ];
         }
 
@@ -119,8 +119,8 @@ class Notification extends Model
 
     public function scopeByStatus($query, $status, $userId)
     {
-        $valids = ['unread', 'read'];
-        if (!in_array($status, $valids)) {
+        $valids = [ 'unread', 'read' ];
+        if (!in_array($status, $valids, true)) {
             return $query;
         }
 
@@ -134,15 +134,15 @@ class Notification extends Model
 
     public function scopeByType($query, $type)
     {
-        $valids = ['mentioned', 'following'];
-        if (!in_array($type, $valids)) {
+        $valids = [ 'mentioned', 'following' ];
+        if (!in_array($type, $valids, true)) {
             return $query;
         }
 
-        if ($type == 'mentioned') {
-            $query->whereIn('action', ['feed/mentioned', 'mention_added']);
+        if ($type === 'mentioned') {
+            $query->whereIn('action', [ 'feed/mentioned', 'mention_added' ]);
         } else {
-            $query->whereNotIn('action', ['feed/mentioned', 'mention_added']);
+            $query->whereNotIn('action', [ 'feed/mentioned', 'mention_added' ]);
         }
 
         return $query;

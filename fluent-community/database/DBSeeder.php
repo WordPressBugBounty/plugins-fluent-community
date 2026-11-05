@@ -18,7 +18,6 @@ class DBSeeder
 {
     public static function run()
     {
-        //self::clean();
         $startTime = microtime(true);
         UserTableSeeder::run(1000);
         XProfileTableSeeder::run(1000);
@@ -41,8 +40,6 @@ class DBSeeder
     public static function clean()
     {
         $db = App::make('db');
-         //$db->table('users')->truncate();
-         //$db->table('usermeta')->truncate();
          $db->table('fcom_xprofile')->truncate();
          $db->table('fcom_posts')->truncate();
          $db->table('fcom_post_comments')->truncate();

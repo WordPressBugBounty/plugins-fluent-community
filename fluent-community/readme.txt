@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.12.0
+Stable tag: 2.13.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,67 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.13.0 (Date: Nov 5, 2026) =
+- Introduced: Course Certificates With Public Verification and Open Badges (pro)
+- Introduced: Add-on Module Runtime via Import Map
+- Added: Unified Global Search With a Command Palette
+- Added: Time Limit and Attempt Limit for Quizzes (pro)
+- Added: Rating Scale and Image Choice Questions for Quizzes (pro)
+- Added: Points per Question and Instructor-Graded Answers in Quizzes (pro)
+- Added: Needs Review Shortcut in Quiz Results (pro)
+- Added: Manual Certificates for People Without an Account (pro)
+- Added: Option to Strip Image and GPS Metadata From Uploads
+- Added: Show Only Joined Spaces in a Space Group Sidebar
+- Added: System Option in the Dark Mode Switcher
+- Added: Courses Enable Page When the Module Is Off
+- Added: Course Completion Hooks for Add-ons
+- Added: Admin Hooks for Course Menu Items and Settings Tabs
+- Added: FluentCRM Pro Action Placeholders
+- Improved: Embedded Posts Open in a Modal and Follow Post Rules
+- Improved: Popular Sort Favors Recent Activity
+- Improved: Quiz Result Card Shows Pass Mark and Attempts Left (pro)
+- Improved: Course Module Settings in a Drawer
+- Improved: Step-by-Step Help When Browser Notifications Are Blocked
+- Improved: Cached Insights Tabs With No Duplicate Requests
+- Improved: Meaningful SEO Page Titles for Posts Without Titles
+- Improved: Buttons and Borders Match the Theme
+- Improved: FluentCart Product Status Labels on Paywall Rows
+- Security: Plugin-Wide Access Control and Data Exposure Hardening
+- Fixed: Partial Space and Course Updates Resetting Fields They Did Not Send
+- Fixed: Admin-Only Topic Rules on Post Create and Edit
+- Fixed: Quiz Timer Expiry Now Submits Partial Answers Without Restarting (pro)
+- Fixed: Attempt Limit Bypass From Concurrent Quiz Submits (pro)
+- Fixed: Quiz Dialog Layout on Small Screens
+- Fixed: Multiple Votes on a Single-Choice Poll Through the API
+- Fixed: Clear Message When an Upload Is Too Large
+- Fixed: Images Over the Media Limit Shown and Then Deleted
+- Fixed: Mobile and RTL Layout Issues Across Portal Pages
+- Fixed: Required Fields Shown as Optional or Unmarked
+- Fixed: Sidebar Not Updating After Joining a Space or a Course
+- Fixed: Lesson Checkmark Missing Right After Completing a Lesson
+- Fixed: Portal Routing and URL Encoding at the Site Root
+- Fixed: Dead Notification Links in Invitation and Course Emails
+- Fixed: Display Names Adding Bcc Recipients to Join-Request Emails
+- Fixed: Drip Emails Sent to Blocked Students (pro)
+- Fixed: Moderator Actions on Unpublished and Scheduled Posts
+- Fixed: Profile Crash When an Add-on Tab Route Is Missing
+- Fixed: Profile Meta Lost on Background and Badge Saves
+- Fixed: Removing a Draft or Deleted Paywall Product
+- Fixed: FluentPlayer YouTube Embeds Saved Without a Source
+- Fixed: Broken Welcome Banner Image Now Hidden
+- Fixed: Old Files Left Behind When Replacing Space and Course Images
+- Fixed: Community Title Not Saving After Being Cleared
+- Fixed: Header Logo Not Updating After Save
+- Fixed: Feed Link Visibility Rules Not Applied
+- Fixed: FluentForms Log for Failed User Creation
+- Fixed: Requested Role Lost When Re-Adding a Member
+- Fixed: Lesson Number for Free Previews in Private Courses
+- Fixed: Post Edit Blocked When Comments Are Off
+- Fixed: Leave Space Confirmation Calling the Space a Community
+- Fixed: Crashes With Week Number and Ordinal Date Formats
+- Fixed: Stale Feed and Comment Timestamps
+- Fixed: Cloud Document Downloads Opening Inline (pro)
 
 = 2.12.0 (Date: Oct 16, 2026) =
 - Introduced: Insights Reporting for Members, Content and Courses

@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Services;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Services\Libs\FileSystem;
 use FluentCommunity\Framework\Support\Arr;
@@ -18,10 +19,15 @@ class UploadHelper
             'resize'          => true,
             'max_width'       => 0,
             'context'         => '',
-            'skip_convert'    => ''
+            'skip_convert'    => '',
         ];
 
         $options = wp_parse_args($options, $defaultOptions);
+
+        $error = Helper::checkUploadSizeError();
+        if ($error) {
+            return new \WP_Error('upload_size_error', $error['message']);
+        }
 
         $allowedTypes = implode(
             ',',
@@ -32,7 +38,7 @@ class UploadHelper
                 'image/pjpeg',
                 'image/png',
                 'image/gif',
-                'image/webp'
+                'image/webp',
             ])
         );
 
@@ -40,9 +46,9 @@ class UploadHelper
         $maxFileSize = apply_filters('fluent_community/media_upload_max_file_size', $options['max_size']);
 
         $allowedFileSize = $maxFileSize;
-        if (strtoupper($maxFileUnit) == 'MB') {
+        if (strtoupper($maxFileUnit) === 'MB') {
             $allowedFileSize = $maxFileSize * 1024;
-        } else if (strtoupper($maxFileUnit) == 'GB') {
+        } elseif (strtoupper($maxFileUnit) === 'GB') {
             $allowedFileSize = $maxFileSize * 1024 * 1024;
         }
 
@@ -53,16 +59,16 @@ class UploadHelper
             'file.required'  => __('No upload file was received. Please try again.', 'fluent-community'),
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
             /* translators: %$1s is replaced by the maximum allowed file size, %2$s is replaced by the file size unit (e.g. MB) */
-            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
+            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit),
         ]);
 
         if ($validator->fails()) {
             return new \WP_Error('validation_error', __('Validation Error', 'fluent-community'), $validator->errors());
         }
 
-        add_filter('wp_handle_upload', [self::class, 'fixImageOrientation']);
+        add_filter('wp_handle_upload', [ self::class, 'fixImageOrientation' ]);
         $uploadedFiles = FileSystem::put($requestFiles);
-        remove_filter('wp_handle_upload', [self::class, 'fixImageOrientation']);
+        remove_filter('wp_handle_upload', [ self::class, 'fixImageOrientation' ]);
 
         $file = Arr::get($uploadedFiles, 0);
 
@@ -81,15 +87,16 @@ class UploadHelper
         $originalFileType = $file['type'];
         $originalFileName = $file['file'];
 
-        $willWebPConvert = Arr::get($options, 'disable_convert') != 'yes';
+        $willWebPConvert = Arr::get($options, 'disable_convert') !== 'yes';
 
         $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
-        $willResize = Arr::get($options, 'resize') != 'yes';
+        $willResize = Arr::get($options, 'resize') !== 'yes';
         $maxWidth = Arr::get($options, 'max_width', 0);
 
         $willResize = apply_filters('fluent_community/media_upload_resize', $willResize, $file);
 
-        if ($context = Arr::get($options, 'context')) {
+        $context = Arr::get($options, 'context');
+        if ($context) {
             $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
         }
 
@@ -102,8 +109,8 @@ class UploadHelper
             if (!is_wp_error($editor) && $editor->get_size()['width'] > $maxWidth) {
                 // Current file extension
                 $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
-                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $willConvert = in_array($ext, $imageExtensions) && $willWebPConvert;
+                $imageExtensions = [ 'jpg', 'jpeg', 'png', 'gif' ];
+                $willConvert = in_array($ext, $imageExtensions, true) && $willWebPConvert;
 
                 if ($willConvert) {
                     $imageExtensions = array_map(function ($ext) {
@@ -121,7 +128,7 @@ class UploadHelper
                 $editor->set_quality(90);
                 if ($willConvert) {
                     $result = $editor->save($fileUrl, 'image/webp');
-                    if ($result['mime-type'] == 'image/webp') {
+                    if ($result['mime-type'] === 'image/webp') {
                         // remove original file now
                         wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
                     }
@@ -130,7 +137,7 @@ class UploadHelper
                     $result = $editor->save($fileUrl);
                 }
 
-                if ($result['mime-type'] != 'image/webp') {
+                if ($result['mime-type'] !== 'image/webp') {
                     $file['file'] = $originalFileName;
                     $file['url'] = $originalUrl;
                     $file['type'] = $result['mime-type'];
@@ -138,7 +145,7 @@ class UploadHelper
 
                 $file['meta'] = [
                     'width'  => $editor->get_size()['width'],
-                    'height' => $editor->get_size()['height']
+                    'height' => $editor->get_size()['height'],
                 ];
             }
             $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
@@ -151,8 +158,8 @@ class UploadHelper
             $path = $file['path'];
             $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-            $convertFromExtensions = ['png', 'jpg', 'jpeg', 'gif'];
-            if ($extension != 'webp' && in_array($extension, $convertFromExtensions)) {
+            $convertFromExtensions = [ 'png', 'jpg', 'jpeg', 'gif' ];
+            if ($extension !== 'webp' && in_array($extension, $convertFromExtensions, true)) {
                 // Let's convert to webp
                 $editor = wp_get_image_editor($file['path']);
                 if (!is_wp_error($editor)) {
@@ -161,7 +168,7 @@ class UploadHelper
                     $file['type'] = 'image/webp';
                     $result = $editor->save($file['path'], 'image/webp');
 
-                    if ($result['mime-type'] != 'image/webp') {
+                    if ($result['mime-type'] !== 'image/webp') {
                         $file['path'] = $orginalPath;
                         $file['url'] = $originalUrl;
                         $file['type'] = $result['mime-type'];
@@ -171,7 +178,7 @@ class UploadHelper
 
                     $file['meta'] = [
                         'width'  => $editor->get_size()['width'],
-                        'height' => $editor->get_size()['height']
+                        'height' => $editor->get_size()['height'],
                     ];
                 }
             }
@@ -182,7 +189,7 @@ class UploadHelper
             'driver'     => 'local',
             'media_path' => $file['path'],
             'media_url'  => $file['url'],
-            'settings'   => Arr::get($file, 'meta', [])
+            'settings'   => Arr::get($file, 'meta', []),
         ];
 
         $mediaData = apply_filters('fluent_community/media_upload_data', $mediaData, $file);
@@ -209,15 +216,15 @@ class UploadHelper
             'media_key' => $media->media_key,
             'type'      => $media->media_type,
             'width'     => Arr::get($media->settings, 'width'),
-            'height'    => Arr::get($media->settings, 'height')
+            'height'    => Arr::get($media->settings, 'height'),
         ];
     }
 
     public static function fixImageOrientation($file)
     {
         // Only process JPEG images (since they typically have EXIF data)
-        $image_types = array('image/jpeg', 'image/jpg');
-        if (!in_array($file['type'], $image_types)) {
+        $image_types = array( 'image/jpeg', 'image/jpg' );
+        if (!in_array($file['type'], $image_types, true)) {
             return $file;
         }
 
@@ -227,7 +234,7 @@ class UploadHelper
         }
 
         // Read EXIF data from the uploaded image
-        $exif = @exif_read_data($file['file']);
+        $exif = @exif_read_data($file['file']); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
         if (!$exif || !isset($exif['Orientation'])) {
             return $file;
@@ -236,7 +243,7 @@ class UploadHelper
         $orientation = $exif['Orientation'];
 
         // Nothing to correct for the "normal" orientation
-        if ($orientation == 1) {
+        if ((int) $orientation === 1) {
             return $file;
         }
 
@@ -274,17 +281,17 @@ class UploadHelper
                         $image->destroy();
                         return $file;
                 }
-                // Strip EXIF data to prevent further issues
-                $image->stripImage();
+                // Strip EXIF so the old Orientation tag cannot rotate the baked image again
+                ImageMetaStripper::stripImagickKeepingIcc($image);
                 // Save the rotated image
                 $image->writeImage($file['file']);
                 $image->destroy();
-            } catch (\Exception $e) {
+            } catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
                 // Leave the original file untouched if Imagick fails
             }
         } elseif (function_exists('imagecreatefromjpeg')) {
             // Use GD if Imagick is not available
-            $image = @imagecreatefromjpeg($file['file']);
+            $image = @imagecreatefromjpeg($file['file']); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
             if ($image === false) {
                 return $file;
             }
@@ -323,6 +330,29 @@ class UploadHelper
             imagejpeg($image, $file['file'], 100);
             imagedestroy($image);
         }
+
+        return $file;
+    }
+
+    /**
+     * Drop EXIF (incl. GPS), XMP, IPTC and comments from JPEG, PNG, WebP and HEIC uploads; keeps ICC.
+     * Opt-in via the strip_image_meta privacy setting (off by default).
+     * FileSystem::_put() registers it before wp_handle_upload(), so it runs after a caller's
+     * fixImageOrientation() and before FileSystem basenames the path.
+     */
+    public static function stripImageMeta($file)
+    {
+        if (empty($file['file']) || empty($file['type'])) {
+            return $file;
+        }
+
+        $isEnabled = Utility::getPrivacySetting('strip_image_meta') === 'yes';
+
+        if (!apply_filters('fluent_community/strip_image_meta', $isEnabled, $file)) {
+            return $file;
+        }
+
+        ImageMetaStripper::strip($file['file'], $file['type']);
 
         return $file;
     }

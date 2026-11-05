@@ -15,18 +15,18 @@ class MigrationController extends Controller
             $migrations[] = [
                 'key'   => 'buddyboss',
                 'title' => 'BuddyBoss',
-                'logo'  => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/brands/bboss_logo.png'
+                'logo'  => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/brands/bboss_logo.png',
             ];
-        }  else if (defined('BP_PLUGIN_DIR')) {
+        }  elseif (defined('BP_PLUGIN_DIR')) {
             $migrations[] = [
                 'key'   => 'buddypress',
                 'title' => 'BuddyPress',
-                'logo'  => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/brands/buddypress.svg'
+                'logo'  => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/brands/buddypress.svg',
             ];
         }
 
         return [
-            'migrations' => $migrations
+            'migrations' => $migrations,
         ];
     }
 }

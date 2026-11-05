@@ -1,5 +1,6 @@
 <?php
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
+if (!defined('ABSPATH')) { exit; // Exit if accessed directly
+}
 
 /**
  * @var string $title
@@ -19,7 +20,8 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
     <link rel="icon" type="image/x-icon" href="<?php echo esc_url(get_site_icon_url()); ?>"/>
     <?php
     $fluent_community_custom_css = apply_filters('fluent_community/error_page_custom_css', '');
-    if ($fluent_community_custom_css): ?>
+    if ($fluent_community_custom_css):
+        ?>
     <style><?php echo wp_strip_all_tags($fluent_community_custom_css); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- intentional CSS output, tags stripped ?></style>
     <?php endif; ?>
 </head>

@@ -11,6 +11,7 @@ use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Modules\Course\Services\CourseHelper;
 
 class ReactionController extends Controller
 {
@@ -20,18 +21,24 @@ class ReactionController extends Controller
 
         if (!$feedId) {
             return [
-                'reactions' => []
+                'reactions' => [],
             ];
         }
 
         $feed = Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($feedId);
+
+        if (!$feed->isViewableBy(get_current_user_id())) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
+            ], 404);
+        }
 
         $reactions = $feed->reactions()
             ->whereHas('xprofile')
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
-                }
+                },
             ])
             ->where('type', 'like')
             ->distinct('user_id')
@@ -39,7 +46,7 @@ class ReactionController extends Controller
             ->get(); // Todo: Add lazy loading in the future
 
         return apply_filters('fluent_community/reactions_api_response', [
-            'reactions' => $reactions
+            'reactions' => $reactions,
         ], $reactions, $request->all());
     }
 
@@ -49,14 +56,25 @@ class ReactionController extends Controller
 
         if (!$commentId) {
             return [
-                'reactions' => []
+                'reactions' => [],
             ];
         }
 
         $comment = Comment::findOrFail($commentId);
 
-        // Just validate the permission
-        Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($comment->post_id);
+        $feed = Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($comment->post_id);
+
+        if (!$feed->isViewableBy(get_current_user_id())) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
+            ], 404);
+        }
+
+        if (CourseHelper::isLockedLesson($feed, $this->getUser())) {
+            return [
+                'reactions' => []
+            ];
+        }
 
         $reactions = $comment
             ->reactions()
@@ -64,7 +82,7 @@ class ReactionController extends Controller
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
-                }
+                },
             ])
             ->where('type', 'like')
             ->distinct('user_id')
@@ -72,7 +90,7 @@ class ReactionController extends Controller
             ->get(); // Todo: Add lazy loading in the future
 
         return apply_filters('fluent_community/reactions_api_response', [
-            'reactions' => $reactions
+            'reactions' => $reactions,
         ], $reactions, $request->all());
     }
 
@@ -81,18 +99,18 @@ class ReactionController extends Controller
         $currentUser = $this->getUser(true);
         $feed = Feed::withoutGlobalScopes()->byUserAccess($currentUser->ID)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
-        $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
+        $type = in_array($type, [ 'like', 'bookmark' ], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
         if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
-                'message' => __('This post is not published yet', 'fluent-community')
+                'message' => __('This post is not published yet', 'fluent-community'),
             ]);
         }
 
         if (!$willRemove && (int) $currentUser->ID === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
-                'message' => __('You cannot react to your own post', 'fluent-community')
+                'message' => __('You cannot react to your own post', 'fluent-community'),
             ]);
         }
 
@@ -105,7 +123,7 @@ class ReactionController extends Controller
         if ($willRemove) {
             if ($react) {
                 $react->delete();
-                if ($type == 'like') {
+                if ($type === 'like') {
                     $feed->reactions_count = $feed->reactions_count - 1;
                     $feed->timestamps = false; // Don't update the updated_at timestamp
                     $feed->save();
@@ -115,14 +133,14 @@ class ReactionController extends Controller
 
             return [
                 'message'   => __('Reaction has been removed', 'fluent-community'),
-                'new_count' => $feed->reactions_count
+                'new_count' => $feed->reactions_count,
             ];
         }
 
         if ($react) {
             return [
                 'message'   => __('You have already reacted to this post', 'fluent-community'),
-                'new_count' => $feed->reactions_count
+                'new_count' => $feed->reactions_count,
             ];
         }
 
@@ -146,10 +164,10 @@ class ReactionController extends Controller
                 'user_id'     => $currentUser->ID,
                 'object_id'   => $feed->id,
                 'type'        => $type,
-                'object_type' => 'feed'
+                'object_type' => 'feed',
             ]);
 
-            if ($type == 'like') {
+            if ($type === 'like') {
                 // getQuery() so the atomic increment does not touch updated_at
                 Feed::withoutGlobalScopes()->where('id', $feed->id)->getQuery()->increment('reactions_count');
                 $feed->reactions_count = $feed->reactions_count + 1;
@@ -158,14 +176,14 @@ class ReactionController extends Controller
             return $react;
         });
 
-        if ($react->wasRecentlyCreated && $type == 'like') {
+        if ($react->wasRecentlyCreated && $type === 'like') {
             $react->load('xprofile');
             do_action('fluent_community/feed/react_added', $react, $feed);
         }
 
         return [
             'message'   => __('Reaction has been added', 'fluent-community'),
-            'new_count' => $feed->reactions_count
+            'new_count' => $feed->reactions_count,
         ];
     }
 
@@ -177,29 +195,45 @@ class ReactionController extends Controller
             ->where('id', $feed_id)
             ->first();
 
-        if (!$feed || $feed->content_type != 'survey' || !$userId) {
+        if (!$feed || $feed->content_type !== 'survey' || !$userId) {
             return $this->sendError([
-                'message' => __('Sorry! you do not have access to this post or invalid request', 'fluent-community')
+                'message' => __('Sorry! you do not have access to this post or invalid request', 'fluent-community'),
+            ]);
+        }
+
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
+            return $this->sendError([
+                'message' => __('This post is not published yet', 'fluent-community'),
             ]);
         }
 
         $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
         if (empty($surveyConfig['options'])) {
             return $this->sendError([
-                'message' => __('Sorry! This survey configuration is invalid', 'fluent-community')
+                'message' => __('Sorry! This survey configuration is invalid', 'fluent-community'),
             ]);
         }
 
         $endDate = Arr::get($surveyConfig, 'end_date');
         if ($endDate && strtotime($endDate) < current_time('timestamp')) {
             return $this->sendError([
-                'message' => __('Sorry! This survey has ended', 'fluent-community')
+                'message' => __('Sorry! This survey has ended', 'fluent-community'),
             ]);
         }
 
         $voteIndexes = (array) $request->get('vote_indexes', []);
 
         $voteIndexes = array_values(array_map('sanitize_text_field', $voteIndexes));
+
+        // The poll renderer lets a member pick one option here; hold direct requests to the same rule
+        if (Arr::get($surveyConfig, 'type') === 'single_choice') {
+            $chosenSlugs = array_intersect(array_column($surveyConfig['options'], 'slug'), $voteIndexes);
+            if (count($chosenSlugs) > 1) {
+                return $this->sendError([
+                    'message' => __('This poll allows only one choice.', 'fluent-community')
+                ]);
+            }
+        }
 
         $feed = FeedsHelper::castSurveyVote($voteIndexes, $feed, $userId);
         $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
@@ -219,7 +253,7 @@ class ReactionController extends Controller
         $surveyConfig = apply_filters('fluent_community/survey_config_response', $surveyConfig, $feed, $userId);
 
         return [
-            'survey_config' => $surveyConfig
+            'survey_config' => $surveyConfig,
         ];
     }
 
@@ -229,19 +263,25 @@ class ReactionController extends Controller
 
         $feed = Feed::withoutGlobalScopes()->byUserAccess($currentUserId)->findOrFail($feedId);
 
+        if (!$feed->isViewableBy($currentUserId)) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
+            ], 404);
+        }
+
         $voters = $feed->surveyVotes()
             ->where('object_type', $optionSlug)
             ->whereHas('xprofile')
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
-                }
+                },
             ])
             ->limit(100)
             ->get(); // Todo: Add lazy loading in the future
 
         $data = [
-            'voters' => $voters
+            'voters' => $voters,
         ];
         return apply_filters('fluent_community/survey_voters_api_response', $data, $this->request->all());
     }

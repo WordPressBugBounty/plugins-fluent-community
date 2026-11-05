@@ -16,7 +16,7 @@ class SmartCodeParser
         'user'      => null,
         'feed'      => null,
         'course'    => null,
-        'community' => null
+        'community' => null,
     ];
 
     public function parse($templateString, $user, $feed = null, $isHtml = true)
@@ -50,19 +50,28 @@ class SmartCodeParser
         static::$store['community'] = Helper::generalSettings();
     }
 
-    public function parseShortcode($string)
+    public function parseShortcode($content)
     {
-        if (strpos($string, '{{') === false && strpos($string, '##') === false) {
-            return $string;
+        if (strpos($content, '{{') === false && strpos($content, '##') === false) {
+            return $content;
         }
 
-        if (static::$isHtml) {
-            $string = $this->resolveUrlPlaceholders($string);
+        // Plain-text output, such as an email subject, never holds the login hash.
+        if (!static::$isHtml) {
+            return $this->replacePlaceholders($content);
         }
 
-        return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) {
-            return $this->replace($matches);
-        }, $string);
+        $content = $this->resolveUrlPlaceholders($content);
+        $content = $this->resolveTagPlaceholders($content);
+
+        return $this->replacePlaceholders($content, true);
+    }
+
+    protected function replacePlaceholders($content, $signUrl = false)
+    {
+        return preg_replace_callback('/({{|##)+(.*?)(}}|##)/', function ($matches) use ($signUrl) {
+            return $this->replace($matches, $signUrl);
+        }, $content);
     }
 
     /**
@@ -72,8 +81,11 @@ class SmartCodeParser
      * Substitution runs after wp_kses, so esc_url() here is the only scheme
      * check a resolved URL gets — esc_html() would let javascript: through.
      * Covering the whole kses URI set keeps that true if the allowlist widens.
+     *
+     * {{section.url}} holds the recipient's login hash. It stays signed here
+     * only when it is the whole href, because only then the destination is ours.
      */
-    protected function resolveUrlPlaceholders($string)
+    protected function resolveUrlPlaceholders($content)
     {
         $attributes = implode('|', array_map(function ($attribute) {
             return preg_quote($attribute, '/');
@@ -82,16 +94,29 @@ class SmartCodeParser
         return preg_replace_callback(
             '/(?<![a-zA-Z-])(' . $attributes . ')\s*=\s*(["\'])([^"\']*(?:\{\{|##)[^"\']*)\2/i',
             function ($m) {
+                $signUrl = strcasecmp($m[1], 'href') === 0
+                    && preg_match('/^\s*(?:\{\{|##)\s*section\.url\s*(?:\}\}|##)\s*\z/', $m[3]);
                 static::$isHtml = false;
-                $resolved = $this->parseShortcode($m[3]);
+                $resolved = $this->replacePlaceholders($m[3], $signUrl);
                 static::$isHtml = true;
                 return $m[1] . '=' . $m[2] . esc_url($resolved) . $m[2];
             },
-            $string
+            $content
         );
     }
 
-    protected function replace($matches)
+    /**
+     * Any placeholder still inside a tag sits in markup the author controls, so
+     * it never gets the login hash. The pattern splits tags as wp_kses does.
+     */
+    protected function resolveTagPlaceholders($content)
+    {
+        return preg_replace_callback('/<[^>]*(?:>|\z)/', function ($m) {
+            return $this->replacePlaceholders($m[0]);
+        }, $content);
+    }
+
+    protected function replace($matches, $signUrl = false)
     {
         if (empty($matches[2])) {
             return apply_filters('fluent_community/smartcode_fallback', $matches[0], $this->store['user']);
@@ -124,7 +149,7 @@ class SmartCodeParser
         if ($valueCounts >= 3) {
             $defaultValue = trim($valueKeys[1]);
             $transformer = trim($valueKeys[2]);
-        } else if ($valueCounts === 2) {
+        } elseif ($valueCounts === 2) {
             $defaultValue = trim($valueKeys[1]);
         }
 
@@ -140,7 +165,8 @@ class SmartCodeParser
                 $value = $this->getCommunityValue($valueKey, $defaultValue);
                 break;
             case 'section':
-                $value = $this->getSectionValue($valueKey, $defaultValue);
+                // A transformer can add author text to the value, so it is never signed.
+                $value = $this->getSectionValue($valueKey, $defaultValue, $signUrl && !$transformer);
                 break;
             case 'course':
                 $value = $this->getCourseValue($valueKey, $defaultValue);
@@ -171,7 +197,7 @@ class SmartCodeParser
                         $value = trim($valueKeys[3] . ' ' . $value);
                     }
                     break;
-                case 'concat_last': // usage: {{contact.first_name||concat_last|, => FIRST_NAME,
+                case 'concat_last': // Appends the next argument to the value
                     if (isset($valueKeys[3])) {
                         $value = trim($value . '' . $valueKeys[3]);
                     }
@@ -202,18 +228,18 @@ class SmartCodeParser
             return $value;
         }
 
-        $knownGroups = ['site', 'user', 'community', 'section', 'course'];
+        $knownGroups = [ 'site', 'user', 'community', 'section', 'course' ];
         if (!in_array($dataKey, $knownGroups, true)) {
             return $value;
         }
 
         $trustedHtml = [
-            'user'      => ['photo_html'],
-            'community' => ['name_with_url'],
-            'section'   => ['url'],
+            'user'      => [ 'photo_html' ],
+            'community' => [ 'name_with_url' ],
+            'section'   => [ 'url' ],
         ];
 
-        $baseKey = strtok($valueKey, '.'); // "photo_html.50px" -> "photo_html"
+        $baseKey = strtok($valueKey, '.'); // Keep the part before the first dot
         if (in_array($baseKey, Arr::get($trustedHtml, $dataKey, []), true)) {
             return $value;
         }
@@ -223,11 +249,11 @@ class SmartCodeParser
 
     protected function getWpValue($valueKey, $defaultValue)
     {
-        if ($valueKey == 'login_url') {
+        if ($valueKey === 'login_url') {
             return network_site_url('wp-login.php', 'login');
         }
 
-        if ($valueKey == 'name') {
+        if ($valueKey === 'name') {
             return wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
         }
 
@@ -248,7 +274,7 @@ class SmartCodeParser
 
         $xProfile = $userModel->xprofile;
 
-        if ($valueKey == 'profile_link') {
+        if ($valueKey === 'profile_link') {
             if ($xProfile) {
                 return $xProfile->getPermalink();
             }
@@ -256,12 +282,12 @@ class SmartCodeParser
         }
 
         if ($xProfile) {
-            if ($valueKey == 'display_name') {
+            if ($valueKey === 'display_name') {
                 return $xProfile->display_name;
             }
         }
 
-        if ($valueKey == 'photo_html') {
+        if ($valueKey === 'photo_html') {
             if ($xProfile) {
                 return '<img src="' . esc_url($xProfile->avatar) . '" alt="' . esc_attr($xProfile->display_name) . '" class="fcom_user_dynamic_photo" />';
             }
@@ -270,7 +296,7 @@ class SmartCodeParser
 
         $wpUser = $userModel->getWpUser();
         $valueKeys = explode('.', $valueKey);
-        if (count($valueKeys) == 1) {
+        if (count($valueKeys) === 1) {
             // Smartcodes are resolved against the *viewer* and can be authored by
             // space/course/page admins, so only a fixed set of non-sensitive
             // profile fields may be read. Never expose user_pass,
@@ -278,7 +304,7 @@ class SmartCodeParser
             $allowedFields = apply_filters('fluent_community/smartcode/user_fields', [
                 'ID', 'first_name', 'last_name', 'nickname', 'display_name',
                 'user_email', 'user_login', 'user_nicename', 'user_url',
-                'description', 'user_registered'
+                'description', 'user_registered',
             ]);
 
             if (!in_array($valueKey, $allowedFields, true)) {
@@ -309,7 +335,7 @@ class SmartCodeParser
             return '<img ' . $style . ' src="' . esc_url($userModel->photo) . '" alt="' . esc_attr($userModel->display_name) . '" class="fcom_user_dynamic_photo" />';
         }
 
-        if ($customKey == 'meta') {
+        if ($customKey === 'meta') {
             // No first-party template reads user meta through smartcodes, and the
             // viewer's own meta (session_tokens, capability keys, reset keys,
             // any _-prefixed value) must never leak into author-controlled
@@ -339,11 +365,11 @@ class SmartCodeParser
     {
         $communitySettings = static::$store['community'];
 
-        if ($valueKey == 'name') {
+        if ($valueKey === 'name') {
             return Arr::get($communitySettings, 'site_title');
         }
 
-        if ($valueKey == 'name_with_url') {
+        if ($valueKey === 'name_with_url') {
             $siteTitle = Arr::get($communitySettings, 'site_title');
             return static::$isHtml ? '<a target="_blank" href="' . Helper::baseUrl('/') . '">' . $siteTitle . '</a>' : $siteTitle;
         }
@@ -355,7 +381,7 @@ class SmartCodeParser
         return $defaultValue;
     }
 
-    protected function getSectionValue($valueKey, $defaultValue)
+    protected function getSectionValue($valueKey, $defaultValue, $signUrl = false)
     {
         $sectionModel = static::$store['feed'];
         if (!$sectionModel || !$sectionModel instanceof CourseTopic) {
@@ -373,7 +399,7 @@ class SmartCodeParser
             $courseUrl = $course->getPermalink();
 
             $userId = $user->ID ?? null;
-            $signedUrl = $userId ? ProfileHelper::signUserUrlWithAuthHash($courseUrl, $userId) : $courseUrl;
+            $signedUrl = ($userId && $signUrl) ? ProfileHelper::signUserUrlWithAuthHash($courseUrl, $userId) : $courseUrl;
 
             if (static::$isHtml) {
                 return sprintf('<a href="%s">%s</a>', esc_url($signedUrl), esc_html($courseUrl));
@@ -384,10 +410,10 @@ class SmartCodeParser
 
         $fillables = array_merge(
             (new CourseTopic())->getFillable(),
-            ['id', 'created_at', 'updated_at']
+            [ 'id', 'created_at', 'updated_at' ]
         );
 
-        if (in_array($valueKey, $fillables)) {
+        if (in_array($valueKey, $fillables, true)) {
             return $sectionModel->{$valueKey};
         }
 
@@ -403,10 +429,10 @@ class SmartCodeParser
 
         $fillables = array_merge(
             (new Course())->getFillable(),
-            ['id', 'created_at', 'updated_at']
+            [ 'id', 'created_at', 'updated_at' ]
         );
 
-        if (in_array($valueKey, $fillables)) {
+        if (in_array($valueKey, $fillables, true)) {
             return $courseModel->{$valueKey};
         }
 

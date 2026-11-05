@@ -13,9 +13,9 @@ use FluentCommunity\App\Services\Insights\Clock;
  */
 class ActivityTracker
 {
-    const COLUMNS = ['visits', 'posts', 'comments', 'reactions', 'messages', 'lessons'];
+    const COLUMNS = [ 'visits', 'posts', 'comments', 'reactions', 'messages', 'lessons' ];
 
-    const COUNTER_METRICS = ['space_joined', 'space_left'];
+    const COUNTER_METRICS = [ 'space_joined', 'space_left' ];
 
     /**
      * @param int $userId
@@ -74,7 +74,7 @@ class ActivityTracker
      */
     public static function incrementCounter($objectType, $objectId, $metric)
     {
-        if (!in_array($metric, self::COUNTER_METRICS, true) || !in_array($objectType, ['space', 'course', 'global'], true)) {
+        if (!in_array($metric, self::COUNTER_METRICS, true) || !in_array($objectType, [ 'space', 'course', 'global' ], true)) {
             return false;
         }
 
@@ -105,7 +105,7 @@ class ActivityTracker
 
         global $wpdb;
 
-        return (int)$wpdb->delete($wpdb->prefix . 'fcom_activity_daily', ['user_id' => $userId], ['%d']); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (int)$wpdb->delete($wpdb->prefix . 'fcom_activity_daily', [ 'user_id' => $userId ], [ '%d' ]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     }
 
     /**

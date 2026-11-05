@@ -29,6 +29,6 @@ $app->addFilter('fluent_community/lockscreen_fields', function ($fields) {
     }
 
     return array_values(array_filter($fields, function ($field) use ($unavailableFields) {
-        return !in_array($field['name'] ?? '', $unavailableFields);
+        return !in_array($field['name'] ?? '', $unavailableFields, true);
     }));
 }, 10, 1);

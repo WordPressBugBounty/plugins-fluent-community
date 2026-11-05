@@ -35,7 +35,7 @@ class AuthenticationService
                     'title_color'      => '#19283a',
                     'text_color'       => '#525866',
                     'background_image' => '',
-                    'background_color' => '#F5F7FA'
+                    'background_color' => '#F5F7FA',
                 ],
                 'form'   => [
                     'type'               => 'form',
@@ -49,8 +49,8 @@ class AuthenticationService
                     'button_color'       => '#2B2E33',
                     'button_label_color' => '#ffffff',
                     'background_image'   => '',
-                    'background_color'   => '#ffffff'
-                ]
+                    'background_color'   => '#ffffff',
+                ],
             ],
             'signup' => [
                 'banner' => [
@@ -80,8 +80,8 @@ class AuthenticationService
                     'button_label_color' => '#ffffff',
                     'background_image'   => '',
                     'background_color'   => '#ffffff',
-                ]
-            ]
+                ],
+            ],
         ];
 
         $settings = Utility::getOption('auth_settings', []);
@@ -95,7 +95,7 @@ class AuthenticationService
                 'required'     => true,
                 'type'         => 'inline_checkbox',
                 'label'        => Helper::htmlToMd($termsText),
-                'inline_label' => $termsText
+                'inline_label' => $termsText,
             ];
         }
 
@@ -121,8 +121,8 @@ class AuthenticationService
     {
         $currentSettings = self::getAuthSettings();
 
-        $textFields = ['type', 'title', 'button_label', 'position', 'title_color', 'text_color', 'button_color', 'button_label_color', 'background_color'];
-        $mediaFields = ['logo', 'background_image'];
+        $textFields = [ 'type', 'title', 'button_label', 'position', 'title_color', 'text_color', 'button_color', 'button_label_color', 'background_color' ];
+        $mediaFields = [ 'logo', 'background_image' ];
 
         $formattedFields = [];
         foreach ($settingFields as $section => $settings) {
@@ -183,7 +183,7 @@ class AuthenticationService
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
                     'sub_object_id' => null,
-                    'object_source' => 'auth_' . $section . '_' . $key
+                    'object_source' => 'auth_' . $section . '_' . $key,
                 ]);
             }
         }

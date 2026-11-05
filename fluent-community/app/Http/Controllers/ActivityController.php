@@ -20,8 +20,7 @@ class ActivityController extends Controller
         $spaceId = !empty($context['space_id']) ? (int)$context['space_id'] : null;
         $userId = !empty($context['user_id']) ? (int)$context['user_id'] : null;
 
-        $maxPerPage = (int) apply_filters('fluent_community/max_per_page', 100) ?: 100;
-        $perPage = min($maxPerPage, max(1, (int)$request->get('per_page', 5)));
+        $perPage = Helper::clampPerPage($request->get('per_page', 5));
         $page = max(1, (int)$request->get('page', 1));
 
         $latestActivityIds = Activity::where(function ($q) {
@@ -51,7 +50,7 @@ class ActivityController extends Controller
                 }
             });
         })
-            ->whereIn('action_name', ['feed_published', 'comment_added'])
+            ->whereIn('action_name', [ 'feed_published', 'comment_added' ])
             ->when($spaceId, function ($q) use ($spaceId) {
                 $q->where('space_id', $spaceId);
             })
@@ -63,9 +62,11 @@ class ActivityController extends Controller
             ->pluck('id');
 
         $activities = Activity::whereIn('id', $latestActivityIds)
-            ->with(['xprofile' => function ($q) {
+            ->with([
+        'xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }, 'feed', 'feed.space', 'space'])
+        }, 'feed', 'feed.space', 'space',
+        ])
             ->whereHas('feed', function ($q) {
                 $q->where('status', 'published');
             })
@@ -87,9 +88,9 @@ class ActivityController extends Controller
 
             $route = $activity->feed->getJsRoute();
 
-            if ($activity->action_name == 'comment_added') {
+            if ($activity->action_name === 'comment_added') {
                 $route['query'] = [
-                    'comment_id' => $activity->related_id
+                    'comment_id' => $activity->related_id,
                 ];
             }
 
@@ -98,14 +99,14 @@ class ActivityController extends Controller
                 'message'    => $message,
                 'xprofile'   => $activity->xprofile,
                 'updated_at' => $activity->updated_at->format('Y-m-d H:i:s'),
-                'route'      => $route
+                'route'      => $route,
             ];
         }
 
         if ($spaceId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_space', '', $spaceId, $context);
             $beforeContent = apply_filters('fluent_community/activity/before_contents_space', '', $spaceId, $context);
-        } else if ($userId) {
+        } elseif ($userId) {
             $afterContent = apply_filters('fluent_community/activity/after_contents_user', '', $userId, $context);
             $beforeContent = apply_filters('fluent_community/activity/before_contents_user', '', $userId, $context);
         } else {
@@ -124,7 +125,7 @@ class ActivityController extends Controller
         $returnData = [
             'activities'      => [
                 'data'         => $formattedActivities,
-                'has_more'     => (boolean) $hasMore,
+                'has_more'     => (bool) $hasMore,
                 'per_page'     => $perPage,
                 'current_page' => $page,
             ],
@@ -171,9 +172,11 @@ class ActivityController extends Controller
             ->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
             })
-            ->with(['xprofile' => function ($q) {
+            ->with([
+        'xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }], 'space')
+        },
+        ], 'space')
             ->limit(5);
 
         if ($isTrending && !$spaceId) {

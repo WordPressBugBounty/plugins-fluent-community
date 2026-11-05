@@ -33,11 +33,11 @@ class CourseAdminController extends Controller
         $sortBy    = $request->getSafe('sort_by', 'sanitize_text_field', 'latest');
         $topicSlug = $request->getSafe('topic_slug');
 
-        $query = Course::searchBy($request->getSafe('search'))
+        $query = Course::searchBy($request->getSafe('search'), true)
             ->byAdminAccess($user->ID)
             ->byPostTopic($topicSlug);
 
-        if ($status && in_array($status, [ 'published', 'draft' ])) {
+        if ($status && in_array($status, [ 'published', 'draft' ], true)) {
             $query->where('status', $status);
         }
 
@@ -77,9 +77,9 @@ class CourseAdminController extends Controller
 
         $parentId = $request->get('parent_id');
         if ($parentId) {
-            $serial = BaseSpace::where('parent_id', $parentId)->max('serial') + 1;
+            $serial = BaseSpace::withoutGlobalScopes()->where('parent_id', $parentId)->max('serial') + 1;
         } else {
-            $serial = BaseSpace::max('serial') + 1;
+            $serial = BaseSpace::withoutGlobalScopes()->max('serial') + 1;
         }
 
         $courseData = [
@@ -104,7 +104,7 @@ class CourseAdminController extends Controller
         ];
 
         $lockScreenType = $request->get('settings.custom_lock_screen');
-        if (!in_array($lockScreenType, [ 'yes', 'no', 'redirect' ]) || $request->get('privacy') != 'private') {
+        if (!in_array($lockScreenType, [ 'yes', 'no', 'redirect' ], true) || $request->get('privacy') !== 'private') {
             $lockScreenType = 'no';
         }
 
@@ -120,8 +120,8 @@ class CourseAdminController extends Controller
             $courseData['settings']['onboard_redirect_url'] = sanitize_url($redirectUrl);
         }
 
-        if ($request->get('privacy') == 'public' && $request->get('course_type') == 'self_paced') {
-            $courseData['settings']['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
+        if ($request->get('privacy') === 'public' && $request->get('course_type') === 'self_paced') {
+            $courseData['settings']['public_lesson_view'] = $request->get('settings.public_lesson_view') === 'yes' ? 'yes' : 'no';
         }
 
         $slug = $request->get('slug');
@@ -227,12 +227,18 @@ class CourseAdminController extends Controller
             'privacy'     => $request->get('privacy'),
             'description' => wp_kses_post((string) $request->get('description', '')),
             'status'      => $request->get('status'),
-            'cover_photo' => $request->getSafe('cover_photo', 'sanitize_url'),
-            'parent_id'   => $request->get('parent_id') ?: null, // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
         ];
 
+        if ($request->exists('cover_photo')) {
+            $courseData['cover_photo'] = $request->getSafe('cover_photo', 'sanitize_url');
+        }
+
+        if ($request->exists('parent_id')) {
+            $courseData['parent_id'] = $request->get('parent_id') ?: null; // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
+        }
+
         $slug = $request->get('slug');
-        if ($slug && $course->slug != $slug) {
+        if ($slug && (string) $course->slug !== (string) $slug) {
             $slug = Utility::slugify($slug);
 
             $exist = App::getInstance('db')->table('fcom_spaces')->where('slug', $slug)
@@ -255,6 +261,10 @@ class CourseAdminController extends Controller
         $imageTypes = [ 'cover_photo', 'logo' ];
 
         foreach ($imageTypes as $type) {
+            if (!$request->exists($type)) {
+                continue;
+            }
+
             if (!empty($request->get($type))) {
                 $media = Helper::getMediaFromUrl($request->get($type));
                 if (!$media || $media->is_active) {
@@ -275,12 +285,21 @@ class CourseAdminController extends Controller
         $existingSettings = $course->settings;
         $existingSettings['course_type'] = $request->get('course_type');
 
-        $lockScreenType = $request->get('settings.custom_lock_screen');
-        if (!in_array($lockScreenType, [ 'yes', 'no', 'redirect' ]) || $request->get('privacy') != 'private') {
+        // Emoji and SVG are one icon: sending either replaces both.
+        if ($request->exists('settings.emoji') || $request->exists('settings.shape_svg')) {
+            $existingSettings['emoji'] = '';
+            $existingSettings['shape_svg'] = '';
+        }
+
+        // Omitted settings keep their stored value; only the submitted keys change.
+        $settings = wp_parse_args((array) $request->get('settings', []), $existingSettings);
+
+        $lockScreenType = Arr::get($settings, 'custom_lock_screen');
+        if (!in_array($lockScreenType, [ 'yes', 'no', 'redirect' ], true) || $request->get('privacy') !== 'private') {
             $lockScreenType = 'no';
         }
-        if ($lockScreenType == 'redirect') {
-            $redirectUrl = $request->get('settings.onboard_redirect_url');
+        if ($lockScreenType === 'redirect') {
+            $redirectUrl = Arr::get($settings, 'onboard_redirect_url');
             if (!$redirectUrl || !filter_var($redirectUrl, FILTER_VALIDATE_URL)) {
                 return $this->sendError([
                     'message' => __('Course Redirect URL is not valid', 'fluent-community'),
@@ -290,20 +309,22 @@ class CourseAdminController extends Controller
         }
 
         $existingSettings['custom_lock_screen'] = $lockScreenType;
-        $existingSettings['emoji'] = CustomSanitizer::sanitizeEmoji($request->get('settings.emoji', ''));
-        $existingSettings['shape_svg'] = CustomSanitizer::sanitizeSvg($request->get('settings.shape_svg', ''));
-        $existingSettings['disable_comments'] = $request->get('settings.disable_comments') === 'yes' ? 'yes' : 'no';
-        $existingSettings['hide_members_count'] = $request->get('settings.hide_members_count') === 'yes' ? 'yes' : 'no';
-        $existingSettings['hide_instructor_view'] = $request->get('settings.hide_instructor_view') === 'yes' ? 'yes' : 'no';
-        $existingSettings['show_instructor_students_count'] = $request->get('settings.show_instructor_students_count') === 'yes' ? 'yes' : 'no';
-        $existingSettings['show_paywalls'] = $request->get('settings.show_paywalls') === 'yes' ? 'yes' : 'no';
-        $existingSettings['show_welcome_banner'] = $request->get('settings.show_welcome_banner') === 'yes' ? 'yes' : 'no';
-        $existingSettings['course_layout'] = $request->get('settings.course_layout') === 'modern' ? 'modern' : 'classic';
-        $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim((string) $request->get('settings.course_details', '')));
-        $existingSettings['sequential_lesson_order'] = $request->get('settings.sequential_lesson_order') === 'yes' ? 'yes' : 'no';
+        $existingSettings['emoji'] = CustomSanitizer::sanitizeEmoji(Arr::get($settings, 'emoji', ''));
+        $existingSettings['shape_svg'] = CustomSanitizer::sanitizeSvg(Arr::get($settings, 'shape_svg', ''));
+        $existingSettings['disable_comments'] = Arr::get($settings, 'disable_comments') === 'yes' ? 'yes' : 'no';
+        $existingSettings['hide_members_count'] = Arr::get($settings, 'hide_members_count') === 'yes' ? 'yes' : 'no';
+        $existingSettings['hide_instructor_view'] = Arr::get($settings, 'hide_instructor_view') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_instructor_students_count'] = Arr::get($settings, 'show_instructor_students_count') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_paywalls'] = Arr::get($settings, 'show_paywalls') === 'yes' ? 'yes' : 'no';
+        $existingSettings['show_welcome_banner'] = Arr::get($settings, 'show_welcome_banner') === 'yes' ? 'yes' : 'no';
+        $existingSettings['course_layout'] = Arr::get($settings, 'course_layout') === 'modern' ? 'modern' : 'classic';
+        if ($request->exists('settings.course_details')) {
+            $existingSettings['course_details'] = CustomSanitizer::unslashMarkdown(trim((string) $request->get('settings.course_details', '')));
+        }
+        $existingSettings['sequential_lesson_order'] = Arr::get($settings, 'sequential_lesson_order') === 'yes' ? 'yes' : 'no';
 
-        if ($request->get('privacy') == 'public' && $existingSettings['course_type'] == 'self_paced') {
-            $existingSettings['public_lesson_view'] = $request->get('settings.public_lesson_view') == 'yes' ? 'yes' : 'no';
+        if ($request->get('privacy') === 'public' && $existingSettings['course_type'] === 'self_paced') {
+            $existingSettings['public_lesson_view'] = Arr::get($settings, 'public_lesson_view') === 'yes' ? 'yes' : 'no';
         } else {
             unset($existingSettings['public_lesson_view']);
         }
@@ -320,7 +341,7 @@ class CourseAdminController extends Controller
         if ($dirtyFields) {
             $course->save();
             do_action('fluent_community/course/updated', $course, $dirtyFields, $prevCourse);
-            if ($previousStatus != 'published' && $course->status == 'published') {
+            if ($previousStatus !== 'published' && $course->status === 'published') {
                 do_action('fluent_community/course/published', $course);
             }
         }
@@ -449,7 +470,7 @@ class CourseAdminController extends Controller
     {
         $course = Course::findOrFail($courseId);
 
-        $comments = Comment::byContentModerationAccessStatus($this->getUser(), $course)
+        $comments = Comment::query()->byContentModerationAccessStatus($this->getUser(), $course)
             ->whereHas('post', function ($q) use ($courseId) {
                 return $q->where('space_id', $courseId);
             })
@@ -469,7 +490,7 @@ class CourseAdminController extends Controller
                 $comment->user->makeHidden([ 'user_email' ]);
             }
             $likedIds = FeedsHelper::getLikedIdsByUserFeedId($comment->post_id, get_current_user_id());
-            if ($likedIds && in_array($comment->id, $likedIds)) {
+            if ($likedIds && in_array((int) $comment->id, array_map('intval', $likedIds), true)) {
                 $comment->liked = 1;
             }
         }
@@ -496,7 +517,7 @@ class CourseAdminController extends Controller
         $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'created_at');
         $sortColumn = in_array($sortBy, array_keys($defaultDirections), true) ? $sortBy : 'created_at';
         $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
-        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true) ? $sortDir : $defaultDirections[$sortColumn];
+        $sortDirection = in_array($sortDir, [ 'ASC', 'DESC' ], true) ? $sortDir : $defaultDirections[$sortColumn];
         $orderColumn = $sortColumn === 'created_at'
             ? 'fcom_space_user.created_at'
             : 'fcom_xprofile.' . $sortColumn;
@@ -505,7 +526,7 @@ class CourseAdminController extends Controller
             return 'fcom_xprofile.' . $field;
         }, ProfileHelper::getXProfilePublicFields());
 
-        $students = XProfile::searchBy($search)
+        $students = XProfile::query()->searchBy($search)
             ->whereHas('user')
             ->with([
                 'space_pivot' => function ($q) use ($courseId) {
@@ -548,7 +569,7 @@ class CourseAdminController extends Controller
         $targetUser = User::findOrFail($userId);
         $xprofile = $targetUser->syncXProfile();
 
-        if ($xprofile && $xprofile->status != 'active') {
+        if ($xprofile && $xprofile->status !== 'active') {
             return $this->sendError([
                 'message' => __('Selected user is not active', 'fluent-community'),
             ]);
@@ -623,7 +644,7 @@ class CourseAdminController extends Controller
             ->orderBy('priority', 'ASC')
             ->orderBy('id', 'ASC');
 
-        if (in_array('only_published', $request->get('conditions', []))) {
+        if (in_array('only_published', $request->get('conditions', []), true)) {
             $sectionsQuery->where('status', 'published')
                 ->with([
             'lessons' => function ($q) {
@@ -794,9 +815,9 @@ class CourseAdminController extends Controller
 
         $acceptedFields = [ 'title', 'status' ];
 
-        if ($course->getCourseType() == 'scheduled') {
+        if ($course->getCourseType() === 'scheduled') {
             $acceptedFields[] = 'scheduled_at';
-        } elseif ($course->getCourseType() == 'structured') {
+        } elseif ($course->getCourseType() === 'structured') {
             $acceptedFields[] = 'reactions_count';
         }
 
@@ -1038,7 +1059,8 @@ class CourseAdminController extends Controller
         $updatedMeta = CourseHelper::sanitizeLessonMeta(Arr::get($lessonData, 'meta', []), $lesson);
         $updatedMeta['document_ids'] = Arr::get($lesson->meta, 'document_ids', []);
 
-        if ($mediaId = Arr::get($updatedMeta, 'featured_image_id')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
+        $mediaId = Arr::get($updatedMeta, 'featured_image_id');
+        if ($mediaId) {
             if (!$lesson->isQuizType()) {
                 $media = wp_get_attachment_image_url($mediaId);
                 $lesson->featured_image = $media ? $media : null;
@@ -1129,7 +1151,7 @@ class CourseAdminController extends Controller
             );
         }
 
-        if (isset($lessonData['status']) && !in_array($lessonData['status'], ['draft', 'published', 'archived'], true)) {
+        if (isset($lessonData['status']) && !in_array($lessonData['status'], [ 'draft', 'published', 'archived' ], true)) {
             unset($lessonData['status']);
         }
 
@@ -1248,9 +1270,11 @@ class CourseAdminController extends Controller
             'ID',
             'display_name',
         ];
+        $searchFields = [ 'display_name' ];
 
         if (current_user_can('list_users')) {
             $selects[] = 'user_email';
+            $searchFields[] = 'user_email';
         }
 
         $userQuery = User::select([ 'ID' ])
@@ -1258,7 +1282,7 @@ class CourseAdminController extends Controller
                 $q->where('space_id', $courseId);
             })
             ->limit(100)
-            ->searchBy($request->getSafe('search'));
+            ->searchBy($request->getSafe('search'), $searchFields);
 
         if (is_multisite()) {
             global $wpdb;
@@ -1330,14 +1354,16 @@ class CourseAdminController extends Controller
             'ID',
             'display_name',
         ];
+        $searchFields = [ 'display_name' ];
 
         if (current_user_can('list_users')) {
             $selects[] = 'user_email';
+            $searchFields[] = 'user_email';
         }
 
         $instructors = User::select($selects)
             ->limit(100)
-            ->searchBy($search)
+            ->searchBy($search, $searchFields)
             ->get();
 
         $data = [

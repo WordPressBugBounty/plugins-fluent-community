@@ -9,6 +9,9 @@ use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\Term;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\Libs\EmailComposer;
+use FluentCommunity\App\Services\LockscreenService;
+use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\App\Services\SmartCodeParser;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Model\Course;
@@ -66,9 +69,11 @@ class CourseHelper
             return $enrollmentCache[$key];
         }
 
-        return $enrollmentCache[$key] = SpaceUserPivot::where('space_id', $courseId)
+        $enrollmentCache[$key] = SpaceUserPivot::where('space_id', $courseId)
             ->where('user_id', $userId)
             ->first();
+
+        return $enrollmentCache[$key];
     }
 
     public static function getCoursePublishedLessonIds($courseId)
@@ -97,7 +102,7 @@ class CourseHelper
             return 0;
         }
 
-        $progressMap = self::getBulkCourseProgress($courseId, [$userId]);
+        $progressMap = self::getBulkCourseProgress($courseId, [ $userId ]);
 
         return $progressMap[$userId] ?? 0;
     }
@@ -148,12 +153,14 @@ class CourseHelper
             return self::$completedLessonsCache[$key];
         }
 
-        return self::$completedLessonsCache[$key] = Reaction::where('user_id', $userId)
+        self::$completedLessonsCache[$key] = Reaction::where('user_id', $userId)
             ->where('parent_id', $courseId)
             ->where('object_type', 'lesson_completed')
             ->where('type', 'completed')
             ->pluck('object_id')
             ->toArray();
+
+        return self::$completedLessonsCache[$key];
     }
 
     public static function overallCourseProgressAverage($course)
@@ -183,13 +190,16 @@ class CourseHelper
 
     public static function updateLessonCompletion($lesson, $userId, $state = 'completed')
     {
+        // The lesson-access check may have cached the list before this write
+        unset(self::$completedLessonsCache[$lesson->space_id . '_' . $userId]);
+
         $reaction = Reaction::where('user_id', $userId)
             ->where('object_id', $lesson->id)
             ->where('object_type', 'lesson_completed')
             ->first();
 
         if ($reaction) {
-            if ($state != 'completed') {
+            if ($state !== 'completed') {
                 $reaction->type = 'incomplete';
                 $reaction->save();
                 do_action('fluent_community/course/lesson_marked_incomplete', $lesson, $userId);
@@ -210,7 +220,7 @@ class CourseHelper
             'object_id'   => $lesson->id,
             'object_type' => 'lesson_completed',
             'parent_id'   => $lesson->space_id,
-            'type'        => 'completed'
+            'type'        => 'completed',
         ]);
 
         do_action('fluent_community/course/lesson_completed', $lesson, $userId);
@@ -228,7 +238,7 @@ class CourseHelper
             ->where('type', 'completed')
             ->count();
 
-        if (count($allTopicLessonIds) == $completedLessonCount) {
+        if (count($allTopicLessonIds) === (int) $completedLessonCount) {
             $topic = CourseTopic::find($lesson->parent_id);
             do_action('fluent_community/course/topic_completed', $topic, $userId, $lesson);
         }
@@ -257,7 +267,7 @@ class CourseHelper
 
         if ($meta) {
             $meta->update([
-                'value' => $value
+                'value' => $value,
             ]);
             return $meta;
         }
@@ -265,7 +275,7 @@ class CourseHelper
         return Meta::create([
             'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
             'value'       => $value,
-            'object_type' => 'course'
+            'object_type' => 'course',
         ]);
     }
 
@@ -289,7 +299,7 @@ class CourseHelper
         Activity::create([
             'feed_id'     => $course->id,
             'user_id'     => $userId,
-            'action_name' => 'course_completed'
+            'action_name' => 'course_completed',
         ]);
 
         do_action('fluent_community/course/completed', $course, $userId);
@@ -408,11 +418,11 @@ class CourseHelper
 
     public static function getSectionAccessDate($section, $courseType, $enrollment = null)
     {
-        if ($courseType == 'self_paced') {
+        if ($courseType === 'self_paced') {
             return null;
         }
 
-        if ($courseType == 'scheduled') {
+        if ($courseType === 'scheduled') {
             return $section->scheduled_at;
         }
 
@@ -437,41 +447,46 @@ class CourseHelper
             'free_preview_lesson',
             'require_video_completion',
             'video_completion_threshold',
-            'auto_complete_on_video_end'
+            'auto_complete_on_video_end',
         ];
 
         if ($lesson->isQuizType()) {
-            $quizFields = ['quiz_questions', 'passing_score', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions', 'layout'];
+            $quizFields = [ 'quiz_questions', 'passing_score', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions', 'layout', 'limit_attempts', 'max_attempts', 'enable_time_limit', 'time_limit' ];
             $validFields = wp_parse_args($validFields, $quizFields);
         }
 
         $meta = Arr::only($meta, $validFields);
 
-        $yesNoFields = ['enable_comments', 'enable_media', 'free_preview_lesson', 'require_video_completion', 'auto_complete_on_video_end', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions'];
+        $yesNoFields = [ 'enable_comments', 'enable_media', 'free_preview_lesson', 'require_video_completion', 'auto_complete_on_video_end', 'enable_passing_score', 'enforce_passing_score', 'hide_result', 'shuffle_options', 'shuffle_questions', 'limit_attempts', 'enable_time_limit' ];
 
         foreach ($yesNoFields as $field) {
-            $meta[$field] = Arr::get($meta, $field, 'no') == 'yes' ? 'yes' : 'no';
+            $meta[$field] = Arr::get($meta, $field, 'no') === 'yes' ? 'yes' : 'no';
         }
 
         if ($lesson->isQuizType()) {
             $meta['layout'] = Arr::get($meta, 'layout') === 'one_by_one' ? 'one_by_one' : 'all';
+            $meta['max_attempts'] = min(100, max(1, absint(Arr::get($meta, 'max_attempts', 3))));
+            $meta['time_limit'] = min(600, max(1, absint(Arr::get($meta, 'time_limit', 20)))); // minutes
         }
 
-        if (Arr::get($meta, 'enable_media') == 'yes') {
-            if ($media = Arr::get($meta, 'media', [])) {
+        if (Arr::get($meta, 'enable_media') === 'yes') {
+            $media = Arr::get($meta, 'media', []);
+            if ($media) {
                 $meta['media'] = self::sanitizeMedia($media);
             }
         } else {
             $meta['media'] = [
-                'provider' => ''
+                'provider' => '',
             ];
         }
 
-        $numericFields = ['video_length', 'passing_score', 'video_completion_threshold'];
+        $numericFields = [ 'video_length', 'passing_score', 'video_completion_threshold' ];
 
         foreach ($numericFields as $field) {
             $meta[$field] = absint(Arr::get($meta, $field, 0));
         }
+
+        $meta['passing_score'] = min(100, $meta['passing_score']);
 
         // 0 means "not set" — the gate falls back to its default threshold
         if ($meta['video_completion_threshold']) {
@@ -491,7 +506,7 @@ class CourseHelper
             'title'        => sanitize_text_field(Arr::get($media, 'title', '')),
             'author_name'  => sanitize_text_field(Arr::get($media, 'author_name', '')),
             'html'         => CustomSanitizer::sanitizeRichText(Arr::get($media, 'html', '')),
-            'image'        => sanitize_url(Arr::get($media, 'image', ''))
+            'image'        => sanitize_url(Arr::get($media, 'image', '')),
         ]);
     }
 
@@ -522,7 +537,7 @@ class CourseHelper
             $formattedTerms[] = [
                 'id'    => $term->id,
                 'title' => $term->title,
-                'slug'  => $term->slug
+                'slug'  => $term->slug,
             ];
         }
 
@@ -564,12 +579,12 @@ class CourseHelper
 
             // message_rendered still holding block markup never went through the_content
             if (!$content || has_blocks($content)) {
-                $source = $lesson->message ?: $content;
+                $source = $lesson->message ? $lesson->message : $content;
 
                 if ($source) {
                     $content = CustomSanitizer::renderEditorBody($source, $lesson->user_id);
                     if (function_exists('wp_style_engine_get_stylesheet_from_context')) {
-                        $core_styles_keys = array('block-supports');
+                        $core_styles_keys = array( 'block-supports' );
                         // Adds comment if code is prettified to identify core styles sections in debugging.
                         foreach ($core_styles_keys as $style_key) {
                             $inlineCss .= wp_style_engine_get_stylesheet_from_context($style_key, []);
@@ -602,7 +617,7 @@ class CourseHelper
             'unlock_date'    => Arr::get($config, 'unlock_date', ''),
             'lock_type'      => Arr::get($config, 'lock_type', ''),
             'can_view'       => $canViewLesson,
-            'inline_css'     => $inlineCss
+            'inline_css'     => $inlineCss,
         ];
 
         if (!$canViewLesson) {
@@ -627,7 +642,7 @@ class CourseHelper
             $newMedia = $media->replicate();
             $newMedia->feed_id = $newLesson->id;
             $newMedia->save();
-            if ($media->object_source == 'lesson_document') {
+            if ($media->object_source === 'lesson_document') {
                 $newLessonMeta['document_lists'][] = $newMedia->getPrivateFileMeta();
             }
         }
@@ -679,34 +694,133 @@ class CourseHelper
     {
         $parsedBody = (new SmartCodeParser())->parse($text, $user, $section);
 
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+        $emailComposer = new EmailComposer();
 
         $emailComposer->addBlock('html_content', $parsedBody);
         $emailComposer->setDefaultLogo();
         $emailComposer->setDefaultFooter();
 
-        return $emailComposer->getHtml();
+        return str_replace(
+            '##email_notification_url##',
+            ProfileHelper::getSignedNotificationPrefUrl($user->ID),
+            $emailComposer->getHtml()
+        );
     }
 
     /**
-     * The same gate the lesson view applies: the section's unlock date first,
-     * then whatever lock the access filters add on top of it. $enrollment is
-     * passed in because every caller already holds it.
+     * The single lesson access rule, shared by the lesson page, the course page and comments.
+     *
+     * @return array can_view, lock_type, unlock_date, has_section_access, is_admin
      */
-    public static function canAccessLesson($lesson, $course, $user, $enrollment)
+    public static function getLessonAccess($lesson, $course, $user, $enrollment)
     {
-        $section = $lesson->topic;
         $isCourseAdmin = $course->isCourseAdmin($user);
-        $unlockDate = $section ? self::getSectionAccessDate($section, $course->getCourseType(), $enrollment) : '';
-        $hasSectionAccess = $enrollment && (!$unlockDate || strtotime($unlockDate) <= strtotime(current_time('mysql')));
 
-        $access = self::resolveLessonAccess($hasSectionAccess || $isCourseAdmin, $lesson, $course, $user, [
+        if (!$isCourseAdmin && ($course->status !== 'published' || $lesson->status !== 'published')) {
+            return [
+                'can_view'           => false,
+                'lock_type'          => '',
+                'unlock_date'        => '',
+                'has_section_access' => false,
+                'is_admin'           => false,
+            ];
+        }
+
+        $section = $lesson->topic;
+        $unlockDate = '';
+        $hasSectionAccess = false;
+
+        if ($enrollment) {
+            $unlockDate = $section ? self::getSectionAccessDate($section, $course->getCourseType(), $enrollment) : null;
+            $hasSectionAccess = !$unlockDate || strtotime($unlockDate) <= strtotime(current_time('mysql'));
+            if ($hasSectionAccess) {
+                $unlockDate = null;
+            }
+        }
+
+        $hasPublicAccess = $course->hasPublicLessonView();
+
+        $access = self::resolveLessonAccess($hasSectionAccess || $isCourseAdmin || $hasPublicAccess, $lesson, $course, $user, [
             'enrollment'         => $enrollment,
             'section'            => $section,
             'is_admin'           => $isCourseAdmin,
             'has_section_access' => $hasSectionAccess,
+            'has_public_access'  => $hasPublicAccess,
         ]);
 
-        return !empty($access['can_view']);
+        $access['unlock_date'] = $unlockDate;
+        $access['has_section_access'] = $hasSectionAccess;
+        $access['is_admin'] = $isCourseAdmin;
+
+        return $access;
+    }
+
+    /**
+     * Whether the course's lesson list (section and lesson titles) may be shown to a user
+     * who is not necessarily allowed to open the lessons.
+     *
+     * Course admins, enrolled students and visitors of a published public course see it.
+     * On a private course, a visitor who is not enrolled sees it only when the admin shows
+     * the "Lessons" block on the course's custom lock screen. A secret course never shows
+     * it to them. A lesson the user can open is listed regardless (see processCourse).
+     */
+    public static function canSeeLessonList($course, $enrollment, $isCourseAdmin)
+    {
+        if ($isCourseAdmin) {
+            return true;
+        }
+
+        if ($course->status !== 'published') {
+            return false;
+        }
+
+        if ($enrollment || $course->privacy === 'public') {
+            return true;
+        }
+
+        if ($course->privacy !== 'private') {
+            return false;
+        }
+
+        return self::lockscreenShowsLessons($course);
+    }
+
+    public static function lockscreenShowsLessons($course)
+    {
+        if (Arr::get($course->settings, 'custom_lock_screen') !== 'yes') {
+            return false;
+        }
+
+        foreach ((array) LockscreenService::getLockscreenSettings($course) as $field) {
+            if (Arr::get($field, 'type') === 'lesson' && !Arr::isTrue($field, 'hidden')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether $user can open the lesson, by the same rule as the lesson page.
+     */
+    public static function canAccessLesson($lesson, $course, $user, $enrollment)
+    {
+        return !empty(self::getLessonAccess($lesson, $course, $user, $enrollment)['can_view']);
+    }
+
+    /**
+     * Whether $feed is a lesson that $user cannot open. A lesson whose course no longer exists
+     * counts as locked. Any other feed type is never locked.
+     */
+    public static function isLockedLesson($feed, $user)
+    {
+        if ($feed->type !== 'course_lesson') {
+            return false;
+        }
+
+        $lesson = CourseLesson::find($feed->id);
+        $course = $lesson ? $lesson->course : null;
+
+        return !$course || !self::canAccessLesson($lesson, $course, $user, self::getCourseEnrollment($course->id, $user ? $user->ID : null));
     }
 }

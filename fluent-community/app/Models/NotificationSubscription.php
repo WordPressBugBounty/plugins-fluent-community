@@ -24,14 +24,14 @@ class NotificationSubscription extends Model
 
     protected $primaryKey = 'id';
     
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'object_id',
         'user_id',
         'is_read',
         'object_type',
-        'notification_type'
+        'notification_type',
     ];
 
     protected static function boot()

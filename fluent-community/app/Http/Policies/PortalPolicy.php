@@ -18,15 +18,15 @@ class PortalPolicy extends BasePolicy
         $userId = get_current_user_id();
 
         $xProfile = Helper::getCurrentProfile(true);
-        if($xProfile && $xProfile->status != 'active') {
+        if($xProfile && $xProfile->status !== 'active') {
             return false;
         }
 
-        if ($method != 'GET' && !$userId) {
+        if ($method !== 'GET' && !$userId) {
             throw new \Exception(esc_html__('You must be logged in to perform this action', 'fluent-community'));
         }
 
-        return !!Helper::canAccessPortal($userId);
+        return (bool)Helper::canAccessPortal($userId);
     }
 
     public function getBookmarks(Request $request)
@@ -59,6 +59,6 @@ class PortalPolicy extends BasePolicy
 
     public function updateLinks(Request $request)
     {
-        return !!Helper::isSiteAdmin();
+        return (bool)Helper::isSiteAdmin();
     }
 }

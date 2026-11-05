@@ -29,14 +29,14 @@ class NotificationPreference extends Model
 
     protected $primaryKey = 'id';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'user_id',
         'channel',
         'event_key',
         'object_id',
-        'value'
+        'value',
     ];
 
     public function user()

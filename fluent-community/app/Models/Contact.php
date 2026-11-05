@@ -16,7 +16,7 @@ class Contact extends Model
 {
     protected $table = 'fc_subscribers';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'hash',
@@ -46,7 +46,7 @@ class Contact extends Model
         'ip',
         'created_at',
         'updated_at',
-        'avatar'
+        'avatar',
     ];
 
 }

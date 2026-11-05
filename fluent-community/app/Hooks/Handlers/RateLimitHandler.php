@@ -12,10 +12,10 @@ class RateLimitHandler
 {
     public function register()
     {
-        add_action('fluent_community/check_rate_limit/create_post', [$this, 'maybeLimitPost'], 10, 1);
-        add_action('fluent_community/check_rate_limit/create_comment', [$this, 'maybeLimitComment'], 10, 1);
-        add_action('fluent_community/check_rate_limit/media_upload', [$this, 'maybeLimitMediaUpload'], 10, 1);
-        add_action('fluent_community/check_rate_limit/oembed', [$this, 'maybeLimitOembed'], 10, 1);
+        add_action('fluent_community/check_rate_limit/create_post', [ $this, 'maybeLimitPost' ], 10, 1);
+        add_action('fluent_community/check_rate_limit/create_comment', [ $this, 'maybeLimitComment' ], 10, 1);
+        add_action('fluent_community/check_rate_limit/media_upload', [ $this, 'maybeLimitMediaUpload' ], 10, 1);
+        add_action('fluent_community/check_rate_limit/oembed', [ $this, 'maybeLimitOembed' ], 10, 1);
     }
 
     public function maybeLimitPost(User $user)

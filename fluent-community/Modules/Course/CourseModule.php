@@ -18,9 +18,11 @@ class CourseModule
         });
 
         // Add to Menu
-        add_filter('fluent_community/main_menu_items', [$this, 'maybeRemoveCourseMenu']);
+        add_filter('fluent_community/main_menu_items', [ $this, 'maybeRemoveCourseMenu' ]);
 
-        add_filter('fluent_community/insights/cards', [$this, 'registerInsightsCards']);
+        add_filter('fluent_community/insights/cards', [ $this, 'registerInsightsCards' ]);
+
+        (new \FluentCommunity\Modules\Course\Services\CourseSearchProvider())->register();
     }
 
     public function registerInsightsCards($cards)

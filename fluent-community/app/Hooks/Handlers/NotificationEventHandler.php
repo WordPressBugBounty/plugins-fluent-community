@@ -14,17 +14,17 @@ class NotificationEventHandler
 {
     public function register()
     {
-        add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 2);
-        add_action('fluent_community/space_feed/created', [$this, 'handleNewSpaceFeed'], 10);
-        add_action('fluent_community/feed/react_added', [$this, 'handleNewFeedReact'], 10, 2);
-        add_action('fluent_community/comment/react_added', [$this, 'handleNewCommentReact'], 10, 3);
+        add_action('fluent_community/comment_added', [ $this, 'handleNewCommentEvent' ], 10, 2);
+        add_action('fluent_community/space_feed/created', [ $this, 'handleNewSpaceFeed' ], 10);
+        add_action('fluent_community/feed/react_added', [ $this, 'handleNewFeedReact' ], 10, 2);
+        add_action('fluent_community/comment/react_added', [ $this, 'handleNewCommentReact' ], 10, 3);
 
-        add_action('fluent_community/space/member/role_updated', [$this, 'handleSpaceMemberRoleUpdated'], 10, 2);
+        add_action('fluent_community/space/member/role_updated', [ $this, 'handleSpaceMemberRoleUpdated' ], 10, 2);
 
         /*
          * Mentions handler
          */
-        add_action('fluent_community/feed/created', [$this, 'maybeHandleMentionedUserIds'], 10, 1);
+        add_action('fluent_community/feed/created', [ $this, 'maybeHandleMentionedUserIds' ], 10, 1);
     }
 
     public function handleNewCommentEvent($comment, $feed)
@@ -84,7 +84,7 @@ class NotificationEventHandler
 
     public function handleNewFeedReact($react, $feed)
     {
-        if ($react->user_id == $feed->user_id) {
+        if ((int) $react->user_id === (int) $feed->user_id) {
             return;
         }
 
@@ -113,7 +113,7 @@ class NotificationEventHandler
                     ->where('user_id', $feed->user_id)
                     ->update([
                         'is_read'    => 0,
-                        'updated_at' => current_time('mysql')
+                        'updated_at' => current_time('mysql'),
                     ]);
                 return;
             }
@@ -139,12 +139,12 @@ class NotificationEventHandler
 
         $notification = Notification::create($notification);
 
-        $notification->subscribe([$feed->user_id]);
+        $notification->subscribe([ $feed->user_id ]);
     }
 
     public function handleNewCommentReact($react, $comment, $feed)
     {
-        if ($react->user_id == $comment->user_id) {
+        if ((int) $react->user_id === (int) $comment->user_id) {
             return;
         }
 
@@ -179,7 +179,7 @@ class NotificationEventHandler
             $existingNotification->save();
             NotificationSubscriber::where('object_id', $existingNotification->id)
                 ->where('user_id', $comment->user_id)
-                ->update(['is_read' => 0, 'updated_at' => current_time('mysql')]);
+                ->update([ 'is_read' => 0, 'updated_at' => current_time('mysql') ]);
             return;
         }
 
@@ -193,7 +193,7 @@ class NotificationEventHandler
             'route'           => $feed->getJsRoute(),
         ]);
 
-        $notification->subscribe([$comment->user_id]);
+        $notification->subscribe([ $comment->user_id ]);
     }
 
     public function handleSpaceMemberRoleUpdated($space, $pivot)
@@ -210,8 +210,8 @@ class NotificationEventHandler
         $route = [
             'name'   => 'space_feeds',
             'params' => [
-                'space' => $space->slug
-            ]
+                'space' => $space->slug,
+            ],
         ];
 
         $notification = [
@@ -223,20 +223,20 @@ class NotificationEventHandler
             'route'           => $route,
         ];
         $notification = Notification::create($notification);
-        $notification->subscribe([$pivot->user_id]);
+        $notification->subscribe([ $pivot->user_id ]);
     }
 
     protected function commentNotificationToAuthorFeed(Comment $comment, Feed $feed)
     {
         $authorId = FeedsHelper::getNotificationAuthorId($feed);
 
-        if ($comment->user_id == $authorId) {
+        if ((int) $comment->user_id === (int) $authorId) {
             return;
         }
 
         // Skip a mentioned author here; notifyMentionedUsers() notifies them instead.
         $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
-        if (in_array($authorId, $mentionedUserIds)) {
+        if (in_array((int) $authorId, array_map('intval', $mentionedUserIds), true)) {
             return;
         }
 
@@ -277,9 +277,8 @@ class NotificationEventHandler
                         '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 }
-            } else {
+            } elseif ($totalUsers > 1) {
 
-                if ($totalUsers > 1) {
                     $notificationContent = \sprintf(
                     /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
                         __('%1$s and %2$s other people commented on your post %3$s', 'fluent-community'),
@@ -287,17 +286,15 @@ class NotificationEventHandler
                         '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
                         '<span class="fcom_nft">' . $feedTitle . '</span>'
                     );
-                } else {
-                    $notificationContent = \sprintf(
-                    /* translators: %1$s is the user name & %2$s is the feed title */
-                        __('%1$s commented on your post: %2$s', 'fluent-community'),
-                        $commenter,
-                        '<span class="fcom_nft">' . $feedTitle . '</span>'
-                    );
-                }
+            } else {
+                $notificationContent = \sprintf(
+                /* translators: %1$s is the user name & %2$s is the feed title */
+                    __('%1$s commented on your post: %2$s', 'fluent-community'),
+                    $commenter,
+                    '<span class="fcom_nft">' . $feedTitle . '</span>'
+                );
             }
-        } else {
-            if ($feed->space_id) {
+        } elseif ($feed->space_id) {
                 $notificationContent = \sprintf(
                 /* translators: %1$s is the commenter name, %2$s is the feed title & %3$s is the space title */
                     __('%1$s commented on your post: %2$s in %3$s', 'fluent-community'),
@@ -305,14 +302,13 @@ class NotificationEventHandler
                     '<span class="fcom_nft">' . $feedTitle . '</span>',
                     '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                 );
-            } else {
-                $notificationContent = \sprintf(
-                /* translators: %1$s is the commenter name & %2$s is the feed title */
-                    __('%1$s commented on your post: %2$s', 'fluent-community'),
-                    $commenter,
-                    '<span class="fcom_nft">' . $feedTitle . '</span>'
-                );
-            }
+        } else {
+            $notificationContent = \sprintf(
+            /* translators: %1$s is the commenter name & %2$s is the feed title */
+                __('%1$s commented on your post: %2$s', 'fluent-community'),
+                $commenter,
+                '<span class="fcom_nft">' . $feedTitle . '</span>'
+            );
         }
 
         $route = $feed->getJsRoute();
@@ -328,16 +324,16 @@ class NotificationEventHandler
                 ->where('user_id', $authorId)
                 ->update([
                     'is_read'    => 0,
-                    'updated_at' => current_time('mysql')
+                    'updated_at' => current_time('mysql'),
                 ]);
 
             do_action('fluent_community/notification/comment/notifed_to_author', [
-                'user_ids'     => [$authorId],
+                'user_ids'     => [ $authorId ],
                 'notification' => $exist,
                 'key'          => 'notifed_to_author',
                 'comment'      => $comment,
                 'feed'         => $feed,
-                'created'      => false
+                'created'      => false,
             ]);
 
             return;
@@ -355,15 +351,15 @@ class NotificationEventHandler
 
         $notification = Notification::create($notification);
 
-        $notification->subscribe([$authorId]);
+        $notification->subscribe([ $authorId ]);
 
         do_action('fluent_community/notification/comment/notifed_to_author', [
-            'user_ids'     => [$authorId],
+            'user_ids'     => [ $authorId ],
             'notification' => $notification,
             'comment'      => $comment,
             'key'          => 'notifed_to_author',
             'feed'         => $feed,
-            'created'      => true
+            'created'      => true,
         ]);
     }
 
@@ -380,7 +376,7 @@ class NotificationEventHandler
             return $this->notifyForChildCommentReply($comment, $feed, $mentionedUserIds);
         }
 
-        $userIds = Comment::whereNotIn('user_id', [$feed->user_id, $comment->user_id])
+        $userIds = Comment::whereNotIn('user_id', [ $feed->user_id, $comment->user_id ])
             ->where('post_id', $feed->id)
             ->whereNull('parent_id')
             ->distinct()
@@ -422,8 +418,7 @@ class NotificationEventHandler
                         '<b class="fcom_nst">' . esc_html($feed->space->title) . '</b>'
                     );
                 }
-            } else {
-                if ($totalUsers > 1) {
+            } elseif ($totalUsers > 1) {
                     $notificationContent = \sprintf(
                     /* translators: %1$s is the user name, %2$s is the like count & %3$s is the feed title */
                         __('%1$s and %2$s other people also commented on %3$s', 'fluent-community'),
@@ -431,17 +426,15 @@ class NotificationEventHandler
                         '<b class="fcom_nrc">' . ($totalUsers - 1) . '</b>',
                         $feedTitle,
                     );
-                } else {
-                    $notificationContent = \sprintf(
-                    /* translators: %1$s is the user name & %2$s is the feed title */
-                        __('%1$s also commented on %2$s', 'fluent-community'),
-                        $commenter,
-                        $feedTitle,
-                    );
-                }
+            } else {
+                $notificationContent = \sprintf(
+                /* translators: %1$s is the user name & %2$s is the feed title */
+                    __('%1$s also commented on %2$s', 'fluent-community'),
+                    $commenter,
+                    $feedTitle,
+                );
             }
-        } else {
-            if ($feed->space_id) {
+        } elseif ($feed->space_id) {
                 $notificationContent = \sprintf(
                 /* translators: %1$s is the commenter name, %2$s is the feed title & %3$s is the space title */
                     __('%1$s also commented on %2$s in %3$s', 'fluent-community'),
@@ -449,14 +442,13 @@ class NotificationEventHandler
                     $feedTitle,
                     '<b class="fcom_nst">' . esc_html($space->title) . '</b>'
                 );
-            } else {
-                $notificationContent = \sprintf(
-                /* translators: %1$s is the commenter name & %2$s is the feed title */
-                    __('%1$s also commented on %2$s', 'fluent-community'),
-                    $commenter,
-                    $feedTitle,
-                );
-            }
+        } else {
+            $notificationContent = \sprintf(
+            /* translators: %1$s is the commenter name & %2$s is the feed title */
+                __('%1$s also commented on %2$s', 'fluent-community'),
+                $commenter,
+                $feedTitle,
+            );
         }
 
         if ($mentionedUserIds) {
@@ -470,7 +462,7 @@ class NotificationEventHandler
         $existIds = Notification::where('feed_id', $feed->id)
             ->where('action', 'comment_added')
             ->whereDoesntHave('subscribers', function ($query) use ($feed, $comment) {
-                $query->whereIn('user_id', [$feed->user_id, $comment->user_id]);
+                $query->whereIn('user_id', [ $feed->user_id, $comment->user_id ]);
             })
             ->pluck('id')
             ->toArray();
@@ -481,7 +473,7 @@ class NotificationEventHandler
                 'content'    => $notificationContent,
                 'updated_at' => current_time('mysql'),
                 'src_user_id' => $comment->user_id,
-                'object_id'  => $comment->id
+                'object_id'  => $comment->id,
             ]);
 
             $existingSubscriberUserIds = NotificationSubscriber::whereIn('object_id', $existIds)
@@ -493,7 +485,7 @@ class NotificationEventHandler
                 ->whereIn('user_id', $existingSubscriberUserIds)
                 ->update([
                     'is_read'    => 0,
-                    'updated_at' => current_time('mysql')
+                    'updated_at' => current_time('mysql'),
                 ]);
         }
 
@@ -513,7 +505,7 @@ class NotificationEventHandler
 
         foreach ($userIds as $userId) {
             $createdNotification = Notification::create($notification);
-            $createdNotification->subscribe([$userId]);
+            $createdNotification->subscribe([ $userId ]);
         }
 
         $sendingUserIds = array_merge($userIds, $existingSubscriberUserIds);
@@ -523,7 +515,7 @@ class NotificationEventHandler
             'key'          => 'notifed_to_other_users',
             'notification' => $notification,
             'comment'      => $comment,
-            'feed'         => $feed
+            'feed'         => $feed,
         ]);
     }
 
@@ -558,7 +550,7 @@ class NotificationEventHandler
             'notification' => $mentionNotification,
             'key'          => 'notifed_to_mentions',
             'comment'      => $comment,
-            'feed'         => $feed
+            'feed'         => $feed,
         ]);
 
         return $mentionNotification;
@@ -571,8 +563,8 @@ class NotificationEventHandler
             $q->where('parent_id', $comment->parent_id)
                 ->orWhere('id', $comment->parent_id);
         })
-            ->whereNotIn('user_id', [$comment->user_id, $feed->user_id])
-            ->select(['user_id'])
+            ->whereNotIn('user_id', [ $comment->user_id, $feed->user_id ])
+            ->select([ 'user_id' ])
             ->distinct('user_id')
             ->get()
             ->pluck('user_id')
@@ -607,7 +599,7 @@ class NotificationEventHandler
 
             $route = $existingNotification->route;
             $route['query'] = [
-                'comment_id' => $comment->id
+                'comment_id' => $comment->id,
             ];
 
             $existingNotification->content = $newContent;
@@ -620,7 +612,7 @@ class NotificationEventHandler
                 ->whereIn('user_id', $childCommentUserIds)
                 ->update([
                     'is_read'    => 0,
-                    'updated_at' => current_time('mysql')
+                    'updated_at' => current_time('mysql'),
                 ]);
 
             do_action('fluent_community/notification/comment/notifed_to_thread_commetenter', [
@@ -628,7 +620,7 @@ class NotificationEventHandler
                 'notification' => $existingNotification,
                 'key'          => 'notifed_to_thread_commetenter',
                 'comment'      => $comment,
-                'feed'         => $feed
+                'feed'         => $feed,
             ]);
 
             return $existingNotification;
@@ -644,7 +636,7 @@ class NotificationEventHandler
         $route = $feed->getJsRoute();
 
         $route['query'] = [
-            'comment_id' => $comment->id
+            'comment_id' => $comment->id,
         ];
 
         $notification = [
@@ -665,7 +657,7 @@ class NotificationEventHandler
             'notification' => $notification,
             'key'          => 'notifed_to_thread_commetenter',
             'comment'      => $comment,
-            'feed'         => $feed
+            'feed'         => $feed,
         ]);
 
         return $notification;
@@ -720,7 +712,7 @@ class NotificationEventHandler
         // check if current user is a moderator or admin
         $user = $feed->user;
         $spaceRole = $user->getSpaceRole($feed->space);
-        if (!in_array($spaceRole, ['admin', 'moderator'])) {
+        if (!in_array($spaceRole, [ 'admin', 'moderator' ], true)) {
             return;
         }
 
@@ -729,7 +721,7 @@ class NotificationEventHandler
         // We are scheduling this after 5 minutes of the post publish for performance
         as_schedule_single_action(time() + 300, 'fluent_community/email_notify_users_everyone_tag', [
             $feed->id,
-            0
+            0,
         ], 'fluent-community');
     }
 
@@ -746,7 +738,7 @@ class NotificationEventHandler
 
         if ($feed->space) {
             $role = $feed->user->getSpaceRole($feed->space);
-            return in_array($role, ['admin', 'moderator']);
+            return in_array($role, [ 'admin', 'moderator' ], true);
         }
 
         return false;

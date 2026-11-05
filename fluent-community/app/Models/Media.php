@@ -17,6 +17,7 @@ use FluentCommunity\Framework\Support\Arr;
  * @version 1.0.0
  *
  * @property int          $id
+ * @property Feed|null    $feed
  * @property string       $object_source
  * @property int|null     $user_id
  * @property string       $media_key
@@ -70,7 +71,7 @@ class Media extends Model
                 $model->object_source = '';
             }
 
-            $model->media_key = $model->media_key ? $model->media_key : md5($model->media_url . '_' . time());
+            $model->media_key = $model->media_key ? $model->media_key : bin2hex(random_bytes(16));
         });
 
         static::deleting(function ($media) {
@@ -138,14 +139,14 @@ class Media extends Model
         return apply_filters('fluent_community/media_public_url_' . $this->driver, $this->media_url, $this);
     }
 
-    public function getSignedPublicUrl($time = 3600)
+    public function getSignedPublicUrl($time = 3600, $args = [])
     {
-        return apply_filters('fluent_community/media_signed_public_url_' . $this->driver, $this->media_url, $this, $time);
+        return apply_filters('fluent_community/media_signed_public_url_' . $this->driver, $this->media_url, $this, $time, $args);
     }
 
     public function deleteFile()
     {
-        if ($this->driver == 'local') {
+        if ($this->driver === 'local') {
             if (file_exists($this->media_path)) {
                 wp_delete_file($this->media_path);
             }

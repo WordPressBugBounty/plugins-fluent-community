@@ -42,7 +42,7 @@ class TopSpacesCard extends AbstractCard
 
     public function supports()
     {
-        return ['export'];
+        return [ 'export' ];
     }
 
     public function compute(Range $range, Scope $scope, array $options)
@@ -59,9 +59,9 @@ class TopSpacesCard extends AbstractCard
 
         return [
             'columns'  => [
-                ['key' => 'title', 'label' => __('Space', 'fluent-community'), 'type' => 'link', 'link_key' => 'link'],
-                ['key' => 'posts', 'label' => __('Posts', 'fluent-community'), 'type' => 'bar'],
-                ['key' => 'contributors', 'label' => __('Contributors', 'fluent-community'), 'type' => 'number'],
+                [ 'key' => 'title', 'label' => __('Space', 'fluent-community'), 'type' => 'link', 'link_key' => 'link' ],
+                [ 'key' => 'posts', 'label' => __('Posts', 'fluent-community'), 'type' => 'bar' ],
+                [ 'key' => 'contributors', 'label' => __('Contributors', 'fluent-community'), 'type' => 'number' ],
             ],
             'layout'   => 'ranked',
             'rows'     => $rows,

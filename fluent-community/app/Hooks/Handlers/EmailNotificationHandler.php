@@ -24,21 +24,21 @@ class EmailNotificationHandler
 
     public function register()
     {
-        add_action('fluent_community/space_feed/created', [$this, 'handleSpaceFeedCreated'], 20, 1);
-        add_action('fluent_community/email_notify_new_posts', [$this, 'notifyOnPostCreatedAsync'], 10, 1);
+        add_action('fluent_community/space_feed/created', [ $this, 'handleSpaceFeedCreated' ], 20, 1);
+        add_action('fluent_community/email_notify_new_posts', [ $this, 'notifyOnPostCreatedAsync' ], 10, 1);
 
-        add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 30, 2);
-        add_action('fluent_community/comment_added_async', [$this, 'handleNewCommentNotificationAsync'], 10, 2);
+        add_action('fluent_community/comment_added', [ $this, 'handleNewCommentEvent' ], 30, 2);
+        add_action('fluent_community/comment_added_async', [ $this, 'handleNewCommentNotificationAsync' ], 10, 2);
 
         /*
          * This is an async request
          */
-        add_action('fluent_community/email_notify_users_everyone_tag', [$this, 'emailNotifyUsersForEveryoneTag'], 10, 2);
+        add_action('fluent_community/email_notify_users_everyone_tag', [ $this, 'emailNotifyUsersForEveryoneTag' ], 10, 2);
 
-        add_action('fluent_community_send_daily_digest', [$this, 'maybeSendDailyDigest'], 10);
-        add_action('fluent_community/space/join_requested', [$this, 'handleCommunityJoinRequest'], 10, 2);
+        add_action('fluent_community_send_daily_digest', [ $this, 'maybeSendDailyDigest' ], 10);
+        add_action('fluent_community/space/join_requested', [ $this, 'handleCommunityJoinRequest' ], 10, 2);
 
-        add_action('fluent_community/send_new_user_notification', [$this, 'sendNewUserNotificationAsync'], 10, 1);
+        add_action('fluent_community/send_new_user_notification', [ $this, 'sendNewUserNotificationAsync' ], 10, 1);
     }
 
     public function sendNewUserNotificationAsync($userId)
@@ -61,9 +61,9 @@ class EmailNotificationHandler
             return false;
         }
 
-        $events = ['np_by_member'];
+        $events = [ 'np_by_member' ];
         $spaceRole = $feed->user->getSpaceRole($feed->space);
-        if (in_array($spaceRole, ['admin', 'moderator'])) {
+        if (in_array($spaceRole, [ 'admin', 'moderator' ], true)) {
             $events[] = 'np_by_admin';
         }
 
@@ -75,7 +75,7 @@ class EmailNotificationHandler
                     ->where('value', 1);
             });
 
-            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $events]);
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [ &$query, $feed, $space, $events ]);
 
             return $query;
         })->exists();
@@ -83,7 +83,7 @@ class EmailNotificationHandler
         if ($hasSubscribers || Arr::get($feed->meta, 'mentioned_user_ids', [])) {
             // We are scheduling this after 2 minutes of the post publish for performance
             as_schedule_single_action(time() + 120, 'fluent_community/email_notify_new_posts', [
-                $feed->id
+                $feed->id,
             ], 'fluent-community');
         }
     }
@@ -109,9 +109,9 @@ class EmailNotificationHandler
             return;
         }
 
-        $events = ['np_by_member'];
+        $events = [ 'np_by_member' ];
         $spaceRole = $feed->user->getSpaceRole($feed->space);
-        if (in_array($spaceRole, ['admin', 'moderator'])) {
+        if (in_array($spaceRole, [ 'admin', 'moderator' ], true)) {
             $events[] = 'np_by_admin';
         }
 
@@ -130,7 +130,7 @@ class EmailNotificationHandler
                 $query->orWhereIn('ID', $mentionedUserIds);
             }
 
-            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [&$query, $feed, $space, $events]);
+            do_action_ref_array('fluent_community/space_feed/email_notify_sub_query', [ &$query, $feed, $space, $events ]);
 
             return $query;
         })
@@ -176,20 +176,20 @@ class EmailNotificationHandler
 
         foreach ($users as $index => $user) {
             $feed->updateCustomMeta('_last_email_user_id', $user->ID);
-            if ($user->ID == $feed->user_id) {
+            if ((int) $user->ID === (int) $feed->user_id) {
                 continue;
             }
 
-            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails, true)) {
                 continue;
             }
 
             $newEmailBody = str_replace([
                 '##feed_permalink##',
-                '##email_notification_url##'
+                '##email_notification_url##',
             ], [
                 ProfileHelper::signUserUrlWithAuthHash($feedLink, $user->ID),
-                ProfileHelper::getSignedNotificationPrefUrl($user->ID)
+                ProfileHelper::getSignedNotificationPrefUrl($user->ID),
             ], $emailBody);
 
             $notificationBagde = $this->getNotificationBadges($user->ID);
@@ -199,7 +199,7 @@ class EmailNotificationHandler
 
             $hooksSections = apply_filters('fluent_community/new_feed_notification/email_sections', [
                 'before_content' => '',
-                'after_content'  => ''
+                'after_content'  => '',
             ], $user, $feed);
 
             if (!empty($hooksSections['before_content'])) {
@@ -216,11 +216,11 @@ class EmailNotificationHandler
 
             if (microtime(true) - FLUENT_COMMUNITY_START_TIME > $this->maxRunTime) {
                 // It's been 45 seconds, let's stop and schedule the next one and schedule a new one
-                as_schedule_single_action(time(), 'fluent_community/email_notify_new_posts', [$feed->id], 'fluent-community');
+                as_schedule_single_action(time(), 'fluent_community/email_notify_new_posts', [ $feed->id ], 'fluent-community');
                 return true;
             }
 
-            if (($index + 1) % $maxSendPerSecond == 0) {
+            if (($index + 1) % $maxSendPerSecond === 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
                     usleep((int)(1000000 - ($timeTaken * 1000000)));
@@ -236,7 +236,7 @@ class EmailNotificationHandler
     {
         // Check the comment mentioned users or not
         if (Arr::get($comment->meta, 'mentioned_user_ids', [])) {
-            as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
+            as_schedule_single_action(time(), 'fluent_community/comment_added_async', [ $comment->id, 0 ], 'fluent-community');
             return;
         }
 
@@ -249,8 +249,8 @@ class EmailNotificationHandler
         $authorId = FeedsHelper::getNotificationAuthorId($feed);
 
         $notificationUserIds = [];
-        if ($comment->user_id != $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
-            as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
+        if ((int) $comment->user_id !== (int) $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
+            as_schedule_single_action(time(), 'fluent_community/comment_added_async', [ $comment->id, 0 ], 'fluent-community');
             return true;
         }
 
@@ -265,7 +265,7 @@ class EmailNotificationHandler
             return false;
         }
 
-        as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, 0], 'fluent-community');
+        as_schedule_single_action(time(), 'fluent_community/comment_added_async', [ $comment->id, 0 ], 'fluent-community');
         return true;
     }
 
@@ -295,15 +295,16 @@ class EmailNotificationHandler
             return NotificationPref::willGetNotification($userId, 'reply', 'mail', $globalCommentStatus);
         });
 
-        $notificationUserIds = array_diff($notificationUserIds, [$comment->user_id]);
+        $notificationUserIds = array_diff($notificationUserIds, [ $comment->user_id ]);
         $authorId = FeedsHelper::getNotificationAuthorId($feed);
-        if ($comment->user_id != $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
+        if ((int) $comment->user_id !== (int) $authorId && NotificationPref::willGetNotification($authorId, 'comment', 'mail', $globalCommentStatus)) {
             // Add at the first
             $notificationUserIds[] = $authorId;
         }
 
         // the mentioned user ids
-        if ($mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', [])) {
+        $mentionedUserIds = Arr::get($comment->meta, 'mentioned_user_ids', []);
+        if ($mentionedUserIds) {
             foreach ($mentionedUserIds as $mentionedUserId) {
                 if (NotificationPref::willGetNotification($mentionedUserId, 'mention', 'mail', $this->isEnabled('mention_mail'))) {
                     $notificationUserIds[] = $mentionedUserId;
@@ -336,27 +337,27 @@ class EmailNotificationHandler
         $emailBody = $comment->getCommentHtml(true);
         $emailSubject = $comment->getEmailSubject($feed);
 
-        $feedPermalink = Helper::addNotificationReadMarker($feed->getPermalink(), $feed->id, ['comment_id' => $comment->id]);
+        $feedPermalink = Helper::addNotificationReadMarker($feed->getPermalink(), $feed->id, [ 'comment_id' => $comment->id ]);
         $usersCount = count($users);
 
         $startTime = microtime(true);
         $maxSendPerSecond = 10; // max 10 emails per second
         foreach ($users as $index => $user) {
             $lastUserId = $user->ID;
-            if ($user->ID == $comment->user_id) {
+            if ((int) $user->ID === (int) $comment->user_id) {
                 continue;
             }
 
-            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails, true)) {
                 continue;
             }
 
             $newEmailBody = str_replace([
                 '##feed_permalink##',
-                '##email_notification_url##'
+                '##email_notification_url##',
             ], [
                 ProfileHelper::signUserUrlWithAuthHash($feedPermalink, $user->ID),
-                ProfileHelper::getSignedNotificationPrefUrl($user->ID)
+                ProfileHelper::getSignedNotificationPrefUrl($user->ID),
             ], $emailBody);
 
             $notificationBagde = $this->getNotificationBadges($user->ID);
@@ -366,7 +367,7 @@ class EmailNotificationHandler
 
             $hooksSections = apply_filters('fluent_community/comment_notification/email_sections', [
                 'before_content' => '',
-                'after_content'  => ''
+                'after_content'  => '',
             ], $user, $comment);
 
             if (!empty($hooksSections['before_content'])) {
@@ -383,11 +384,11 @@ class EmailNotificationHandler
 
             if (microtime(true) - FLUENT_COMMUNITY_START_TIME > 50 && $index < ($usersCount - 1)) {
                 // It's been 45 seconds, let's stop and schedule the next one and schedule a new one
-                as_schedule_single_action(time(), 'fluent_community/comment_added_async', [$comment->id, $lastUserId], 'fluent-community');
+                as_schedule_single_action(time(), 'fluent_community/comment_added_async', [ $comment->id, $lastUserId ], 'fluent-community');
                 return true;
             }
 
-            if (($index + 1) % $maxSendPerSecond == 0) {
+            if (($index + 1) % $maxSendPerSecond === 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
                     usleep((int)(1000000 - ($timeTaken * 1000000)));
@@ -468,20 +469,20 @@ class EmailNotificationHandler
 
         foreach ($users as $index => $user) {
             $lastSendUserId = $user->ID;
-            if ($user->ID == $author->ID) {
+            if ((int) $user->ID === (int) $author->ID) {
                 continue;
             }
 
-            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails, true)) {
                 continue;
             }
 
             $newEmailBody = str_replace([
                 '##feed_permalink##',
-                '##email_notification_url##'
+                '##email_notification_url##',
             ], [
                 ProfileHelper::signUserUrlWithAuthHash($feedPermalink, $user->ID),
-                ProfileHelper::getSignedNotificationPrefUrl($user->ID)
+                ProfileHelper::getSignedNotificationPrefUrl($user->ID),
             ], $emailBody);
 
             $notificationBagde = $this->getNotificationBadges($user->ID);
@@ -491,7 +492,7 @@ class EmailNotificationHandler
 
             $hooksSections = apply_filters('fluent_community/new_feed_everybody_notification/email_sections', [
                 'before_content' => '',
-                'after_content'  => ''
+                'after_content'  => '',
             ], $user, $feed);
 
             if (!empty($hooksSections['before_content'])) {
@@ -508,11 +509,11 @@ class EmailNotificationHandler
 
             if (microtime(true) - FLUENT_COMMUNITY_START_TIME > $this->maxRunTime) {
                 // It's been 45 seconds, let's stop and schedule the next one and schedule a new one
-                as_schedule_single_action(time(), 'fluent_community/email_notify_users_everyone_tag', [$feedId, $lastSendUserId], 'fluent-community');
+                as_schedule_single_action(time(), 'fluent_community/email_notify_users_everyone_tag', [ $feedId, $lastSendUserId ], 'fluent-community');
                 return true;
             }
 
-            if (($index + 1) % $maxSendPerSecond == 0) {
+            if (($index + 1) % $maxSendPerSecond === 0) {
                 $timeTaken = microtime(true) - $startTime;
                 if ($timeTaken < 1) {
                     usleep((int)(1000000 - ($timeTaken * 1000000)));
@@ -534,12 +535,12 @@ class EmailNotificationHandler
         $settings = Utility::getEmailNotificationSettings();
 
         $digestEmailDay = Arr::get($settings, 'digest_mail_day');
-        if (strtolower(gmdate('D', current_time('timestamp'))) != $digestEmailDay) {
+        if (strtolower(gmdate('D', current_time('timestamp'))) !== $digestEmailDay) {
             return false;
         }
 
         $lastSentDate = Utility::getOption('last_digest_sent_date');
-        if ($lastSentDate && gmdate('Y-m-d', strtotime($lastSentDate)) == gmdate('Y-m-d', current_time('timestamp'))) {
+        if ($lastSentDate && gmdate('Y-m-d', strtotime($lastSentDate)) === gmdate('Y-m-d', current_time('timestamp'))) {
             return false; // already completed
         }
 
@@ -594,13 +595,13 @@ class EmailNotificationHandler
         foreach ($users as $user) {
             Utility::updateOption('last_digest_sent_user_id', $user->ID);
 
-            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+            if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails, true)) {
                 continue;
             }
 
             $emailDigest = new DailyDigest($user);
             if ($emailDigest->send()) {
-                $sentCount++;
+                ++$sentCount;
             }
 
             if (microtime(true) - FLUENT_COMMUNITY_START_TIME > $this->maxRunTime) {
@@ -643,7 +644,7 @@ class EmailNotificationHandler
         $emailComposer->addBlock('paragraph', __('Please review the request in the portal', 'fluent-community'));
 
         $emailComposer->addBlock('button', __('View Pending Join Requests', 'fluent-community'), [
-            'link' => Helper::baseUrl('space/' . $space->slug . '/members?view_pending=yes')
+            'link' => Helper::baseUrl('space/' . $space->slug . '/members?view_pending=yes'),
         ]);
 
         $emailComposer->setDefaultLogo();
@@ -661,7 +662,7 @@ class EmailNotificationHandler
         );
 
         $moderatorsUserIds = SpaceUserPivot::where('space_id', $space->id)
-            ->whereIn('role', ['moderator', 'admin'])
+            ->whereIn('role', [ 'moderator', 'admin' ])
             ->pluck('user_id')
             ->toArray();
 
@@ -670,7 +671,7 @@ class EmailNotificationHandler
         }
 
         $mailer = new Mailer('', $emailSubject, $emailBody);
-        if (count($moderatorsUserIds) == 1) {
+        if (count($moderatorsUserIds) === 1) {
             $modUserId = $moderatorsUserIds[0];
 
             $moderator = get_user_by('ID', $modUserId);
@@ -699,7 +700,7 @@ class EmailNotificationHandler
                     continue;
                 }
 
-                if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails)) {
+                if ($undeliverableEmails && in_array(strtolower($user->user_email), $undeliverableEmails, true)) {
                     continue;
                 }
                 if (!$first) {
@@ -707,7 +708,7 @@ class EmailNotificationHandler
                     $first = $user;
                     continue;
                 }
-                $mailer->addBCC($user->display_name . ' <' . $user->user_email . '>');
+                $mailer->addBCC(Mailer::formatAddress($user->user_email, $user->display_name));
             }
 
             if ($first) {

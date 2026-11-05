@@ -5,7 +5,7 @@ namespace FluentCommunity\Modules\Integrations\FluentForms;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentForm\App\Helpers\Helper;
-use \FluentForm\App\Http\Controllers\IntegrationManagerController;
+use FluentForm\App\Http\Controllers\IntegrationManagerController;
 use FluentCommunity\Framework\Support\Arr;
 
 
@@ -31,7 +31,7 @@ class Bootstrap extends IntegrationManagerController
         $this->description = __('Connect Fluent Forms with FluentCommunity', 'fluent-community');
 
         $this->registerAdminHooks();
-        add_filter("fluentform/save_integration_value_{$this->integrationKey}", array($this, 'validateSettings'), 10, 2);
+        add_filter("fluentform/save_integration_value_{$this->integrationKey}", array( $this, 'validateSettings' ), 10, 2);
     
         add_filter('fluentform/notifying_async_fluent_community', '__return_false');
     }
@@ -49,9 +49,9 @@ class Bootstrap extends IntegrationManagerController
             'conditionals'       => [
                 'conditions' => [],
                 'status'     => false,
-                'type'       => 'all'
+                'type'       => 'all',
             ],
-            'enabled'            => true
+            'enabled'            => true,
         ];
 
 
@@ -72,7 +72,7 @@ class Bootstrap extends IntegrationManagerController
                     'label'       => __('Name', 'fluent-community'),
                     'required'    => true,
                     'placeholder' => __('Your Feed Name', 'fluent-community'),
-                    'component'   => 'text'
+                    'component'   => 'text',
                 ],
                 [
                     'key'         => 'space_ids',
@@ -81,7 +81,7 @@ class Bootstrap extends IntegrationManagerController
                     'required'    => true,
                     'is_multiple' => true,
                     'component'   => 'select',
-                    'options'     => $this->getAllSpacesCourses()
+                    'options'     => $this->getAllSpacesCourses(),
                 ],
                 [
                     'key'                => 'custom_fields',
@@ -91,7 +91,7 @@ class Bootstrap extends IntegrationManagerController
                     'component'          => 'map_fields',
                     'field_label_remote' => __('User Profile  Field', 'fluent-community'),
                     'field_label_local'  => __('Form Field', 'fluent-community'),
-                    'primary_fileds'     => $this->communityMapFields()
+                    'primary_fileds'     => $this->communityMapFields(),
                 ],
                 [
                     'require_list' => false,
@@ -103,14 +103,14 @@ class Bootstrap extends IntegrationManagerController
                     'require_list' => false,
                     'key'          => 'full_name',
                     'component'    => 'value_text',
-                    'label'        => __('Full Name (Only for new users)', 'fluent-community')
+                    'label'        => __('Full Name (Only for new users)', 'fluent-community'),
                 ],
                 [
                     'require_list' => false,
                     'key'          => 'password',
                     'component'    => 'value_text',
                     'label'        => __('Password (Only for new users)', 'fluent-community'),
-                    'inline_tip'   => __('Keep empty to auto generated password', 'fluent-community')
+                    'inline_tip'   => __('Keep empty to auto generated password', 'fluent-community'),
                 ],
                 [
                     'require_list'   => false,
@@ -132,11 +132,11 @@ class Bootstrap extends IntegrationManagerController
                     'label'        => __('Conditional Logics', 'fluent-community'),
                     'tips'         => __('Allow this integration conditionally based on your submission values',
                         'fluent-community'),
-                    'component'    => 'conditional_block'
+                    'component'    => 'conditional_block',
                 ],
             ],
             'button_require_list' => false,
-            'integration_title'   => $this->title
+            'integration_title'   => $this->title,
         ];
 
 
@@ -148,16 +148,16 @@ class Bootstrap extends IntegrationManagerController
         $message = __('Validation Failed', 'fluent-community');
         $errors = [];
         if (empty($settings['space_ids'])) {
-            $errors['space_ids'] = [__('Please Select Space or Course', 'fluent-community')];
+            $errors['space_ids'] = [ __('Please Select Space or Course', 'fluent-community') ];
         }
         if (empty($settings['email'])) {
-            $errors['custom_fields'] = [__('Please Select a Email', 'fluent-community')];
+            $errors['custom_fields'] = [ __('Please Select a Email', 'fluent-community') ];
         }
         
         if ($errors) {
             wp_send_json_error([
                 'message' => $message,
-                'errors'  => $errors
+                'errors'  => $errors,
             ], 423);
         }
         
@@ -167,14 +167,14 @@ class Bootstrap extends IntegrationManagerController
     public function getAllSpacesCourses()
     {
         $allSpaces = \FluentCommunity\App\Models\BaseSpace::query()->withoutGlobalScopes()
-            ->whereIn('type', ['course', 'community'])
-            ->select(['id', 'title', 'type'])
+            ->whereIn('type', [ 'course', 'community' ])
+            ->select([ 'id', 'title', 'type' ])
             ->orderBy('title', 'ASC')
             ->get();
 
         $formattedSpaces = [];
         foreach ($allSpaces as $space) {
-            $type = $space->type == 'course' ? __('Course', 'fluent-community') : __('Space', 'fluent-community');
+            $type = $space->type === 'course' ? __('Course', 'fluent-community') : __('Space', 'fluent-community');
             $formattedSpaces[$space->id] = "{$space->title} ({$type})";
         }
         return $formattedSpaces;
@@ -188,7 +188,7 @@ class Bootstrap extends IntegrationManagerController
                 'label'         => __('Email Address', 'fluent-community'),
                 'input_options' => 'emails',
                 'required'      => true,
-            ]
+            ],
         ];
 
         return apply_filters('fluent-community/fluentform_map_fields', $fields);
@@ -202,7 +202,7 @@ class Bootstrap extends IntegrationManagerController
             'logo'                    => '',
             /* translators: %s is replaced by the title of the integration */
             'title'                   => sprintf(__(' %s Integration', 'fluent-community'), 'FluentCommunity'),
-            'is_active'               => $this->isConfigured()
+            'is_active'               => $this->isConfigured(),
         ];
 
         return $integrations;
@@ -264,19 +264,21 @@ class Bootstrap extends IntegrationManagerController
                 $userId = $this->registerUser([
                     'email'     => $emailAddress,
                     'full_name' => $userFullName,
-                    'password'  => $password
+                    'password'  => $password,
                 ]);
                 if (is_wp_error($userId)) {
                     return $this->addLog(
                         $feed['settings']['name'],
                         'failed',
-                        /* translators: %s is replaced by the error message */
-                        __('Failed to create user. Reason: %s', 'fluent-community'), $userId->get_error_message(),
+                        sprintf(
+                            /* translators: %s is replaced by the error message */
+                            __('Failed to create user. Reason: %s', 'fluent-community'),
+                            $userId->get_error_message()
+                        ),
                         $form->id,
                         $entry->id,
                         $this->integrationKey
                     );
-                    return false;
                 }
 
                 $isNewUser = true;
@@ -339,7 +341,7 @@ class Bootstrap extends IntegrationManagerController
             'parent_source_id' => $formId,
             'source_id'        => $entryId,
             'component'        => $integrationKey,
-            'source_type'      => 'submission_item'
+            'source_type'      => 'submission_item',
         ];
 
         do_action('fluentform/log_data', $logData);

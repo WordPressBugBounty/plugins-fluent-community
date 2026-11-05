@@ -15,9 +15,9 @@ class ProfileSection
 {
     public function register()
     {
-        add_filter('fluentcrm_profile_sections', [$this, 'addProfileSection'], 10, 1);
-        add_filter('fluencrm_profile_section_fluent_community', [$this, 'getProfileSection'], 10, 2);
-        add_filter('fluencrm_profile_section_save_fluent_community', [$this, 'saveProfileSection'], 10, 3);
+        add_filter('fluentcrm_profile_sections', [ $this, 'addProfileSection' ], 10, 1);
+        add_filter('fluencrm_profile_section_fluent_community', [ $this, 'getProfileSection' ], 10, 2);
+        add_filter('fluencrm_profile_section_save_fluent_community', [ $this, 'saveProfileSection' ], 10, 3);
     }
 
     public function addProfileSection($sections)
@@ -27,7 +27,7 @@ class ProfileSection
             'title'   => __('Community', 'fluent-community'),
             'handler' => 'route',
             'query'   => [
-                'handler' => 'fluent_community'
+                'handler' => 'fluent_community',
             ],
         ];
 
@@ -54,9 +54,11 @@ class ProfileSection
 
         $dateFormat = get_option('date_format') . ' ' . get_option('time_format');
 
-        $userSpaces = Space::with(['space_pivot' => function ($query) use ($userId) {
+        $userSpaces = Space::with([
+        'space_pivot' => function ($query) use ($userId) {
                 $query->where('user_id', $userId);
-            }])
+        },
+        ])
             ->whereHas('space_pivot', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -73,7 +75,7 @@ class ProfileSection
                     'title'      => '<a target="_blank" rel="noopener" href="' . $space->getPermalink() . '">' . $space->title . '</a>',
                     'created_at' => gmdate($dateFormat, strtotime($space->space_pivot->created_at)),
                     'status'     => $space->space_pivot->status,
-                    'role'       => $space->space_pivot->role
+                    'role'       => $space->space_pivot->role,
                 ]);
             }
             $tableBuilder->setHeader([
@@ -99,7 +101,7 @@ class ProfileSection
                         'title'           => '<a target="_blank" rel="noopener" href="' . $course->getPermalink() . '">' . $course->title . '</a>',
                         'enrollment_date' => gmdate($dateFormat, strtotime($course->enrollment->created_at)),
                         'status'          => $course->enrollment->status,
-                        'progress'        => CourseHelper::getCourseProgress($course->id, $userId) . '%'
+                        'progress'        => CourseHelper::getCourseProgress($course->id, $userId) . '%',
                     ]);
                 }
                 $tableBuilder->setHeader([
@@ -117,7 +119,7 @@ class ProfileSection
 
         $spaceCourses = \FluentCommunity\App\Models\BaseSpace::withoutGlobalScopes()
             ->select('title', 'id', 'type', 'slug')
-            ->whereIn('type', ['course', 'community'])
+            ->whereIn('type', [ 'course', 'community' ])
             ->whereDoesntHave('space_pivot', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -128,21 +130,21 @@ class ProfileSection
 
         foreach ($spaceCourses as $spaceCourse) {
             $type = $spaceCourse->type;
-            if ($type == 'course') {
+            if ($type === 'course') {
                 $type = __('Course', 'fluent-community');
-            } else if ($type == 'community') {
+            } elseif ($type === 'community') {
                 $type = __('Space', 'fluent-community');
             }
 
             $options[] = [
                 'id'    => $spaceCourse->id,
-                'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug
+                'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug,
             ];
         }
 
         $removeSpaceCourses = \FluentCommunity\App\Models\BaseSpace::withoutGlobalScopes()
             ->select('title', 'id', 'type', 'slug')
-            ->whereIn('type', ['course', 'community'])
+            ->whereIn('type', [ 'course', 'community' ])
             ->whereHas('space_pivot', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -152,15 +154,15 @@ class ProfileSection
         $removeOptions = [];
         foreach ($removeSpaceCourses as $spaceCourse) {
             $type = $spaceCourse->type;
-            if ($type == 'course') {
+            if ($type === 'course') {
                 $type = __('Course', 'fluent-community');
-            } else if ($type == 'community') {
+            } elseif ($type === 'community') {
                 $type = __('Space', 'fluent-community');
             }
 
             $removeOptions[] = [
                 'id'    => $spaceCourse->id,
-                'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug
+                'label' => $spaceCourse->title . ' (' . $type . ') - ' . $spaceCourse->slug,
             ];
         }
 
@@ -173,16 +175,16 @@ class ProfileSection
                     'multiple'    => true,
                     'placeholder' => $options ? __('Select Space or Course', 'fluent-community') : __('No Space or Course available', 'fluent-community'),
                     'label'       => __('Add to Space or Course', 'fluent-community'),
-                    'options'     => $options
+                    'options'     => $options,
                 ],
                 'remove_space_ids' => [
                     'type'        => 'input-option',
                     'multiple'    => true,
                     'placeholder' => __('Select Space or Course', 'fluent-community'),
                     'label'       => __('Remove from Space or Course', 'fluent-community'),
-                    'options'     => $removeOptions
-                ]
-            ]
+                    'options'     => $removeOptions,
+                ],
+            ],
         ];
 
         $sections['content_html'] = $content;

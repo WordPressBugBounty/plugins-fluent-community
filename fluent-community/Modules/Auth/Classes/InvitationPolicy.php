@@ -21,6 +21,11 @@ class InvitationPolicy extends BasePolicy
             return false;
         }
 
+        $xProfile = Helper::getCurrentProfile();
+        if ($xProfile && $xProfile->status !== 'active') {
+            return false;
+        }
+
         return Helper::canAccessPortal($userId);
     }
 }

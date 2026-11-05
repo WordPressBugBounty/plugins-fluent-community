@@ -53,7 +53,7 @@ class AttentionCard extends AbstractCard
 
     public function supports()
     {
-        return ['space_id', 'export'];
+        return [ 'space_id', 'export' ];
     }
 
     public function compute(Range $range, Scope $scope, array $options)
@@ -102,7 +102,7 @@ class AttentionCard extends AbstractCard
          */
         $items = apply_filters('fluent_community/insights/attention_items', $items, $scope);
 
-        return ['items' => array_values($items)];
+        return [ 'items' => array_values($items) ];
     }
 
     private function spaceMembersUrl($spaceId)

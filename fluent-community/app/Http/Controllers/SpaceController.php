@@ -24,12 +24,19 @@ class SpaceController extends Controller
     {
         $spaces = Space::orderBy('title', 'ASC')
             ->whereHas('space_pivot', function ($q) {
-                $q->where('user_id', get_current_user_id());
+                $q->where('user_id', get_current_user_id())
+                    ->where('status', 'active');
             })
             ->get();
 
+        $currentUser = $this->getUser();
+
+        $spaces->each(function (Space $space) use ($currentUser) {
+            $space->settings = $space->getVisibleSettings($currentUser);
+        });
+
         $data = [
-            'spaces' => $spaces
+            'spaces' => $spaces,
         ];
 
         return apply_filters('fluent_community/spaces_api_response', $data, $this->request->all());
@@ -41,7 +48,10 @@ class SpaceController extends Controller
 
         $data = $request->get('space', []);
 
-        $slug = Arr::get($data, 'slug') ?: Arr::get($data, 'title');
+        $slug = Arr::get($data, 'slug');
+        if (!$slug) {
+            $slug = Arr::get($data, 'title');
+        }
 
         $data['slug'] = Utility::slugify($slug);
         $data['title'] = sanitize_text_field(Arr::get($data, 'title'));
@@ -50,12 +60,12 @@ class SpaceController extends Controller
         $this->validate($data, [
             'title'   => 'required',
             'slug'    => 'unique:fcom_spaces,slug',
-            'privacy' => 'required|in:' . implode(',', BaseSpace::PRIVACY_TYPES)
+            'privacy' => 'required|in:' . implode(',', BaseSpace::PRIVACY_TYPES),
         ]);
 
         if (Arr::get($data, 'settings.topic_required') === 'yes' && !array_filter((array)Arr::get($data, 'topic_ids', []))) {
             return $this->sendError([
-                'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community')
+                'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community'),
             ]);
         }
 
@@ -71,7 +81,7 @@ class SpaceController extends Controller
 
         if (is_wp_error($settings)) {
             return $this->sendError([
-                'message' => $settings->get_error_message()
+                'message' => $settings->get_error_message(),
             ]);
         }
 
@@ -82,7 +92,7 @@ class SpaceController extends Controller
             'description' => sanitize_textarea_field(Arr::get($data, 'description', '')),
             'settings'    => $settings,
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
-            'serial'      => $serial ?: 1
+            'serial'      => $serial ? $serial : 1,
         ]);
 
         $ogImage = Arr::get($data, 'settings.og_image', '');
@@ -100,11 +110,11 @@ class SpaceController extends Controller
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
                 'sub_object_id' => $space->id,
-                'object_source' => 'space_og_image'
+                'object_source' => 'space_og_image',
             ]);
         }
 
-        $imageTypes = ['cover_photo', 'logo'];
+        $imageTypes = [ 'cover_photo', 'logo' ];
         $metaData = [];
         foreach ($imageTypes as $type) {
             if (!empty($data[$type])) {
@@ -117,7 +127,7 @@ class SpaceController extends Controller
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
                     'sub_object_id' => $space->id,
-                    'object_source' => 'space_' . $type
+                    'object_source' => 'space_' . $type,
                 ]);
             }
         }
@@ -127,7 +137,7 @@ class SpaceController extends Controller
         }
 
         $space->members()->attach(get_current_user_id(), [
-            'role' => 'admin'
+            'role' => 'admin',
         ]);
 
         if (Arr::has($data, 'topic_ids')) {
@@ -142,7 +152,7 @@ class SpaceController extends Controller
 
         return [
             'message' => __('Space has been created successfully', 'fluent-community'),
-            'space'   => $space
+            'space'   => $space,
         ];
     }
 
@@ -158,19 +168,21 @@ class SpaceController extends Controller
         // here only made the Spaces page disagree with the sidebar, feed and getBySlug().
         $isModerator = $currentUser && $currentUser->hasCommunityModeratorAccess();
 
-        $query = Space::with(['space_pivot' => function ($q) {
+        $query = Space::with([
+        'space_pivot' => function ($q) {
             $q->where('user_id', get_current_user_id());
-        }])
+        },
+        ])
             ->when(!$isModerator, function ($q) {
                 $q->where(function ($q) {
                     $q->whereHas('space_pivot', function ($q) {
                         $q->where('user_id', get_current_user_id())
                             ->where('status', 'active');
                     })
-                        ->orWhereIn('privacy', ['public', 'private']);
+                        ->orWhereIn('privacy', [ 'public', 'private' ]);
                 });
             })
-            ->when($type == 'joined', function ($q) {
+            ->when($type === 'joined', function ($q) {
                 $q->whereHas('space_pivot', function ($q) {
                     $q->where('user_id', get_current_user_id());
                 });
@@ -178,16 +190,16 @@ class SpaceController extends Controller
             ->when($search, function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%');
             })
-            ->when($sortBy == 'alphabetical', function ($q) {
+            ->when($sortBy === 'alphabetical', function ($q) {
                 $q->orderBy('title', 'ASC');
             })
-            ->when($sortBy == 'oldest', function ($q) {
+            ->when($sortBy === 'oldest', function ($q) {
                 $q->orderBy('created_at', 'ASC');
             })
-            ->when($sortBy == 'latest', function ($q) {
+            ->when($sortBy === 'latest', function ($q) {
                 $q->orderBy('created_at', 'DESC');
             })
-            ->when($sortBy == 'custom', function ($q) {
+            ->when($sortBy === 'custom', function ($q) {
                 Utility::applyCustomOrder($q, 'fluent_community_spaces_order');
             });
 
@@ -197,8 +209,9 @@ class SpaceController extends Controller
 
         foreach ($spaces as $space) {
             $space->description_rendered = wpautop($space->description);
-            
-            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $space->settings = $space->getVisibleSettings($currentUser);
+
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') === 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
 
             if ($shouldHideMembersCount && !$canViewMembers) {
@@ -211,7 +224,7 @@ class SpaceController extends Controller
 
         $data = [
             'spaces'         => $spaces,
-            'execution_time' => microtime(true) - $start
+            'execution_time' => microtime(true) - $start,
         ];
 
         return apply_filters('fluent_community/spaces_api_response', $data, $request->all());
@@ -229,7 +242,7 @@ class SpaceController extends Controller
                     $q->where('user_id', get_current_user_id())
                         ->where('status', 'active');
                 })
-                    ->orWhereIn('privacy', ['public', 'private']);
+                    ->orWhereIn('privacy', [ 'public', 'private' ]);
             });
         }
         $spaces = $spacesQuery->paginate();
@@ -237,22 +250,21 @@ class SpaceController extends Controller
         $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
-            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') === 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
 
             if ($shouldHideMembersCount && !$canViewMembers) {
                 $space->members_count = 0;
-                continue;
+            } else {
+                $space->members_count = (int)Arr::get($memberCounts, $space->id, 0);
             }
 
-            $space->members_count = (int)Arr::get($memberCounts, $space->id, 0);
-
             $space->formatSpaceData($currentUser);
-            do_action_ref_array('fluent_community/space', [&$space]);
+            do_action_ref_array('fluent_community/space', [ &$space ]);
         }
 
         return apply_filters('fluent_community/all_spaces_api_response', [
-            'spaces' => $spaces
+            'spaces' => $spaces,
         ], $request->all());
     }
 
@@ -265,18 +277,18 @@ class SpaceController extends Controller
 
         // A hidden secret space must be indistinguishable from a non-existent one, so its
         // existence cannot be enumerated by slug. Both return an identical 404.
-        if (!$space || ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true))) {
+        if (!$space || ($space->privacy === 'secret' && !$space->isActiveMember($userId) && !$space->isAdmin($userId, true))) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ], 404);
         }
 
         $space = $space->formatSpaceData($user);
 
-        do_action_ref_array('fluent_community/space', [&$space]);
+        do_action_ref_array('fluent_community/space', [ &$space ]);
 
         $data = [
-            'space' => $space
+            'space' => $space,
         ];
 
         return apply_filters('fluent_community/space_api_response', $data, $request->all());
@@ -289,15 +301,21 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
         $data = $request->get('data', []);
 
+        if ((!$data || !is_array($data)) && !$request->get('meta_settings')) {
+            return $this->sendError([
+                'message' => __('Please provide the space data to update.', 'fluent-community'),
+            ]);
+        }
+
         if (Arr::has($data, 'title') && !trim(sanitize_text_field(Arr::get($data, 'title', '')))) {
             return $this->sendError([
-                'message' => __('Space title is required.', 'fluent-community')
+                'message' => __('Space title is required.', 'fluent-community'),
             ]);
         }
 
@@ -308,7 +326,7 @@ class SpaceController extends Controller
 
             if ($taken) {
                 return $this->sendError([
-                    'message' => __('Slug is already taken. Please use a different slug', 'fluent-community')
+                    'message' => __('Slug is already taken. Please use a different slug', 'fluent-community'),
                 ]);
             }
         }
@@ -324,12 +342,12 @@ class SpaceController extends Controller
 
             if (!array_filter($topicIds)) {
                 return $this->sendError([
-                    'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community')
+                    'message' => __('Please select at least one topic when members are required to select a topic.', 'fluent-community'),
                 ]);
             }
         }
 
-        $mediaTypes = ['cover_photo', 'logo'];
+        $mediaTypes = [ 'cover_photo', 'logo' ];
         foreach ($mediaTypes as $type) {
             if (!empty($data[$type])) {
                 $media = Helper::getMediaFromUrl($data[$type]);
@@ -344,9 +362,9 @@ class SpaceController extends Controller
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
                     'sub_object_id' => $space->id,
-                    'object_source' => 'space_' . $type
+                    'object_source' => 'space_' . $type,
                 ]);
-            } else if (isset($data[$type])) {
+            } elseif (isset($data[$type])) {
                 $data[$type] = '';
             }
         }
@@ -361,7 +379,7 @@ class SpaceController extends Controller
 
         if (is_wp_error($space)) {
             return $this->sendError([
-                'message' => $space->get_error_message()
+                'message' => $space->get_error_message(),
             ]);
         }
 
@@ -373,7 +391,7 @@ class SpaceController extends Controller
         }
 
         do_action('fluent_community/space/updated', $space, $data);
-        $slugUpdated = $slug != $space->slug;
+        $slugUpdated = (string) $slug !== (string) $space->slug;
 
         $metaSettings = $request->get('meta_settings', []);
         if($metaSettings) {
@@ -384,7 +402,7 @@ class SpaceController extends Controller
 
         return [
             'message'      => __('Settings have been updated', 'fluent-community'),
-            'redirect_url' => $slugUpdated ? $space->getPermalink() : ''
+            'redirect_url' => $slugUpdated ? $space->getPermalink() : '',
         ];
     }
 
@@ -406,7 +424,7 @@ class SpaceController extends Controller
         if (!$space->verifyUserPermisson($user, 'can_view_members', false)) {
             return $this->sendError([
                 'message'           => __('You are not allowed to view members of this space', 'fluent-community'),
-                'permission_failed' => true
+                'permission_failed' => true,
             ]);
         }
 
@@ -418,21 +436,23 @@ class SpaceController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
-            if ($request->get('status') == 'pending') {
+            if ($request->get('status') === 'pending') {
                 $pendingRequests = SpaceUserPivot::bySpace($space->id)
                     ->whereHas('xprofile', function ($q) use ($search) {
                         return $q->searchBy($search)
                             ->where('status', 'active');
                     })
-                    ->with(['xprofile' => function ($q) {
+                    ->with([
+                'xprofile' => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
-                    }])
+                },
+                ])
                     ->where('status', 'pending')
                     ->paginate();
 
                 return apply_filters('fluent_community/space_members_api_response', [
                     'members'       => $pendingRequests,
-                    'pending_count' => $pendingCount
+                    'pending_count' => $pendingCount,
                 ], $pendingRequests, $request->all());
             }
         }
@@ -446,7 +466,7 @@ class SpaceController extends Controller
         $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'created_at');
         $sortColumn = in_array($sortBy, array_keys($defaultDirections), true) ? $sortBy : 'created_at';
         $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
-        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true) ? $sortDir : ($sortColumn === 'created_at' ? 'ASC' : $defaultDirections[$sortColumn]);
+        $sortDirection = in_array($sortDir, [ 'ASC', 'DESC' ], true) ? $sortDir : ($sortColumn === 'created_at' ? 'ASC' : $defaultDirections[$sortColumn]);
 
         $profileSort = $sortColumn !== 'created_at';
         $orderColumn = $profileSort ? 'fcom_xprofile.' . $sortColumn : 'fcom_space_user.created_at';
@@ -456,9 +476,11 @@ class SpaceController extends Controller
                 $q->searchBy($search)->where('status', 'active');
             })
             ->where('fcom_space_user.status', 'active')
-            ->with(['xprofile' => function ($q) {
+            ->with([
+        'xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }])
+        },
+        ])
             ->when($profileSort, function ($q) {
                 $q->join('fcom_xprofile', 'fcom_xprofile.user_id', '=', 'fcom_space_user.user_id')
                     ->select('fcom_space_user.*');
@@ -468,7 +490,7 @@ class SpaceController extends Controller
 
         return apply_filters('fluent_community/space_members_api_response', [
             'members'       => $spaceMembers,
-            'pending_count' => $pendingCount
+            'pending_count' => $pendingCount,
         ], $spaceMembers, $request->all());
     }
 
@@ -478,7 +500,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
@@ -488,25 +510,25 @@ class SpaceController extends Controller
 
         if ($membership) {
             return $this->sendError([
-                'message' => __('You are already a member of this space. Please reload this page', 'fluent-community')
+                'message' => __('You are already a member of this space. Please reload this page', 'fluent-community'),
             ]);
         }
 
         $roles = $user->getCommunityRoles();
-        $isPrivileged = !!array_intersect($roles, ['admin', 'moderator']);
+        $isPrivileged = (bool)array_intersect($roles, [ 'admin', 'moderator' ]);
 
-        if (!$isPrivileged && $space->privacy == 'secret') {
+        if (!$isPrivileged && $space->privacy === 'secret') {
             return $this->sendError([
-                'message' => __('You are not allowed to join this space', 'fluent-community')
+                'message' => __('You are not allowed to join this space', 'fluent-community'),
             ]);
         }
 
         $status = 'active';
         if (!$isPrivileged) {
-            if ($space->privacy != 'public') {
+            if ($space->privacy !== 'public') {
                 $status = apply_filters('fluent_community/space/join_status_for_private', 'pending', $space, $user);
 
-                if (!in_array($status, ['pending', 'active'])) {
+                if (!in_array($status, [ 'pending', 'active' ], true)) {
                     $status = 'pending';
                 }
             }
@@ -518,12 +540,12 @@ class SpaceController extends Controller
 
         $space->members()->attach(get_current_user_id(), [
             'role'   => $role,
-            'status' => $status
+            'status' => $status,
         ]);
 
         $space->membership = $space->getMembership(get_current_user_id());
 
-        if ($status == 'pending') {
+        if ($status === 'pending') {
             do_action('fluent_community/space/join_requested', $space, $user->ID, 'self');
         } else {
             do_action('fluent_community/space/joined', $space, $user->ID, 'self');
@@ -532,8 +554,8 @@ class SpaceController extends Controller
         $user->cacheAccessSpaces();
 
         return [
-            'message'    => ($status == 'active') ? __('You have joined this Space', 'fluent-community') : __('Your join request has been sent to the Space admin.', 'fluent-community'),
-            'membership' => $space->membership
+            'message'    => ($status === 'active') ? __('You have joined this Space', 'fluent-community') : __('Your join request has been sent to the Space admin.', 'fluent-community'),
+            'membership' => $space->membership,
         ];
     }
 
@@ -544,7 +566,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
@@ -552,14 +574,14 @@ class SpaceController extends Controller
 
         if (!$membership) {
             return $this->sendError([
-                'message' => __('You are not a member of this community', 'fluent-community')
+                'message' => __('You are not a member of this community', 'fluent-community'),
             ]);
         }
 
         Helper::removeFromSpace($space, $user->ID, 'self');
 
         return [
-            'message' => __('You have left this space', 'fluent-community')
+            'message' => __('You have left this space', 'fluent-community'),
         ];
     }
 
@@ -568,7 +590,7 @@ class SpaceController extends Controller
         $spaceId = BaseSpace::where('slug', $slug)->value('id');
 
         return [
-            'success' => $spaceId && Helper::markSpaceSeen($spaceId, get_current_user_id())
+            'success' => $spaceId && Helper::markSpaceSeen($spaceId, get_current_user_id()),
         ];
     }
 
@@ -578,7 +600,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
@@ -602,7 +624,7 @@ class SpaceController extends Controller
         do_action('fluent_community/space/deleted', $spaceId);
 
         return [
-            'message' => __('Space has been deleted successfully', 'fluent-community')
+            'message' => __('Space has been deleted successfully', 'fluent-community'),
         ];
     }
 
@@ -619,12 +641,12 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
         $this->validate($request->all(), [
-            'user_id' => 'required|exists:users,ID'
+            'user_id' => 'required|exists:users,ID',
         ]);
 
         $userId = $request->get('user_id');
@@ -632,9 +654,9 @@ class SpaceController extends Controller
         $targetUser->syncXProfile();
         $xprofile = $targetUser->xprofile;
 
-        if ($xprofile && $xprofile->status != 'active') {
+        if ($xprofile && $xprofile->status !== 'active') {
             return $this->sendError([
-                'message' => __('Selected user is not active', 'fluent-community')
+                'message' => __('Selected user is not active', 'fluent-community'),
             ]);
         }
 
@@ -642,44 +664,49 @@ class SpaceController extends Controller
             ->byUser($userId)
             ->first();
 
-        $allowedRoles = ['member', 'moderator', 'admin'];
+        $allowedRoles = [ 'member', 'moderator', 'admin' ];
         $requestedRole = $request->get('role', 'member');
         $role = in_array($requestedRole, $allowedRoles, true) ? $requestedRole : 'member';
 
         if ($pivot) {
-            if ($pivot->status == 'active') {
-                if ($role != $pivot->role) {
+            if ($pivot->status === 'active') {
+                if ((string) $role !== (string) $pivot->role) {
                     $pivot->role = $role;
                     $pivot->save();
 
                     do_action('fluent_community/space/member/role_updated', $space, $pivot);
 
                     return [
-                        'message' => __('Member role updated', 'fluent-community')
+                        'message' => __('Member role updated', 'fluent-community'),
                     ];
                 }
 
                 return $this->sendError([
-                    'message' => __('Selected user is already a member of this community', 'fluent-community')
+                    'message' => __('Selected user is already a member of this community', 'fluent-community'),
                 ]);
             }
 
+            // Approval keeps the stored role unless the admin chose one.
+            $newRole = $request->get('role') ? $role : $pivot->role;
+            $roleChanged = (string) $newRole !== (string) $pivot->role;
+
             $pivot->status = 'active';
+            $pivot->role = $newRole;
             $pivot->save();
             do_action('fluent_community/space/joined', $space, $userId, 'by_admin');
 
-            if ($role != 'member') {
+            if ($roleChanged) {
                 do_action('fluent_community/space/member/role_updated', $space, $pivot);
             }
 
             return [
-                'message' => __('Member approved', 'fluent-community')
+                'message' => __('Member approved', 'fluent-community'),
             ];
         }
 
         $space->members()->attach($userId, [
             'role'   => $role,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $targetUser->cacheAccessSpaces();
@@ -687,7 +714,7 @@ class SpaceController extends Controller
         do_action('fluent_community/space/joined', $space, $userId, 'by_admin');
 
         return [
-            'message' => __('User has been added to this Space', 'fluent-community')
+            'message' => __('User has been added to this Space', 'fluent-community'),
         ];
     }
 
@@ -697,7 +724,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
@@ -709,7 +736,7 @@ class SpaceController extends Controller
 
         if (!$pivot) {
             return $this->sendError([
-                'message' => __('Selected user is not a member of this community', 'fluent-community')
+                'message' => __('Selected user is not a member of this community', 'fluent-community'),
             ]);
         }
 
@@ -724,7 +751,7 @@ class SpaceController extends Controller
         do_action('fluent_community/space/user_left', $space, $userId, 'by_admin');
 
         return [
-            'message' => __('User has been removed from this community', 'fluent-community')
+            'message' => __('User has been removed from this community', 'fluent-community'),
         ];
     }
 
@@ -733,7 +760,7 @@ class SpaceController extends Controller
         $currentUser = $this->getUser(true);
 
         $this->validate($request->all(), [
-            'space_id' => 'required|exists:fcom_spaces,id'
+            'space_id' => 'required|exists:fcom_spaces,id',
         ]);
 
         $isMod = $currentUser->isCommunityModerator() && current_user_can('list_users');
@@ -743,18 +770,18 @@ class SpaceController extends Controller
 
         if (!$space->verifyUserPermisson($currentUser, 'can_add_member', false)) {
             return $this->sendError([
-                'message' => __('You are not allowed to add members to this space', 'fluent-community')
+                'message' => __('You are not allowed to add members to this space', 'fluent-community'),
             ]);
         }
 
-        $selects = ['ID', 'display_name'];
-        $searchFields = ['display_name'];
+        $selects = [ 'ID', 'display_name' ];
+        $searchFields = [ 'display_name' ];
         if ($isMod) {
             $selects[] = 'user_email';
             $searchFields[] = 'user_email';
         }
 
-        $userQuery = User::select(['ID'])
+        $userQuery = User::select([ 'ID' ])
             ->whereDoesntHave('space_pivot', function ($q) use ($space) {
                 $q->where('space_id', $space->id);
             })
@@ -783,7 +810,7 @@ class SpaceController extends Controller
             ->paginate(100);
 
         $data = [
-            'users' => $users
+            'users' => $users,
         ];
         return apply_filters('fluent_community/space_non_members_api_response', $data, $request->all());
     }
@@ -794,7 +821,7 @@ class SpaceController extends Controller
 
         if (!$space) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ]);
         }
 
@@ -811,7 +838,7 @@ class SpaceController extends Controller
 
         return [
             'message' => __('Links have been updated for the space', 'fluent-community'),
-            'links'   => $links
+            'links'   => $links,
         ];
     }
 
@@ -872,11 +899,11 @@ class SpaceController extends Controller
     {
         if ($request->get('options_only')) {
             $groups = SpaceGroup::orderBy('serial', 'ASC')
-                ->select(['id', 'title'])
+                ->select([ 'id', 'title' ])
                 ->get();
 
             return [
-                'groups' => $groups
+                'groups' => $groups,
             ];
         }
 
@@ -897,7 +924,7 @@ class SpaceController extends Controller
 
         $orphanedSpaces = BaseSpace::withoutGlobalScopes()
             ->whereNull('parent_id')
-            ->whereIn('type', ['community', 'course'])
+            ->whereIn('type', [ 'community', 'course' ])
             ->orderBy('title', 'ASC')
             ->get();
 
@@ -912,7 +939,7 @@ class SpaceController extends Controller
 
         $data = [
             'groups'          => $groups,
-            'orphaned_spaces' => $orphanedSpaces
+            'orphaned_spaces' => $orphanedSpaces,
         ];
         return apply_filters('fluent_community/space_groups_api_response', $data, $request->all());
     }
@@ -923,7 +950,7 @@ class SpaceController extends Controller
 
         $this->validate($data, [
             'title' => 'required|unique:fcom_spaces,title',
-            'slug'  => 'required|unique:fcom_spaces,slug'
+            'slug'  => 'required|unique:fcom_spaces,slug',
         ]);
 
         $title = sanitize_text_field(Arr::get($data, 'title', ''));
@@ -932,13 +959,13 @@ class SpaceController extends Controller
 
         if (!$title) {
             return $this->sendError([
-                'message' => __('Please enter a valid group title.', 'fluent-community')
+                'message' => __('Please enter a valid group title.', 'fluent-community'),
             ]);
         }
 
         if (!$slug) {
             return $this->sendError([
-                'message' => __('Please enter a valid group slug.', 'fluent-community')
+                'message' => __('Please enter a valid group slug.', 'fluent-community'),
             ]);
         }
 
@@ -949,16 +976,16 @@ class SpaceController extends Controller
             'status'      => 'active',
             'type'        => 'space_group',
             'settings'    => [
-                'always_show_spaces' => Arr::get($data, 'settings.always_show_spaces', 'yes'),
+                'always_show_spaces' => SpaceGroup::sanitizeSidebarVisibility(Arr::get($data, 'settings.always_show_spaces', 'yes')),
             ],
-            'serial'      => SpaceGroup::max('serial') + 1
+            'serial'      => SpaceGroup::max('serial') + 1,
         ];
 
         $group = SpaceGroup::create($formattedData);
 
         return [
             'message' => __('Space group has been created successfully', 'fluent-community'),
-            'group'   => $group
+            'group'   => $group,
         ];
     }
 
@@ -968,7 +995,7 @@ class SpaceController extends Controller
         $data = $request->all();
 
         $this->validate($data, [
-            'title' => 'required'
+            'title' => 'required',
         ]);
 
         $taken = BaseSpace::where('title', $data['title'])
@@ -977,7 +1004,7 @@ class SpaceController extends Controller
 
         if ($taken) {
             return $this->sendError([
-                'message' => __('The title is already taken. Please use a different title', 'fluent-community')
+                'message' => __('The title is already taken. Please use a different title', 'fluent-community'),
             ]);
         }
 
@@ -987,15 +1014,15 @@ class SpaceController extends Controller
             'status'      => 'active',
             'type'        => 'space_group',
             'settings'    => [
-                'always_show_spaces' => Arr::get($data, 'settings.always_show_spaces', 'yes'),
-            ]
+                'always_show_spaces' => SpaceGroup::sanitizeSidebarVisibility(Arr::get($data, 'settings.always_show_spaces', Arr::get($group->settings, 'always_show_spaces', 'yes'))),
+            ],
         ];
 
         $group->fill($formattedData)->save();
 
         return [
             'message' => __('Space group has been updated', 'fluent-community'),
-            'group'   => $group
+            'group'   => $group,
         ];
     }
 
@@ -1005,14 +1032,14 @@ class SpaceController extends Controller
 
         if (!$group->spaces->isEmpty()) {
             return $this->sendError([
-                'message' => __('You cannot delete this group. It has spaces', 'fluent-community')
+                'message' => __('You cannot delete this group. It has spaces', 'fluent-community'),
             ]);
         }
 
         $group->delete();
 
         return [
-            'message' => __('Space group has been deleted successfully', 'fluent-community')
+            'message' => __('Space group has been deleted successfully', 'fluent-community'),
         ];
     }
 
@@ -1023,12 +1050,12 @@ class SpaceController extends Controller
         foreach ($indexes as $groupId => $indexNumber) {
             $group = SpaceGroup::findOrFail($groupId);
             $group->update([
-                'serial' => $indexNumber + 1
+                'serial' => $indexNumber + 1,
             ]);
         }
 
         return [
-            'message' => __('Space group indexes have been updated.', 'fluent-community')
+            'message' => __('Space group indexes have been updated.', 'fluent-community'),
         ];
 
     }
@@ -1040,12 +1067,12 @@ class SpaceController extends Controller
         foreach ($indexes as $index => $spaceId) {
             $space = BaseSpace::withoutGlobalScopes()->findOrFail($spaceId);
             $space->update([
-                'serial' => $index + 1
+                'serial' => $index + 1,
             ]);
         }
 
         return [
-            'message' => __('Space indexes have been updated.', 'fluent-community')
+            'message' => __('Space indexes have been updated.', 'fluent-community'),
         ];
     }
 
@@ -1058,11 +1085,11 @@ class SpaceController extends Controller
         $group = SpaceGroup::findOrFail($groupId);
 
         $space->update([
-            'parent_id' => $group->id
+            'parent_id' => $group->id,
         ]);
 
         return [
-            'message' => __('Space has been moved successfully', 'fluent-community')
+            'message' => __('Space has been moved successfully', 'fluent-community'),
         ];
     }
 
@@ -1073,9 +1100,9 @@ class SpaceController extends Controller
 
         $userId = $this->getUser() ? $this->getUser()->ID : null;
 
-        if (!$space || ($space->privacy == 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true))) {
+        if (!$space || ($space->privacy === 'secret' && !$space->isActiveMember($userId) && !$space->isAdmin($userId, true))) {
             return $this->sendError([
-                'message' => __('Space not found', 'fluent-community')
+                'message' => __('Space not found', 'fluent-community'),
             ], 404);
         }
 
@@ -1084,7 +1111,7 @@ class SpaceController extends Controller
         $lockscreen = apply_filters('fluent_community/get_lockscreen_settings', $lockscreen, $space);
 
         return [
-            'lockscreen' => $lockscreen
+            'lockscreen' => $lockscreen,
         ];
     }
 
@@ -1095,12 +1122,12 @@ class SpaceController extends Controller
 
         if (!$metaSettings) {
             return [
-                'meta_settings' => null
+                'meta_settings' => null,
             ];
         }
 
         return [
-            'meta_settings' => $metaSettings
+            'meta_settings' => $metaSettings,
         ];
     }
 

@@ -13,27 +13,27 @@ class InvitationHandler
     {
         add_filter('fluent_community/auth/invitation', function ($invitation, $token) {
             return Invitation::where('message_rendered', $token)
-                ->whereIn('status', ['pending', 'active'])
+                ->whereIn('status', [ 'pending', 'active' ])
                 ->first();
         }, 10, 2);
 
-        add_action('fluent_community/auth/show_invitation_for_user', [$this, 'showCommunityOnBoard'], 10, 2);
-        add_action('wp_ajax_fcom_user_accept_invitation', [$this, 'acceptInvitationAjax']);
-        add_filter('fluent_community/auth/after_login_with_invitation', [$this, 'handleInvitationLogin'], 10, 3);
+        add_action('fluent_community/auth/show_invitation_for_user', [ $this, 'showCommunityOnBoard' ], 10, 2);
+        add_action('wp_ajax_fcom_user_accept_invitation', [ $this, 'acceptInvitationAjax' ]);
+        add_filter('fluent_community/auth/after_login_with_invitation', [ $this, 'handleInvitationLogin' ], 10, 3);
         add_filter('fluent_community/auth/after_signup_redirect_url', function ($redirecctUrl, $user, $postedData) {
             if (empty($postedData['invitation_token'])) {
                 return $redirecctUrl;
             }
 
             $invitation = Invitation::where('message_rendered', $postedData['invitation_token'])
-                ->whereIn('status', ['pending', 'active'])
+                ->whereIn('status', [ 'pending', 'active' ])
                 ->first();
 
             if (!$invitation || !$user || !$invitation->isValid()) {
                 return $redirecctUrl;
             }
 
-            if ($invitation->message && $invitation->message != $user->user_email) {
+            if ($invitation->message && (string) $invitation->message !== (string) $user->user_email) {
                 return $redirecctUrl;
             }
 
@@ -42,7 +42,7 @@ class InvitationHandler
                 /** @var BaseSpace|null $space */
                 if ($space) {
                     $role = 'member';
-                    if ($space->type == 'course') {
+                    if ($space->type === 'course') {
                         $role = 'student';
                     }
                     $isNew = Helper::addToSpace($space, $user->ID, $role);
@@ -95,7 +95,7 @@ class InvitationHandler
     {
         if (!check_ajax_referer('fcom_accept_invitation', '_fcom_accept_invitation_nonce', false)) {
             wp_send_json([
-                'message' => __('Invalid request', 'fluent-community')
+                'message' => __('Invalid request', 'fluent-community'),
             ], 403);
         }
 
@@ -106,13 +106,13 @@ class InvitationHandler
 
         if (is_wp_error($redirectUrl)) {
             wp_send_json([
-                'message' => $redirectUrl->get_error_message()
+                'message' => $redirectUrl->get_error_message(),
             ], 422);
         }
 
         wp_send_json([
             'redirect_url' => $redirectUrl,
-            'message'      => __('Invitation accepted successfully. Please wait...', 'fluent-community')
+            'message'      => __('Invitation accepted successfully. Please wait...', 'fluent-community'),
         ]);
     }
 
@@ -121,10 +121,10 @@ class InvitationHandler
         $userModel = User::find($user->ID);
 
         $invitation = Invitation::where('message_rendered', $token)
-            ->whereIn('status', ['pending', 'active'])
+            ->whereIn('status', [ 'pending', 'active' ])
             ->first();
 
-        if (!$userModel || !$invitation || !$invitation->isValid() || ($invitation->message && $invitation->message != $userModel->user_email)) {
+        if (!$userModel || !$invitation || !$invitation->isValid() || ($invitation->message && (string) $invitation->message !== (string) $userModel->user_email)) {
             return new \WP_Error('invalid_invitation', __('Invalid invitation token. Please try again', 'fluent-community'));
         }
 
@@ -136,7 +136,7 @@ class InvitationHandler
             /** @var BaseSpace|null $space */
             if ($space) {
                 $role = 'member';
-                if ($space->type == 'course') {
+                if ($space->type === 'course') {
                     $role = 'student';
                 }
                 $isNew = Helper::addToSpace($space, $userModel->ID, $role);

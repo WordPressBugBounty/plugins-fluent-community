@@ -34,11 +34,11 @@ class BPMigrationController extends Controller
         $data = [
             'groupItems'     => $groups,
             'featureConfig'  => [
-                'has_groups' => $hasGroups
+                'has_groups' => $hasGroups,
             ],
             'stats'          => BPMigratorHelper::getBbDataStats(),
             'current_status' => $previousConfig,
-            'has_previous'   => !empty($previousConfig['migrated_groups']) || !empty($previousConfig['last_migrated_user_id'])
+            'has_previous'   => !empty($previousConfig['migrated_groups']) || !empty($previousConfig['last_migrated_user_id']),
         ];
 
         return $data;
@@ -51,14 +51,14 @@ class BPMigrationController extends Controller
         if ($request->get('delete_current_data') === 'yes') {
             if (!Helper::isSuperAdmin()) {
                 return $this->sendError([
-                    'message' => __('You do not have permission to delete existing FluentCommunity data.', 'fluent-community')
+                    'message' => __('You do not have permission to delete existing FluentCommunity data.', 'fluent-community'),
                 ], 403);
             }
 
             if ($request->get('delete_current_data_confirmation') !== 'DELETE') {
                 return $this->sendError([
                     // translators: %s is the confirmation word the user must type (DELETE)
-                    'message' => sprintf(__('Please type %s to confirm permanently removing all existing FluentCommunity data.', 'fluent-community'), 'DELETE')
+                    'message' => sprintf(__('Please type %s to confirm permanently removing all existing FluentCommunity data.', 'fluent-community'), 'DELETE'),
                 ]);
             }
         }
@@ -100,8 +100,8 @@ class BPMigrationController extends Controller
             'max_ids'        => [
                 'group_member_max' => fluentCommunityApp('db')->table('bp_groups_members')->max('id'),
                 'max_user_id'      => fluentCommunityApp('db')->table('bp_xprofile_data')->count('user_id'),
-                'max_activity_id'  => fluentCommunityApp('db')->table('bp_activity')->max('id')
-            ]
+                'max_activity_id'  => fluentCommunityApp('db')->table('bp_activity')->max('id'),
+            ],
         ];
     }
 
@@ -113,23 +113,23 @@ class BPMigrationController extends Controller
         $status = $this->getCurrentStatus();
         $currentStep = Arr::get($status, 'current_stage', 'groups');
 
-        $validStages = ['group_members', 'posts', 'users', 'completed'];
+        $validStages = [ 'group_members', 'posts', 'users', 'completed' ];
 
-        if (!in_array($currentStep, $validStages)) {
+        if (!in_array($currentStep, $validStages, true)) {
             return $this->sendError([
-                'message' => 'Invalid stage. Please start the migration again.'
+                'message' => 'Invalid stage. Please start the migration again.',
             ]);
         }
 
-        if ($currentStep == 'group_members') {
+        if ($currentStep === 'group_members') {
             return $this->syncGroupMembers($status);
         }
 
-        if ($currentStep == 'posts') {
+        if ($currentStep === 'posts') {
             return $this->syncPostsAndComments($status);
         }
 
-        if ($currentStep == 'users') {
+        if ($currentStep === 'users') {
             return $this->syncUsers($status);
         }
 
@@ -145,7 +145,7 @@ class BPMigrationController extends Controller
         $lastUserId = Arr::get($status, 'last_migrated_user_id', 0);
         $usersIds = fluentCommunityApp('db')->table('bp_xprofile_data')
             ->groupBy('user_id')
-            ->select(['user_id'])
+            ->select([ 'user_id' ])
             ->when($lastUserId, function ($q) use ($lastUserId) {
                 $q->where('user_id', '>', $lastUserId);
             })
@@ -207,15 +207,20 @@ class BPMigrationController extends Controller
         }
 
         foreach ($groupMemberEntries as $entry) {
+            $status['last_migrated_member_id'] = $entry->id;
+
             $spaceId = Arr::get($status['migrated_groups'], $entry->group_id);
-            if (!$spaceId) {
+
+            // Banned members, join requests and pending invites are not group members.
+            if (!$spaceId || (int) $entry->is_confirmed !== 1 || (int) $entry->is_banned === 1) {
+                $status = $this->updateCurrentStatus($status, false);
                 continue;
             }
 
             $role = 'member';
-            if ($entry->is_admin == 1) {
+            if ((int) $entry->is_admin === 1) {
                 $role = 'admin';
-            } else if ($entry->is_mod == 1) {
+            } elseif ((int) $entry->is_mod === 1) {
                 $role = 'moderator';
             }
 
@@ -231,7 +236,6 @@ class BPMigrationController extends Controller
                 fluentCommunityApp('db')->table('fcom_space_user')->insert($entryData);
             }
 
-            $status['last_migrated_member_id'] = $entry->id;
             $status = $this->updateCurrentStatus($status, false);
         }
 
@@ -250,8 +254,10 @@ class BPMigrationController extends Controller
 
         $posts = fluentCommunityApp('db')->table('bp_activity')
             ->where('type', 'activity_update')
+            ->where('is_spam', 0)
             ->when($isBuddyBoss, function ($q) {
-                $q->whereNotIn('privacy', ['media', 'onlyme']);
+                // Posts shared only with friends or logged-in members have no public audience here.
+                $q->whereNotIn('privacy', [ 'media', 'onlyme', 'friends', 'loggedin' ]);
             })
             ->when($lastPostId, function ($q) use ($lastPostId) {
                 $q->where('id', '>', $lastPostId);
@@ -274,14 +280,14 @@ class BPMigrationController extends Controller
                 continue;
             }
 
-            $feed = BPMigratorHelper::migratePost($post, Arr::get($status['migrated_groups'], $post->item_id, NULL));
+            $feed = BPMigratorHelper::migratePost($post, Arr::get($status['migrated_groups'], $post->item_id, null));
 
             if ($feed) {
                 fluentCommunityApp('db')->table('bp_activity_meta')
                     ->insert([
                         'activity_id' => $post->id,
                         'meta_key'    => '_fcom_feed_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                        'meta_value'  => $feed->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        'meta_value'  => $feed->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                     ]);
             }
         }
@@ -344,7 +350,7 @@ class BPMigrationController extends Controller
             'last_migrated_member_id',
             'migrated_posts_count',
             'last_migrated_user_id',
-            'current_stage'
+            'current_stage',
         ]);
 
         update_option('_fcom_bp_migrations_status', $newData, false);

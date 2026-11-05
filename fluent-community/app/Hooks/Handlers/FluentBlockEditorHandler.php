@@ -29,13 +29,13 @@ class FluentBlockEditorHandler
                     'label'        => __('Lesson', 'fluent-community'),
                     'public'       => false,
                     'show_in_rest' => true,
-                    'supports'     => ['title', 'editor', 'thumbnail'],
+                    'supports'     => [ 'title', 'editor', 'thumbnail' ],
                 ],
                 'fcom-lockscreen' => [
                     'label'        => __('Lock Screen', 'fluent-community'),
                     'public'       => false,
                     'show_in_rest' => true,
-                    'supports'     => ['editor'],
+                    'supports'     => [ 'editor' ],
                 ],
             ]);
 
@@ -166,11 +166,11 @@ class FluentBlockEditorHandler
         }
 
         global $post;
-        $post = $simulatedPost;
+        $post = $simulatedPost; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
         if ($lesson) {
             $post->post_title = $lesson->title;
-            $post->post_content = $lesson->message ?: '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
+            $post->post_content = $lesson->message ? $lesson->message : '<!-- wp:paragraph --><p> </p><!-- /wp:paragraph -->';
         } elseif (!empty($contextConfig['has_content'])) {
             $contextContent = Arr::get($contextConfig, 'content');
             $post->post_title = Arr::get($contextConfig, 'title', '');
@@ -183,7 +183,7 @@ class FluentBlockEditorHandler
         // live GET /wp/v2/fcom-dummy/{id}?context=edit — which 403s for users without
         // edit_others_posts (e.g. contributors) on the shared, admin-authored dummy post.
         add_action('wp_enqueue_scripts', function () use ($post) {
-            wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array('jquery-ui-sortable'), FLUENT_COMMUNITY_PLUGIN_VERSION, true);
+            wp_enqueue_script('postbox', admin_url('js/postbox.min.js'), array( 'jquery-ui-sortable' ), FLUENT_COMMUNITY_PLUGIN_VERSION, true);
             wp_enqueue_style('dashicons');
             wp_enqueue_style('media');
             wp_enqueue_style('admin-menu');
@@ -201,12 +201,12 @@ class FluentBlockEditorHandler
                             '/wp/v2/' . $post->post_type . '/' . $post->ID . '?context=edit' => array(
                                 'body' => array(
                                     'id'                 => $post->ID,
-                                    'title'              => array('raw' => $post->post_title),
+                                    'title'              => array( 'raw' => $post->post_title ),
                                     'content'            => array(
                                         'block_format' => 1,
                                         'raw'          => $post->post_content,
                                     ),
-                                    'excerpt'            => array('raw' => ''),
+                                    'excerpt'            => array( 'raw' => '' ),
                                     'date'               => '',
                                     'date_gmt'           => '',
                                     'modified'           => '',
@@ -247,7 +247,7 @@ class FluentBlockEditorHandler
         add_filter('show_post_locked_dialog', '__return_false');
 
         // Everyone can richedit! This avoids a case where a page can be cached where a user can't richedit.
-        $GLOBALS['wp_rich_edit'] = true;
+        $GLOBALS['wp_rich_edit'] = true; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
         add_filter('user_can_richedit', '__return_true', 1000);
 
         // Homepage is always locked by @wordpressdotorg
@@ -423,7 +423,7 @@ class FluentBlockEditorHandler
          */
         do_action('fluent_enqueue_block_editor_assets');
 
-        wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', ['react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins'], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
+        wp_enqueue_script('fcom_editor_custom', FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/index.js', [ 'react', 'wp-components', 'wp-compose', 'wp-data', 'wp-edit-post', 'wp-i18n', 'wp-plugins' ], FLUENT_COMMUNITY_PLUGIN_VERSION . time(), true);
         wp_localize_script('fcom_editor_custom', 'fcomEditorI18n', $this->getEditorI18nStrings());
         wp_localize_script('fcom_editor_custom', 'fcomEditorVars', array_merge([
             'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold(),
@@ -631,15 +631,15 @@ class FluentBlockEditorHandler
 
         // scripts only; styles use fluent_community/asset_listed_slugs
         $approvedSlugs = apply_filters('fluent_com_editor/asset_listed_slugs', [
-            '\/gutenberg\/'
+            '\/gutenberg\/',
         ]);
         $approvedSlugs[] = '\/fluent-community(-pro)?\/';
         $approvedSlugs = array_unique($approvedSlugs);
         $approvedSlugs = implode('|', $approvedSlugs);
 
-        $pluginUrl = str_replace(['http:', 'https:'], '', plugins_url());
+        $pluginUrl = str_replace([ 'http:', 'https:' ], '', plugins_url());
 
-        $themesUrl = str_replace(['http:', 'https:'], '', get_theme_root_uri());
+        $themesUrl = str_replace([ 'http:', 'https:' ], '', get_theme_root_uri());
 
         add_filter('script_loader_src', function ($src, $handle) use ($approvedSlugs, $pluginUrl, $themesUrl) {
             if (!$src) {
@@ -696,8 +696,8 @@ class FluentBlockEditorHandler
             $pluginUrl = plugins_url();
             $themeUrl = get_theme_root_uri();
 
-            $pluginUrl = str_replace(['http:', 'https:'], '', $pluginUrl);
-            $themeUrl = str_replace(['http:', 'https:'], '', $themeUrl);
+            $pluginUrl = str_replace([ 'http:', 'https:' ], '', $pluginUrl);
+            $themeUrl = str_replace([ 'http:', 'https:' ], '', $themeUrl);
 
             foreach ($wp_styles->queue as $script) {
 
@@ -750,7 +750,7 @@ class FluentBlockEditorHandler
                 'defaultCommentStatus' => 'open',
                 'pageComments'         => '',
                 'threadComments'       => '1',
-                'threadCommentsDepth'  => '5'
+                'threadCommentsDepth'  => '5',
             ],
             '__unstableGalleryWithImageBlocks' => false,
             '__unstableIsBlockBasedTheme'      => false,
@@ -760,34 +760,34 @@ class FluentBlockEditorHandler
                 'rem',
                 '%',
                 'vh',
-                'vw'
+                'vw',
             ],
             'fontSizes'                        => [
                 [
                     'name' => 'Small',
                     'size' => 'var(--fcom-font-size-small)',
-                    'slug' => 'small'
+                    'slug' => 'small',
                 ],
                 [
                     'name' => 'Medium',
                     'size' => 'var(--fcom-font-size-medium)',
-                    'slug' => 'medium'
+                    'slug' => 'medium',
                 ],
                 [
                     'name' => 'Large',
                     'size' => 'var(--fcom-font-size-large)',
-                    'slug' => 'large'
+                    'slug' => 'large',
                 ],
                 [
                     'name' => 'Larger',
                     'size' => 'var(--fcom-font-size-larger)',
-                    'slug' => 'larger'
+                    'slug' => 'larger',
                 ],
                 [
                     'name' => 'XX-Large',
                     'size' => 'var(--fcom-font-size-xxlarge)',
-                    'slug' => 'xxlarge'
-                ]
+                    'slug' => 'xxlarge',
+                ],
             ],
             'fullscreenMode'                   => 1,
             'enableCustomSpacing'              => 1,
@@ -834,7 +834,7 @@ class FluentBlockEditorHandler
                 'core/social-links',
                 'core/spacer',
                 'core/table',
-                'core/verse'
+                'core/verse',
             ]),
             'gradients'                        => [],
             'imageDefaultSize'                 => 'large',
@@ -847,40 +847,40 @@ class FluentBlockEditorHandler
                 [
                     'name' => '2X-Small',
                     'size' => '0.44rem',
-                    'slug' => '20'
+                    'slug' => '20',
                 ],
                 [
                     'name' => 'X-Small',
                     'size' => '0.67rem',
-                    'slug' => '30'
+                    'slug' => '30',
                 ],
                 [
                     'name' => 'Small',
                     'size' => '1rem',
-                    'slug' => '40'
+                    'slug' => '40',
                 ],
                 [
                     'name' => 'Medium',
                     'size' => '1.5rem',
-                    'slug' => '50'
+                    'slug' => '50',
                 ],
                 [
                     'name' => 'Large',
                     'size' => '2.25rem',
-                    'slug' => '60'
+                    'slug' => '60',
                 ],
                 [
                     'name' => 'X-Large',
                     'size' => '3.38rem',
-                    'slug' => '70'
+                    'slug' => '70',
                 ],
                 [
                     'name' => '2X-Large',
                     'size' => '5.06rem',
-                    'slug' => '80'
-                ]
+                    'slug' => '80',
+                ],
             ],
-            'titlePlaceholder'                 => __('Add Lesson title', 'fluent-community')
+            'titlePlaceholder'                 => __('Add Lesson title', 'fluent-community'),
         );
 
         $editor_settings['styles'] = $this->getEditorStyles();
@@ -957,8 +957,8 @@ class FluentBlockEditorHandler
                             'name'  => 'Lighter Background',
                             'slug'  => 'theme-palette-color-8',
                             'color' => 'var(--theme-palette-color-8)',
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
                 'text'             => true,
             ],
@@ -1001,7 +1001,7 @@ class FluentBlockEditorHandler
                             'slug'  => '9-16',
                             'ratio' => '9/16',
                         ],
-                    ]
+                    ],
                 ],
                 'aspectRatio'         => 1,
                 'minHeight'           => 1,
@@ -1093,7 +1093,7 @@ class FluentBlockEditorHandler
                 ],
             ],
             'typography'                    => [
-                'defaultFontSizes' => NULL,
+                'defaultFontSizes' => null,
                 'dropCap'          => true,
                 'fontSizes'        => [
                     'default' => [
@@ -1159,12 +1159,12 @@ class FluentBlockEditorHandler
                 'core/button'    => [
                     'border' => [
                         'radius' => true,
-                    ]
+                    ],
                 ],
                 'core/image'     => [
                     'lightbox' => [
                         'allowEditing' => true,
-                    ]
+                    ],
                 ],
                 'core/pullquote' => [
                     'border' => [
@@ -1172,14 +1172,14 @@ class FluentBlockEditorHandler
                         'radius' => true,
                         'style'  => true,
                         'width'  => true,
-                    ]
+                    ],
                 ],
                 'core/paragraph' => [
                     'spacing' => [
                         'margin'  => 1,
                         'padding' => 1,
-                    ]
-                ]
+                    ],
+                ],
             ],
             'layout'                        => [
                 'contentSize' => 'var(--theme-block-max-width)',
@@ -1191,7 +1191,7 @@ class FluentBlockEditorHandler
             ],
             'position'                      => [
                 'sticky' => 0,
-            ]
+            ],
         );
     }
 
@@ -1201,43 +1201,43 @@ class FluentBlockEditorHandler
             [
                 'color' => 'var(--fcom-primary-bg, #ffffff)',
                 'name'  => 'Accent',
-                'slug'  => 'theme-palette-color-1'
+                'slug'  => 'theme-palette-color-1',
             ],
             [
                 'color' => 'var(--fcom-secondary-bg, #f0f2f5)',
                 'name'  => 'Accent - alt',
-                'slug'  => 'theme-palette-color-2'
+                'slug'  => 'theme-palette-color-2',
             ],
             [
                 'color' => 'var(--fcom-secondary-text, #525866)',
                 'name'  => 'Strongest text',
-                'slug'  => 'theme-palette-color-3'
+                'slug'  => 'theme-palette-color-3',
             ],
             [
                 'color' => 'var(--fcom-secondary-content-bg, #f0f3f5)',
                 'name'  => 'Strong Text',
-                'slug'  => 'theme-palette-color-4'
+                'slug'  => 'theme-palette-color-4',
             ],
             [
                 'color' => 'var(--fcom-active-bg, #f0f3f5)',
                 'name'  => 'Medium text',
-                'slug'  => 'theme-palette-color-5'
+                'slug'  => 'theme-palette-color-5',
             ],
             [
                 'color' => 'var(--fcom-light-bg, #E1E4EA)',
                 'name'  => 'Subtle Text',
-                'slug'  => 'theme-palette-color-6'
+                'slug'  => 'theme-palette-color-6',
             ],
             [
                 'color' => 'var(--fcom-deep-bg, #E1E4EA)',
                 'name'  => 'Subtle Background',
-                'slug'  => 'theme-palette-color-7'
+                'slug'  => 'theme-palette-color-7',
             ],
             [
                 'color' => 'var(--fcom-primary-text, #19283a)',
                 'name'  => 'Lighter Background',
-                'slug'  => 'theme-palette-color-8'
-            ]
+                'slug'  => 'theme-palette-color-8',
+            ],
         ];
     }
 
@@ -1249,17 +1249,17 @@ class FluentBlockEditorHandler
             [
                 '__unstableType' => 'colorSchema',
                 'css'            => $this->getColorSchemaCss(),
-                'isGlobalStyles' => true
+                'isGlobalStyles' => true,
             ],
             [
                 '__unstableType' => 'theme',
-                'css'            => file_get_contents($editorDir . 'editor-iframe-styles.css') ?: '',
-                'isGlobalStyles' => true
+                'css'            => (string) file_get_contents($editorDir . 'editor-iframe-styles.css'), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+                'isGlobalStyles' => true,
             ],
             [
-                'css'            => file_get_contents($editorDir . 'editor.css') ?: '',
-                '__unstableType' => 'user'
-            ]
+                'css'            => (string) file_get_contents($editorDir . 'editor.css'), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+                '__unstableType' => 'user',
+            ],
         ];
     }
 
@@ -1275,7 +1275,7 @@ class FluentBlockEditorHandler
             'wp-block-library-css'        => includes_url('/css/dist/block-library/style.min.css'),
             'wp-block-editor-content-css' => includes_url('/css/dist/block-editor/content.min.css'),
             'wp-edit-blocks-css'          => includes_url('/css/dist/block-library/editor.min.css'),
-            'fcom-content-styling'        => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css'
+            'fcom-content-styling'        => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css',
         ];
 
         global $wp_version;
@@ -1286,7 +1286,7 @@ class FluentBlockEditorHandler
 
         return [
             'scripts' => '<script src="' . includes_url('/js/dist/vendor/wp-polyfill.min.js?ver=3.15.0') . '" id="wp-polyfill-js"></script>', // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
-            'styles'  => $cssFiles
+            'styles'  => $cssFiles,
         ];
     }
 
@@ -1295,8 +1295,8 @@ class FluentBlockEditorHandler
         return [
             [
                 '__unstableType' => 'user',
-                'css'            => ':root{--wp-admin-theme-color:#007cba;--wp-admin-theme-color--rgb:0, 124, 186;--wp-admin-theme-color-darker-10:#006ba1;--wp-admin-theme-color-darker-10--rgb:0, 107, 161;--wp-admin-theme-color-darker-20:#005a87;--wp-admin-theme-color-darker-20--rgb:0, 90, 135;--wp-admin-border-width-focus:2px;--wp-block-synced-color:#7a00df;--wp-block-synced-color--rgb:122, 0, 223;--wp-bound-block-color:var(--wp-block-synced-color);}@media (min-resolution:192dpi){:root{--wp-admin-border-width-focus:1.5px;}}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif;font-size:18px;line-height:1.5;--wp--style--block-gap:2em;}p{line-height:1.8;}.editor-post-title__block{font-size:2.5em;font-weight:800;margin-bottom:1em;margin-top:2em;}'
-            ]
+                'css'            => ':root{--wp-admin-theme-color:#007cba;--wp-admin-theme-color--rgb:0, 124, 186;--wp-admin-theme-color-darker-10:#006ba1;--wp-admin-theme-color-darker-10--rgb:0, 107, 161;--wp-admin-theme-color-darker-20:#005a87;--wp-admin-theme-color-darker-20--rgb:0, 90, 135;--wp-admin-border-width-focus:2px;--wp-block-synced-color:#7a00df;--wp-block-synced-color--rgb:122, 0, 223;--wp-bound-block-color:var(--wp-block-synced-color);}@media (min-resolution:192dpi){:root{--wp-admin-border-width-focus:1.5px;}}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif;font-size:18px;line-height:1.5;--wp--style--block-gap:2em;}p{line-height:1.8;}.editor-post-title__block{font-size:2.5em;font-weight:800;margin-bottom:1em;margin-top:2em;}',
+            ],
         ];
     }
 

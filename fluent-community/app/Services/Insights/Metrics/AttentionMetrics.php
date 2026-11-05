@@ -38,7 +38,7 @@ class AttentionMetrics
             "SELECT p.id, p.title, p.message, p.slug, p.space_id, p.user_id, p.created_at FROM {$posts} p WHERE {$where} ORDER BY p.created_at DESC, p.id DESC LIMIT " . (int)$limit
         ) : [];
 
-        return ['count' => $count, 'posts' => $rows];
+        return [ 'count' => $count, 'posts' => $rows ];
     }
 
     /**

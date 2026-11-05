@@ -21,7 +21,7 @@ class InvitationController extends Controller
         $space->verifyUserPermisson($user, 'community_moderator');
 
         $status = $request->get('status', 'pending');
-        if ($status == 'all') {
+        if ($status === 'all') {
             $status = '';
         }
 
@@ -29,21 +29,24 @@ class InvitationController extends Controller
             ->when($status, function ($query) use ($status) {
                 $query->where('status', $status);
             })
-            ->with(['xprofile' => function ($query) {
+            ->with([
+        'xprofile' => function ($query) {
                 $query->select(ProfileHelper::getXProfilePublicFields());
-            }])
+        },
+        ])
             ->orderBy('id', 'desc')
             ->paginate();
 
         foreach ($inviatations as $inviatation) {
-            if ($inviatation->isValid()) {
+            // An email invitation is for one address, so its link is never shown.
+            if (!$inviatation->message && $inviatation->isValid()) {
                 $inviatation->access_url = $inviatation->getAccessUrl();
             }
         }
 
         return [
             'invitations' => $inviatations,
-            'is_mod'      => true
+            'is_mod'      => true,
         ];
     }
 
@@ -58,7 +61,7 @@ class InvitationController extends Controller
         $inivitation->delete();
 
         return [
-            'message' => __('Invitation deleted successfully', 'fluent-community')
+            'message' => __('Invitation deleted successfully', 'fluent-community'),
         ];
     }
 
@@ -67,7 +70,7 @@ class InvitationController extends Controller
         $data = $request->all();
         $this->validate($data, [
             'email'    => 'required|email',
-            'space_id' => 'required'
+            'space_id' => 'required',
         ]);
 
         $spaceId = (int)Arr::get($data, 'space_id');
@@ -82,13 +85,13 @@ class InvitationController extends Controller
             'email'        => $inviteeEmail,
             'user_id'      => $user->ID,
             'invitee_name' => sanitize_text_field(Arr::get($data, 'invitee_name')),
-            'space_id'     => $space->id
+            'space_id'     => $space->id,
         ]);
 
         $invitation = InvitationService::invite($indivatationData);
         if (is_wp_error($invitation)) {
             return $this->sendError([
-                'message' => $invitation->get_error_message()
+                'message' => $invitation->get_error_message(),
             ]);
         }
 
@@ -97,7 +100,7 @@ class InvitationController extends Controller
 
         return [
             'message'    => __('Invitation has been sent successfully', 'fluent-community'),
-            'invitation' => $invitation
+            'invitation' => $invitation,
         ];
     }
 
@@ -127,13 +130,13 @@ class InvitationController extends Controller
 
         if(!$invitation) {
             return $this->sendError([
-                'message' => __('Something went wrong', 'fluent-community')
+                'message' => __('Something went wrong', 'fluent-community'),
             ]);
         }
 
         if (is_wp_error($invitation)) {
             return $this->sendError([
-                'message' => $invitation->get_error_message()
+                'message' => $invitation->get_error_message(),
             ]);
         }
 
@@ -141,7 +144,7 @@ class InvitationController extends Controller
 
         return [
             'message'    => __('Invitation link has been created', 'fluent-community'),
-            'invitation' => $invitation
+            'invitation' => $invitation,
         ];
     }
 
@@ -156,20 +159,20 @@ class InvitationController extends Controller
         // Links have no recipient; resending would mail an empty address and burn a redemption.
         if (!is_email($invitation->message)) {
             return $this->sendError([
-                'message' => __('Only email invitations can be resent.', 'fluent-community')
+                'message' => __('Only email invitations can be resent.', 'fluent-community'),
             ]);
         }
 
         if ($invitation->reactions_count > 5) {
             return $this->sendError([
-                'message' => __('You cannot resend this invitation', 'fluent-community')
+                'message' => __('You cannot resend this invitation', 'fluent-community'),
             ]);
         }
 
         InvitationService::sendInvitationEmail($invitation);
 
         return [
-            'message' => __('Invitation has been resent successfully', 'fluent-community')
+            'message' => __('Invitation has been resent successfully', 'fluent-community'),
         ];
     }
 
@@ -183,7 +186,7 @@ class InvitationController extends Controller
             }
 
             wp_send_json([
-                'message' => __('You are already a member of this site', 'fluent-community')
+                'message' => __('You are already a member of this site', 'fluent-community'),
             ], 400);
         }
     }
@@ -192,7 +195,7 @@ class InvitationController extends Controller
     {
         $settings = Helper::getOnboardingSettings();
 
-        return Arr::get($settings, 'is_onboarding_enabled', '') == 'yes';
+        return Arr::get($settings, 'is_onboarding_enabled', '') === 'yes';
     }
 
     private function isTodayInvitationLimitExceeded($userId)

@@ -1,4 +1,5 @@
-<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly
+<?php if (!defined('ABSPATH')) { exit; // Exit if accessed directly
+}
 
 use FluentCommunity\App\Hooks\Handlers\ActivationHandler;
 use FluentCommunity\App\Hooks\Handlers\DeactivationHandler;

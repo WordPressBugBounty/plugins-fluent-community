@@ -24,16 +24,16 @@ class LessonCompletedTrigger extends BaseTrigger
         return [
             'category'    => __('Community', 'fluent-community'),
             'label'       => __('Lesson Completed', 'fluent-community'),
-	        'icon'        => 'fc-icon-wp_new_user_signup',
+            'icon'        => 'fc-icon-wp_new_user_signup',
             'description' => __('This funnel runs when a student completes a lesson', 'fluent-community'),
-            'svg_icon' => '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="7" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="7" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M16.5 18l1.3 1.3L20 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            'svg_icon' => '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="7" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="7" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M16.5 18l1.3 1.3L20 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         ];
     }
 
     public function getFunnelSettingsDefaults()
     {
         return [
-            'subscription_status' => 'subscribed'
+            'subscription_status' => 'subscribed',
         ];
     }
 
@@ -48,7 +48,7 @@ class LessonCompletedTrigger extends BaseTrigger
                     'option_key'  => 'editable_statuses',
                     'is_multiple' => false,
                     'label'       => __('Subscription Status', 'fluent-community'),
-                    'placeholder' => __('Select Status', 'fluent-community')
+                    'placeholder' => __('Select Status', 'fluent-community'),
                 ],
                 'subscription_status_info' => [
                     'type' => 'html',
@@ -56,10 +56,10 @@ class LessonCompletedTrigger extends BaseTrigger
                     'dependency'  => [
                         'depends_on'    => 'subscription_status',
                         'operator' => '=',
-                        'value'    => 'pending'
-                    ]
-                ]
-            ]
+                        'value'    => 'pending',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -67,7 +67,7 @@ class LessonCompletedTrigger extends BaseTrigger
     {
         return [
             'update_type'   => 'update', // skip_all_actions, skip_update_if_exist
-            'lesson_ids'    => []
+            'lesson_ids'    => [],
         ];
     }
 
@@ -78,7 +78,7 @@ class LessonCompletedTrigger extends BaseTrigger
                 'type'    => 'radio',
                 'label'   => __('If Contact Already Exists?', 'fluent-community'),
                 'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
-                'options' => FunnelHelper::getUpdateOptions()
+                'options' => FunnelHelper::getUpdateOptions(),
             ],
             'lesson_ids'    => [
                 'type'        => 'grouped-select',
@@ -86,14 +86,14 @@ class LessonCompletedTrigger extends BaseTrigger
                 'help'        => __('Select which lessons this automation will run for', 'fluent-community'),
                 'options'     => $this->getLessonsByCourseGroup(),
                 'is_multiple' => true,
-                'inline_help' => __('Keep it blank to run on any lesson', 'fluent-community')
+                'inline_help' => __('Keep it blank to run on any lesson', 'fluent-community'),
             ],
             'run_multiple'       => [
                 'type'        => 'yes_no_check',
                 'label'       => '',
                 'check_label' => __('Restart the Automation Multiple times for a contact for this event. (Only enable if you want to restart automation for the same contact)', 'fluent-community'),
-                'inline_help' => __('If you enable, it will restart the automation for a contact if the contact is already in the automation. Otherwise, it will skip if it already exists.', 'fluent-community')
-            ]
+                'inline_help' => __('If you enable, it will restart the automation for a contact if the contact is already in the automation. Otherwise, it will skip if it already exists.', 'fluent-community'),
+            ],
         ];
     }
 
@@ -124,7 +124,7 @@ class LessonCompletedTrigger extends BaseTrigger
 
         (new FunnelProcessor())->startFunnelSequence($funnel, $subscriberData, [
             'source_trigger_name' => $this->triggerName,
-            'source_ref_id' => $lesson->id
+            'source_ref_id' => $lesson->id,
         ]);
 
     }
@@ -136,20 +136,20 @@ class LessonCompletedTrigger extends BaseTrigger
         $updateType = Arr::get($conditions, 'update_type');
 
         $subscriber = FunnelHelper::getSubscriber($subscriberData['email']);
-        if ($subscriber && $updateType == 'skip_all_if_exist') {
+        if ($subscriber && $updateType === 'skip_all_if_exist') {
             return false;
         }
 
         // check the products ids
         if ($conditions['lesson_ids']) {
-            return in_array($lessonId, $conditions['lesson_ids']);
+            return in_array((int) $lessonId, array_map('intval', $conditions['lesson_ids']), true);
         }
 
         // check run_only_one
         if ($subscriber && FunnelHelper::ifAlreadyInFunnel($funnel->id, $subscriber->id)) {
-            $multipleRun = Arr::get($conditions, 'run_multiple') == 'yes';
+            $multipleRun = Arr::get($conditions, 'run_multiple') === 'yes';
             if ($multipleRun) {
-                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [$subscriber->id]);
+                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [ $subscriber->id ]);
             } else {
                 return false;
             }
@@ -167,12 +167,12 @@ class LessonCompletedTrigger extends BaseTrigger
             $group = [
                 'title'   => $course->title,
                 'slug'    => $course->slug,
-                'options' => []
+                'options' => [],
             ];
 
             $sections = CourseTopic::where('space_id', $course->id)
                 ->orderBy('priority', 'ASC')
-                ->with(['lessons'])
+                ->with([ 'lessons' ])
                 ->get();
 
 
@@ -180,7 +180,7 @@ class LessonCompletedTrigger extends BaseTrigger
                 foreach ($section->lessons as $lesson) {
                     $group['options'][] = [
                         'id' => (string) $lesson->id,
-                        'title' => $section->title .': '.$lesson->title
+                        'title' => $section->title .': '.$lesson->title,
                     ];
                 }
             }

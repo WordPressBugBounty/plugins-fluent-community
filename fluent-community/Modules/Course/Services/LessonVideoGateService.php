@@ -43,15 +43,15 @@ class LessonVideoGateService
 
         $meta = $lesson->meta;
 
-        if (Arr::get($meta, 'require_video_completion') != 'yes') {
+        if (Arr::get($meta, 'require_video_completion') !== 'yes') {
             return false;
         }
 
-        if (Arr::get($meta, 'enable_media') != 'yes') {
+        if (Arr::get($meta, 'enable_media') !== 'yes') {
             return false;
         }
 
-        return Arr::get($meta, 'media.type') == 'fluent_player';
+        return Arr::get($meta, 'media.type') === 'fluent_player';
     }
 
     public static function isAutoCompleteEnabled($lesson)
@@ -62,15 +62,15 @@ class LessonVideoGateService
 
         $meta = $lesson->meta;
 
-        if (Arr::get($meta, 'auto_complete_on_video_end') != 'yes') {
+        if (Arr::get($meta, 'auto_complete_on_video_end') !== 'yes') {
             return false;
         }
 
-        if (Arr::get($meta, 'enable_media') != 'yes') {
+        if (Arr::get($meta, 'enable_media') !== 'yes') {
             return false;
         }
 
-        return Arr::get($meta, 'media.type') == 'fluent_player';
+        return Arr::get($meta, 'media.type') === 'fluent_player';
     }
 
     public static function getAutoCompleteDelay()
@@ -126,7 +126,7 @@ class LessonVideoGateService
                 ->toArray();
         }
 
-        return in_array($lesson->id, self::$watchedCache[$cacheKey]);
+        return in_array((int) $lesson->id, array_map('intval', self::$watchedCache[$cacheKey]), true);
     }
 
     public static function markWatched($lesson, $userId)
@@ -137,7 +137,7 @@ class LessonVideoGateService
             ->first();
 
         if ($existing) {
-            if ($existing->type != 'watched') {
+            if ($existing->type !== 'watched') {
                 $existing->type = 'watched';
                 $existing->save();
                 unset(self::$watchedCache[$lesson->space_id . '_' . $userId]);
@@ -150,7 +150,7 @@ class LessonVideoGateService
             'object_id'   => $lesson->id,
             'object_type' => self::WATCHED_OBJECT_TYPE,
             'parent_id'   => $lesson->space_id,
-            'type'        => 'watched'
+            'type'        => 'watched',
         ]);
 
         unset(self::$watchedCache[$lesson->space_id . '_' . $userId]);

@@ -68,6 +68,6 @@ class ActivityTrendCard extends AbstractCard
             ];
         }
 
-        return $this->timeseries($bucketer, $series, 'count', ['chart' => 'line', 'layout' => 'multiples']);
+        return $this->timeseries($bucketer, $series, 'count', [ 'chart' => 'line', 'layout' => 'multiples' ]);
     }
 }

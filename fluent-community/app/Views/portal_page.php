@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) { exit; // Exit if accessed directly
  * @var string $theme_color
  * @var string $landing_route
  * @var bool $isHeadless
+ * @var string $module_runtime
  */
 $fluentCommunityOgTitle = $og_title ?? '';
 $fluentCommunityThemeColor = $theme_color ?? '';
@@ -21,6 +22,7 @@ $fluentCommunityThemeColor = $theme_color ?? '';
     <meta charset='utf-8'>
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=2.0,user-scalable=yes,viewport-fit=cover"/>
     <meta name="mobile-web-app-capable" content="yes">
+    <?php \FluentCommunity\App\Vite::printModuleImportMap($module_runtime ?? 'portal'); // before wp_head() and every module script ?>
     <?php if (!$isHeadless) : wp_head(); else: ?>
         <meta name="description" content="<?php echo esc_attr($description); ?>">
         <?php $fluentCommunitySiteIcon = get_site_icon_url(); ?>

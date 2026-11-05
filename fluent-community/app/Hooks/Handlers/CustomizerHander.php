@@ -11,7 +11,7 @@ class CustomizerHander
     public function register()
     {
         add_filter('fluent_community/portal_data_vars', function ($vars) {
-            if (Arr::get($vars, 'route_group') == 'admin' && Helper::isSiteAdmin()) {
+            if (Arr::get($vars, 'route_group') === 'admin' && Helper::isSiteAdmin()) {
                 add_action('fluent_community/before_header_right_menu_items', function () {
                     ?>
                     <li class="customizer_menu_item">
@@ -27,18 +27,15 @@ class CustomizerHander
                     </li>
                     <?php
                 });
-            } else if (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            } elseif (isset($_GET['customizer_panel']) && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 $isRtl = Helper::isRtl();
                 $vars['css_files'] = array_merge($vars['css_files'], [
-                    'customizer'     => [
-                        'url' => Vite::getStaticSrcUrl('customizer.css', $isRtl)
-                    ],
                     'customizer_app' => [
-                        'url' => Vite::getStaticSrcUrl('customizer_app.css', $isRtl)
+                        'url' => Vite::getStaticSrcUrl('customizer_app.css', $isRtl),
                     ],
                 ]);
 
-                add_action('fluent_community/before_portal_rendered', [$this, 'pushCustomizer'], 10, 1);
+                add_action('fluent_community/before_portal_rendered', [ $this, 'pushCustomizer' ], 10, 1);
                 $vars['js_vars']['customizerI18n'] = [
                     'Light Mode'                                                                                                                                    => __('Light Mode', 'fluent-community'),
                     'Dark Mode'                                                                                                                                     => __('Dark Mode', 'fluent-community'),
@@ -108,7 +105,7 @@ class CustomizerHander
         add_action('fluent_community/portal_footer', function () {
             $jsFiles = [
                 'customizer_app' => [
-                    'url' => Vite::getDynamicSrcUrl('customizer/customizer_app.js')
+                    'url' => Vite::getDynamicSrcUrl('customizer/customizer_app.js'),
                 ],
             ];
 

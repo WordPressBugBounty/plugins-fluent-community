@@ -24,7 +24,7 @@ class NotificationsController extends Controller
                 },
                 'subscriber' => function ($q) {
                     return $q->where('user_id', get_current_user_id());
-                }
+                },
             ])
             ->byStatus($request->get('status'), $user->ID)
             ->byType($request->get('notification_type', 'all'))
@@ -33,7 +33,7 @@ class NotificationsController extends Controller
 
         $data = [
             'notifications' => $notifications,
-            'unread_count'  => Notification::byStatus('unread', $user->ID)->count()
+            'unread_count'  => Notification::byStatus('unread', $user->ID)->count(),
         ];
         return apply_filters('fluent_community/notifications_api_response', $data, $request->all());
     }
@@ -43,9 +43,11 @@ class NotificationsController extends Controller
         $user = $this->getUser(true);
 
         $unreadNotifications = Notification::byStatus('unread', $user->ID)
-            ->with(['xprofile' => function ($q) {
+            ->with([
+        'xprofile' => function ($q) {
                 return $q->select(ProfileHelper::getXProfilePublicFields());
-            }])
+        },
+        ])
             ->orderBy('updated_at', 'DESC')
             ->byType($request->get('notification_type', 'all'))
             ->limit(50)
@@ -53,7 +55,7 @@ class NotificationsController extends Controller
 
         $data = [
             'notifications' => $unreadNotifications,
-            'unread_count'  => Notification::byStatus('unread', get_current_user_id())->count()
+            'unread_count'  => Notification::byStatus('unread', get_current_user_id())->count(),
         ];
 
         return apply_filters('fluent_community/unread_notifications_api_response', $data, $request->all());
@@ -63,10 +65,10 @@ class NotificationsController extends Controller
     {
         NotificationSubscriber::where('is_read', 0)
             ->where('user_id', get_current_user_id())
-            ->update(['is_read' => 1]);
+            ->update([ 'is_read' => 1 ]);
 
         return [
-            'message' => __('All notifications have been marked as read.', 'fluent-community')
+            'message' => __('All notifications have been marked as read.', 'fluent-community'),
         ];
     }
 
@@ -81,10 +83,10 @@ class NotificationsController extends Controller
             }
         })
             ->where('user_id', get_current_user_id())
-            ->update(['is_read' => 1]);
+            ->update([ 'is_read' => 1 ]);
 
         return [
-            'unread_count' => Notification::byStatus('unread', get_current_user_id())->count()
+            'unread_count' => Notification::byStatus('unread', get_current_user_id())->count(),
         ];
     }
 
@@ -96,7 +98,7 @@ class NotificationsController extends Controller
             return $query->where('feed_id', $feed->id);
         })
             ->where('user_id', get_current_user_id())
-            ->update(['is_read' => 1]);
+            ->update([ 'is_read' => 1 ]);
 
         $userModel = $this->getUser();
 

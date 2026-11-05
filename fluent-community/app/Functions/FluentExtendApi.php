@@ -2,7 +2,7 @@
 
 namespace FluentCommunity\App\Functions;
 
-class  FluentExtendApi
+class FluentExtendApi
 {
     /**
      * Add a meta box for the space provider.
@@ -22,14 +22,14 @@ class  FluentExtendApi
             return;
         }
 
-        $validObjectTypes = ['space', 'course'];
+        $validObjectTypes = [ 'space', 'course' ];
         $objectTypes = array_intersect($objectTypes, $validObjectTypes);
         if (!$objectTypes) {
             return;
         }
 
         foreach ($objectTypes as $objectType) {
-            if (!in_array($objectType, $validObjectTypes)) {
+            if (!in_array($objectType, $validObjectTypes, true)) {
                 continue;
             }
 
@@ -55,7 +55,7 @@ class  FluentExtendApi
             $fields[$provider] = [
                 'section_title' => $args['section_title'],
                 'settings'      => $settings,
-                'fields'        => $formFields
+                'fields'        => $formFields,
             ];
 
             return $fields;

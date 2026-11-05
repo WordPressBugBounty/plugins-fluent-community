@@ -11,13 +11,13 @@ class CleanupHandler
 {
     public function register()
     {
-        add_action('fluent_community/feed/before_deleted', [$this, 'handleFeedDeleted'], 10, 1);
-        add_action('fluent_community/lesson/before_deleted', [$this, 'handleLessonDeleted'], 10, 1);
-        add_action('fluent_community/remove_old_notifications', [$this, 'maybeDeleteOldNotifications']);
+        add_action('fluent_community/feed/before_deleted', [ $this, 'handleFeedDeleted' ], 10, 1);
+        add_action('fluent_community/lesson/before_deleted', [ $this, 'handleLessonDeleted' ], 10, 1);
+        add_action('fluent_community/remove_old_notifications', [ $this, 'maybeDeleteOldNotifications' ]);
 
-        add_action('fluent_community/comment/media_deleted', [$this, 'queueMediaDelete'], 10, 1);
-        add_action('fluent_community/feed/media_deleted', [$this, 'handleMediaDelete'], 10, 1);
-        add_action('fluent_community/maybe_delete_draft_medias', [$this, 'deleteOldDraftMedias'], 10);
+        add_action('fluent_community/comment/media_deleted', [ $this, 'queueMediaDelete' ], 10, 1);
+        add_action('fluent_community/feed/media_deleted', [ $this, 'handleMediaDelete' ], 10, 1);
+        add_action('fluent_community/maybe_delete_draft_medias', [ $this, 'deleteOldDraftMedias' ], 10);
         add_action('fluent_community/remove_medias_by_url', function ($mediaUrls, $wheres = []) {
             if (!$mediaUrls) {
                 return;
@@ -37,7 +37,7 @@ class CleanupHandler
             $this->queueMediaDelete($media);
         }, 10, 2);
 
-        add_action('deleted_user', [$this, 'handleUserDeleted'], 10, 2);
+        add_action('deleted_user', [ $this, 'handleUserDeleted' ], 10, 2);
     }
 
     public function handleMediaDelete($media)
@@ -46,7 +46,7 @@ class CleanupHandler
             return;
         }
 
-        if ($media && $media instanceof Media && $media->object_source == 'lesson_document') {
+        if ($media && $media instanceof Media && $media->object_source === 'lesson_document') {
             $this->handleLessonMediaDelete($media->feed_id, $media);
             return;
         }
@@ -74,7 +74,7 @@ class CleanupHandler
 
     public function handleLessonMediaDelete($lessonId, $media, $mediaKeys = [], $isCollection = false)
     {
-        $mediaKeys = $isCollection ? $mediaKeys : [$media->media_key];
+        $mediaKeys = $isCollection ? $mediaKeys : [ $media->media_key ];
 
         $duplicateMediaKeys = Media::whereIn('media_key', $mediaKeys)
             ->where('feed_id', '!=', $lessonId)
@@ -102,7 +102,7 @@ class CleanupHandler
         }
 
         $lessonMedia = $media ? $media->filter(function ($medium) use ($deletedIds) {
-            return !in_array($medium->id, $deletedIds);
+            return !in_array((int) $medium->id, array_map('intval', $deletedIds), true);
         }) : null;
 
         $this->queueMediaDelete($lessonMedia);
@@ -136,20 +136,18 @@ class CleanupHandler
             }
 
             foreach ($media as $medium) {
-                if ($medium->driver == 'local') {
+                if ($medium->driver === 'local') {
                     $medium->delete();
                 } else {
                     $medium->is_active = 0;
                     $medium->save();
                 }
             }
-        } else {
-            if ($media->driver == 'local') {
+        } elseif ($media->driver === 'local') {
                 $media->delete();
-            } else {
-                $media->is_active = 0;
-                $media->save();
-            }
+        } else {
+            $media->is_active = 0;
+            $media->save();
         }
     }
 
@@ -196,7 +194,7 @@ class CleanupHandler
                 ->where('object_type', 'feed')
                 ->whereIn('meta_key', [
                     '_last_mention_email_user_id',
-                    '_last_email_user_id'
+                    '_last_email_user_id',
                 ])
                 ->limit(9000)
                 ->where('created_at', '<', gmdate('Y-m-d H:i:s', strtotime('-1 week')))
@@ -261,7 +259,7 @@ class CleanupHandler
          * Delete the related media data as well which are connected with posts and comments
          *
          * ## Media
-         * where object_source = user_photo|user_cover_photo|comment|feed|chat_message	and user_id = user_id
+         * where object_source = user_photo|user_cover_photo|comment|feed|chat_message  and user_id = user_id
          *
          *
          */
@@ -310,11 +308,11 @@ class CleanupHandler
             'user_cover_photo',
             'comment',
             'feed',
-            'chat_message'
+            'chat_message',
         ])
             ->where('user_id', $userId)
             ->update([
-                'is_active' => 0
+                'is_active' => 0,
             ]);
     }
 }

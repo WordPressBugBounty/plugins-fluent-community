@@ -2,6 +2,8 @@
 
 namespace FluentCommunity\App\Services\Libs;
 
+use FluentCommunity\App\Services\UploadHelper;
+
 /**
  * @method string getDir()
  * @method mixed get(string $file)
@@ -65,14 +67,18 @@ class FileSystem
     public function _put($files)
     {
         if (!function_exists('wp_handle_upload')) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once ABSPATH . 'wp-admin/includes/file.php';
         }
 
         $this->overrideUploadDir();
 
-        $uploadOverrides = ['test_form' => false];
+        $uploadOverrides = [ 'test_form' => false ];
 
         $uploadedFiles = [];
+
+        // Every upload path goes through here, so strip image metadata (when enabled) in one place.
+        // Callers that add fixImageOrientation() first get it run before the strip.
+        add_filter('wp_handle_upload', [ UploadHelper::class, 'stripImageMeta' ]);
 
         foreach ((array)$files as $file) {
             $filesArray = $file->toArray();
@@ -88,6 +94,8 @@ class FileSystem
 
             $uploadedFiles[] = $uploadedFile;
         }
+
+        remove_filter('wp_handle_upload', [ UploadHelper::class, 'stripImageMeta' ]);
 
         return $uploadedFiles;
     }
@@ -114,10 +122,10 @@ class FileSystem
     public function _overrideUploadDir()
     {
         add_filter('wp_handle_upload_prefilter', function ($file) {
-            add_filter('upload_dir', [$this, '_setCustomUploadDir']);
+            add_filter('upload_dir', [ $this, '_setCustomUploadDir' ]);
 
             add_filter('wp_handle_upload', function ($fileinfo) {
-                remove_filter('upload_dir', [$this, '_setCustomUploadDir']);
+                remove_filter('upload_dir', [ $this, '_setCustomUploadDir' ]);
                 $fileinfo['file'] = basename($fileinfo['file']);
                 return $fileinfo;
             });
@@ -140,11 +148,17 @@ class FileSystem
 
         $param['path'] = $param['basedir'] . '/' . $folderName;
 
+        // FileInfo directives only: Options or php_flag answer 500 for the whole folder where
+        // AllowOverride does not include Options.
+        $htaccessContent = "# BEGIN FluentCommunity\n# Disable parsing of PHP for some server configurations.\n<Files *>\nSetHandler none\nSetHandler default-handler\nRemoveHandler .cgi .php .php3 .php4 .php5 .phtml .pl .py .pyc .pyo\n</Files>\n# END FluentCommunity\n";
+        $htaccessFile = $param['path'] . '/.htaccess';
+
         if (!is_dir($param['path'])) {
             mkdir($param['path'], 0755); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
-            $htaccessContent = '# END FluentCommunity\n# Disable parsing of PHP for some server configurations.\n<Files *>\nSetHandler none\nSetHandler default-handler\nOptions -ExecCGI\nRemoveHandler .cgi .php .php3 .php4 .php5 .phtml .pl .py .pyc .pyo\n</Files>\n<IfModule mod_php5.c>\nphp_flag engine off\n</IfModule>\n# END FluentCommunity';
-
-            file_put_contents($param['basedir'] . '/' . $folderName . '/.htaccess', $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            file_put_contents($htaccessFile, $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+        } elseif (is_file($htaccessFile) && strpos((string) file_get_contents($htaccessFile), '# END FluentCommunity\n') === 0) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+            // Older versions wrote this file in single quotes, as one comment line that Apache ignores.
+            file_put_contents($htaccessFile, $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         }
 
         if (!file_exists($param['basedir'] . '/' . $folderName . '/index.php')) {
@@ -173,9 +187,9 @@ class FileSystem
 
     public static function __callStatic($method, $params)
     {
-        $instance = new static;
+        $instance = new static();
 
-        return call_user_func_array([$instance, $method], $params);
+        return call_user_func_array([ $instance, $method ], $params);
     }
 
     public function __call($method, $params)
@@ -184,6 +198,6 @@ class FileSystem
 
         $method = method_exists($this, $hiddenMethod) ? $hiddenMethod : $method;
 
-        return call_user_func_array([$this, $method], $params);
+        return call_user_func_array([ $this, $method ], $params);
     }
 }

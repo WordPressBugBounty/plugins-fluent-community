@@ -18,7 +18,7 @@ use FluentCommunity\Database\Migrations\TermMigrator;
 use FluentCommunity\Database\Migrations\UserActivitiesMigrator;
 use FluentCommunity\Database\Migrations\XProfileMigrator;
 
-require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 class DBMigrator
 {

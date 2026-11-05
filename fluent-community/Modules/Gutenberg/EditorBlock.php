@@ -10,14 +10,14 @@ class EditorBlock
 {
     public function register($app)
     {
-        add_action('init', [$this, 'registerBlock']);
+        add_action('init', [ $this, 'registerBlock' ]);
     }
 
     public function registerBlock()
     {
         global $pagenow;
 
-        $asset_file = include(plugin_dir_path(__FILE__) . 'build/index.asset.php');
+        $asset_file = include plugin_dir_path(__FILE__) . 'build/index.asset.php';
         wp_register_style(
             'custom-layout-block-editor-style',
             plugins_url('build/index.css', __FILE__),
@@ -42,7 +42,7 @@ class EditorBlock
                 'blockEditor' => array(
                     'isGutenberg'   => true,
                     'isBlockEditor' => true,
-                    'isPage'        => $pagenow == 'post.php' || $pagenow == 'post-new.php',
+                    'isPage'        => $pagenow === 'post.php' || $pagenow === 'post-new.php',
                     'isPostType'    => get_post_type(),
                 ),
             )
@@ -56,9 +56,9 @@ class EditorBlock
                     'editor_script'   => 'custom-layout-block-editor',
                     'editor_style'    => 'custom-layout-block-editor-style',
                     'style'           => 'fluent_community_global',
-                    'render_callback' => [$this, 'render'],
+                    'render_callback' => [ $this, 'render' ],
                     'supports'        => [
-                        'html' => false
+                        'html' => false,
                     ],
                     'attributes'      => array(
                         'showPageHeader'      => array(
@@ -91,13 +91,13 @@ class EditorBlock
             return;
         }
 
-        $supportedPostTypes = apply_filters('fluent_communuty/block_templates_post_types', ['page', 'post']);
+        $supportedPostTypes = apply_filters('fluent_communuty/block_templates_post_types', [ 'page', 'post' ]);
 
         register_block_template('fluent-community//frame-template', [
             'title'       => __('FluentCommunity Page Template', 'fluent-community'),
             'description' => __('A Page Template that render your WP content into FluentCommunity UI Frame', 'fluent-community'),
             'content'     => '<!-- wp:fluent-community/page-layout --><!-- wp:post-title /--><!-- wp:post-content /--><!-- /wp:fluent-community/page-layout -->',
-            'post_types'  => $supportedPostTypes
+            'post_types'  => $supportedPostTypes,
         ]);
 
         add_filter('get_block_templates', function ($templates) {
@@ -121,7 +121,7 @@ class EditorBlock
         }
 
         $contenx = 'wp';
-        if (isset($_REQUEST['context']) && $_REQUEST['context'] == 'edit' && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if (isset($_REQUEST['context']) && $_REQUEST['context'] === 'edit' && Helper::isSiteAdmin()) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $contenx = 'block_editor';
         }
 
@@ -147,7 +147,7 @@ class EditorBlock
                 $classes[] = 'fcom_disable_dark_mode';
                 return $classes;
             });
-        } else if (Helper::hasColorScheme()) {
+        } elseif (Helper::hasColorScheme()) {
             add_action('wp_head', function () {
                 Helper::renderColorSchemePrePaintScript();
             });

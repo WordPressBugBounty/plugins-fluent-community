@@ -22,7 +22,7 @@ class SidebarLink extends BaseSpace
             'emoji'                => '',
             'shape_svg'            => '',
             'permalink'            => '',
-            'membership_ids'     => []
+            'membership_ids'     => [],
         ];
     }
 

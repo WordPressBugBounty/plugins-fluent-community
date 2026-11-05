@@ -16,7 +16,7 @@ use FluentCommunity\Framework\Validator\Validator;
 
 class FeedsHelper
 {
-    static protected $currentRelatedUserIds = [];
+    protected static $currentRelatedUserIds = [];
 
     public static function setCurrentRelatedUserId($userId)
     {
@@ -68,7 +68,7 @@ class FeedsHelper
      */
     public static function getViewableByLinkStatuses()
     {
-        return ['published', 'unlisted'];
+        return [ 'published', 'unlisted' ];
     }
 
     /**
@@ -145,11 +145,9 @@ class FeedsHelper
 
         $text = str_replace('&#x20;', '', $text); // hide markdown empty content
 
-        $html = (new \FluentCommunity\App\Services\Parsedown([
-        ]))
+        $html = (new \FluentCommunity\App\Services\Parsedown([]))
             ->setBreaksEnabled(true)
             ->setUrlsLinked(false)
-            //  ->setSafeMode(true)
             ->text($text);
 
         if (!Arr::get($options, 'disable_link_process')) {
@@ -261,8 +259,8 @@ class FeedsHelper
             // Remove existing rel attribute if present
             $attr = preg_replace('/\srel=("|\').*?("|\')/i', '', $attr);
 
-            // Add nofollow
-            return '<a href="' . $url . '" rel="nofollow" ' . trim($attr) . '>';
+            // Add nofollow noopener
+            return '<a href="' . $url . '" rel="nofollow noopener" ' . trim($attr) . '>';
         };
 
         // Perform the replacement
@@ -363,7 +361,7 @@ class FeedsHelper
             $termIds[$term->slug] = $term->id;
         }
 
-        if (count($termIds) == count($tags)) {
+        if (count($termIds) === count($tags)) {
             return array_values($termIds);
         }
 
@@ -373,7 +371,7 @@ class FeedsHelper
             $term = Term::create([
                 'taxonomy_name' => 'hashtag',
                 'slug'          => strtolower($except),
-                'title'         => $except
+                'title'         => $except,
             ]);
 
             $termIds[$term->slug] = $term->id;
@@ -419,7 +417,7 @@ class FeedsHelper
 
         $data = [
             'user_ids' => $userIds,
-            'text'     => strtr($text, $userMentions)
+            'text'     => strtr($text, $userMentions),
         ];
 
         if ($withUsers) {
@@ -459,7 +457,7 @@ class FeedsHelper
         $alreadyIndexes = [];
 
         foreach ($previousVotes as $previousVote) {
-            if (!in_array($previousVote->object_type, $newVoteIndexes)) {
+            if (!in_array($previousVote->object_type, $newVoteIndexes, true)) {
                 // This vote need to be deleted
                 $removedIndexes[] = $previousVote->object_type;
                 $previousVote->delete();
@@ -475,7 +473,7 @@ class FeedsHelper
                 'user_id'     => $userId,
                 'object_id'   => $feed->id,
                 'type'        => 'survey_vote',
-                'object_type' => $newSyncIndex
+                'object_type' => $newSyncIndex,
             ]);
         }
 
@@ -486,10 +484,10 @@ class FeedsHelper
         foreach ($surveyConfig['options'] as $index => $option) {
             $slug = $option['slug'];
 
-            if (in_array($slug, $removedIndexes)) {
+            if (in_array($slug, $removedIndexes, true)) {
                 $newCount = (int)Arr::get($option, 'vote_counts', 0) - 1;
                 $option['vote_counts'] = $newCount > 0 ? $newCount : 0;
-            } else if (in_array($slug, $newSyncIndexes)) {
+            } elseif (in_array($slug, $newSyncIndexes, true)) {
                 $newCount = (int)Arr::get($option, 'vote_counts', 0) + 1;
                 $option['vote_counts'] = $newCount > 0 ? $newCount : 0;
             }
@@ -517,10 +515,10 @@ class FeedsHelper
     public static function createFeed($allData)
     {
         if (!is_array($allData)) {
-            return new \WP_Error('invalid_data', __('Invalid data. The data need to be array', 'fluent-community'), ['status' => 400]);
+            return new \WP_Error('invalid_data', __('Invalid data. The data need to be array', 'fluent-community'), [ 'status' => 400 ]);
         }
 
-        $acceptedKeys = ['message', 'title', 'user_id', 'space_id', 'type'];
+        $acceptedKeys = [ 'message', 'title', 'user_id', 'space_id', 'type' ];
         $feedData = Arr::only($allData, $acceptedKeys);
 
         // Let's validate the data
@@ -528,7 +526,7 @@ class FeedsHelper
             'message'  => 'required',
             'title'    => 'nullable|string',
             'user_id'  => 'required|integer|exists:users,ID',
-            'space_id' => 'nullable|integer|exists:fcom_spaces,id'
+            'space_id' => 'nullable|integer|exists:fcom_spaces,id',
         ]);
 
         if ($validation->fails()) {
@@ -542,10 +540,10 @@ class FeedsHelper
         $user = User::find($feedData['user_id']);
 
         if (!$user) {
-            return new \WP_Error('user_not_found', __('User not found', 'fluent-community'), ['status' => 400]);
+            return new \WP_Error('user_not_found', __('User not found', 'fluent-community'), [ 'status' => 400 ]);
         }
         $user->syncXProfile();
-        if ($user->xprofile->status != 'active') {
+        if ($user->xprofile->status !== 'active') {
             return new \WP_Error('user_inactive', __('User status is not active', 'fluent-community'), $validation->errors());
         }
 
@@ -555,20 +553,20 @@ class FeedsHelper
         // Extra Validaton for space_id
         if (!empty($feedData['space_id'])) {
             if (!Helper::isUserInSpace($feedData['user_id'], $feedData['space_id'])) {
-                return new \WP_Error('invalid_space', __('User is not in the space', 'fluent-community'), ['status' => 400]);
+                return new \WP_Error('invalid_space', __('User is not in the space', 'fluent-community'), [ 'status' => 400 ]);
             }
-            $mentions = FeedsHelper::getMentions($markdown, Arr::get($feedData, 'space_id'), true);
+            $mentions = self::getMentions($markdown, Arr::get($feedData, 'space_id'), true);
             if ($mentions) {
                 $markdown = $mentions['text'];
             }
-        } else if (!Helper::hasGlobalPost()) {
-            return new \WP_Error('global_post_disabled', 'User is not allowed to post in global', ['status' => 400]);
+        } elseif (!Helper::hasGlobalPost()) {
+            return new \WP_Error('global_post_disabled', 'User is not allowed to post in global', [ 'status' => 400 ]);
         }
 
         $feedData['message_rendered'] = wp_kses_post(self::mdToHtml($markdown));
         $feedData['status'] = 'published';
 
-        if (Arr::get($allData, 'meta.media_preview.provider') == 'inline') {
+        if (Arr::get($allData, 'meta.media_preview.provider') === 'inline') {
             $allData['meta']['media_preview']['provider'] = 'giphy';
         }
 
@@ -627,7 +625,7 @@ class FeedsHelper
 
         $processedData = [
             'message' => $message,
-            'type'    => 'text'
+            'type'    => 'text',
         ];
 
         $survey = Arr::get($data, 'survey', []);
@@ -642,7 +640,7 @@ class FeedsHelper
 
                 $formattedOptions[] = [
                     'label' => sanitize_text_field($option['label']),
-                    'slug'  => Arr::get($option, 'slug') ?: 'opt_' . ($index + 1)
+                    'slug'  => Arr::get($option, 'slug') ? Arr::get($option, 'slug') : 'opt_' . ($index + 1),
                 ];
             }
 
@@ -655,9 +653,9 @@ class FeedsHelper
 
             if ($formattedOptions) {
                 $processedData['survey'] = [
-                    'type'     => Arr::get($survey, 'type') == 'single_choice' ? 'single_choice' : 'multi_choice',
+                    'type'     => Arr::get($survey, 'type') === 'single_choice' ? 'single_choice' : 'multi_choice',
                     'options'  => $formattedOptions,
-                    'end_date' => $endDate
+                    'end_date' => $endDate,
                 ];
             }
         }
@@ -675,7 +673,7 @@ class FeedsHelper
 
         if ($titlePref) {
             $processedData['title'] = sanitize_text_field(Arr::get($data, 'title'));
-            if ($titlePref == 'required' && empty($processedData['title'])) {
+            if ($titlePref === 'required' && empty($processedData['title'])) {
                 throw new UnprocessableEntityHttpException(
                     esc_html__('Title is required. Please provide a title', 'fluent-community'),
                     'feed_title_required'
@@ -718,13 +716,37 @@ class FeedsHelper
         return null;
     }
 
+    /**
+     * Title for a post that has none of its own. Shared by the head, the JSON-LD
+     * headline and the SPA tab so the three cannot drift apart.
+     *
+     * @return string Unescaped; callers escape for their own context.
+     */
+    public static function getSeoTitle(Feed $feed)
+    {
+        $seoTitle = $feed->title ?: Helper::getHumanExcerpt($feed->message, 60);
+
+        if (!$seoTitle) {
+            // A body of only markdown - a bare image, a rule - passes validation but strips to nothing.
+            $seoTitle = sprintf(
+                /* translators: %1$s is the author name and %2$s is the space title, or the site title when the post has no space */
+                __('%1$s posted in %2$s', 'fluent-community'),
+                $feed->xprofile ? $feed->xprofile->display_name : __('Someone', 'fluent-community'),
+                // The portal head reads the same setting, so both callers name the site identically.
+                $feed->space ? $feed->space->title : (Arr::get(Helper::generalSettings(), 'site_title') ?: get_bloginfo('name'))
+            );
+        }
+
+        return apply_filters('fluent_community/feed_seo_title', $seoTitle, $feed);
+    }
+
     public static function transformForEdit($feed)
     {
         $topicsConfig = Helper::getTopicsConfig();
 
         $terms = $feed->terms;
         $feed->topic_ids = $terms->where('taxonomy_name', 'post_topic')->pluck('id')->toArray();
-        if ($topicsConfig['max_topics_per_post'] == 1) {
+        if ((int) $topicsConfig['max_topics_per_post'] === 1) {
             if ($feed->topic_ids) {
                 $feed->topic_ids = Arr::first($feed->topic_ids);
             } else {
@@ -732,11 +754,11 @@ class FeedsHelper
             }
         }
 
-        if (Arr::get($feed->meta, 'send_announcement_email') == 'yes') {
+        if (Arr::get($feed->meta, 'send_announcement_email') === 'yes') {
             $feed->send_announcement_email = 'yes';
         }
 
-        if ($feed->content_type == 'document') {
+        if ($feed->content_type === 'document') {
             $documents = Media::where('object_source', 'space_document')
                 ->where('feed_id', $feed->id)
                 ->where('is_active', 1)
@@ -747,7 +769,7 @@ class FeedsHelper
                 $mediaIds[] = $document->getPrivateFileMeta();
             }
             $feed->document_ids = $mediaIds;
-            $feed->load('space');
+            self::loadSpaceWithoutSettings($feed);
             return $feed;
         }
 
@@ -757,7 +779,7 @@ class FeedsHelper
             $feed->survey = [
                 'type'     => Arr::get($surveyConfig, 'type'),
                 'options'  => Arr::get($surveyConfig, 'options', []),
-                'end_date' => Arr::get($surveyConfig, 'end_date', '')
+                'end_date' => Arr::get($surveyConfig, 'end_date', ''),
             ];
         }
 
@@ -765,33 +787,37 @@ class FeedsHelper
         $meta = $feed->meta;
         unset($feed->meta);
 
+        $mediaPreview = Arr::get($meta, 'media_preview');
+
         if ($mediaImages) {
             $feed->media_images = $mediaImages;
-        } else if ($mediaPreview = Arr::get($meta, 'media_preview')) {
+        } elseif ($mediaPreview) {
             $type = Arr::get($mediaPreview, 'type');
-            if ($type == 'oembed' || $type == 'iframe_html') {
+            if ($type === 'oembed' || $type === 'iframe_html') {
                 $feed->media = $mediaPreview;
             }
 
             // Only fetch the specific attached media, not all media (which would include inline images).
             $mediaId = Arr::get($mediaPreview, 'media_id');
-            if ($mediaId && $type != 'oembed' && $type != 'iframe_html') {
+            if ($mediaId && $type !== 'oembed' && $type !== 'iframe_html') {
                 $media = Media::where('id', $mediaId)
                     ->where('feed_id', $feed->id)
                     ->where('is_active', 1)
                     ->first();
 
                 if ($media) {
-                    $feed->media_images = [[
+                    $feed->media_images = [
+                    [
                         'url'      => $media->public_url,
                         'type'     => 'image',
                         'media_id' => $media->id,
                         'width'    => Arr::get($media->settings, 'width'),
                         'height'   => Arr::get($media->settings, 'height'),
-                        'provider' => Arr::get($media->settings, 'provider', 'uploader')
-                    ]];
+                        'provider' => Arr::get($media->settings, 'provider', 'uploader'),
+                    ],
+                    ];
                 }
-            } else if ($type != 'meta_data') {
+            } elseif ($type !== 'meta_data') {
                 $feed->meta = $meta;
             }
         }
@@ -805,8 +831,33 @@ class FeedsHelper
             $feed->meta = $editMeta;
         }
 
-        $feed->load('space');
+        self::loadSpaceWithoutSettings($feed);
         return $feed;
+    }
+
+    /**
+     * Whether the current user may trigger a server-side link-preview fetch.
+     *
+     * Runs the same per-user limit as the oembed endpoint. Over the limit, callers skip
+     * the preview instead of failing the save, so an author never loses a post to it.
+     * Requests without a user (CLI, migrations) are not limited.
+     *
+     * @return bool
+     */
+    public static function canFetchRemotePreview()
+    {
+        $user = Helper::getCurrentUser();
+        if (!$user) {
+            return true;
+        }
+
+        try {
+            do_action('fluent_community/check_rate_limit/oembed', $user);
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -846,10 +897,15 @@ class FeedsHelper
             return false;
         }
 
+        $spaceId = Arr::get($data, 'space_id');
+        if (!$spaceId) {
+            $spaceId = Arr::get($requestData, 'space_id');
+        }
+
         $space = null;
         if ($existingFeed) {
             $space = $existingFeed->space;
-        } elseif ($spaceId = (Arr::get($data, 'space_id') ?: Arr::get($requestData, 'space_id'))) {
+        } elseif ($spaceId) {
             $space = BaseSpace::find($spaceId);
         }
 
@@ -887,7 +943,8 @@ class FeedsHelper
                 }
             }
 
-            if ($endDate = Arr::get($data['survey'], 'end_date', '')) {
+            $endDate = Arr::get($data['survey'], 'end_date', '');
+            if ($endDate) {
                 $surveyConfig['end_date'] = gmdate('Y-m-d H:i:s', strtotime($endDate));
             } else {
                 $surveyConfig['end_date'] = '';
@@ -899,10 +956,10 @@ class FeedsHelper
         }
 
         // Handle Giphy
-        if (Arr::get($requestData, 'meta.media_preview.provider') == 'giphy') {
+        if (Arr::get($requestData, 'meta.media_preview.provider') === 'giphy') {
             $url = Arr::get($requestData, 'meta.media_preview.image');
             if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
-                return [$data, $uplaodedDocs];
+                return [ $data, $uplaodedDocs ];
             }
 
             $data['meta']['media_preview'] = array_filter([
@@ -913,25 +970,25 @@ class FeedsHelper
                 'width'    => (int)Arr::get($requestData, 'meta.media_preview.width', 0),
             ]);
 
-            return [$data, $uplaodedDocs];
+            return [ $data, $uplaodedDocs ];
         }
 
         // Handling Video Embed
-	    if (
-		    Arr::get($requestData, 'media') &&
-		    (
-			    (Arr::get($requestData, 'media.type') == 'oembed' && Arr::get($requestData, 'media.player') != 'fluent_player') ||
-			    Arr::get($requestData, 'media.type') == 'iframe_html'
-		    )
-	    ) {
-            if (Arr::get($requestData, 'media.type') == 'iframe_html') {
+        if (
+            Arr::get($requestData, 'media') &&
+            (
+                (Arr::get($requestData, 'media.type') === 'oembed' && Arr::get($requestData, 'media.player') !== 'fluent_player') ||
+                Arr::get($requestData, 'media.type') === 'iframe_html'
+            )
+        ) {
+            if (Arr::get($requestData, 'media.type') === 'iframe_html') {
                 // The UI only offers the "HTML Code" embed to moderators
                 // (_VideoEmbeder.vue passes has_iframe="is_admin"). That is a hint, not a
                 // control, so the same rule is enforced here. Reaching this branch without
                 // the permission means the field was posted straight to the REST API, so
                 // the embed is dropped rather than stored.
                 if (!self::canEmbedRawHtml($requestData, $data, $existingFeed)) {
-                    return [$data, $uplaodedDocs];
+                    return [ $data, $uplaodedDocs ];
                 }
 
                 // Moderators are trusted to embed, not to bypass sanitization: html goes
@@ -947,7 +1004,9 @@ class FeedsHelper
                     $mediaPreview = array_filter($mediaPreview);
                 }
 
-                if (empty($mediaPreview['image']) && !empty($mediaPreview['html'])) {
+                // sanitizeMediaPreview() already ran sanitizeOembedHtml() on the html, so
+                // skipping the thumbnail lookup over the limit does not skip sanitizing.
+                if (empty($mediaPreview['image']) && !empty($mediaPreview['html']) && self::canFetchRemotePreview()) {
                     $thumb = RemoteUrlParser::extractIframeThumbnail($mediaPreview['html']);
                     if ($thumb) {
                         $mediaPreview['image'] = $thumb;
@@ -956,21 +1015,21 @@ class FeedsHelper
 
                 // Nothing usable survived; skip storing a broken preview.
                 if (empty($mediaPreview['html']) && empty($mediaPreview['image'])) {
-                    return [$data, $uplaodedDocs];
+                    return [ $data, $uplaodedDocs ];
                 }
 
                 $data['meta']['media_preview'] = $mediaPreview;
-                return [$data, $uplaodedDocs];
+                return [ $data, $uplaodedDocs ];
             }
 
             $media = Arr::get($requestData, 'media');
             $url = Arr::get($media, 'url');
-            $metaData = RemoteUrlParser::parse($url);
+            $metaData = self::canFetchRemotePreview() ? RemoteUrlParser::parse($url) : null;
             if ($metaData && !is_wp_error($metaData) && (!empty($metaData['image']) || !empty($metaData['html']))) {
                 $data['meta']['media_preview'] = $metaData;
             }
 
-            return [$data, $uplaodedDocs];
+            return [ $data, $uplaodedDocs ];
         }
 
         // Let's handle the uploaded media
@@ -987,7 +1046,7 @@ class FeedsHelper
                         continue;
                     }
                     $mediaItem = Helper::getMediaFromUrl($mediaImage);
-                    if ($mediaItem) {
+                    if ($mediaItem && (!$mediaItem->is_active || ($mediaItem->object_source === 'feed' && (int) $mediaItem->feed_id === (int) $existingFeed->id))) {
                         $uploadedMediaItems[] = $mediaItem;
                     } else {
                         // maybe this is a previously uploaded image
@@ -1004,7 +1063,13 @@ class FeedsHelper
                 }
             }
 
-            if (count($uploadedMediaItems) == 1) {
+            // Limit before building the preview: an image the post shows but does not keep
+            // stays a draft, and deleteOldDraftMedias() removes it while the post still shows it
+            $maxMediaPerPost = apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post'));
+
+            $uploadedMediaItems = array_slice($uploadedMediaItems, 0, (int)$maxMediaPerPost);
+
+            if (count($uploadedMediaItems) === 1) {
                 $singleMedia = $uploadedMediaItems[0];
                 $data['meta']['media_preview'] = [
                     'is_uploaded' => true,
@@ -1015,7 +1080,7 @@ class FeedsHelper
                     'height'      => Arr::get($singleMedia->settings, 'height'),
                     'media_id'    => $singleMedia->id,
                 ];
-            } else if ($uploadedMediaItems) {
+            } elseif ($uploadedMediaItems) {
                 $mediaPreviews = [];
                 foreach ($uploadedMediaItems as $mediaItem) {
                     $mediaData = [
@@ -1024,28 +1089,24 @@ class FeedsHelper
                         'type'     => 'image',
                         'width'    => Arr::get($mediaItem->settings, 'width'),
                         'height'   => Arr::get($mediaItem->settings, 'height'),
-                        'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
+                        'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader'),
                     ];
                     $mediaPreviews[] = array_filter($mediaData);
                 }
                 $data['meta']['media_items'] = $mediaPreviews;
             }
 
-            $maxMediaPerPost = apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post'));
-
-            $allMediaItems = array_slice($uploadedMediaItems, 0, (int)$maxMediaPerPost);
-
-            return [$data, $allMediaItems];
+            return [ $data, $uploadedMediaItems ];
         }
 
-        if ($existingFeed && Arr::get($existingFeed->meta, 'auto_flagged') == 'yes') {
+        if ($existingFeed && Arr::get($existingFeed->meta, 'auto_flagged') === 'yes') {
             $data['meta']['auto_flagged'] = 'yes';
             $data['meta']['prevent_published'] = 'yes';
             $data['meta']['reports_count'] = Arr::get($existingFeed->meta, 'reports_count', 0);
         }
 
         // Let's handle the fallback here
-        $firstUrl = FeedsHelper::findFirstUrl(Arr::get($data, 'message_rendered'));
+        $firstUrl = self::findFirstUrl(Arr::get($data, 'message_rendered'));
 
         // check if this is another post or not
         if (strpos($firstUrl, Helper::baseUrl()) === 0) {
@@ -1059,14 +1120,14 @@ class FeedsHelper
                         $firstUrl = null;
                         $data['meta']['custom_app_preview'] = [
                             'app_name' => 'child_post',
-                            'feed_id'  => $feed->id
+                            'feed_id'  => $feed->id,
                         ];
                     }
                 }
             }
         }
 
-        if ($firstUrl) {
+        if ($firstUrl && self::canFetchRemotePreview()) {
             $metaData = RemoteUrlParser::parse($firstUrl);
             if ($metaData && !is_wp_error($metaData) && (!empty($metaData['image']) || !empty($metaData['html']))) {
                 $data['meta']['media_preview'] = $metaData;
@@ -1074,7 +1135,7 @@ class FeedsHelper
         }
 
         $uplaodedDocs = apply_filters('fluent_community/feed/uploaded_feed_medias', $uplaodedDocs, $requestData);
-        return [$data, $uplaodedDocs];
+        return [ $data, $uplaodedDocs ];
     }
 
     protected static function tranformFeedData(Feed $feed, $config = [])
@@ -1084,7 +1145,7 @@ class FeedsHelper
 
         $feed->comments->each(function ($comment) use ($commentLikeIds) {
             self::setCurrentRelatedUserId($comment->user_id);
-            if ($commentLikeIds && in_array($comment->id, $commentLikeIds)) {
+            if ($commentLikeIds && in_array((int) $comment->id, array_map('intval', $commentLikeIds), true)) {
                 $comment->liked = 1;
             }
         });
@@ -1098,12 +1159,12 @@ class FeedsHelper
                 $feed->bookmarked = Arr::get($interactions, 'bookmark', false);
             }
 
-            if ($feed->content_type == 'survey') {
+            if ($feed->content_type === 'survey') {
                 $votedOptions = $feed->getSurveyCastsByUserId($userId);
                 if ($votedOptions) {
                     $surveyConfig = Arr::get($feed->meta, 'survey_config', []);
                     foreach ($surveyConfig['options'] as $index => $option) {
-                        if (in_array($option['slug'], $votedOptions)) {
+                        if (in_array($option['slug'], $votedOptions, true)) {
                             $surveyConfig['options'][$index]['voted'] = true;
                         }
                     }
@@ -1114,7 +1175,7 @@ class FeedsHelper
             }
         }
 
-        if ($feed->content_type == 'document') {
+        if ($feed->content_type === 'document') {
             $feedMeta = $feed->meta;
             $documentLists = Arr::get($feedMeta, 'document_lists', []);
             foreach ($documentLists as $index => $document) {
@@ -1127,25 +1188,50 @@ class FeedsHelper
         $spaceSettings = $feed->space ? $feed->space->settings : [];
         $feed->default_comment_sort_by = Arr::get($spaceSettings, 'default_comment_sort_by', '');
 
-        // Feed::withPublicRelations() eager-loads the space with its raw settings, and
-        // those settings carry links scoped to logged-in members or to specific
-        // memberships. BaseSpace::formatSpaceData() filters them for the space
-        // endpoints; nothing filtered them here, so every feed response handed all of
-        // a space's links - titles and URLs - to any caller, anonymous included.
-        if ($feed->space && Arr::get($spaceSettings, 'links')) {
-            $currentUser = Helper::getCurrentUser();
-
-            $spaceSettings['links'] = Helper::filterAccessibleLinks(
-                Arr::get($spaceSettings, 'links', []),
-                $currentUser ? $currentUser : null
-            );
-
-            $feed->space->settings = $spaceSettings;
-        }
+        self::hideSpaceSettings($feed);
 
         self::setCurrentRelatedUserId($feed->user_id);
 
+        // Opening a post from a list reuses this payload instead of refetching, so the
+        // canonical title travels with it. message is selected only to derive it.
+        if (isset($feed->message)) {
+            $feed->seo_title = self::getSeoTitle($feed);
+            unset($feed->message);
+        }
+
         return apply_filters('fluent_community/rendering_feed_model', $feed, $config);
+    }
+
+    /**
+     * Keep the loaded space's settings out of the response.
+     *
+     * The settings carry links and menu items scoped to logged-in members or to
+     * specific memberships, so sending them handed those titles and URLs to any
+     * caller, anonymous included. The client reads only the space's slug and title,
+     * and the one setting a feed needs is copied onto it as default_comment_sort_by.
+     * Hiding the attribute also drops about 2 KB per post from feed responses.
+     *
+     * The posts on a page share one model per space, so this runs once per space.
+     *
+     * @param \FluentCommunity\App\Models\Feed $feed
+     */
+    protected static function hideSpaceSettings($feed)
+    {
+        if ($feed->space) {
+            $feed->space->makeHidden([ 'settings' ]);
+        }
+    }
+
+    /**
+     * @param \FluentCommunity\App\Models\Feed $feed
+     */
+    protected static function loadSpaceWithoutSettings($feed)
+    {
+        $feed->load([
+            'space' => function ($query) {
+                $query->select([ 'id', 'title', 'slug', 'type' ]);
+            },
+        ]);
     }
 
     public static function transformFeed(Feed $feed)
@@ -1156,7 +1242,7 @@ class FeedsHelper
             'user_id'          => $userId,
             'interactions'     => [],
             'comment_like_ids' => [],
-            'is_collection'    => false
+            'is_collection'    => false,
         ], $feed, $userId);
 
         if ($userId) {
@@ -1183,11 +1269,11 @@ class FeedsHelper
 
         if ($userId) {
             $interactions = Reaction::query()
-                ->select(['user_id', 'type', 'object_id'])
+                ->select([ 'user_id', 'type', 'object_id' ])
                 ->whereIn('object_id', $feedIds)
                 ->where('object_type', 'feed')
                 ->where('user_id', $userId)
-                ->whereIn('type', ['like', 'bookmark'])
+                ->whereIn('type', [ 'like', 'bookmark' ])
                 ->get();
 
             $formattedInteractions = [];
@@ -1213,7 +1299,7 @@ class FeedsHelper
             'user_id'          => $userId,
             'interactions'     => [],
             'comment_like_ids' => $commentLikeIds,
-            'is_collection'    => true
+            'is_collection'    => true,
         ], $feeds, $feedIds);
 
         $feeds->each(function ($feed) use ($userId, $generalConfig, $formattedInteractions) {
@@ -1262,12 +1348,12 @@ class FeedsHelper
         return preg_match($pattern, $message) === 1;
     }
 
-    public static function replaceImageUrlsWithRealMediaArchive($markdown, $existingFeed = null)
+    public static function replaceImageUrlsWithRealMediaArchive($markdown, $existingFeed = null, $existingComment = null)
     {
         $imageUrls = self::getInlineImageUrls($markdown);
 
         if (!$imageUrls) {
-            return [$markdown, []];
+            return [ $markdown, [] ];
         }
 
         $mediaItems = [];
@@ -1276,8 +1362,16 @@ class FeedsHelper
             $url = sanitize_url($url);
             $media = Helper::getMediaFromUrl($url);
             if ($media) {
-                if ($media->is_active && (!$existingFeed || $media->feed_id != $existingFeed->id) ) {
-                    continue;
+                // An active row may only stay on the post or comment that already owns it.
+                if ($media->is_active) {
+                    if ($existingComment) {
+                        $isOwn = $media->object_source === 'comment' && (int) $media->sub_object_id === (int) $existingComment->id;
+                    } else {
+                        $isOwn = $existingFeed && $media->object_source === 'feed' && (int) $media->feed_id === (int) $existingFeed->id;
+                    }
+                    if (!$isOwn) {
+                        continue;
+                    }
                 }
 
                 $realUrl = $media->public_url;
@@ -1286,13 +1380,13 @@ class FeedsHelper
             }
         }
 
-        return [$markdown, $mediaItems];
+        return [ $markdown, $mediaItems ];
     }
 
     private static function getInlineImageUrls($markdown)
     {
         $urls = [];
-        // Match ![alt](url) and ![alt](url "title")
+        // Match markdown images with or without a title
         if (preg_match_all('/!\[[^\]]*\]\(([^\s\)]+)(?:\s+"[^"]*")?\)/', $markdown, $matches)) {
             $urls = array_merge($urls, $matches[1]);
         }

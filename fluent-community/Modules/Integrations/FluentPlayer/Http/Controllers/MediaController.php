@@ -18,41 +18,41 @@ class MediaController extends Controller
         $getFluentPlayerStatus = Bootstrap::getPluginStatus();
         if ($getFluentPlayerStatus !== 'active') {
             return $this->sendError([
-                'message' => __('Uploading videos is not allowed. Activate FluentPlayer to upload videos.', 'fluent-community')
+                'message' => __('Uploading videos is not allowed. Activate FluentPlayer to upload videos.', 'fluent-community'),
             ]);
         }
         
-	    $fluentPlayerSettings = Bootstrap::getSettings();
-	    if (!Arr::isTrue($fluentPlayerSettings, 'video_upload')) {
-		    return $this->sendError([
-			    'message' => __('Uploading videos is not allowed', 'fluent-community')
-		    ]);
-	    }
-	    $uploadRole = Arr::get($fluentPlayerSettings, 'video_upload_role');
-        $uploadRole = $uploadRole ?: 'admin';
+        $fluentPlayerSettings = Bootstrap::getSettings();
+        if (!Arr::isTrue($fluentPlayerSettings, 'video_upload')) {
+            return $this->sendError([
+                'message' => __('Uploading videos is not allowed', 'fluent-community'),
+            ]);
+        }
+        $uploadRole = Arr::get($fluentPlayerSettings, 'video_upload_role');
+        $uploadRole = $uploadRole ? $uploadRole : 'admin';
         $isAllowed = false;
         if ('admin' === $uploadRole && Helper::isSiteAdmin()) {
             $isAllowed = true;
-        } else if ('admin_moderator' === $uploadRole && (Helper::isModerator() || Helper::isSiteAdmin())) {
+        } elseif ('admin_moderator' === $uploadRole && (Helper::isModerator() || Helper::isSiteAdmin())) {
             $isAllowed = true;
-        } else if ('everyone' === $uploadRole) {
+        } elseif ('everyone' === $uploadRole) {
             $isAllowed = true;
         }
-	    if (!$isAllowed) {
-		    return $this->sendError([
-			    'message' => __('You do not have permission to upload videos', 'fluent-community')
-		    ]);
-	    }
-		
+        if (!$isAllowed) {
+            return $this->sendError([
+                'message' => __('You do not have permission to upload videos', 'fluent-community'),
+            ]);
+        }
+        
         $hasAudioUpload = Arr::get($fluentPlayerSettings, 'enable_audio') === 'yes';
         $mediaKind = $request->getSafe('media_kind', 'sanitize_text_field', '');
-        if (!in_array($mediaKind, ['video', 'audio'], true)) {
+        if (!in_array($mediaKind, [ 'video', 'audio' ], true)) {
             $mediaKind = null;
         }
 
         if ($mediaKind === 'audio' && !$hasAudioUpload) {
             return $this->sendError([
-                'message' => __('Uploading audio files is not allowed', 'fluent-community')
+                'message' => __('Uploading audio files is not allowed', 'fluent-community'),
             ]);
         }
 
@@ -60,25 +60,27 @@ class MediaController extends Controller
         $maxFileUnit = apply_filters('fluent_community/video_upload_max_file_unit', 'MB');
         $maxFileSize = apply_filters('fluent_community/video_upload_max_file_size', 300);
         $allowedFileSize = $maxFileSize;
-        if (strtoupper($maxFileUnit) == 'MB') {
+        if (strtoupper($maxFileUnit) === 'MB') {
             $allowedFileSize = $maxFileSize * 1024;
-        } else if (strtoupper($maxFileUnit) == 'GB') {
+        } elseif (strtoupper($maxFileUnit) === 'GB') {
             $allowedFileSize = $maxFileSize * 1024 * 1024;
         }
 
         $allowedTypesString = implode(',', $allowedMediaTypes);
+
+        // Before validation: a file PHP rejected has no temp path, so the type check would fail first with the wrong message.
+        $error = Helper::checkUploadSizeError();
+        if ($error) {
+            return $this->sendError($error, 413);
+        }
 
         $files = $this->validate($request->files(), [
             'file' => 'mimetypes:' . $allowedTypesString . '|max:' . $allowedFileSize,
         ], [
             'file.mimetypes' => $this->getMimeTypeErrorMessage($mediaKind, $hasAudioUpload),
             /* translators: %1$s is the maximum file size value, %2$s is the size unit (KB, MB, etc.) */
-            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
+            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit),
         ]);
-        // File size check
-        if ($error = Helper::checkUploadSizeError()) {
-            return $this->sendError($error, 413);
-        }
 
         $uploadedFiles = FileSystem::put($files);
         $file = $uploadedFiles[0];
@@ -94,8 +96,8 @@ class MediaController extends Controller
             'settings'   => [
                 'src'      => $file['url'],
                 'title'    => $file['original_name'],
-                'viewType' => $this->resolveViewType($file, $mediaKind)
-            ]
+                'viewType' => $this->resolveViewType($file, $mediaKind),
+            ],
         ];
 
         $mediaData = apply_filters('fluent_community/media_upload_data', $mediaData, $file);
@@ -103,13 +105,13 @@ class MediaController extends Controller
         if (is_wp_error($mediaData)) {
             return $this->sendError([
                 'message' => $mediaData->get_error_message(),
-                'errors'  => $mediaData->get_error_data()
+                'errors'  => $mediaData->get_error_data(),
             ]);
         }
 
         if (!$mediaData) {
             return $this->sendError([
-                'message' => __('Error while uploading the video', 'fluent-community')
+                'message' => __('Error while uploading the video', 'fluent-community'),
             ]);
         }
         $mediaData['settings']['src'] = Arr::get($mediaData, 'media_url', $file['url']);
@@ -128,8 +130,8 @@ class MediaController extends Controller
                 'media_key' => $media->media_key,
                 'type'      => $media->media_type,
                 'settings'  => $media->settings,
-                'html'      => ''
-            ]
+                'html'      => '',
+            ],
         ];
     }
 
@@ -199,7 +201,7 @@ class MediaController extends Controller
 
     private function resolveViewType($file, $mediaKind)
     {
-        $audioExtensions = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac'];
+        $audioExtensions = [ 'mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac' ];
         $name = Arr::get($file, 'original_name', Arr::get($file, 'url', ''));
         $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
 
@@ -253,11 +255,11 @@ class MediaController extends Controller
         } else {
             $currentUserId = get_current_user_id();
             $canView = ($currentUserId && (int) $media->user_id === $currentUserId)
-                || ($media->feed_id && Feed::byUserAccess($currentUserId)
+                || ($media->feed_id && Feed::query()->byUserAccess($currentUserId)
                         ->byContentModerationAccessStatus($this->getUser())
                         ->find($media->feed_id));
             if (!$canView) {
-                return ['html' => ''];
+                return [ 'html' => '' ];
             }
             if ($shareUrl) {
                 $media->share_url = $shareUrl;
@@ -273,7 +275,7 @@ class MediaController extends Controller
         $instanceId = $playerKey . ($instanceKey ? '_' . $instanceKey : '');
         $mediaSettings = [];
         $formattedMedia = [
-            'ID' => $mediaId
+            'ID' => $mediaId,
         ];
         if (!empty($media->settings)) {
             $mediaSettings = $media->settings;
@@ -290,14 +292,14 @@ class MediaController extends Controller
         if (empty($mediaSettings['share_url']) && !empty($media->share_url)) {
             $mediaSettings['share_url'] = esc_url_raw($media->share_url);
         }
-		$src = Arr::get($mediaSettings, 'src', '');
-		// Normalize YouTube /live/ URLs to /watch?v= so Vidstack can resolve them
-		if ($src && strpos($src, 'youtube.com/live/') !== false) {
-		    $src = preg_replace('/youtube\.com\/live\/([^?&#]+)\??/', 'youtube.com/watch?v=$1&', $src);
-		    $src = rtrim($src, '&');
-		    $mediaSettings['src'] = $src;
-		}
-		if ($src && preg_match('#youtube\.com/shorts/#i', $src)) {
+        $src = Arr::get($mediaSettings, 'src', '');
+        // Normalize YouTube /live/ URLs to /watch?v= so Vidstack can resolve them
+        if ($src && strpos($src, 'youtube.com/live/') !== false) {
+            $src = preg_replace('/youtube\.com\/live\/([^?&#]+)\??/', 'youtube.com/watch?v=$1&', $src);
+            $src = rtrim($src, '&');
+            $mediaSettings['src'] = $src;
+        }
+        if ($src && preg_match('#youtube\.com/shorts/#i', $src)) {
             $mediaSettings['is_short'] = true;
         }
 
@@ -331,23 +333,23 @@ class MediaController extends Controller
                         'instance_id' => $instanceId,
                         'media_var_name' => $mediaVarName,
                         'player_ref' => $playerKey,
-                        'settings' => $mediaSettings
+                        'settings' => $mediaSettings,
                     ]);
                 }
-            } catch (\Exception $e) {
+            } catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+                // Keep the empty markup when the player view fails.
             }
         }
         $html = ob_get_clean();
         return [
             'html' => $html ? $html . $this->generateFluentPlayerCustomStyle($instanceId, $mediaSettings) : '',
-            'media' => $formattedMedia
+            'media' => $formattedMedia,
         ];
     }
 
     private function isAudioMedia($settings)
     {
-        if (class_exists('\FluentPlayer\App\Helpers\Helper')
-            && method_exists('\FluentPlayer\App\Helpers\Helper', 'isAudioSource')) {
+        if (is_callable([ '\FluentPlayer\App\Helpers\Helper', 'isAudioSource' ])) {
             return \FluentPlayer\App\Helpers\Helper::isAudioSource($settings);
         }
         return Arr::get($settings, 'viewType') === 'audio';
@@ -369,7 +371,7 @@ class MediaController extends Controller
             '--media-brand'       => Bootstrap::sanitizeColor(Arr::get($settings, 'brandColor', '')),
             '--fp-control-bar-bg' => Bootstrap::sanitizeColor(Arr::get($settings, 'controlBarColor', '')),
             '--media-play-color'  => Bootstrap::sanitizeColor(Arr::get($settings, 'playButtonColor', '')),
-            '--media-play-bg'     => Bootstrap::sanitizeColor(Arr::get($settings, 'playButtonBgColor', ''))
+            '--media-play-bg'     => Bootstrap::sanitizeColor(Arr::get($settings, 'playButtonBgColor', '')),
         ]);
         if ($colorVars) {
             $customCss .= "
@@ -558,7 +560,7 @@ class MediaController extends Controller
         }
 
         $aspectRatio = Arr::get($settings, 'aspectRatio');
-        if ($aspectRatio && $aspectRatio != 'original' && preg_match('/^\d+:\d+$/', $aspectRatio)) {
+        if ($aspectRatio && $aspectRatio !== 'original' && preg_match('/^\d+:\d+$/', $aspectRatio)) {
             $cssAspectRatio = preg_replace('/^(\d+):(\d+)$/', '$1/$2', $aspectRatio);
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
@@ -568,7 +570,7 @@ class MediaController extends Controller
                     aspect-ratio: " . esc_attr($cssAspectRatio) . ";
                 }
             ";
-        } else if (!$isAudio) {
+        } elseif (!$isAudio) {
             $customCss .= "
                 #fluent_player_" . esc_attr($instanceId) . " {
                     max-width: 100%;
@@ -598,13 +600,13 @@ class MediaController extends Controller
             'brandColor' => '#4a90e2',
             'aspectRatio' => 'original',
             'playerWidth' => '',
-            'playsInline' => true
+            'playsInline' => true,
         ];
-		$mediaSettings = Bootstrap::getSettings();
-	    if (Arr::isTrue($mediaSettings, 'behaviors.muted_autoplay')) {
-		    $mediaSettings['autoplay'] = true;
-		    $mediaSettings['muted'] = true;
-	    }
+        $mediaSettings = Bootstrap::getSettings();
+        if (Arr::isTrue($mediaSettings, 'behaviors.muted_autoplay')) {
+            $mediaSettings['autoplay'] = true;
+            $mediaSettings['muted'] = true;
+        }
         $settings['loadStrategy'] = 'idle'; // for SPA context this needs to be set to 'idle' 
         $settings = array_merge($settings, $mediaSettings);
 

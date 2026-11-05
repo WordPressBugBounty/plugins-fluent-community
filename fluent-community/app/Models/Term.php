@@ -16,7 +16,7 @@ class Term extends Model
 {
     protected $table = 'fcom_terms';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'parent_id',
@@ -24,13 +24,13 @@ class Term extends Model
         'slug',
         'title',
         'description',
-        'settings'
+        'settings',
     ];
 
     protected $searchable = [
         'title',
         'description',
-        'slug'
+        'slug',
     ];
 
     public static function boot()

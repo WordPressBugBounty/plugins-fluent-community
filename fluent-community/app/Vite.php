@@ -3,6 +3,7 @@
 namespace FluentCommunity\App;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\Framework\Support\Arr;
 
 class Vite
 {
@@ -130,6 +131,95 @@ class Vite
     public static function versionedUrl($url)
     {
         return $url . '?ver=' . FLUENT_COMMUNITY_PLUGIN_VERSION;
+    }
+
+    /**
+     * Print the import map that lets add-on bundles import core's runtime instead of bundling
+     * their own: `@fluentcommunity/vue`, `@fluentcommunity/element-plus` and `@fluentcommunity/ui`.
+     * One Vue and one Element Plus per page; a second copy breaks provide/inject and every <el-*>.
+     *
+     * Must print before any module script. Each app builds its own copy of the runtime
+     * (see vite.unified.config.js), so the map points at the set that matches the page's app.
+     *
+     * @param string $runtime 'portal' or 'admin'
+     * @return void
+     */
+    public static function printModuleImportMap($runtime = 'portal')
+    {
+        $imports = [];
+        foreach ([ 'vue', 'element-plus', 'ui' ] as $name) {
+            if (self::isDev()) {
+                $url = static::$resourceURL . 'shared/' . $name . '.js';
+            } else {
+                $prefix = $runtime === 'admin' ? 'admin_' : '';
+                // Same ?ver= as the chunk imports, so the browser sees the same module URLs
+                $url = self::versionedUrl(static::$assetsURL . $prefix . 'runtime_' . $name . '.js');
+            }
+            $imports['@fluentcommunity/' . $name] = $url;
+        }
+
+        /**
+         * Bare module specifiers add-ons may import on FluentCommunity pages.
+         *
+         * @param array  $imports Map of bare specifier => absolute URL.
+         * @param string $runtime 'portal' or 'admin'.
+         */
+        $imports = apply_filters('fluent_community/module_import_map', $imports, $runtime);
+
+        if (!$imports || !is_array($imports)) {
+            return;
+        }
+
+        $imports = array_map('esc_url_raw', $imports);
+
+        // JSON_HEX_TAG keeps "</script" out of the element content
+        echo '<script type="importmap">' . wp_json_encode([ 'imports' => $imports ], JSON_HEX_TAG | JSON_UNESCAPED_SLASHES) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    }
+
+    /**
+     * Put add-on module scripts between start.js and the app.
+     *
+     * The app applies its route and app filters as soon as its module runs, so an add-on that
+     * registers routes must run first. It also needs window.FluentCommunityUtil, which start.js
+     * creates. Module scripts run in document order, so placement is the whole contract.
+     *
+     * @param array $dataVars Portal page data, after the portal_data_vars filter.
+     * @return array
+     */
+    public static function insertModuleScripts($dataVars)
+    {
+        $runtime = Arr::get($dataVars, 'module_runtime', 'portal');
+
+        /**
+         * Module scripts of add-ons built on the shared runtime.
+         *
+         * @param array  $scripts Map of handle => ['url' => string]. No query string in the URL:
+         *                        the page appends ?ver= to every script.
+         * @param string $runtime 'portal' or 'admin'.
+         */
+        $scripts = apply_filters('fluent_community/module_scripts', [], $runtime);
+
+        $jsFiles = Arr::get($dataVars, 'js_files', []);
+        if (!$scripts || !is_array($scripts) || !isset($jsFiles['fcom_app'])) {
+            return $dataVars;
+        }
+
+        $ordered = [];
+        foreach ($jsFiles as $handle => $file) {
+            if ($handle === 'fcom_app') {
+                foreach ($scripts as $scriptHandle => $script) {
+                    if (empty($script['url']) || isset($jsFiles[$scriptHandle])) {
+                        continue;
+                    }
+                    $ordered[$scriptHandle] = [ 'url' => $script['url'], 'deps' => [] ];
+                }
+            }
+            $ordered[$handle] = $file;
+        }
+
+        $dataVars['js_files'] = $ordered;
+
+        return $dataVars;
     }
 
     public static function getAssetsUrl()

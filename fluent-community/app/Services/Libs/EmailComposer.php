@@ -23,7 +23,7 @@ class EmailComposer
             $this->blocks[] = [
                 'type'    => $type,
                 'content' => $content,
-                'options' => $options
+                'options' => $options,
             ];
         }
 
@@ -35,7 +35,7 @@ class EmailComposer
         $this->headingBlocks[] = [
             'type'    => $type,
             'content' => $content,
-            'options' => $options
+            'options' => $options,
         ];
 
         return $this;
@@ -65,35 +65,35 @@ class EmailComposer
 
     public function compileBlock($block)
     {
-        if ($block['type'] == 'paragraph') {
+        if ($block['type'] === 'paragraph') {
             return '<p style="font-family: Arial, sans-serif; line-height: 1.6; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 10px;">' . $block['content'] . '</p>';
         }
 
-        if ($block['type'] == 'heading') {
+        if ($block['type'] === 'heading') {
             return '<h2 style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; margin: 0; margin-bottom: 10px;">' . $block['content'] . '</h2>';
         }
 
-        if ($block['type'] == 'button') {
+        if ($block['type'] === 'button') {
             return (string)App::make('view')->make('email.Default._button', [
                 'link'         => Arr::get($block['options'], 'link'),
                 'btnText'      => $block['content'],
                 'linkColor'    => Utility::getThemeColor(),
-                'btnTextColor' => Utility::getThemeColor('theme_button_text')
+                'btnTextColor' => Utility::getThemeColor('theme_button_text'),
             ]);
         }
 
-        if ($block['type'] == 'boxed_content') {
+        if ($block['type'] === 'boxed_content') {
             return (string)App::make('view')->make('email.Default._user_box_content', [
                 'user_name'    => $block['options']['user']->getPublicDisplayName(),
                 'user_avatar'  => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
                 'content'      => $block['content'],
                 'permalink'    => $block['options']['permalink'],
                 'post_content' => $block['options']['post_content'],
-                'linkColor'    => Utility::getThemeColor()
+                'linkColor'    => Utility::getThemeColor(),
             ]);
         }
 
-        if ($block['type'] == 'post_boxed_content') {
+        if ($block['type'] === 'post_boxed_content') {
             return (string)App::make('view')->make('email.Default._user_post_content', [
                 'user_name'   => $block['options']['user']->getPublicDisplayName(),
                 'user_avatar' => !(empty($block['options']['user']->xprofile->avatar)) ? $block['options']['user']->xprofile->avatar : $block['options']['user']->photo,
@@ -101,11 +101,11 @@ class EmailComposer
                 'title'       => Arr::get($block['options'], 'title'),
                 'permalink'   => $block['options']['permalink'],
                 'space_name'  => $block['options']['space_name'],
-                'linkColor'   => Utility::getThemeColor()
+                'linkColor'   => Utility::getThemeColor(),
             ]);
         }
 
-        if ($block['type'] == 'html_content') {
+        if ($block['type'] === 'html_content') {
             return (string)$block['content'];
         }
 
@@ -135,7 +135,7 @@ class EmailComposer
     {
         $this->footerBlocks[] = [
             'type'    => $type,
-            'content' => $line
+            'content' => $line,
         ];
 
         return $this;
@@ -147,8 +147,8 @@ class EmailComposer
         $footerTextHtml = Arr::get($settings, 'email_footer_rendered', '');
 
         if (!$footerTextHtml) {
-            if ($settings['disable_powered_by'] == 'no') {
-                $utmParams = ['utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email'];
+            if ($settings['disable_powered_by'] === 'no') {
+                $utmParams = [ 'utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email' ];
                 $poweredBy = '<a href="' . Utility::getProductUrl(true, $utmParams) . '" target="_blank" style="font-size: 12px; margin: 15px 0; display: block; text-decoration: none;color: #9a9ea6;">Powered by FluentCommunity</a>';
                 $this->addFooterLine('paragraph', $poweredBy);
             }
@@ -161,7 +161,7 @@ class EmailComposer
 
         $replaces = [
             '{{site_name_with_url}}' => '<a target="_blank" href="' . Helper::baseUrl('/') . '" style="color: ' . esc_attr($themeColor) . '; text-decoration: none;">' . Arr::get($generalSettings, 'site_title') . '</a>',
-            '{{site_name}}'          => Arr::get($generalSettings, 'site_title')
+            '{{site_name}}'          => Arr::get($generalSettings, 'site_title'),
         ];
 
         $footerTextHtml = str_replace(array_keys($replaces), array_values($replaces), $footerTextHtml);
@@ -169,12 +169,12 @@ class EmailComposer
         // find pattern like this: {{manage_email_notification_url|Manage Your Email Notifications Preference}}
         $footerTextHtml = preg_replace_callback('/{{(.*?)\|(.*?)}}/', function ($matches) use ($withPlaceHolder, $themeColor) {
             $match1 = $matches[1];
-            if ($match1 != 'manage_email_notification_url') {
+            if ($match1 !== 'manage_email_notification_url') {
                 return $matches[0];
             }
 
             if ($withPlaceHolder) {
-                $url = '##email_notification_url##';
+                $url = self::slot('email_notification_url');
             } else {
                 $url = Helper::baseUrl('fcom_route?route=user_notification_settings&auth=yes');
             }
@@ -185,8 +185,8 @@ class EmailComposer
 
         $this->addFooterLine('paragraph', $footerTextHtml);
 
-        if ($settings['disable_powered_by'] == 'no') {
-            $utmParams = ['utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email'];
+        if ($settings['disable_powered_by'] === 'no') {
+            $utmParams = [ 'utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email' ];
             $poweredBy = '<p style="margin-top: 10px;" class="powered_by"><a href="' . Utility::getProductUrl(true, $utmParams) . '" target="_blank" style="font-size: 12px; margin: 15px 0; text-decoration: none;color: #9a9ea6; display: block;">Powered by FluentCommunity</a></p>';
             $this->addFooterLine('paragraph', $poweredBy);
         }
@@ -200,13 +200,13 @@ class EmailComposer
 
         $data = [
             'logo'        => [],
-            'bodyContent' => $this->compileBody()
+            'bodyContent' => $this->compileBody(),
         ];
 
         if ($this->logo) {
             $data['logo'] = [
                 'url' => $this->logo,
-                'alt' => Arr::get($generalSettings, 'site_title')
+                'alt' => Arr::get($generalSettings, 'site_title'),
             ];
         }
 
@@ -228,11 +228,44 @@ class EmailComposer
         // preview). @media/:hover rules can't be inlined and are kept in a <style> tag.
         try {
             $html = (new Emogrifier\Emogrifier($html))->emogrify();
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
             // Fall back to the un-inlined HTML; the <head><style> still covers Gmail.
         }
 
-        return $html;
+        return self::sealPlaceholders($html);
+    }
+
+    /**
+     * Template position for a per-recipient signed login URL. The random part
+     * means text from a post or comment can never match it.
+     */
+    public static function slot($name)
+    {
+        static $nonce = null;
+
+        if ($nonce === null) {
+            $nonce = bin2hex(random_bytes(12));
+        }
+
+        // The # at each end keeps the value unchanged through esc_url() in the email views.
+        return '#fcomslot' . $nonce . $name . '#';
+    }
+
+    /**
+     * Senders replace ##feed_permalink## and ##email_notification_url## with a
+     * signed login URL for each recipient. Only the template's own slots may
+     * become those placeholders, so every other ## is encoded first. This runs
+     * after Emogrifier, because Emogrifier decodes entities.
+     */
+    private static function sealPlaceholders($html)
+    {
+        $html = str_replace('##', '&#35;&#35;', $html);
+
+        return str_replace(
+            [ self::slot('feed_permalink'), self::slot('email_notification_url') ],
+            [ '##feed_permalink##', '##email_notification_url##' ],
+            $html
+        );
     }
 
 }

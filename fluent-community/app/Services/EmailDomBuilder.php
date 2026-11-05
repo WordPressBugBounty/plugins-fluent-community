@@ -44,7 +44,7 @@ class EmailDomBuilder
             'type'    => 'button',
             'content' => $btnText,
             'url'     => $url,
-            'style'   => $style
+            'style'   => $style,
         ];
         return $this;
     }

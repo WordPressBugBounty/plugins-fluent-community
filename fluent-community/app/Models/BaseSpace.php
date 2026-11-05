@@ -35,7 +35,7 @@ use FluentCommunity\Framework\Support\Arr;
  */
 class BaseSpace extends Model
 {
-    const PRIVACY_TYPES = ['public', 'private', 'secret'];
+    const PRIVACY_TYPES = [ 'public', 'private', 'secret' ];
 
     protected $table = 'fcom_spaces';
 
@@ -216,11 +216,21 @@ class BaseSpace extends Model
             return null;
         }
 
-        if ($this->_preloadedMembershipUserId == $userId) {
+        if ((int) $this->_preloadedMembershipUserId === (int) $userId) {
             return $this->_preloadedMembership;
         }
 
         return $this->members()->where('user_id', $userId)->first();
+    }
+
+    /**
+     * Whether the user is an approved member. A pending join request does not count.
+     */
+    public function isActiveMember($userId)
+    {
+        $membership = $this->getMembership($userId);
+
+        return $membership && $membership->pivot->status === 'active';
     }
 
     public static function preloadMemberships($spaces, $userId)
@@ -253,7 +263,7 @@ class BaseSpace extends Model
 
     public function isCourseSpace()
     {
-        return $this->type == 'course';
+        return $this->type === 'course';
     }
 
     public function isAdmin($userId, $checkModerator = false)
@@ -276,7 +286,7 @@ class BaseSpace extends Model
             return false;
         }
 
-        return in_array($membership->pivot->role, $roles);
+        return in_array($membership->pivot->role, $roles, true);
     }
 
     public function updateCustomData($data, $removeSrc = false)
@@ -317,14 +327,20 @@ class BaseSpace extends Model
         }
 
         if (isset($data['settings'])) {
+            $exisitingSetting = $this->settings;
 
-            $settings = CustomSanitizer::santizeSpaceSettings($data['settings'], $this->privacy);
+            // A sent emoji replaces the stored SVG icon.
+            if (!empty($data['settings']['emoji'])) {
+                $exisitingSetting['shape_svg'] = '';
+            }
+
+            // Omitted settings keep their stored value; only the submitted keys change.
+            $settings = CustomSanitizer::santizeSpaceSettings(wp_parse_args($data['settings'], $exisitingSetting), $this->privacy);
 
             if (is_wp_error($settings)) {
                 return $settings;
             }
 
-            $exisitingSetting = $this->settings;
             $settings['links'] = Arr::get($exisitingSetting, 'links', []);
             $settings[SpaceMenuService::SETTINGS_KEY] = Arr::get($exisitingSetting, SpaceMenuService::SETTINGS_KEY, []);
 
@@ -345,9 +361,9 @@ class BaseSpace extends Model
                     } else {
                         $settings['og_image'] = sanitize_url($ogImageUrl);
                     }
+                } else {
+                    $deletePhotos[] = Arr::get($exisitingSetting, 'og_image');
                 }
-            } else {
-                $deletePhotos[] = Arr::get($exisitingSetting, 'og_image');
             }
 
             $settings = wp_parse_args($settings, $exisitingSetting);
@@ -384,7 +400,7 @@ class BaseSpace extends Model
 
         if ($dirty) {
             $this->save();
-            if ($this->type == 'community') {
+            if ($this->type === 'community') {
                 do_action('fluent_community/space/updated', $this, $dirty);
             }
         }
@@ -394,7 +410,7 @@ class BaseSpace extends Model
 
     public function isContentSpace()
     {
-        return in_array($this->type, [ 'community', 'course' ]);
+        return in_array($this->type, [ 'community', 'course' ], true);
     }
 
     public function getSettingsAttribute($value)
@@ -440,18 +456,18 @@ class BaseSpace extends Model
 
     public function getPublicPermissions()
     {
-        if ($this->privacy == 'public') {
+        if ($this->privacy === 'public') {
 
-            $hasDocuments     = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') == 'yes';
-            $hasMediaGallery  = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'media_gallery') == 'yes';
+            $hasDocuments     = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'document_library') === 'yes';
+            $hasMediaGallery  = defined('FLUENT_COMMUNITY_PRO') && Arr::get($this->settings, 'media_gallery') === 'yes';
 
             return [
                 'can_view_info'      => true,
                 'can_view_posts'     => true,
                 'can_view_members'   => $this->canViewMembers(null),
                 'can_create_post'    => false,
-                'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') == 'everybody',
-                'can_view_media'     => $hasMediaGallery && Arr::get($this->settings, 'media_access') == 'everybody',
+                'can_view_documents' => $hasDocuments && Arr::get($this->settings, 'document_access') === 'everybody',
+                'can_view_media'     => $hasMediaGallery && Arr::get($this->settings, 'media_access') === 'everybody',
             ];
         }
 
@@ -522,11 +538,11 @@ class BaseSpace extends Model
     {
         $permalink = Helper::baseUrl('/');
 
-        if ($this->type == 'community') {
+        if ($this->type === 'community') {
             $permalink = Helper::baseUrl('space/' . $this->slug . '/home');
-        } elseif ($this->type == 'course') {
+        } elseif ($this->type === 'course') {
             $permalink = Helper::baseUrl('course/' . $this->slug . '/lessons');
-        } elseif ($this->type == 'sidebar_link') {
+        } elseif ($this->type === 'sidebar_link') {
             $customLink = Arr::get($this->settings, 'permalink');
             if ($customLink) {
                 $permalink = $customLink;
@@ -566,15 +582,33 @@ class BaseSpace extends Model
             return '<img alt="" src="' . esc_url($this->logo) . '"/>';
         }
 
-        if ($imoji = Arr::get($this->settings, 'emoji')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
-            return '<span class="fcom_emoji">' . $imoji . '</span>';
+        $imoji = Arr::get($this->settings, 'emoji');
+        if ($imoji) {
+            return '<span class="fcom_emoji">' . esc_html($imoji) . '</span>';
         }
 
-        if ($svg = Arr::get($this->settings, 'shape_svg')) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
+        $svg = Arr::get($this->settings, 'shape_svg');
+        if ($svg) {
             return '<span class="fcom_shape"><i class="el-icon">' . $svg . '</i></span>';
         }
 
         return '';
+    }
+
+    // Topics this user can put on a post here. Matches the composer's picker:
+    // admin-only topics are for moderators.
+    public function getPickableTopicIds($userId)
+    {
+        $isModerator = $this->isAdmin($userId, true);
+        $topicIds = [];
+
+        foreach (Utility::getTopicsBySpaceId($this->id) as $topic) {
+            if ($isModerator || Arr::get($topic, 'admin_only') !== 'yes') {
+                $topicIds[] = $topic['id'];
+            }
+        }
+
+        return $topicIds;
     }
 
     public function syncTopics($topicIds)
@@ -634,7 +668,7 @@ class BaseSpace extends Model
         $slug = $title;
         $count = 1;
         while (self::withoutGlobalScopes()->where('slug', $slug)->exists()) {
-            if ($count == 5) {
+            if ((int) $count === 5) {
                 $count = time();
             }
             $slug = $title . '-' . (++$slugNum);
@@ -661,12 +695,36 @@ class BaseSpace extends Model
 
         $this->lockscreen_config = LockscreenService::getLockscreenConfig($this, $this->membership, true);
 
-        $spaceSettings = $this->settings;
-
-        $spaceSettings['links'] = Helper::filterAccessibleLinks(Arr::get($spaceSettings, 'links', []), $user);
-
-        $this->settings = $spaceSettings;
+        $this->settings = $this->getVisibleSettings($user);
 
         return $this;
+    }
+
+    /**
+     * The settings a non-admin may read.
+     *
+     * `links` and `primary_menu` carry URLs scoped to logged-in users or to space
+     * memberships. Every response that hands a space's settings to a client goes
+     * through here, or those URLs reach anyone who calls the endpoint. The portal
+     * builds the menu from `header_links` and the menu manager loads its own rows,
+     * so no client reads `primary_menu`: it is emptied, not filtered.
+     *
+     * Saving settings restores both keys from the stored row (see updateCustomData()),
+     * so a client that sends these settings back cannot wipe them.
+     *
+     * @param \FluentCommunity\App\Models\User|null $user
+     * @return array
+     */
+    public function getVisibleSettings($user)
+    {
+        $settings = $this->settings;
+
+        $settings['links'] = Helper::filterAccessibleLinks(Arr::get($settings, 'links', []), $user);
+
+        if (isset($settings[SpaceMenuService::SETTINGS_KEY])) {
+            $settings[SpaceMenuService::SETTINGS_KEY] = [];
+        }
+
+        return $settings;
     }
 }

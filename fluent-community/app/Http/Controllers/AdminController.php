@@ -33,8 +33,8 @@ class AdminController extends Controller
         $data = [
             'settings'                     => $settings,
             'user_roles'                   => $formatedRoles,
-            'users_can_register'           => !!get_option('users_can_register'),
-            'user_registration_enable_url' => admin_url('options-general.php')
+            'users_can_register'           => (bool)get_option('users_can_register'),
+            'user_registration_enable_url' => admin_url('options-general.php'),
         ];
         return apply_filters('fluent_community/general_settings_api_response', $data, $request->all());
     }
@@ -62,8 +62,8 @@ class AdminController extends Controller
             $settings['featured_image'] = sanitize_url($settings['featured_image']);
         }
 
-        if (!empty($settings['site_title'])) {
-            $settings['site_title'] = sanitize_text_field(Arr::get($inputs, 'site_title', ''));
+        if (isset($inputs['site_title'])) {
+            $settings['site_title'] = sanitize_text_field($inputs['site_title']);
         }
 
         $settings['disable_global_posts'] = sanitize_text_field(Arr::get($inputs, 'disable_global_posts', 'no'));
@@ -81,7 +81,7 @@ class AdminController extends Controller
         $settings['auth_form_type'] = sanitize_text_field(Arr::get($inputs, 'auth_form_type', ''));
         $settings['explicit_registration'] = sanitize_text_field(Arr::get($inputs, 'explicit_registration', 'no'));
 
-        $isCustomSignupPage = $settings['auth_form_type'] === 'default' && Arr::get($inputs, 'use_custom_signup_page', 'no') == 'yes';
+        $isCustomSignupPage = $settings['auth_form_type'] === 'default' && Arr::get($inputs, 'use_custom_signup_page', 'no') === 'yes';
         if (!$isCustomSignupPage) {
             $settings['custom_signup_url'] = '';
             $settings['use_custom_signup_page'] = 'no';
@@ -92,7 +92,7 @@ class AdminController extends Controller
 
             if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
                 return $this->sendError([
-                    'message' => __('Please provide a valid signup URL', 'fluent-community')
+                    'message' => __('Please provide a valid signup URL', 'fluent-community'),
                 ]);
             }
             $settings['custom_signup_url'] = $url;
@@ -103,7 +103,7 @@ class AdminController extends Controller
             $media->update([
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
-                'object_source' => 'general'
+                'object_source' => 'general',
             ]);
         }
 
@@ -112,7 +112,7 @@ class AdminController extends Controller
             $whiteMedia->update([
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
-                'object_source' => 'general'
+                'object_source' => 'general',
             ]);
         }
 
@@ -121,22 +121,27 @@ class AdminController extends Controller
             $featuredMedia->update([
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
-                'object_source' => 'general'
+                'object_source' => 'general',
             ]);
         }
 
         $slugChanged = false;
         $newSlug = sanitize_title($inputs['slug'] ?? '');
-        if ($newSlug && $settings['slug'] != $newSlug && !defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
+        if ($newSlug && (string) $settings['slug'] !== (string) $newSlug && !defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
+            if (!Helper::isSuperAdmin()) {
+                return $this->sendError([
+                    'message' => __('Only a site administrator can change the portal slug.', 'fluent-community'),
+                ]);
+            }
             $settings['slug'] = $newSlug;
             $slugChanged = true;
         }
 
         if (!Helper::isSuperAdmin()) {
-            foreach (['auth_url', 'cutsom_auth_url', 'auth_form_type', 'auth_redirect', 'custom_signup_url', 'use_custom_signup_page', 'explicit_registration'] as $restrictedKey) {
-                if ($settings[$restrictedKey] != Arr::get($storedSettings, $restrictedKey, '')) {
+            foreach ([ 'auth_url', 'cutsom_auth_url', 'auth_form_type', 'auth_redirect', 'custom_signup_url', 'use_custom_signup_page', 'explicit_registration' ] as $restrictedKey) {
+                if ((string) $settings[$restrictedKey] !== (string) Arr::get($storedSettings, $restrictedKey, '')) {
                     return $this->sendError([
-                        'message' => __('You do not have permission to change the authentication and login settings', 'fluent-community')
+                        'message' => __('You do not have permission to change the authentication and login settings', 'fluent-community'),
                     ]);
                 }
             }
@@ -155,7 +160,7 @@ class AdminController extends Controller
 
         return [
             'message'      => __('Settings have been saved successfully.', 'fluent-community'),
-            'redirect_url' => $redirectUrl
+            'redirect_url' => $redirectUrl,
         ];
     }
 
@@ -168,7 +173,7 @@ class AdminController extends Controller
         }
 
         $data = [
-            'email_settings' => $emailSettings
+            'email_settings' => $emailSettings,
         ];
         return apply_filters('fluent_community/email_settings_api_response', $data, $request->all());
     }
@@ -187,7 +192,7 @@ class AdminController extends Controller
                 $logoMedia->update([
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
-                    'object_source' => 'general'
+                    'object_source' => 'general',
                 ]);
             }
         }
@@ -200,7 +205,7 @@ class AdminController extends Controller
         /*
          * We are unscheduling all digest schedules if the settings has been changed or disabled
          */
-        $isScheduleChanged = ($newSettings['digest_mail_day'] != $prevSettings['digest_mail_day']) || ($newSettings['daily_digest_time'] != $prevSettings['daily_digest_time']);
+        $isScheduleChanged = ((string) $newSettings['digest_mail_day'] !== (string) $prevSettings['digest_mail_day']) || ((string) $newSettings['daily_digest_time'] !== (string) $prevSettings['daily_digest_time']);
         if ($isScheduleChanged) {
             if (as_next_scheduled_action('fluent_community_send_daily_digest_init')) {
                 as_unschedule_all_actions('fluent_community_send_daily_digest_init', [], 'fluent-community');
@@ -209,7 +214,7 @@ class AdminController extends Controller
 
         return [
             'email_settings' => $newSettings,
-            'message'        => __('Email notification settings have been updated', 'fluent-community')
+            'message'        => __('Email notification settings have been updated', 'fluent-community'),
         ];
     }
 
@@ -224,8 +229,8 @@ class AdminController extends Controller
                 'can_install'    => current_user_can('install_plugins'),
                 'can_activate'   => current_user_can('activate_plugins'),
                 'has_installer'  => (bool)has_action('fluent_community/install_fluent_notify_plugin'),
-                'learn_more_url' => 'https://fluentnotify.com'
-            ]
+                'learn_more_url' => 'https://fluentnotify.com',
+            ],
         ];
 
         return apply_filters('fluent_community/push_settings_api_response', $data, $request->all());
@@ -253,7 +258,7 @@ class AdminController extends Controller
 
         return [
             'push_settings' => $settings,
-            'message'       => __('Push notification settings have been updated', 'fluent-community')
+            'message'       => __('Push notification settings have been updated', 'fluent-community'),
         ];
     }
 
@@ -261,14 +266,14 @@ class AdminController extends Controller
     {
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             $config = [
-                'driver' => 'local'
+                'driver' => 'local',
             ];
         } else {
             $config = \FluentCommunityPro\App\Modules\CloudStorage\StorageHelper::getConfig('view');
         }
 
         return apply_filters('fluent_community/storage_settings_response', [
-            'config' => $config
+            'config' => $config,
         ], $request->all());
     }
 
@@ -276,13 +281,13 @@ class AdminController extends Controller
     {
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             return $this->sendError([
-                'message' => __('Sorry, you cannot update this config. Please activate pro', 'fluent-community')
+                'message' => __('Sorry, you cannot update this config. Please activate pro', 'fluent-community'),
             ]);
         }
 
         if (defined('FLUENT_COMMUNITY_CLOUD_STORAGE') && FLUENT_COMMUNITY_CLOUD_STORAGE) {
             return $this->sendError([
-                'message' => __('You cannot update the storage settings as it is defined in the config file', 'fluent-community')
+                'message' => __('You cannot update the storage settings as it is defined in the config file', 'fluent-community'),
             ]);
         }
 
@@ -295,23 +300,23 @@ class AdminController extends Controller
             'endpoint_url',
             'account_id',
             'sub_folder',
-            's3_endpoint'
+            's3_endpoint',
         ]);
 
         foreach ($config as $key => $value) {
-            $config[$key] = in_array($key, ['public_url', 'endpoint_url'], true) ? sanitize_url($value) : sanitize_text_field($value);
+            $config[$key] = in_array($key, [ 'public_url', 'endpoint_url' ], true) ? sanitize_url($value) : sanitize_text_field($value);
         }
 
         $driver = Arr::get($config, 'driver', 'local');
         $config['driver'] = $driver;
 
         $validation = [
-            'driver' => 'required'
+            'driver' => 'required',
         ];
 
-        $isRemote = in_array($driver, ['amazon_s3', 'bunny_cdn', 'cloudflare_r2']);
+        $isRemote = in_array($driver, [ 'amazon_s3', 'bunny_cdn', 'cloudflare_r2' ], true);
 
-        if ($driver == 'cloudflare_r2') {
+        if ($driver === 'cloudflare_r2') {
             $validation = [
                 'driver'       => 'required',
                 'access_key'   => 'required',
@@ -319,20 +324,20 @@ class AdminController extends Controller
                 'public_url'   => 'required|url',
                 'endpoint_url' => 'required|url',
             ];
-        } else if ($driver == 'amazon_s3') {
+        } elseif ($driver === 'amazon_s3') {
             $validation = [
                 'driver'     => 'required',
                 'access_key' => 'required',
                 'secret_key' => 'required',
-                'bucket'     => 'required'
+                'bucket'     => 'required',
             ];
-        } else if ($driver == 'bunny_cdn') {
+        } elseif ($driver === 'bunny_cdn') {
             $validation = [
                 'driver'      => 'required',
                 'access_key'  => 'required',
                 's3_endpoint' => 'required',
                 'bucket'      => 'required',
-                'public_url'  => 'required|url'
+                'public_url'  => 'required|url',
             ];
         }
 
@@ -340,31 +345,31 @@ class AdminController extends Controller
 
         if ($isRemote) {
             $previousConfig = \FluentCommunityPro\App\Modules\CloudStorage\StorageHelper::getConfig();
-            $usesStoredKeys = $config['access_key'] == 'FCOM_ENCRYPTED_DATA_KEY' || Arr::get($config, 'secret_key') == 'FCOM_ENCRYPTED_DATA_KEY';
+            $usesStoredKeys = $config['access_key'] === 'FCOM_ENCRYPTED_DATA_KEY' || Arr::get($config, 'secret_key') === 'FCOM_ENCRYPTED_DATA_KEY';
 
             if ($usesStoredKeys) {
-                foreach (['driver', 'bucket', 's3_endpoint', 'endpoint_url'] as $targetKey) {
+                foreach ([ 'driver', 'bucket', 's3_endpoint', 'endpoint_url' ] as $targetKey) {
                     if ((string)Arr::get($config, $targetKey) !== (string)Arr::get($previousConfig, $targetKey)) {
                         return $this->sendError([
-                            'message' => __('The storage location has changed. Please enter the access key and secret key again.', 'fluent-community')
+                            'message' => __('The storage location has changed. Please enter the access key and secret key again.', 'fluent-community'),
                         ]);
                     }
                 }
             }
 
-            if ($config['access_key'] == 'FCOM_ENCRYPTED_DATA_KEY') {
+            if ($config['access_key'] === 'FCOM_ENCRYPTED_DATA_KEY') {
                 $config['access_key'] = Arr::get($previousConfig, 'access_key');
             }
 
-            if ($config['secret_key'] == 'FCOM_ENCRYPTED_DATA_KEY') {
+            if ($config['secret_key'] === 'FCOM_ENCRYPTED_DATA_KEY') {
                 $config['secret_key'] = Arr::get($previousConfig, 'secret_key');
             }
 
-            $driver = (new \FluentCommunityPro\App\Modules\CloudStorage\CloudStorageModule)->getConnectionDriver($config);
+            $driver = (new \FluentCommunityPro\App\Modules\CloudStorage\CloudStorageModule())->getConnectionDriver($config);
 
             if (!$driver) {
                 return $this->sendError([
-                    'message' => __('Could not connect to the remote storage service. Please check your credentials', 'fluent-community')
+                    'message' => __('Could not connect to the remote storage service. Please check your credentials', 'fluent-community'),
                 ]);
             }
 
@@ -372,14 +377,14 @@ class AdminController extends Controller
             if (!$test || is_wp_error($test)) {
                 $errorMessage = is_wp_error($test) ? $test->get_error_message() : 'Unknown Error';
                 return $this->sendError([
-                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . $errorMessage
+                    'message' => __('Could not connect to the remote storage service. Error: ', 'fluent-community') . $errorMessage,
                 ]);
             }
         }
 
-        if ($config['driver'] == 'local') {
+        if ($config['driver'] === 'local') {
             $config = [
-                'driver' => 'local'
+                'driver' => 'local',
             ];
 
             $featureConfig = Utility::getFeaturesConfig();
@@ -395,7 +400,7 @@ class AdminController extends Controller
         \FluentCommunityPro\App\Modules\CloudStorage\StorageHelper::updateConfig($config);
 
         return [
-            'message' => __('Storage settings have been updated successfully', 'fluent-community')
+            'message' => __('Storage settings have been updated successfully', 'fluent-community'),
         ];
     }
 
@@ -404,7 +409,7 @@ class AdminController extends Controller
         $settings = apply_filters('fluent_community/get_welcome_banner_settings', Helper::getWelcomeBannerSettings(), $request->all());
 
         return [
-            'settings' => $settings
+            'settings' => $settings,
         ];
     }
 
@@ -414,13 +419,13 @@ class AdminController extends Controller
 
         $settings = CustomSanitizer::sanitizeWelcomeBannerSettings($settings);
 
-        if (Arr::get($settings, 'login.enabled') == 'yes') {
+        if (Arr::get($settings, 'login.enabled') === 'yes') {
             $settings['login']['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml(Arr::get($settings, 'login.description')));
         }
 
-        if (Arr::get($settings, 'logout.enabled') == 'yes') {
+        if (Arr::get($settings, 'logout.enabled') === 'yes') {
             $settings['logout']['description_rendered'] = wp_kses_post(FeedsHelper::mdToHtml(Arr::get($settings, 'logout.description')));
-            if (Arr::get($settings, 'logout.buttonLabel') && Arr::get($settings, 'logout.useCustomUrl') != 'yes') {
+            if (Arr::get($settings, 'logout.buttonLabel') && Arr::get($settings, 'logout.useCustomUrl') !== 'yes') {
                 $settings['logout']['buttonLink'] = Helper::getAuthUrl();
             }
         }
@@ -433,7 +438,7 @@ class AdminController extends Controller
 
         return [
             'message'  => __('Welcome banner settings have been updated successfully', 'fluent-community'),
-            'settings' => $settings
+            'settings' => $settings,
         ];
     }
 
@@ -447,7 +452,7 @@ class AdminController extends Controller
         $settings = apply_filters('fluent_community/get_auth_settings', $settings);
 
         return [
-            'settings' => $settings
+            'settings' => $settings,
         ];
     }
 
@@ -475,7 +480,7 @@ class AdminController extends Controller
         }
 
         $data = [
-            'settings' => $settings
+            'settings' => $settings,
         ];
         return apply_filters('fluent_community/onboarding_settings_api_response', $data, $this->request->all());
     }
@@ -499,7 +504,7 @@ class AdminController extends Controller
                 $media->update([
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
-                    'object_source' => 'onboarding'
+                    'object_source' => 'onboarding',
                 ]);
             }
         }
@@ -515,16 +520,16 @@ class AdminController extends Controller
             'subscribe_to_newsletter' => sanitize_text_field(Arr::get($inputs, 'subscribe_to_newsletter', 'no')),
             'share_data'              => sanitize_text_field(Arr::get($inputs, 'share_data', 'no')),
             'user_full_name'          => sanitize_text_field(Arr::get($inputs, 'user_full_name', '')),
-            'user_email_address'      => sanitize_email(Arr::get($inputs, 'user_email_address', ''))
+            'user_email_address'      => sanitize_email(Arr::get($inputs, 'user_email_address', '')),
         ]);
 
         Utility::updateOption('onboarding_sub_settings', $subscriptionSettings);
         OnboardingService::maybeCreateSpaceTemplates(Arr::get($inputs, 'template'));
 
         $installableAddons = array_keys(array_filter([
-            'fluent-crm'  => Arr::get($inputs, 'install_fluentcrm', 'no') == 'yes',
-            'fluent-smtp' => Arr::get($inputs, 'install_fluentsmtp', 'no') == 'yes',
-            'fluent-cart' => Arr::get($inputs, 'install_fluentcart', 'no') == 'yes',
+            'fluent-crm'  => Arr::get($inputs, 'install_fluentcrm', 'no') === 'yes',
+            'fluent-smtp' => Arr::get($inputs, 'install_fluentsmtp', 'no') === 'yes',
+            'fluent-cart' => Arr::get($inputs, 'install_fluentcart', 'no') === 'yes',
         ]));
 
         // Install Plugins which are checked
@@ -537,7 +542,7 @@ class AdminController extends Controller
         flush_rewrite_rules(true);
 
         return [
-            'message' => __('Onboarding settings have been updated.', 'fluent-community')
+            'message' => __('Onboarding settings have been updated.', 'fluent-community'),
         ];
     }
 
@@ -547,19 +552,19 @@ class AdminController extends Controller
 
         if (!$newSlug) {
             return $this->sendError([
-                'message' => __('Slug cannot be empty', 'fluent-community')
+                'message' => __('Slug cannot be empty', 'fluent-community'),
             ]);
         }
 
         if (defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
             return $this->sendError([
-                'message' => __('You cannot change the slug as it is defined in the config file', 'fluent-community')
+                'message' => __('You cannot change the slug as it is defined in the config file', 'fluent-community'),
             ]);
         }
 
         $settings = Helper::generalSettings();
 
-        if ($settings['slug'] != $newSlug) {
+        if ((string) $settings['slug'] !== (string) $newSlug) {
             $settings['slug'] = $newSlug;
 
             update_option('fluent_community_settings', $settings);
@@ -575,14 +580,14 @@ class AdminController extends Controller
         }
 
         return [
-            'message' => __('Slug has been changed successfully', 'fluent-community')
+            'message' => __('Slug has been changed successfully', 'fluent-community'),
         ];
     }
 
     public function getProfileLinkProviders(Request $request)
     {
         $data = [
-            'providers' => ProfileHelper::socialLinkProviders()
+            'providers' => ProfileHelper::socialLinkProviders(),
         ];
         return apply_filters('fluent_community/profile_link_providers_api_response', $data, $request->all());
     }
@@ -593,7 +598,7 @@ class AdminController extends Controller
         $config = $request->get('configs', []);
 
         $config = array_filter($config, function ($value) use ($providerKeys) {
-            return in_array($value, $providerKeys);
+            return in_array($value, $providerKeys, true);
         });
 
         do_action('fluent_community/update_profile_link_providers', $config);
@@ -607,8 +612,8 @@ class AdminController extends Controller
     {
         $data = [
             'all_spaces' => BaseSpace::query()->withoutGlobalScopes()
-                ->whereIn('type', ['community', 'course'])
-                ->orderBy('serial', 'ASC')->get()
+                ->whereIn('type', [ 'community', 'course' ])
+                ->orderBy('serial', 'ASC')->get(),
         ];
         return apply_filters('fluent_community/all_space_courses_api_response', $data, $request->all());
     }

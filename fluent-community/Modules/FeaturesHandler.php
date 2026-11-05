@@ -15,11 +15,11 @@ class FeaturesHandler
 
         $this->registerModules($app);
 
-        add_action('fluent_community/portal_header', [$this, 'maybePushDarkModeScript']);
-        add_action('fluent_community/portal_sidebar', [$this, 'maybePushDarkModeScript']);
-        add_action('init', [$this, 'maybeOembedRequest']);
+        add_action('fluent_community/portal_header', [ $this, 'maybePushDarkModeScript' ]);
+        add_action('fluent_community/portal_sidebar', [ $this, 'maybePushDarkModeScript' ]);
+        add_action('init', [ $this, 'maybeOembedRequest' ]);
 
-        add_action('fluent_community/rendering_headless_portal', [$this, 'loadHeadlessPortalAssets']);
+        add_action('fluent_community/rendering_headless_portal', [ $this, 'loadHeadlessPortalAssets' ]);
     }
 
     public function loadHeadlessPortalAssets($data)
@@ -37,7 +37,7 @@ class FeaturesHandler
                 foreach ($jsVars as $varKey => $values) {
                     ?>
                     <script>
-                        var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
+                        var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
                     </script>
                     <?php } ?>
                     <script type="module" src="<?php echo esc_url(Vite::versionedUrl($file['url'])); ?>" defer="defer"></script> <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
@@ -50,7 +50,7 @@ class FeaturesHandler
             ?>
             <script>
                 <?php foreach ($jsVars as $varKey => $values): ?>
-                var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?>;
+                var <?php echo esc_attr($varKey); ?> = <?php echo wp_json_encode($values); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
                 <?php endforeach; ?>
             </script>
             <?php
@@ -72,81 +72,54 @@ class FeaturesHandler
 
     }
 
+    /**
+     * Serves core's /oembed/1.0/proxy to community users. Core requires edit_posts, which
+     * community editors (lessons, space pages) often lack.
+     */
     public function maybeOembedRequest()
     {
-        // this is temp hack
         if (!isset($_GET['url'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             return;
         }
 
-        if (defined('REST_REQUEST')) {
+        $path = untrailingslashit((string) wp_parse_url(Arr::get($_SERVER, 'REQUEST_URI', ''), PHP_URL_PATH));
+        $restRoute = untrailingslashit(sanitize_text_field(wp_unslash($_GET['rest_route'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if (!str_ends_with($path, '/oembed/1.0/proxy') && $restRoute !== '/oembed/1.0/proxy') {
             return;
         }
 
-        if (!is_user_logged_in()) {
+        $user = Helper::getCurrentUser();
+        if (!$user || !Helper::canAccessPortal($user->ID)) {
+            return; // Core answers with its own edit_posts check.
+        }
+
+        // The isolated block editor sends no nonce. Browsers send Sec-Fetch-Site: same-origin
+        // only from our own pages, so a cross-site page cannot trigger the fetch.
+        $nonce = sanitize_text_field(wp_unslash(Arr::get($_SERVER, 'HTTP_X_WP_NONCE', '')));
+        if (!wp_verify_nonce($nonce, 'wp_rest') && Arr::get($_SERVER, 'HTTP_SEC_FETCH_SITE') !== 'same-origin') {
             return;
         }
 
-        $requestUrl = Arr::get($_SERVER, 'REQUEST_URI');
-        if (!strpos($requestUrl, 'oembed/1.0/proxy')) {
-            return;
+        try {
+            do_action('fluent_community/check_rate_limit/oembed', $user);
+        } catch (\Exception $e) {
+            wp_send_json([ 'error' => $e->getMessage() ], 429);
         }
 
-        global $wp_embed, $wp_scripts;
-        $url = sanitize_url(wp_unslash($_GET['url'] ?? '')); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        // Core's route args only: core keys its cache on every param, so extras would add cache rows.
+        $params = Arr::only(wp_unslash($_GET), [ 'url', 'maxwidth', 'maxheight', 'format', 'discover' ]); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $params['url'] = sanitize_url($params['url']);
+        $params += [ 'maxwidth' => 600 ];
 
-        $request = \FluentCommunity\App\App::make('request');
+        $request = new \WP_REST_Request('GET', '/oembed/1.0/proxy');
+        $request->set_query_params($params);
 
-        $args = $request->all();
-        unset($args['url']);
+        // Core's handler, with its per-URL cache.
+        $data = (new \WP_oEmbed_Controller())->get_proxy_item($request);
 
-        // Copy maxwidth/maxheight to width/height since WP_oEmbed::fetch() uses these arg names.
-        if (isset($args['maxwidth'])) {
-            $args['width'] = $args['maxwidth'];
-        } else {
-            $args['maxwidth'] = 600;
+        if (is_wp_error($data)) {
+            wp_send_json([ 'error' => 'not_found' ], 404);
         }
-
-        if (isset($args['maxheight'])) {
-            $args['height'] = $args['maxheight'];
-        }
-
-        // Short-circuit process for URLs belonging to the current site.
-        $data = get_oembed_response_data_for_url($url, $args);
-
-        if ($data) {
-            wp_send_json($data, 200);
-        }
-
-        $data = _wp_oembed_get_object()->get_data($url, $args);
-
-        if (false === $data) {
-            // Try using a classic embed, instead.
-            /* @var \WP_Embed $wp_embed */
-            $html = $wp_embed->get_embed_handler_html($args, $url);
-
-            if ($html) {
-                // Check if any scripts were enqueued by the shortcode, and include them in the response.
-                $enqueued_scripts = array();
-
-                foreach ($wp_scripts->queue as $script) {
-                    $enqueued_scripts[] = $wp_scripts->registered[$script]->src;
-                }
-
-                wp_send_json(array(
-                    'provider_name' => __('Embed Handler', 'fluent-community'),
-                    'html'          => $html,
-                    'scripts'       => $enqueued_scripts,
-                ), 200);
-            }
-
-            wp_send_json([
-                'error' => 'not_found',
-            ], 404);
-        }
-
-        /** This filter is documented in wp-includes/class-wp-oembed.php */
-        $data->html = apply_filters('oembed_result', _wp_oembed_get_object()->data2html((object)$data, $url), $url, $args); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
         wp_send_json($data, 200);
     }

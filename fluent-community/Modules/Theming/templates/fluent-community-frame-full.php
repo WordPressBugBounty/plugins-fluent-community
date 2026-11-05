@@ -1,5 +1,5 @@
 <?php
-defined('ABSPATH') or die;
+defined('ABSPATH') || die;
 /**
  * Template Name: Fluent Community Frame Full
  * Description: The template for displaying the Fluent Community frame.
@@ -33,7 +33,7 @@ $fluentCommunityThemeName = get_option('template');
                                 <?php do_action('fluent_community/portal_sidebar', 'wp'); ?>
                             </div>
                         </div>
-                        <div class="feeds_main fcom_theme_full <?php echo apply_filters('fluent_community/is_supported_theme', false, $fluentCommunityThemeName) ? 'fcom_supported_wp_content' : 'fcom_wp_content fcom_fallback_wp_content' ?>">
+                        <div class="feeds_main fcom_theme_full <?php echo apply_filters('fluent_community/is_supported_theme', false, $fluentCommunityThemeName) ? 'fcom_supported_wp_content' : 'fcom_wp_content fcom_fallback_wp_content'; ?>">
                             <?php
                                 do_action('fluent_community/theme_content', $fluentCommunityThemeName, 'full');
                             ?>

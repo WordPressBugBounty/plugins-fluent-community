@@ -46,7 +46,7 @@ class ResponseMetrics
         $cutoff = ($end < $now ? $end : $now)->modify('-24 hours')->format('Y-m-d H:i:s');
 
         if ($cutoff <= $range->sqlFrom()) {
-            return ['minutes' => [], 'eligible' => 0];
+            return [ 'minutes' => [], 'eligible' => 0 ];
         }
 
         $space = $scope->spaceId() ? ' AND p.space_id = ' . $scope->spaceId() : '';
@@ -66,7 +66,7 @@ class ResponseMetrics
             }
         }
 
-        return ['minutes' => $minutes, 'eligible' => count($rows)];
+        return [ 'minutes' => $minutes, 'eligible' => count($rows) ];
     }
 
     /**

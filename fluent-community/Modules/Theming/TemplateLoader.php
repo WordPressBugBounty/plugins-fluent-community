@@ -11,11 +11,11 @@ class TemplateLoader
     {
         add_filter('fluent_community/general_portal_vars', function ($vars) {
             $templateName = get_option('template');
-            if ($templateName == 'blocksy') {
+            if ($templateName === 'blocksy') {
                 $vars['color_switch_cookie_name'] = 'blocksy_current_theme';
             }
 
-            if ($templateName == 'kadence' && defined('KTP_VERSION')) {
+            if ($templateName === 'kadence' && defined('KTP_VERSION')) {
                 if (function_exists('\Kadence\kadence') && \Kadence\kadence()->option('dark_mode_enable') && apply_filters('kadence_dark_mode_enable', true)) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
                     $cookie_name = substr(base_convert(md5(get_site_url()), 16, 32), 0, 12) . '-paletteCookie';
                     $vars['color_switch_cookie_name'] = $cookie_name;
@@ -25,19 +25,19 @@ class TemplateLoader
             return $vars;
         });
 
-        add_filter('theme_page_templates', [$this, 'registerTemplate'], 9999);
-        add_filter('template_include', [$this, 'maybeIncludeTemplate'], 99999);
+        add_filter('theme_page_templates', [ $this, 'registerTemplate' ], 9999);
+        add_filter('template_include', [ $this, 'maybeIncludeTemplate' ], 99999);
 
-        add_action('fluent_community/theme_content', [$this, 'renderWpContent'], 10, 2);
+        add_action('fluent_community/theme_content', [ $this, 'renderWpContent' ], 10, 2);
 
         // support for blocksy
         add_action('fluent_community/theme_body_atts', function ($themeName) {
-            if ($themeName == 'blocksy') {
+            if ($themeName === 'blocksy') {
                 echo blocksy_body_attr(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             }
         });
 
-        add_action('fluent_community/template_footer', [$this, 'renderMobileMenu']);
+        add_action('fluent_community/template_footer', [ $this, 'renderMobileMenu' ]);
     }
 
     public function registerTemplate($templates)
@@ -56,7 +56,7 @@ class TemplateLoader
         // check if the current theme is block based theme or not
         if (wp_is_block_theme()) {
             $template_slug = get_page_template_slug();
-            if ($template_slug != 'wp-custom-template-community-template') {
+            if ($template_slug !== 'wp-custom-template-community-template') {
                 return $template;
             }
             return $this->loadBlockBasedTemplateAssets($template);
@@ -74,7 +74,7 @@ class TemplateLoader
 
             $template_slug = apply_filters('fluent_community/template_slug', $template_slug);
 
-            if (in_array($template_slug, $fluentTemplates)) {
+            if (in_array($template_slug, $fluentTemplates, true)) {
                 // Determine the absolute path to the template file within your plugin.
                 $plugin_template = plugin_dir_path(__FILE__) . 'templates/' . $template_slug;
 
@@ -150,7 +150,7 @@ class TemplateLoader
         });
 
         add_action('wp_head', function () use ($themeName) {
-            $isAlignSupportedTheme = in_array($themeName, ['blocksy'], true);
+            $isAlignSupportedTheme = in_array($themeName, [ 'blocksy' ], true);
             ?>
             <style>
                 html {
@@ -214,7 +214,7 @@ class TemplateLoader
         ?>
         <div id="content" class="site-content">
             <div class="ast-container">
-                <?php $layout == 'left-sidebar' && get_sidebar(); ?>
+                <?php $layout === 'left-sidebar' && get_sidebar(); ?>
                 <div id="primary" <?php astra_primary_class(); ?>>
                     <?php
                     if (is_singular()):
@@ -230,7 +230,7 @@ class TemplateLoader
                     endif;
                     ?>
                 </div><!-- #primary -->
-                <?php $layout == 'right-sidebar' && get_sidebar(); ?>
+                <?php $layout === 'right-sidebar' && get_sidebar(); ?>
             </div>
         </div>
         <?php
@@ -290,7 +290,8 @@ class TemplateLoader
                 </div>
                 <?php
                 do_action('generate_after_primary_content_area'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-                generate_construct_sidebars(); ?>
+                generate_construct_sidebars();
+                ?>
             </div>
         </div>
         <?php
@@ -325,7 +326,8 @@ class TemplateLoader
 
                                 <?php else: ?>
 
-                                    <?php if (have_posts()) :
+                                    <?php
+                                    if (have_posts()) :
                                         if (!function_exists('elementor_theme_do_location') || !elementor_theme_do_location('archive')) {
                                             ?>
                                             <div id="blog-entries" class="<?php oceanwp_blog_wrap_classes(); ?>">
@@ -342,7 +344,7 @@ class TemplateLoader
 
                                                     <?php
                                                     // Add to counter.
-                                                    $oceanwp_count++;
+                                                    ++$oceanwp_count;
                                                     ?>
 
                                                     <?php
@@ -367,8 +369,8 @@ class TemplateLoader
                                         }
                                         ?>
 
-                                    <?php
-                                    // No posts found.
+                                        <?php
+                                        // No posts found.
                                     else :
                                         ?>
 
@@ -458,7 +460,7 @@ class TemplateLoader
                 the_post();
                 ?>
                 <div class="wp_content_wrapper wp_fallback_theme">
-                    <?php if ($wrapperType == 'default'): ?>
+                    <?php if ($wrapperType === 'default'): ?>
                         <div class="fcom_wp_content_title">
                             <?php the_title('<h1 class="entry-title">', '</h1>'); ?>
                         </div>
@@ -467,7 +469,7 @@ class TemplateLoader
                         <?php the_content(); ?>
                     </div>
                 </div>
-            <?php
+                <?php
             endwhile;
         endif;
     }
@@ -487,13 +489,14 @@ class TemplateLoader
                     if (!$permalink) {
                         $permalink = Helper::getUrlByJsRoute(Arr::get($menuItem, 'route', []));
                     }
+                    $label = Arr::get($menuItem, 'html');
                     ?>
                     <div>
                         <a class="focm_menu_item" href="<?php echo esc_url($permalink); ?>">
                         <span class="el-icon">
                             <?php echo Arr::get($menuItem, 'icon_svg'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </span>
-                            <?php if ($label = Arr::get($menuItem, 'html')): ?>
+                            <?php if ($label): ?>
                                 <span><?php echo wp_kses_post($label); ?></span>
                             <?php endif; ?>
                         </a>

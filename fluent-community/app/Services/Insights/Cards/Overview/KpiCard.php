@@ -106,6 +106,6 @@ class KpiCard extends AbstractCard
             'rate'
         );
 
-        return ['items' => $items];
+        return [ 'items' => $items ];
     }
 }

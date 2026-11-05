@@ -3,6 +3,8 @@
 namespace FluentCommunity\Modules\Integrations\FluentPlayer;
 
 use FluentCommunity\App\Functions\Utility;
+use FluentCommunity\App\Services\FeedsHelper;
+use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Support\Sanitizer;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Models\Media;
@@ -30,7 +32,7 @@ class Bootstrap
     public function init()
     {
         // Always register portal vars hook to provide plugin status
-        $this->app->addFilter('fluent_community/portal_vars', [$this, 'getPortalVars']);
+        $this->app->addFilter('fluent_community/portal_vars', [ $this, 'getPortalVars' ]);
         
         // Only register feed functionality if plugin is active
         if (defined('FLUENT_PLAYER_VERSION')) {
@@ -40,9 +42,9 @@ class Bootstrap
 
     private function registerFeedHooks()
     {
-        $this->app->addFilter('fluent_community/feed/new_feed_data', [$this, 'maybeAddFluentPlayerMedia'], 10, 2);
-        $this->app->addFilter('fluent_community/feed/update_feed_data', [$this, 'maybeUpdateFluentPlayerMedia'], 10, 2);
-        $this->app->addFilter('fluent_community/feed/uploaded_feed_medias', [$this, 'maybeUpdateUploadedMedia'], 10, 2);
+        $this->app->addFilter('fluent_community/feed/new_feed_data', [ $this, 'maybeAddFluentPlayerMedia' ], 10, 2);
+        $this->app->addFilter('fluent_community/feed/update_feed_data', [ $this, 'maybeUpdateFluentPlayerMedia' ], 10, 2);
+        $this->app->addFilter('fluent_community/feed/uploaded_feed_medias', [ $this, 'maybeUpdateUploadedMedia' ], 10, 2);
     }
 
     /**
@@ -57,16 +59,20 @@ class Bootstrap
         }
         
         if (defined('FLUENT_PLAYER_VERSION')) {
-            return self::$status = 'active';
+            self::$status = 'active';
+            return self::$status;
         }
         
         if (file_exists(WP_PLUGIN_DIR . '/fluent-player/fluent-player.php')) {
-            return self::$status = 'installed';
+            self::$status = 'installed';
+            return self::$status;
         }
         
-        return self::$status = 'not_installed';
+        self::$status = 'not_installed';
+
+        return self::$status;
     }
-	
+    
     public static function getSettings()
     {
         static $settings = null;
@@ -92,7 +98,7 @@ class Bootstrap
                 'pip'             => true,
                 'fullscreen'      => true,
                 'backward'        => true,
-                'forward'         => true
+                'forward'         => true,
             ],
             'behaviors'            => [
                 'muted_autoplay'       => false,
@@ -100,12 +106,12 @@ class Bootstrap
                 'hide_top_controls'    => false,
                 'hide_center_controls' => false,
                 'hide_bottom_controls' => false,
-                'load_strategy'        => 'visible'
+                'load_strategy'        => 'visible',
             ],
             'video_upload'         => 'no',
             'video_upload_role'    => 'admin',
             'play_embedded_videos' => 'yes',
-            'enable_audio'         => 'no'
+            'enable_audio'         => 'no',
         ];
 
         $settings = Utility::getOption('_fluent_player_settings', $defaults);
@@ -130,7 +136,7 @@ class Bootstrap
             'video_upload'         => 'sanitize_text_field',
             'video_upload_role'    => 'sanitize_text_field',
             'play_embedded_videos' => 'sanitize_text_field',
-            'enable_audio'         => 'sanitize_text_field'
+            'enable_audio'         => 'sanitize_text_field',
         ];
 
         $prevSettings = self::getSettings();
@@ -139,8 +145,8 @@ class Bootstrap
         $settings = wp_parse_args($settings, $prevSettings);
         $settings = Sanitizer::sanitize($settings, $sanitizerRules);
 
-        $allowedStrategies = ['eager', 'visible', 'idle', 'play'];
-        $settings['behaviors']['load_strategy'] = in_array($loadStrategy, $allowedStrategies) ? $loadStrategy : 'visible';
+        $allowedStrategies = [ 'eager', 'visible', 'idle', 'play' ];
+        $settings['behaviors']['load_strategy'] = in_array($loadStrategy, $allowedStrategies, true) ? $loadStrategy : 'visible';
         $settings['enable_audio'] = Arr::get($settings, 'enable_audio') === 'yes' ? 'yes' : 'no';
         $settings['brandColor'] = self::sanitizeColor(Arr::get($settings, 'brandColor', ''));
         $settings['controlBarColor'] = self::sanitizeColor(Arr::get($settings, 'controlBarColor', ''));
@@ -173,7 +179,7 @@ class Bootstrap
         $allowedVideoTypes = apply_filters('fluent_community/support_video_types', [
             'video/mp4',
             'video/webm',
-            'video/quicktime'
+            'video/quicktime',
         ]);
 
         if ($kind === 'video') {
@@ -186,7 +192,7 @@ class Bootstrap
             'audio/mp4',
             'audio/aac',
             'audio/ogg',
-            'audio/flac'
+            'audio/flac',
         ]) : [];
 
         if ($kind === 'audio') {
@@ -222,8 +228,8 @@ class Bootstrap
                     'script_timeout_ms'   => 12000,
                     'script_grace_ms'     => 2000,
                     'init_timeout_ms'     => 3000,
-                    'stall_timeout_ms'    => 12000
-                ])
+                    'stall_timeout_ms'    => 12000,
+                ]),
             ];
         }
         return $data;
@@ -373,14 +379,15 @@ class Bootstrap
     public function maybeAddFluentPlayerMedia($data, $requestData)
     {
         $media = Arr::get($requestData, 'meta.media_preview', []);
-        if ($newMedia = Arr::get($requestData, 'media')) {
+        $newMedia = Arr::get($requestData, 'media');
+        if ($newMedia) {
             $media = $newMedia;
         }
-        if ($media && is_array($media) && Arr::get($media, 'player') == 'fluent_player') {
+        if ($media && is_array($media) && 'fluent_player' === Arr::get($media, 'player')) {
             if (!isset($data['meta'])) {
                 $data['meta'] = [];
             }
-            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml($media));
+            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml(self::rebuildOembedHtml($media)));
         }
         $audioMedias = $this->sanitizeAudioMedias($requestData);
         if ($audioMedias) {
@@ -391,14 +398,14 @@ class Bootstrap
         }
         return $data;
     }
-	public function maybeUpdateFluentPlayerMedia($data, $requestData)
+    public function maybeUpdateFluentPlayerMedia($data, $requestData)
     {
-	    $media = Arr::get($requestData, 'media');
-        if ($media && is_array($media) && Arr::get($media, 'player') == 'fluent_player') {
+        $media = Arr::get($requestData, 'media');
+        if ($media && is_array($media) && 'fluent_player' === Arr::get($media, 'player')) {
             if (!isset($data['meta'])) {
                 $data['meta'] = [];
             }
-            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml($media));
+            $data['meta']['media_preview'] = array_filter(self::sanitizeMediaHtml(self::rebuildOembedHtml($media)));
         }
         $audioMedias = $this->sanitizeAudioMedias($requestData);
         if ($audioMedias) {
@@ -420,13 +427,42 @@ class Bootstrap
         return \FluentCommunity\App\Services\Helper::sanitizeMediaPreview($media);
     }
 
+    /**
+     * Rebuild a provider embed's html from its URL on the server.
+     * Consent plugins rewrite the feeds/oembed response and drop the iframe src.
+     *
+     * @param array $media Request-supplied media.
+     * @return array
+     */
+    private static function rebuildOembedHtml($media)
+    {
+        $url = esc_url_raw((string) Arr::get($media, 'url', ''), [ 'http', 'https' ]);
+
+        if ('oembed' !== Arr::get($media, 'type') || !$url || in_array(Arr::get($media, 'provider'), [ 'url', 'upload' ], true)) {
+            return $media;
+        }
+
+        if (!FeedsHelper::canFetchRemotePreview()) {
+            return $media;
+        }
+
+        $parsed = RemoteUrlParser::parse($url);
+        if ($parsed && !is_wp_error($parsed) && !empty($parsed['html'])) {
+            $media['html'] = $parsed['html'];
+        }
+
+        return $media;
+    }
+
     public function maybeUpdateUploadedMedia($uploadedMedias, $requestData)
     {
         $media = Arr::get($requestData, 'meta.media_preview', []);
-        if ($newMedia = Arr::get($requestData, 'media')) {
+        $newMedia = Arr::get($requestData, 'media');
+        if ($newMedia) {
             $media = $newMedia;
         }
-        if ($media && is_array($media) && Arr::get($media, 'player') == 'fluent_player' && $mediaId = Arr::get($media, 'media_id')) {
+        $mediaId = is_array($media) ? Arr::get($media, 'media_id') : null;
+        if ($mediaId && Arr::get($media, 'player') === 'fluent_player') {
             $mediaId = intval($mediaId);
             if ($mediaId) {
                 $currentUserId = (int) get_current_user_id();

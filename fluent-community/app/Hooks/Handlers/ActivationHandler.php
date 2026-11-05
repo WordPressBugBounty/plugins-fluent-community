@@ -55,8 +55,8 @@ class ActivationHandler
             'description' => 'This is the default menu group. Please update the title and description.',
             'settings'    => [
                 'hide_members'       => 'no',
-                'always_show_spaces' => 'yes'
-            ]
+                'always_show_spaces' => 'yes',
+            ],
         ];
 
         return SpaceGroup::create($defaultData);

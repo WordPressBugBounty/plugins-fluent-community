@@ -16,15 +16,15 @@ class OnboardingService
             return false;
         }
 
-        if (!$template || $template == 'blank') {
+        if (!$template || $template === 'blank') {
             return false;
         }
 
         self::createDefaultSpaceTemplate();
 
-        if ($template == 'course') {
+        if ($template === 'course') {
             self::createCourseTemplate();
-        } else if ($template == 'product') {
+        } elseif ($template === 'product') {
             self::createProductTemplate();
         }
 
@@ -41,9 +41,9 @@ class OnboardingService
             'type'        => 'space_group',
             'settings'    => [
                 'hide_members'       => 'no',
-                'always_show_spaces' => 'yes'
+                'always_show_spaces' => 'yes',
             ],
-            'serial'      => 1
+            'serial'      => 1,
         ];
 
         $spaceGroup = SpaceGroup::where('slug', 'get-started')->first();
@@ -63,10 +63,10 @@ class OnboardingService
                     'can_request_join'     => 'yes',
                     'custom_lock_screen'   => 'no',
                     'layout_style'         => 'timeline',
-                    'show_sidebar'         => 'yes'
+                    'show_sidebar'         => 'yes',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 1
+                'serial'      => 1,
             ],
             [
                 'title'       => 'Say Hello',
@@ -79,11 +79,11 @@ class OnboardingService
                     'can_request_join'     => 'yes',
                     'custom_lock_screen'   => 'no',
                     'layout_style'         => 'timeline',
-                    'show_sidebar'         => 'yes'
+                    'show_sidebar'         => 'yes',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 2
-            ]
+                'serial'      => 2,
+            ],
         ];
 
         foreach ($spacesData as $spaceData) {
@@ -109,9 +109,9 @@ class OnboardingService
             'status'      => 'active',
             'type'        => 'space_group',
             'settings'    => [
-                'always_show_spaces' => 'yes'
+                'always_show_spaces' => 'yes',
             ],
-            'serial'      => 2
+            'serial'      => 2,
         ];
 
         $spaceGroup = SpaceGroup::where('slug', 'courses')->first();
@@ -132,10 +132,10 @@ class OnboardingService
                 'settings'    => [
                     'course_type' => 'self_paced',
                     'emoji'       => '1️⃣',
-                    'shape_svg'   => ''
+                    'shape_svg'   => '',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 1
+                'serial'      => 1,
             ],
             [
                 'title'       => 'Module 2',
@@ -146,11 +146,11 @@ class OnboardingService
                 'settings'    => [
                     'course_type' => 'self_paced',
                     'emoji'       => '2️⃣',
-                    'shape_svg'   => ''
+                    'shape_svg'   => '',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 2
-            ]
+                'serial'      => 2,
+            ],
         ];
 
         foreach ($coursesData as $courseData) {
@@ -172,9 +172,9 @@ class OnboardingService
             'status'      => 'active',
             'type'        => 'space_group',
             'settings'    => [
-                'always_show_spaces' => 'yes'
+                'always_show_spaces' => 'yes',
             ],
-            'serial'      => 2
+            'serial'      => 2,
         ];
 
         $spaceGroup = SpaceGroup::where('slug', 'product-discussions')->first();
@@ -195,10 +195,10 @@ class OnboardingService
                     'can_request_join'     => 'yes',
                     'custom_lock_screen'   => 'no',
                     'layout_style'         => 'timeline',
-                    'show_sidebar'         => 'yes'
+                    'show_sidebar'         => 'yes',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 1
+                'serial'      => 1,
             ],
             [
                 'title'       => 'Ask for Help',
@@ -211,10 +211,10 @@ class OnboardingService
                     'can_request_join'     => 'yes',
                     'custom_lock_screen'   => 'no',
                     'layout_style'         => 'timeline',
-                    'show_sidebar'         => 'yes'
+                    'show_sidebar'         => 'yes',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 2
+                'serial'      => 2,
             ],
             [
                 'title'       => 'Announcements',
@@ -227,10 +227,10 @@ class OnboardingService
                     'can_request_join'     => 'yes',
                     'custom_lock_screen'   => 'no',
                     'layout_style'         => 'timeline',
-                    'show_sidebar'         => 'yes'
+                    'show_sidebar'         => 'yes',
                 ],
                 'parent_id'   => $spaceGroup->id,
-                'serial'      => 3
+                'serial'      => 3,
             ],
         ];
 
@@ -248,7 +248,7 @@ class OnboardingService
 
     public static function installAddons($addons = [])
     {
-        $validAddons = ['fluent-crm', 'fluent-smtp', 'fluent-cart'];
+        $validAddons = [ 'fluent-crm', 'fluent-smtp', 'fluent-cart' ];
         $validAddons = array_intersect($validAddons, $addons);
 
         if (!$validAddons || !current_user_can('install_plugins')) {
@@ -287,7 +287,7 @@ class OnboardingService
                 'source'          => 'fcom_plugin',
                 'optin_website'   => home_url(),
                 'share_essential' => Arr::get($settings, 'share_data', 'no') === 'yes' ? 'yes' : 'no',
-            ])
+            ]),
         ]);
 
         return true;
@@ -298,7 +298,7 @@ class OnboardingService
         $plugin = [
             'name'      => $pluginSlug,
             'repo-slug' => $pluginSlug,
-            'file'      => $pluginSlug . '.php'
+            'file'      => $pluginSlug . '.php',
         ];
 
         $UrlMaps = [
@@ -308,16 +308,16 @@ class OnboardingService
             ],
             'fluent-crm' => [
                 'admin_url' => admin_url('admin.php?page=fluentcrm-admin'),
-                'title'     => 'Go to FluentCRM Dashboard'
+                'title'     => 'Go to FluentCRM Dashboard',
             ],
             'fluent-smtp' => [
                 'admin_url' => admin_url('options-general.php?page=fluent-mail#/'),
-                'title'     => 'Go to FluentSMTP Dashboard'
+                'title'     => 'Go to FluentSMTP Dashboard',
             ],
             'fluent-cart' => [
                 'admin_url' => admin_url('admin.php?page=fluent-cart#/'),
-                'title'     => 'Go to FluentCart Dashboard'
-            ]
+                'title'     => 'Go to FluentCart Dashboard',
+            ],
         ];
 
         if (!isset($UrlMaps[$pluginSlug]) || (defined('DISALLOW_FILE_MODS') && DISALLOW_FILE_MODS)) {
@@ -343,7 +343,7 @@ class OnboardingService
 
             $skin = new \Automatic_Upgrader_Skin();
             $upgrader = new \WP_Upgrader($skin);
-            $installed_plugins = array_reduce(array_keys(\get_plugins()), array(self::class, 'associate_plugin_file'), array());
+            $installed_plugins = array_reduce(array_keys(\get_plugins()), array( self::class, 'associate_plugin_file' ), array());
             $plugin_slug = $plugin_to_install['repo-slug'];
             $plugin_file = isset($plugin_to_install['file']) ? $plugin_to_install['file'] : $plugin_slug . '.php';
             $installed = false;
@@ -427,8 +427,8 @@ class OnboardingService
 
             wp_clean_plugins_cache();
 
-            // Activate this thing.
-            if ($activate) {
+            // Activate this thing. Installing does not imply the right to activate (same as WP core).
+            if ($activate && current_user_can('activate_plugins')) {
                 $result = activate_plugin($installed ? $installed_plugins[$plugin_file] : $plugin_slug . '/' . $plugin_file);
 
                 if (is_wp_error($result)) {

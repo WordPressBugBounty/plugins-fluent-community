@@ -13,7 +13,7 @@ use FluentCommunity\App\Services\Insights\Scope;
  */
 class ContentMetrics
 {
-    const KINDS = ['posts', 'comments', 'reactions'];
+    const KINDS = [ 'posts', 'comments', 'reactions' ];
 
     /**
      * @param string $kind posts|comments|reactions

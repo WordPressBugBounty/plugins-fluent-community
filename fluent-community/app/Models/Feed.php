@@ -5,6 +5,7 @@ namespace FluentCommunity\App\Models;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\Libs\EmailComposer;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunityPro\App\Models\Follow;
 
@@ -115,7 +116,7 @@ class Feed extends Model
      * this list, or a feed URL can answer with a lesson or a page that happens to
      * share the slug. Add a new feed shape here when one is introduced.
      */
-    public static $feedViewTypes = ['text', 'image', 'article'];
+    public static $feedViewTypes = [ 'text', 'image', 'article' ];
 
     public static function boot()
     {
@@ -177,7 +178,7 @@ class Feed extends Model
 
         $count = 1;
         while (self::where('slug', $slug)->exists()) {
-            if ($count == 5) {
+            if ((int) $count === 5) {
                 $count = time();
             }
             $slug = $title . '-' . $count;
@@ -235,7 +236,7 @@ class Feed extends Model
 
         $fields = $this->searchable;
         $query->where(function ($query) use ($fields, $search, $in, $commentSearch) {
-            if (in_array('post_content', $in)) {
+            if (in_array('post_content', $in, true)) {
                 $query->where(array_shift($fields), 'LIKE', "%$search%");
                 foreach ($fields as $field) {
                     $query->orWhere($field, 'LIKE', "%$search%");
@@ -246,10 +247,10 @@ class Feed extends Model
                         ->where('meta', 'LIKE', '%document_lists%title%' . $search . '%');
                 });
 
-                if ($in && in_array('post_comments', $in)) {
+                if ($in && in_array('post_comments', $in, true)) {
                     $query->orWhereHas('comments', $commentSearch);
                 }
-            } elseif ($in && in_array('post_comments', $in)) {
+            } elseif ($in && in_array('post_comments', $in, true)) {
                 $query->whereHas('comments', $commentSearch);
             }
         });
@@ -279,6 +280,17 @@ class Feed extends Model
                 ->orWhereHas('space', function ($q) {
                     $q->where('privacy', 'public');
                 });
+        });
+    }
+
+    /**
+     * Only posts whose author has an active profile. Blocked, pending and
+     * deactivated members' posts stay hidden.
+     */
+    public function scopeByActiveAuthor($query)
+    {
+        return $query->whereHas('xprofile', function ($q) {
+            $q->where('status', 'active');
         });
     }
 
@@ -354,34 +366,38 @@ class Feed extends Model
     {
         $acceptedTypes = array_keys(Helper::getPostOrderOptions());
 
-        if (!in_array($type, $acceptedTypes) || $type == 'latest') {
+        if (!in_array($type, $acceptedTypes, true) || $type === 'latest') {
             return $query->orderBy('created_at', 'DESC');
         }
 
-        if ($type == 'new_activity') {
+        if ($type === 'new_activity') {
             return $query->orderBy('updated_at', 'DESC');
         }
 
-        if ($type == 'oldest') {
+        if ($type === 'oldest') {
             return $query->orderBy('created_at', 'ASC');
         }
 
-        if ($type == 'likes') {
+        if ($type === 'likes') {
             return $query->orderBy('reactions_count', 'DESC');
         }
 
-        if ($type == 'unanswered') {
+        if ($type === 'unanswered') {
             return $query->where('comments_count', 0)
                 ->orderBy('created_at', 'DESC');
         }
 
-        if ($type == 'alphabetical') {
+        if ($type === 'alphabetical') {
             return $query->orderBy('slug', 'ASC');
         }
 
-        if ($type == 'popular') {
-            // sort by comments_count + reactions_count desc
-            return $query->orderByRaw('(reactions_count + (comments_count * 2)) DESC');
+        if ($type === 'popular') {
+            // Hot score: engagement decays with age (gravity 1.5, about half after 2 days).
+            // "Now" comes from PHP because created_at is site-local time and MySQL NOW() may not be.
+            return $query->orderByRaw(
+                '(reactions_count + (comments_count * 2) + 1) / POW(GREATEST(TIMESTAMPDIFF(HOUR, created_at, ?), 0) + 2, 1.5) DESC',
+                [ current_time('mysql') ]
+            )->orderBy('id', 'DESC');
         }
 
         $query = apply_filters('fluent_community/custom_order_by', $query, $type);
@@ -471,27 +487,31 @@ class Feed extends Model
             },
             'comments'  => function ($q) use ($currentUserModel, $space) {
                 $q->byContentModerationAccessStatus($currentUserModel, $space)
-                    ->with(['xprofile' => function ($q) {
+                    ->with([
+                'xprofile' => function ($q) {
                         $q->select(ProfileHelper::getXProfilePublicFields());
-                    }])
+                },
+                ])
                     ->whereHas('xprofile', function ($q) {
                         $q->where('status', 'active');
                     });
             },
             'space'     => function ($q) {
-                $q->select(['id', 'title', 'slug', 'type', 'settings']);
+                $q->select([ 'id', 'title', 'slug', 'type', 'settings' ]);
             },
             'reactions' => function ($q) {
-                $q->with(['xprofile' => function ($query) {
-                    $query->select(['user_id', 'avatar', 'display_name']);
-                }])
+                $q->with([
+                'xprofile' => function ($query) {
+                    $query->select([ 'user_id', 'avatar', 'display_name' ]);
+                },
+                ])
                     ->where('type', 'like')
                     ->limit(3);
             },
             'terms'     => function ($q) {
-                $q->select(['title', 'slug'])
+                $q->select([ 'title', 'slug' ])
                     ->where('taxonomy_name', 'post_topic');
-            }
+            },
         ];
     }
 
@@ -532,7 +552,7 @@ class Feed extends Model
             return false;
         }
 
-        if ($this->user_id == $userId) {
+        if ((int) $this->user_id === (int) $userId) {
             return true;
         }
 
@@ -547,6 +567,15 @@ class Feed extends Model
         }
 
         return $userModel->hasCommunityPermission('edit_any_feed');
+    }
+
+    /**
+     * Published and unlisted posts are viewable by anyone with space access; other
+     * statuses (pending, draft, scheduled) only by the author and moderators.
+     */
+    public function isViewableBy($userId)
+    {
+        return in_array($this->status, FeedsHelper::getViewableByLinkStatuses(), true) || $this->hasEditAccess($userId);
     }
 
     public function getHumanExcerpt($length = 40)
@@ -604,7 +633,7 @@ class Feed extends Model
 
     public function getSurveyCastsByUserId($userId = null)
     {
-        if (!$userId || $this->content_type != 'survey') {
+        if (!$userId || $this->content_type !== 'survey') {
             return [];
         }
 
@@ -665,7 +694,7 @@ class Feed extends Model
         }, $spaceTopics);
 
         $validTopicIds = array_filter($topicIds, function ($topicId) use ($spaceTopicIds) {
-            return in_array($topicId, $spaceTopicIds);
+            return in_array((int) $topicId, array_map('intval', $spaceTopicIds), true);
         });
 
         if ($sync) {
@@ -679,7 +708,7 @@ class Feed extends Model
 
     public function getJsRoute()
     {
-        if ($this->type == 'course_lesson') {
+        if ($this->type === 'course_lesson') {
             return [
                 'name'   => 'view_lesson',
                 'params' => [
@@ -731,10 +760,10 @@ class Feed extends Model
 
     public function getFeedHtml($withPlaceholder = false, $buttonText = null)
     {
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+        $emailComposer = new EmailComposer();
 
         if ($withPlaceholder) {
-            $postPermalink = '##feed_permalink##';
+            $postPermalink = EmailComposer::slot('feed_permalink');
         } else {
             $postPermalink = $this->getPermalink();
         }

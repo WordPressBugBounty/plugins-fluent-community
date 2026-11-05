@@ -110,7 +110,7 @@ class MemberMetrics
             $buckets[$row['k']] = (int)$row['n'];
         }
 
-        return ['buckets' => $buckets, 'total' => $total];
+        return [ 'buckets' => $buckets, 'total' => $total ];
     }
 
     /**

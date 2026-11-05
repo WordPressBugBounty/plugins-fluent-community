@@ -86,7 +86,7 @@ class DailyDigest
             $emailComposer->addBlock('html_content', $notificationsHtml);
             if ($this->displayCount < count($this->unreadNotifications)) {
                 $emailComposer->addBlock('button', __('View all the notifications', 'fluent-community'), [
-                    'link' => ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications/'), $this->user->ID)
+                    'link' => ProfileHelper::signUserUrlWithAuthHash(Helper::baseUrl('notifications/'), $this->user->ID),
                 ]);
             }
         }
@@ -98,14 +98,14 @@ class DailyDigest
         $emailBody = $emailComposer->getHtml();
 
         $emailBody = str_replace([
-            '##email_notification_url##'
+            '##email_notification_url##',
         ], [
-            ProfileHelper::getSignedNotificationPrefUrl($this->user->ID)
+            ProfileHelper::getSignedNotificationPrefUrl($this->user->ID),
         ], $emailBody);
 
         $hooksSections = apply_filters('fluent_community/digest_notification/email_sections', [
             'before_content' => '',
-            'after_content'  => ''
+            'after_content'  => '',
         ], $this->user);
 
         if(!empty($hooksSections['before_content'])) {
@@ -163,7 +163,7 @@ class DailyDigest
                 });
         })
             ->limit(10)
-            ->with(['subscriber', 'xprofile'])
+            ->with([ 'subscriber', 'xprofile' ])
             ->orderBy('updated_at', 'DESC')
             ->get();
 
@@ -192,11 +192,11 @@ class DailyDigest
             foreach ($notifications as $index => $notification):
                 $permalink = Helper::getUrlByJsRoute($notification->route);
                 // Only post and comment notifications link to a post
-                if ($notification->feed_id && in_array($notification->src_object_type, ['feed', 'comment'], true)) {
+                if ($notification->feed_id && in_array($notification->src_object_type, [ 'feed', 'comment' ], true)) {
                     $permalink = Helper::addNotificationReadMarker($permalink, $notification->feed_id);
                 }
                 $permalink = ProfileHelper::signUserUrlWithAuthHash($permalink, $this->user->ID);
-                $isLast = $totalCount == ($index + 1);
+                $isLast = (int) $totalCount === ($index + 1);
                 ?>
                 <tr>
                     <td valign="top">
@@ -235,12 +235,12 @@ class DailyDigest
     {
         $trendingPosts = Feed::byUserAccess($this->user->ID)
             ->where('status', 'published')
-            ->with(['xprofile' => function ($q) {
+            ->with([
+        'xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }, 'space'])
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })
+        }, 'space',
+        ])
+            ->byActiveAuthor()
             ->where('created_at', '>=', gmdate('Y-m-d H:i:s', strtotime('-' . $days . ' days')))
             ->orderByRaw('(reactions_count + (comments_count * 2)) DESC')
             ->limit($count)
@@ -270,7 +270,7 @@ class DailyDigest
                 'hide_publish'   => 'yes',
                 'show_read_more' => 'yes',
                 'linkColor'      => Utility::getThemeColor(),
-                'timestamp'      => human_time_diff(strtotime($post->created_at), current_time('timestamp'))
+                'timestamp'      => human_time_diff(strtotime($post->created_at), current_time('timestamp')),
             ]);
 
             $html .= $blockEnd;

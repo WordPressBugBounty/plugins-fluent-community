@@ -10,17 +10,17 @@ class CustomSanitizer
 {
     public static function sanitizeMenuLink($item)
     {
-        $validKeys = ['title', 'enabled', 'permalink', 'new_tab', 'link_classes', 'shape_svg', 'emoji', 'icon_image', 'is_custom', 'is_system', 'is_locked', 'is_unavailable', 'slug', 'privacy', 'membership_ids'];
+        $validKeys = [ 'title', 'enabled', 'permalink', 'new_tab', 'link_classes', 'shape_svg', 'emoji', 'icon_image', 'is_custom', 'is_system', 'is_locked', 'is_unavailable', 'slug', 'privacy', 'membership_ids' ];
         $item = array_filter(Arr::only($item, $validKeys));
 
-        $yesNoItems = ['enabled', 'is_custom', 'is_system', 'is_locked', 'is_unavailable'];
+        $yesNoItems = [ 'enabled', 'is_custom', 'is_system', 'is_locked', 'is_unavailable' ];
         foreach ($yesNoItems as $key) {
             if (isset($item[$key])) {
                 $item[$key] = $item[$key] === 'yes' ? 'yes' : 'no';
             }
         }
 
-        $textTypes = ['title', 'new_tab', 'link_classes', 'slug', 'privacy'];
+        $textTypes = [ 'title', 'new_tab', 'link_classes', 'slug', 'privacy' ];
         foreach ($textTypes as $key) {
             if (isset($item[$key])) {
                 $item[$key] = sanitize_text_field($item[$key]);
@@ -44,14 +44,14 @@ class CustomSanitizer
                 $media->update([
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
-                    'object_source' => 'general'
+                    'object_source' => 'general',
                 ]);
             } else {
                 $item['icon_image'] = sanitize_url($item['icon_image']);
             }
         }
 
-        if (Arr::get($item, 'privacy') == 'members_only') {
+        if (Arr::get($item, 'privacy') === 'members_only') {
             $item['membership_ids'] = array_map('sanitize_text_field', (array)Arr::get($item, 'membership_ids', []));
         }
 
@@ -81,24 +81,24 @@ class CustomSanitizer
         $svg_content = preg_replace('/on\w+="[^"]*"/i', '', $svg_content);
 
         $allowed_tags = [
-            'svg'            => ['width' => true, 'height' => true, 'viewBox' => true, 'version' => true, 'xmlns' => true, 'xmlns:xlink' => true, 'xml:space' => true, 'preserveAspectRatio' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'color' => true],
-            'g'              => ['fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'clip-path' => true, 'transform' => true],
-            'path'           => ['d' => true, 'opacity' => true, 'stroke-linecap' => true, 'fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'rect'           => ['width' => true, 'height' => true, 'x' => true, 'y' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'circle'         => ['cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'ellipse'        => ['cx' => true, 'cy' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'line'           => ['x1' => true, 'x2' => true, 'y1' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'polyline'       => ['points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'polygon'        => ['points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true],
-            'text'           => ['x' => true, 'y' => true, 'font-size' => true, 'font-family' => true, 'text-anchor' => true, 'fill' => true, 'transform' => true],
-            'tspan'          => ['x' => true, 'y' => true, 'font-size' => true, 'font-family' => true, 'text-anchor' => true, 'fill' => true],
+            'svg'            => [ 'width' => true, 'height' => true, 'viewBox' => true, 'version' => true, 'xmlns' => true, 'xmlns:xlink' => true, 'xml:space' => true, 'preserveAspectRatio' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'color' => true ],
+            'g'              => [ 'fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'clip-path' => true, 'transform' => true ],
+            'path'           => [ 'd' => true, 'opacity' => true, 'stroke-linecap' => true, 'fill' => true, 'fill-rule' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'rect'           => [ 'width' => true, 'height' => true, 'x' => true, 'y' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'circle'         => [ 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'ellipse'        => [ 'cx' => true, 'cy' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'line'           => [ 'x1' => true, 'x2' => true, 'y1' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'polyline'       => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'polygon'        => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'transform' => true ],
+            'text'           => [ 'x' => true, 'y' => true, 'font-size' => true, 'font-family' => true, 'text-anchor' => true, 'fill' => true, 'transform' => true ],
+            'tspan'          => [ 'x' => true, 'y' => true, 'font-size' => true, 'font-family' => true, 'text-anchor' => true, 'fill' => true ],
             'defs'           => [],
-            'clipPath'       => ['id' => true, 'clipPathUnits' => true],
-            'stop'           => ['offset' => true, 'stop-color' => true, 'stop-opacity' => true],
-            'linearGradient' => ['id' => true, 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'gradientUnits' => true, 'gradientTransform' => true],
-            'radialGradient' => ['id' => true, 'cx' => true, 'cy' => true, 'r' => true, 'fx' => true, 'fy' => true, 'gradientUnits' => true, 'gradientTransform' => true],
-            'mask'           => ['id' => true, 'maskUnits' => true, 'maskContentUnits' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true],
-            'use'            => ['x' => true, 'y' => true, 'width' => true, 'height' => true],
+            'clipPath'       => [ 'id' => true, 'clipPathUnits' => true ],
+            'stop'           => [ 'offset' => true, 'stop-color' => true, 'stop-opacity' => true ],
+            'linearGradient' => [ 'id' => true, 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'gradientUnits' => true, 'gradientTransform' => true ],
+            'radialGradient' => [ 'id' => true, 'cx' => true, 'cy' => true, 'r' => true, 'fx' => true, 'fy' => true, 'gradientUnits' => true, 'gradientTransform' => true ],
+            'mask'           => [ 'id' => true, 'maskUnits' => true, 'maskContentUnits' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true ],
+            'use'            => [ 'x' => true, 'y' => true, 'width' => true, 'height' => true ],
             'title'          => [],
             'desc'           => [],
         ];
@@ -121,8 +121,15 @@ class CustomSanitizer
         $loaded = $dom->loadXML($svg_content);
         libxml_clear_errors();
 
-        if (!$loaded || !$dom->documentElement) {
+        if (!$loaded || !$dom->documentElement || $dom->documentElement->nodeName !== 'svg') {
             return '';
+        }
+
+        // saveXML() writes namespace URIs without escaping them, and sanitizeNode() cannot reach them.
+        foreach ((new \DOMXPath($dom))->query('//namespace::*') as $namespace) {
+            if (preg_match('/[<>"\'&]/', (string)$namespace->nodeValue)) {
+                return '';
+            }
         }
 
         // Sanitize by removing unwanted tags and attributes
@@ -133,6 +140,12 @@ class CustomSanitizer
 
     private static function sanitizeNode(\DOMNode $node, array $allowed_tags)
     {
+        // Only elements and plain text are safe: the HTML parser reads other XML nodes differently.
+        if (!in_array($node->nodeType, [ XML_ELEMENT_NODE, XML_TEXT_NODE ], true)) {
+            $node->parentNode->removeChild($node);
+            return;
+        }
+
         if ($node->nodeType === XML_ELEMENT_NODE) {
             /** @var \DOMElement $node */
             if (!isset($allowed_tags[$node->nodeName])) {
@@ -176,6 +189,11 @@ class CustomSanitizer
             $emoji = \mb_substr($emoji, 0, 4, 'UTF-8');
         }
 
+        // Reject markup rather than anchoring the regex below, which would break ZWJ and keycap sequences.
+        if (strpbrk($emoji, '<>"\'&') !== false) {
+            return '';
+        }
+
         $isEmoji = preg_match('/[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{1F1E0}-\x{1F1FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{2B50}\x{2B55}\x{2934}\x{2935}\x{3297}\x{3299}\x{20E3}\x{23E9}-\x{23FA}\x{25B6}\x{25C0}\x{FE0F}]/u', $emoji);
 
         if ($isEmoji) {
@@ -184,9 +202,9 @@ class CustomSanitizer
         return '';
     }
 
-    public static function sanitizeWelcomeBannerSettings($settings, $views = ['login', 'logout'])
+    public static function sanitizeWelcomeBannerSettings($settings, $views = [ 'login', 'logout' ])
     {
-        $views = array_intersect($views, ['login', 'logout', 'enrolled', 'not_enrolled']);
+        $views = array_intersect($views, [ 'login', 'logout', 'enrolled', 'not_enrolled' ]);
 
         $rules = [
             'title'       => 'sanitize_text_field',
@@ -218,7 +236,7 @@ class CustomSanitizer
             $sanitizedSettings[$type]['description'] = $description;
 
             foreach ($typeSettings as $key => $value) {
-                if (isset($rules[$key]) && !in_array($key, ['bannerVideo', 'bannerImage', 'ctaButtons', 'description'])) {
+                if (isset($rules[$key]) && !in_array($key, [ 'bannerVideo', 'bannerImage', 'ctaButtons', 'description' ], true)) {
                     $sanitizedSettings[$type][$key] = call_user_func($rules[$key], $value);
                 }
             }
@@ -256,7 +274,7 @@ class CustomSanitizer
             $media->update([
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
-                'object_source' => 'general'
+                'object_source' => 'general',
             ]);
             return $media->public_url;
         }
@@ -273,10 +291,10 @@ class CustomSanitizer
         $sanitizerMap = [
             'label'  => 'sanitize_text_field',
             'link'   => function ($url) {
-                return esc_url_raw($url, ['http', 'https', 'mailto']);
+                return esc_url_raw($url, [ 'http', 'https', 'mailto' ]);
             },
             'type'   => 'sanitize_text_field',
-            'newTab' => 'sanitize_text_field'
+            'newTab' => 'sanitize_text_field',
         ];
 
         foreach ($ctaButtons as $btnKey => $btnValue) {
@@ -292,10 +310,10 @@ class CustomSanitizer
 
     public static function santizeLinkItem($item)
     {
-        $validKeys = ['title', 'enabled', 'new_tab', 'emoji', 'icon_image', 'shape_svg', 'title', 'permalink', 'slug', 'privacy', 'membership_ids'];
+        $validKeys = [ 'title', 'enabled', 'new_tab', 'emoji', 'icon_image', 'shape_svg', 'title', 'permalink', 'slug', 'privacy', 'membership_ids' ];
         $item = array_filter(Arr::only($item, $validKeys));
 
-        $yesNoItems = ['enabled', 'new_tab', 'is_locked', 'is_unavailable'];
+        $yesNoItems = [ 'enabled', 'new_tab', 'is_locked', 'is_unavailable' ];
         foreach ($yesNoItems as $key) {
             if (isset($item[$key])) {
                 $item[$key] = $item[$key] === 'yes' ? 'yes' : 'no';
@@ -310,7 +328,7 @@ class CustomSanitizer
             $item['slug'] = sanitize_title($item['slug']);
         }
 
-        $textTypes = ['title'];
+        $textTypes = [ 'title' ];
         foreach ($textTypes as $key) {
             if (isset($item[$key])) {
                 $item[$key] = sanitize_text_field($item[$key]);
@@ -325,11 +343,11 @@ class CustomSanitizer
                 $media->update([
                     'is_active'     => true,
                     'user_id'       => get_current_user_id(),
-                    'object_source' => 'general'
+                    'object_source' => 'general',
                 ]);
                 $item['icon_image'] = $media->public_url;
             } else {
-                $item['icon_image'] = sanitize_text_field($item['icon_image']);
+                $item['icon_image'] = sanitize_url($item['icon_image']);
             }
         }
 
@@ -341,7 +359,7 @@ class CustomSanitizer
             $item['shape_svg'] = self::sanitizeSvg($item['shape_svg']);
         }
 
-        if (Arr::get($item, 'privacy') == 'members_only') {
+        if (Arr::get($item, 'privacy') === 'members_only') {
             $item['membership_ids'] = array_map('sanitize_text_field', (array)Arr::get($item, 'membership_ids', []));
         }
 
@@ -398,7 +416,7 @@ class CustomSanitizer
         if ($isCustom) {
             // Force the prefix so a custom row's slug can never hijack a real tab's slug.
             if (strpos($slug, 'fcom_custom_') !== 0) {
-                $slug = 'fcom_custom_' . ($slug ?: substr(md5(wp_generate_password(12, false)), 0, 10));
+                $slug = 'fcom_custom_' . ($slug ? $slug : substr(md5(wp_generate_password(12, false)), 0, 10));
             }
         } elseif (!$slug) {
             return null;
@@ -443,7 +461,7 @@ class CustomSanitizer
 
         $privacy = Arr::get($item, 'privacy');
 
-        if (!in_array($privacy, ['public', 'logged_in', 'logged_out_only', 'members_only'], true)) {
+        if (!in_array($privacy, [ 'public', 'logged_in', 'logged_out_only', 'members_only' ], true)) {
             $privacy = 'public';
         }
 
@@ -550,9 +568,9 @@ class CustomSanitizer
         $prevSettings = Utility::getEmailNotificationSettings();
         $settings = Arr::only($settings, array_keys($prevSettings));
 
-        $yesNoFields = ['com_my_post_mail', 'reply_my_com_mail', 'mention_mail', 'digest_email_status', 'disable_powered_by'];
-        $textFields = ['send_from_name', 'reply_to_name'];
-        $emailFields = ['send_from_email', 'reply_to_email'];
+        $yesNoFields = [ 'com_my_post_mail', 'reply_my_com_mail', 'mention_mail', 'digest_email_status', 'disable_powered_by' ];
+        $textFields = [ 'send_from_name', 'reply_to_name' ];
+        $emailFields = [ 'send_from_email', 'reply_to_email' ];
 
         foreach ($yesNoFields as $field) {
             if (isset($settings[$field])) {
@@ -589,7 +607,7 @@ class CustomSanitizer
 
         if ($emailDay) {
             $emailDay = sanitize_text_field($emailDay);
-            if (!in_array($emailDay, ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'])) {
+            if (!in_array($emailDay, [ 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat' ], true)) {
                 $emailDay = 'tue';
             }
         } else {
@@ -631,7 +649,7 @@ class CustomSanitizer
             '\\*'  => '*',
             '\\~'  => '~',
             '\\:'  => ':',
-            '\\.'  => '.'
+            '\\.'  => '.',
         ];
 
         return str_replace(array_keys($replaceMaps), array_values($replaceMaps), $markdown);
@@ -649,10 +667,15 @@ class CustomSanitizer
             'document_library',
             'media_gallery',
             'disable_post_sort_by',
-            'disable_layout_style'
+            'disable_layout_style',
+            'topic_required',
         ];
 
         $settings = Arr::only($settings, array_keys((new Space())->defaultSettings()));
+
+        // Links and the space menu have their own sanitized endpoints.
+        unset($settings['links'], $settings[SpaceMenuService::SETTINGS_KEY]);
+        $settings['og_image'] = sanitize_url(Arr::get($settings, 'og_image', ''));
 
         foreach ($yesNotFields as $field) {
             $settings[$field] = Arr::get($settings, $field) === 'yes' ? 'yes' : 'no';
@@ -666,7 +689,7 @@ class CustomSanitizer
         }
 
         $lockScreenType = Arr::get($settings, 'custom_lock_screen');
-        if (!in_array($lockScreenType, ['yes', 'no', 'redirect']) || $privacy !== 'private') {
+        if (!in_array($lockScreenType, [ 'yes', 'no', 'redirect' ], true) || $privacy !== 'private') {
             $lockScreenType = 'no';
         }
         $settings['custom_lock_screen'] = $lockScreenType;
@@ -682,22 +705,28 @@ class CustomSanitizer
 
         $validOrderOptions = array_keys(Helper::getPostOrderOptions());
         $defaultOrder = Arr::get($settings, 'default_post_sort_by', '');
-        $settings['default_post_sort_by'] = in_array($defaultOrder, $validOrderOptions) ? $defaultOrder : '';
+        $settings['default_post_sort_by'] = in_array($defaultOrder, $validOrderOptions, true) ? $defaultOrder : '';
 
         $validCommentOrderOptions = array_keys(Helper::getCommentOrderOptions());
         $defaultCommentOrder = Arr::get($settings, 'default_comment_sort_by', '');
-        $settings['default_comment_sort_by'] = in_array($defaultCommentOrder, $validCommentOrderOptions) ? $defaultCommentOrder : '';
+        $settings['default_comment_sort_by'] = in_array($defaultCommentOrder, $validCommentOrderOptions, true) ? $defaultCommentOrder : '';
 
-        $accessOptions = ['members_only', 'logged_in', 'everybody'];
+        $accessOptions = [ 'members_only', 'logged_in', 'everybody' ];
         $mediaAccess = Arr::get($settings, 'media_access');
         $settings['media_access'] = in_array($mediaAccess, $accessOptions, true) ? $mediaAccess : 'members_only';
 
         $documentAccess = Arr::get($settings, 'document_access');
         $settings['document_access'] = in_array($documentAccess, $accessOptions, true) ? $documentAccess : 'members_only';
 
-        $documentUploadOptions = ['admin_only', 'members_only'];
+        $documentUploadOptions = [ 'admin_only', 'members_only' ];
         $documentUpload = Arr::get($settings, 'document_upload');
         $settings['document_upload'] = in_array($documentUpload, $documentUploadOptions, true) ? $documentUpload : 'admin_only';
+
+        $layoutStyle = Arr::get($settings, 'layout_style');
+        $settings['layout_style'] = in_array($layoutStyle, [ 'timeline', 'list', 'card' ], true) ? $layoutStyle : 'timeline';
+
+        $membersPageStatus = Arr::get($settings, 'members_page_status');
+        $settings['members_page_status'] = in_array($membersPageStatus, [ 'members_only', 'admin_only', 'logged_in', 'everybody' ], true) ? $membersPageStatus : 'members_only';
 
         return $settings;
     }

@@ -16,7 +16,7 @@ class CartCheckout
             return $paths;
         });
 
-        add_action('fluent_community/rendering_path_ssr_checkout', [$this, 'renderNativeCheckout'], 10);
+        add_action('fluent_community/rendering_path_ssr_checkout', [ $this, 'renderNativeCheckout' ], 10);
 
         add_action('fluent_cart/checkout/prepare_other_data', function ($event) {
             $order = Arr::get($event, 'order');

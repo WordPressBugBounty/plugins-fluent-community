@@ -36,7 +36,7 @@ class CardCache
             }
 
             if ($found && is_array($value)) {
-                return [$value, true];
+                return [ $value, true ];
             }
         }
 
@@ -47,6 +47,6 @@ class CardCache
             set_transient($cacheKey, $value, $ttl);
         }
 
-        return [$value, false];
+        return [ $value, false ];
     }
 }

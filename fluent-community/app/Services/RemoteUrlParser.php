@@ -88,7 +88,7 @@ class RemoteUrlParser
         }
 
         $maxRes = 'https://i.ytimg.com/vi_webp/' . $videoId . '/maxresdefault.webp';
-        $response = wp_remote_head($maxRes, ['timeout' => 1.5, 'redirection' => 0]);
+        $response = wp_remote_head($maxRes, [ 'timeout' => 1.5, 'redirection' => 0 ]);
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             set_transient($cacheKey, $maxRes, WEEK_IN_SECONDS);
             return $maxRes;
@@ -100,7 +100,7 @@ class RemoteUrlParser
     public function getOembed($url)
     {
         $data = (new \WP_oEmbed())->get_data($url, [
-            'discover' => false
+            'discover' => false,
         ]);
 
         if (empty($data) || is_wp_error($data) || empty($data->provider_name)) {
@@ -113,7 +113,10 @@ class RemoteUrlParser
 
         $image = Arr::get($data, 'thumbnail_url');
         if ($provider === 'youtube') {
-            $image = self::bestYoutubeThumbnail(self::getYoutubeVideoId($url)) ?: $image;
+            $thumbnail = self::bestYoutubeThumbnail(self::getYoutubeVideoId($url));
+            if ($thumbnail) {
+                $image = $thumbnail;
+            }
         }
 
         return array_filter([
@@ -163,7 +166,7 @@ class RemoteUrlParser
         $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#is', '', $html);
         $html = preg_replace('#<(script|style)\b[^>]*/?>#i', '', $html);
 
-        return wp_kses($html, $allowed, ['https']);
+        return wp_kses($html, $allowed, [ 'https' ]);
     }
 
     public function getInfoFromRemoteUrl($url)
@@ -171,7 +174,7 @@ class RemoteUrlParser
         $url = untrailingslashit($url);
 
         if (empty($url)) {
-            return new \WP_Error('rest_invalid_url', __('Invalid URL', 'fluent-community'), array('status' => 404));
+            return new \WP_Error('rest_invalid_url', __('Invalid URL', 'fluent-community'), array( 'status' => 404 ));
         }
 
         $cacheKey = 'fcom_url_details_meta_' . md5($url);
@@ -196,7 +199,7 @@ class RemoteUrlParser
 
         $title = $this->getTitle($html_head);
         if (!$title) {
-            return new \WP_Error('rest_invalid_url', __('Invalid URL', 'fluent-community'), array('status' => 404));
+            return new \WP_Error('rest_invalid_url', __('Invalid URL', 'fluent-community'), array( 'status' => 404 ));
         }
 
         $meta_elements = $this->getMetaWithContentElements($html_head);
@@ -207,7 +210,7 @@ class RemoteUrlParser
             'description' => $this->getDescription($meta_elements),
             'icon'        => $this->getIcon($html_head, $url),
             'type'        => 'meta_data',
-            'url'         => $url
+            'url'         => $url,
         ]);
 
         wp_cache_set($cacheKey, $data, 'fluent-community', apply_filters('rest_url_details_cache_expiration', HOUR_IN_SECONDS)); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -243,7 +246,7 @@ class RemoteUrlParser
             return new \WP_Error(
                 'no_response',
                 __('URL not found. Response returned a non-200 status code for this URL.', 'fluent-community'),
-                array('status' => \WP_Http::NOT_FOUND)
+                array( 'status' => \WP_Http::NOT_FOUND )
             );
         }
 
@@ -253,7 +256,7 @@ class RemoteUrlParser
             return new \WP_Error(
                 'no_content',
                 __('Unable to retrieve body from response at this URL.', 'fluent-community'),
-                array('status' => \WP_Http::NOT_FOUND)
+                array( 'status' => \WP_Http::NOT_FOUND )
             );
         }
 

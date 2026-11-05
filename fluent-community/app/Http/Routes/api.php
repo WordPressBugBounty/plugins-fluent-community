@@ -133,6 +133,10 @@ $router->prefix('admin')->withPolicy('SuperAdminPolicy')->group(function ($route
     $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
 });
 
+$router->prefix('search')->withPolicy('PortalPolicy')->group(function ($router) {
+    $router->get('/', 'SearchController@search');
+});
+
 $router->prefix('members')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->get('/', 'MembersController@getMembers');
     $router->patch('/{user_id}', 'MembersController@patchMember')->int('user_id');

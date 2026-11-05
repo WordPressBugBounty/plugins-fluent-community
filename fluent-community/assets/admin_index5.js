@@ -1,35 +1,33 @@
-import{j as D,v as c,n as F,m as v,x as I,i as P,c as N,B as R}from"./admin_todoList.js?ver=2.12.0";import{aC as V,b7 as H,b8 as M}from"./admin_app.js?ver=2.12.0";import{a as A,b as K}from"./admin_index.es2.js?ver=2.12.0";var W=Object.defineProperty,U=Object.getOwnPropertySymbols,q=Object.prototype.hasOwnProperty,z=Object.prototype.propertyIsEnumerable,C=(t,e,l)=>e in t?W(t,e,{enumerable:!0,configurable:!0,writable:!0,value:l}):t[e]=l,G=(t,e)=>{for(var l in e||(e={}))q.call(e,l)&&C(t,l,e[l]);if(U)for(var l of U(e))z.call(e,l)&&C(t,l,e[l]);return t};function _(t,e){return Object.assign(t,{meta:G({package:"@milkdown/components"},e)}),t}const J={imageIcon:()=>"🌌",uploadButton:()=>c`Upload`,confirmButton:()=>c`⏎`,uploadPlaceholderText:"/Paste",onUpload:t=>Promise.resolve(URL.createObjectURL(t))},h=V(J,"inlineImageConfigCtx");_(h,{displayName:"Config<image-inline>",group:"ImageInline"});function Q(t,e){const l=customElements.get(t);if(l==null){customElements.define(t,e);return}l!==e&&console.warn(`Custom element ${t} has been defined before.`)}var X=(t,e,l)=>new Promise((u,a)=>{var o=s=>{try{n(l.next(s))}catch(d){a(d)}},i=s=>{try{n(l.throw(s))}catch(d){a(d)}},n=s=>s.done?u(s.value):Promise.resolve(s.value).then(o,i);n((l=l.apply(t,e)).next())});const w=({src:t="",selected:e=!1,alt:l,title:u,setAttr:a,config:o})=>{const i=F(),[n]=v(crypto.randomUUID()),[s,d]=v(!1),[x,k]=v(t.length!==0),[y,O]=v(t),E=r=>{const m=r.target.value;k(m.length!==0),O(m)},L=r=>X(void 0,null,function*(){var p;const m=(p=r.target.files)==null?void 0:p[0];if(!m)return;const b=yield o==null?void 0:o.onUpload(m);b&&(a==null||a("src",b),k(!0))}),$=()=>{var r,p;a==null||a("src",(p=(r=i.current)==null?void 0:r.value)!=null?p:"")},T=r=>{r.key==="Enter"&&$()},j=r=>{r.preventDefault(),r.stopPropagation()},S=r=>{r.stopPropagation(),r.preventDefault()};return c`<host class=${I(e&&"selected",!t&&"empty")}>
-    ${t?c`<img class="image-inline" src=${t} alt=${l} title=${u} />`:c`<div class="empty-image-inline">
-        <div class="image-icon">
-          ${o==null?void 0:o.imageIcon()}
-        </div>
-        <div class=${I("link-importer",s&&"focus")}>
-          <input
-            draggable="true"
-            ref=${i}
-            ondragstart=${j}
-            class="link-input-area"
-            value=${y}
-            oninput=${E}
-            onkeydown=${T}
-            onfocus=${()=>d(!0)}
-            onblur=${()=>d(!1)}
-          />
-          <div class=${I("placeholder",x&&"hidden")}>
-            <input class="hidden" id=${n} type="file" accept="image/*" onchange=${L} />
-            <label onpointerdown=${S} class="uploader" for=${n}>
-              ${o==null?void 0:o.uploadButton()}
-            </label>
-            <span class="text" onclick=${()=>{var r;return(r=i.current)==null?void 0:r.focus()}}>
-              ${o==null?void 0:o.uploadPlaceholderText}
-            </span>
-          </div>
-        </div>
-        <div
-          class=${I("confirm",y.length===0&&"hidden")}
-          onclick=${()=>$()}
-        >
-          ${o==null?void 0:o.confirmButton()}
-        </div>
-      </div>`}
-  </host>`};w.props={src:String,alt:String,title:String,selected:Boolean,setAttr:Function,config:Object};const Y=D(w);Q("milkdown-image-inline",Y);const B=H(M.node,t=>(e,l,u)=>{const a=document.createElement("milkdown-image-inline"),o=t.get(h.key),i=n=>{a.src=n.attrs.src,a.alt=n.attrs.alt,a.title=n.attrs.title};return i(e),a.selected=!1,a.setAttr=(n,s)=>{const d=u();d!=null&&l.dispatch(l.state.tr.setNodeAttribute(d,n,s))},a.config=o,{dom:a,update:n=>n.type!==e.type?!1:(i(n),!0),stopEvent:n=>!!(a.selected&&n.target instanceof HTMLInputElement),selectNode:()=>{a.selected=!0},deselectNode:()=>{a.selected=!1},destroy:()=>{a.remove()}}});_(B,{displayName:"NodeView<image-inline>",group:"ImageInline"});const Z=[h,B],te=(t,e)=>{t.config(l=>{l.update(h.key,u=>({uploadButton:(e==null?void 0:e.inlineUploadButton)??(()=>"Upload"),imageIcon:(e==null?void 0:e.inlineImageIcon)??(()=>P),confirmButton:(e==null?void 0:e.inlineConfirmButton)??(()=>N),uploadPlaceholderText:(e==null?void 0:e.inlineUploadPlaceholderText)??"or paste link",onUpload:(e==null?void 0:e.inlineOnUpload)??(e==null?void 0:e.onUpload)??u.onUpload})),l.update(A.key,u=>({uploadButton:(e==null?void 0:e.blockUploadButton)??(()=>"Upload file"),imageIcon:(e==null?void 0:e.blockImageIcon)??(()=>P),captionIcon:(e==null?void 0:e.blockCaptionIcon)??(()=>R),confirmButton:(e==null?void 0:e.blockConfirmButton)??(()=>"Confirm"),captionPlaceholderText:(e==null?void 0:e.blockCaptionPlaceholderText)??"Write Image Caption",uploadPlaceholderText:(e==null?void 0:e.blockUploadPlaceholderText)??"or paste link",onUpload:(e==null?void 0:e.blockOnUpload)??(e==null?void 0:e.onUpload)??u.onUpload}))}).use(K).use(Z)};export{te as defineFeature};
+var E=(e,s,a)=>{if(!s.has(e))throw TypeError("Cannot "+a)};var l=(e,s,a)=>(E(e,s,"read from private field"),a?a.call(e):s.get(e)),I=(e,s,a)=>{if(s.has(e))throw TypeError("Cannot add the same private member more than once");s instanceof WeakSet?s.add(e):s.set(e,a)},T=(e,s,a,t)=>(E(e,s,"write to private field"),t?t.call(e,a):s.set(e,a),a);import{d as H}from"./admin_index4.js?ver=2.13.0";import{a as N,j as P,d as S,h as q,f as p,k as z,m as D,s as G,n as M,l as U}from"./admin_todoList.js?ver=2.13.0";import{$ as V,R as _,T as J,x as K,n as B,L as R,o as v,p as Q,t as W,z as X,q as Y,r as j}from"./admin_app.js?ver=2.13.0";import{b as A,G as Z,A as x}from"./admin_index.es.js?ver=2.13.0";import"./admin_runtime_vue.js?ver=2.13.0";import"./admin_index.js?ver=2.13.0";import"./admin_floating-ui.dom.js?ver=2.13.0";const F=({ctx:e,hide:s,show:a,config:t})=>{var h,b,y,k,w;const c=P();S(()=>{c()},[a]);const n=o=>m=>{m.preventDefault(),e&&o(e),c()},i=o=>{if(!e)return!1;const m=e.get(R),{state:{doc:u,selection:$}}=m;return u.rangeHasMark($.from,$.to,o)};return q`<host>
+    <button
+      class=${p("toolbar-item",e&&i(V.type(e))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(Q.key)})}
+    >
+      ${((h=t==null?void 0:t.boldIcon)==null?void 0:h.call(t))??z}
+    </button>
+    <button
+      class=${p("toolbar-item",e&&i(_.type(e))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(W.key)})}
+    >
+      ${((b=t==null?void 0:t.italicIcon)==null?void 0:b.call(t))??D}
+    </button>
+    <button
+      class=${p("toolbar-item",e&&i(J.type(e))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(X.key)})}
+    >
+      ${((y=t==null?void 0:t.strikethroughIcon)==null?void 0:y.call(t))??G}
+    </button>
+    <div class="divider"></div>
+    <button
+      class=${p("toolbar-item",e&&i(K.type(e))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(Y.key)})}
+    >
+      ${((k=t==null?void 0:t.codeIcon)==null?void 0:k.call(t))??M}
+    </button>
+    <button
+      class=${p("toolbar-item",e&&i(B.type(e))&&"active")}
+      onmousedown=${n(o=>{const m=o.get(R),{selection:u}=m.state;if(i(B.type(o))){o.get(A.key).removeLink(u.from,u.to);return}o.get(A.key).addLink(u.from,u.to),s==null||s()})}
+    >
+      ${((w=t==null?void 0:t.linkIcon)==null?void 0:w.call(t))??U}
+    </button>
+  </host>`};F.props={ctx:Object,hide:Function,show:Boolean,config:Object};const L=N(F),C=Z("CREPE_TOOLBAR");var d,r;class f{constructor(s,a,t){I(this,d,void 0);I(this,r,void 0);this.update=(n,i)=>{l(this,d).update(n,i)},this.destroy=()=>{l(this,d).destroy(),l(this,r).remove()},this.hide=()=>{l(this,d).hide()};const c=new L;T(this,r,c),l(this,r).ctx=s,l(this,r).hide=this.hide,l(this,r).config=t,T(this,d,new x({content:l(this,r),debounce:20,offset:10,shouldShow(n){const{doc:i,selection:h}=n.state,{empty:b,from:y,to:k}=h,w=!i.textBetween(y,k).length&&h instanceof j,o=!(h instanceof j),m=n.dom.getRootNode().activeElement,u=c.contains(m),$=!n.hasFocus()&&!u,O=!n.editable;return!($||o||b||w||O)}})),l(this,d).onShow=()=>{l(this,r).show=!0,setTimeout(()=>{let n=l(this,r).style.left;n=parseInt(n),n<0?l(this,r).style.left=0:n>350&&(l(this,r).style.left="350px")},0)},l(this,d).onHide=()=>{l(this,r).show=!1},this.update(a)}}d=new WeakMap,r=new WeakMap;H("milkdown-toolbar",L);const rt=(e,s)=>{e.config(a=>{a.set(C.key,{view:t=>new f(a,t,s)})}).use(C)};export{rt as defineFeature};

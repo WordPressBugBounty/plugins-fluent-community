@@ -30,7 +30,7 @@ class SettingController extends Controller
 
         $data = [
             'features' => $features,
-            'addOns'   => $this->getAddons()
+            'addOns'   => $this->getAddons(),
         ];
 
         return apply_filters('fluent_community/features_api_response', $data, $this->request->all());
@@ -47,6 +47,9 @@ class SettingController extends Controller
         $data = Sanitizer::sanitize($data, [
             'leader_board_module'   => 'sanitize_text_field',
             'course_module'         => 'sanitize_text_field',
+            'certificates_module'   => 'sanitize_text_field',
+            'certificate_profile_visibility' => 'sanitize_key',
+            'certificate_issue_email' => 'sanitize_text_field',
             'giphy_module'          => 'sanitize_text_field',
             'giphy_api_key'         => 'sanitize_text_field',
             'cloud_storage'         => 'sanitize_text_field',
@@ -69,7 +72,7 @@ class SettingController extends Controller
         Utility::updateOption('fluent_community_features', $data);
 
         return [
-            'message' => __('Features saved successfully.', 'fluent-community')
+            'message' => __('Features saved successfully.', 'fluent-community'),
         ];
     }
 
@@ -91,10 +94,12 @@ class SettingController extends Controller
 
         if (is_array($afterCommunityLinkGroups)) {
             foreach ($afterCommunityLinkGroups as $group) {
-                if (!is_array($group)) continue;
+                if (!is_array($group)) { continue;
+                }
 
                 $title = Arr::get($group, 'title', '');
-                if (empty($title)) continue;
+                if (empty($title)) { continue;
+                }
 
                 $items = Arr::get($group, 'items', []);
                 $items = is_array($items) ? array_values($items) : [];
@@ -110,7 +115,7 @@ class SettingController extends Controller
         $formattedGroups['afterCommunityLinkGroups'] = $formattedAfterCommunityGroups;
 
         $data = [
-            'menuSettings' => $formattedGroups
+            'menuSettings' => $formattedGroups,
         ];
         return apply_filters('fluent_community/menu_settings_api_response', $data, $request->all());
     }
@@ -132,22 +137,23 @@ class SettingController extends Controller
 
         $formattedAfterCommunityGroups = [];
         foreach ($afterCommunityLinkGroups as $afterCommunityLinkGroup) {
-            if (empty($afterCommunityLinkGroup['title'])) continue;
+            if (empty($afterCommunityLinkGroup['title'])) { continue;
+            }
 
             $formattedAfterCommunityGroups[] = [
                 'title' => sanitize_text_field($afterCommunityLinkGroup['title']),
                 'slug'  => !empty($afterCommunityLinkGroup['slug']) ? $afterCommunityLinkGroup['slug'] : 'custom_footer_group_' . time(),
-                'items' => $this->formatMenuGroup($afterCommunityLinkGroup['items'], [])
+                'items' => $this->formatMenuGroup($afterCommunityLinkGroup['items'], []),
             ];
         }
 
         $menuSettings['afterCommunityLinkGroups'] = $formattedAfterCommunityGroups;
-        $menuSettings = Arr::only($menuSettings, ['mainMenuItems', 'profileDropdownItems', 'beforeCommunityMenuItems', 'afterCommunityLinkGroups']);
+        $menuSettings = Arr::only($menuSettings, [ 'mainMenuItems', 'profileDropdownItems', 'beforeCommunityMenuItems', 'afterCommunityLinkGroups' ]);
 
         Utility::updateOption('fluent_community_menu_groups', $menuSettings);
 
         return [
-            'message' => __('Menu settings saved successfully.', 'fluent-community')
+            'message' => __('Menu settings saved successfully.', 'fluent-community'),
         ];
     }
 
@@ -199,7 +205,7 @@ class SettingController extends Controller
 
         if (!$optionKey) {
             return $this->sendError([
-                'message' => __('Invalid order type.', 'fluent-community')
+                'message' => __('Invalid order type.', 'fluent-community'),
             ]);
         }
 
@@ -213,7 +219,7 @@ class SettingController extends Controller
 
         return [
             'message' => __('Order saved successfully.', 'fluent-community'),
-            'order'   => $order
+            'order'   => $order,
         ];
     }
 
@@ -234,7 +240,7 @@ class SettingController extends Controller
 
             $defaultItem = Arr::get($savedMenuItems, $slug, []);
             if ($defaultItem) {
-                $preservedKeys = ['is_system', 'is_locked', 'is_unavailable', 'slug'];
+                $preservedKeys = [ 'is_system', 'is_locked', 'is_unavailable', 'slug' ];
                 foreach ($preservedKeys as $key) {
                     if (isset($defaultItem[$key])) {
                         $item[$key] = Arr::get($defaultItem, $key);
@@ -261,7 +267,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://fluentcommunity.co',
                 'settings_url'   => Helper::baseUrl('chat'),
                 'action_text'    => $this->isPluginInstalled('fluent-messaging/fluent-messaging.php') ? __('Active FluentCommunity Chat', 'fluent-community') : __('Install FluentCommunity Chat', 'fluent-community'),
-                'description'    => __('FluentCommunity Chat is a real-time chat plugin for WordPress. It allows you to create a chat room for your community members.', 'fluent-community')
+                'description'    => __('FluentCommunity Chat is a real-time chat plugin for WordPress. It allows you to create a chat room for your community members.', 'fluent-community'),
             ],
             'fluent-notify'    => [
                 'is_repo'        => false,
@@ -270,7 +276,7 @@ class SettingController extends Controller
                 'is_installed'   => defined('FLUENT_NOTIFY_PLUGIN_VERSION'),
                 'learn_more_url' => 'https://fluentnotify.com',
                 'action_text'    => $this->isPluginInstalled('fluent-notify/fluent-notify.php') ? __('Active FluentNotify', 'fluent-community') : __('Install FluentNotify', 'fluent-community'),
-                'description'    => __('Send browser push notifications to your community members for comments, replies and mentions.', 'fluent-community')
+                'description'    => __('Send browser push notifications to your community members for comments, replies and mentions.', 'fluent-community'),
             ],
             'fluent-player'    => [
                 'is_repo'        => false,
@@ -279,7 +285,7 @@ class SettingController extends Controller
                 'is_installed'   => defined('FLUENT_PLAYER_VERSION'),
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-player/',
                 'action_text'    => $this->isPluginInstalled('fluent-player/fluent-player.php') ? __('Active FluentPlayer', 'fluent-community') : __('Install FluentPlayer', 'fluent-community'),
-                'description'    => __('Advanced video player with support for YouTube, Vimeo, HLS and more.', 'fluent-community')
+                'description'    => __('Advanced video player with support for YouTube, Vimeo, HLS and more.', 'fluent-community'),
             ],
             'fluent-cart'      => [
                 'is_repo'        => true,
@@ -289,7 +295,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-cart/',
                 'settings_url'   => defined('FLUENTCART_VERSION') ? admin_url('admin.php?page=fluent-cart#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-cart/fluent-cart.php') ? __('Active FluentCart', 'fluent-community') : __('Install Fluent Cart', 'fluent-community'),
-                'description'    => __('The easiest way to sell digital and physical products in WordPress. Create, manage, and sell products with ease.', 'fluent-community')
+                'description'    => __('The easiest way to sell digital and physical products in WordPress. Create, manage, and sell products with ease.', 'fluent-community'),
             ],
             'fluent-crm'       => [
                 'is_repo'        => true,
@@ -299,7 +305,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://fluentcrm.com',
                 'settings_url'   => defined('FLUENTCRM') ? admin_url('admin.php?page=fluentcrm-admin#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-crm/fluent-crm.php') ? __('Active FluentCRM', 'fluent-community') : __('Install FluentCRM', 'fluent-community'),
-                'description'    => __('The Best Email Marketing Automation Plugin for WordPress. Capture, Segment and Automate your Marketing.', 'fluent-community')
+                'description'    => __('The Best Email Marketing Automation Plugin for WordPress. Capture, Segment and Automate your Marketing.', 'fluent-community'),
             ],
             'fluentform'       => [
                 'is_repo'        => true,
@@ -309,7 +315,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://wordpress.org/plugins/fluentform/',
                 'settings_url'   => defined('FLUENTFORM') ? admin_url('admin.php?page=fluent_forms') : '',
                 'action_text'    => $this->isPluginInstalled('fluentform/fluentform.php') ? __('Active Fluent Forms', 'fluent-community') : __('Install Fluent Forms', 'fluent-community'),
-                'description'    => __('Collect leads and build any type of forms, accept payments, connect with your CRM with the Fastest Contact Form Builder Plugin for WordPress', 'fluent-community')
+                'description'    => __('Collect leads and build any type of forms, accept payments, connect with your CRM with the Fastest Contact Form Builder Plugin for WordPress', 'fluent-community'),
             ],
             'fluent-smtp'      => [
                 'is_repo'        => true,
@@ -319,7 +325,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-smtp/',
                 'settings_url'   => defined('FLUENTMAIL') ? admin_url('options-general.php?page=fluent-mail#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-smtp/fluent-smtp.php') ? __('Active Fluent SMTP', 'fluent-community') : __('Install Fluent SMTP', 'fluent-community'),
-                'description'    => __('Fluent SMTP is the ultimate SMTP and SES plugin for WordPress. Connect with any SMTP service, including SendGrid, Mailgun, SES, Sendinblue, PepiPost, Google, Microsoft, and more.', 'fluent-community')
+                'description'    => __('Fluent SMTP is the ultimate SMTP and SES plugin for WordPress. Connect with any SMTP service, including SendGrid, Mailgun, SES, Sendinblue, PepiPost, Google, Microsoft, and more.', 'fluent-community'),
             ],
             'fluent-support'   => [
                 'is_repo'        => true,
@@ -329,8 +335,8 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://wordpress.org/plugins/fluent-support/',
                 'settings_url'   => defined('FLUENT_SUPPORT_VERSION') ? admin_url('admin.php?page=fluent-support#/') : '',
                 'action_text'    => $this->isPluginInstalled('fluent-support/fluent-support.php') ? __('Active Fluent Support', 'fluent-community') : __('Install Fluent Support', 'fluent-community'),
-                'description'    => __('WordPress Helpdesk and Customer Support Ticket Plugin. Provide awesome support and manage customer queries right from your WordPress dashboard.', 'fluent-community')
-            ]
+                'description'    => __('WordPress Helpdesk and Customer Support Ticket Plugin. Provide awesome support and manage customer queries right from your WordPress dashboard.', 'fluent-community'),
+            ],
         ];
 
         if (defined('FLUENT_COMMUNITY_PRO')) {
@@ -342,7 +348,7 @@ class SettingController extends Controller
                 'learn_more_url' => 'https://wordpress.org/plugins/wp-payment-form/',
                 'settings_url'   => defined('WPPAYFORM_VERSION') ? admin_url('admin.php?page=wppayform.php#/integrations/fluent_community') : '',
                 'action_text'    => $this->isPluginInstalled('wp-payment-form/wp-payment-form.php') ? __('Active Paymattic', 'fluent-community') : __('Install Paymattic', 'fluent-community'),
-                'description'    => __('Paymattic – Secure, Simple Payment & Donation with Subscription Payments, Recurring Donations, Customer Management', 'fluent-community')
+                'description'    => __('Paymattic – Secure, Simple Payment & Donation with Subscription Payments, Recurring Donations, Customer Management', 'fluent-community'),
             ];
         }
 
@@ -361,7 +367,7 @@ class SettingController extends Controller
         $addons = $this->getAddons();
 
         if (!isset($addons[$pluginSlug])) {
-            return $this->sendError(['message' => __('Invalid Plugin', 'fluent-community')]);
+            return $this->sendError([ 'message' => __('Invalid Plugin', 'fluent-community') ]);
         }
 
         $details = $addons[$pluginSlug];
@@ -372,7 +378,7 @@ class SettingController extends Controller
         // activate_plugins and needs no download.
         if (!$details['is_repo'] && $this->isPluginInstalled($pluginFile)) {
             if (!current_user_can('activate_plugins')) {
-                return $this->sendError(['message' => __('You do not have permission to activate plugins', 'fluent-community')]);
+                return $this->sendError([ 'message' => __('You do not have permission to activate plugins', 'fluent-community') ]);
             }
 
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -381,19 +387,19 @@ class SettingController extends Controller
                 $activated = activate_plugin($pluginFile);
 
                 if (is_wp_error($activated)) {
-                    return $this->sendError(['message' => wp_kses_post($activated->get_error_message())]);
+                    return $this->sendError([ 'message' => wp_kses_post($activated->get_error_message()) ]);
                 }
             }
 
             return [
                 'message'      => __('Plugin has been activated Successfully', 'fluent-community'),
-                'is_installed' => true
+                'is_installed' => true,
             ];
         }
 
         if (!current_user_can('install_plugins')) {
             return $this->sendError([
-                'message' => __('You do not have permission to install plugins', 'fluent-community')
+                'message' => __('You do not have permission to install plugins', 'fluent-community'),
             ]);
         }
 
@@ -406,49 +412,49 @@ class SettingController extends Controller
             try {
                 OnboardingService::backgroundInstaller($plugin);
             } catch (\Exception $e) {
-                return $this->sendError(['message' => $e->getMessage()]);
+                return $this->sendError([ 'message' => $e->getMessage() ]);
             }
         } else {
             $installHook = '';
 
-            if ($pluginSlug == 'fluent-messaging') {
+            if ($pluginSlug === 'fluent-messaging') {
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError(['message' => __('FluentMessaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community')]);
+                    return $this->sendError([ 'message' => __('FluentMessaging is a Pro Plugin. Please install FluentCommunity Pro first.', 'fluent-community') ]);
                 }
                 $installHook = 'fluent_community/install_messaging_plugin';
-            } else if ($pluginSlug == 'fluent-player') {
+            } elseif ($pluginSlug === 'fluent-player') {
 
                 if (!defined('FLUENT_COMMUNITY_PRO')) {
-                    return $this->sendError(['message' => __('FluentPlayer requires the pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community')]);
+                    return $this->sendError([ 'message' => __('FluentPlayer requires the pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community') ]);
                 }
 
                 $installHook = 'fluent_community/install_fluent_player_plugin';
-            } else if ($pluginSlug == 'fluent-notify') {
+            } elseif ($pluginSlug === 'fluent-notify') {
                 $installHook = 'fluent_community/install_fluent_notify_plugin';
             }
 
             if (!$installHook || !has_action($installHook)) {
-                return $this->sendError(['message' => __('This plugin can not be installed from here. Please install it manually.', 'fluent-community')]);
+                return $this->sendError([ 'message' => __('This plugin can not be installed from here. Please install it manually.', 'fluent-community') ]);
             }
 
             try {
                 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- every assigned value is a literal fluent_community/ prefixed hook, guarded above
                 do_action($installHook);
             } catch (\Exception $e) {
-                return $this->sendError(['message' => $e->getMessage()]);
+                return $this->sendError([ 'message' => $e->getMessage() ]);
             }
         }
 
         return [
             'message'      => __('Plugin has been installed Successfully', 'fluent-community'),
-            'is_installed' => true
+            'is_installed' => true,
         ];
     }
 
     public function getCustomizationSettings(Request $request)
     {
         $data = [
-            'settings' => Utility::getCustomizationSettings()
+            'settings' => Utility::getCustomizationSettings(),
         ];
 
         return apply_filters('fluent_community/customization_settings_api_response', $data, $request->all());
@@ -464,12 +470,12 @@ class SettingController extends Controller
         ];
 
         foreach ($settings as $key => $value) {
-            if (in_array($key, $yesNoFields)) {
-                $settings[$key] = $value == 'yes' ? 'yes' : 'no';
+            if (in_array($key, $yesNoFields, true)) {
+                $settings[$key] = $value === 'yes' ? 'yes' : 'no';
             } elseif (in_array($key, [ 'default_space_sort_by', 'default_course_sort_by' ], true)) {
                 $settings[$key] = in_array($value, [ 'custom', 'alphabetical', 'latest', 'oldest' ], true) ? $value : '';
             } elseif ($key === 'default_theme_mode') {
-                $settings[$key] = in_array($value, ['light', 'dark', 'system'], true) ? $value : 'light';
+                $settings[$key] = in_array($value, [ 'light', 'dark', 'system' ], true) ? $value : 'light';
             } elseif ($key === 'affiliate_id') {
                 $settings[$key] = (int)$value;
                 if (!$settings[$key]) {
@@ -487,14 +493,14 @@ class SettingController extends Controller
         Utility::updateCustomizationSettings($settings);
 
         return [
-            'message' => __('Customization settings have been saved successfully.', 'fluent-community')
+            'message' => __('Customization settings have been saved successfully.', 'fluent-community'),
         ];
     }
 
     public function getFluentPlayerSettings(Request $request)
     {
         return [
-            'settings' => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::getSettings()
+            'settings' => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::getSettings(),
         ];
     }
 
@@ -506,14 +512,14 @@ class SettingController extends Controller
 
         return [
             'message'  => __('FluentPlayer settings have been saved successfully.', 'fluent-community'),
-            'settings' => $updatedSettings
+            'settings' => $updatedSettings,
         ];
     }
 
     public function getPrivacySettings(Request $request)
     {
         $data = [
-            'settings' => Utility::getPrivacySettings()
+            'settings' => Utility::getPrivacySettings(),
         ];
 
         return apply_filters('fluent_community/privacy_settings_api_response', $data, $request->all());
@@ -525,7 +531,7 @@ class SettingController extends Controller
         Utility::updatePrivacySettings($settings);
 
         return [
-            'message' => __('Privacy settings have been saved successfully.', 'fluent-community')
+            'message' => __('Privacy settings have been saved successfully.', 'fluent-community'),
         ];
     }
 
@@ -536,7 +542,7 @@ class SettingController extends Controller
 
         $data = [
             'config'  => $config,
-            'schemas' => $schemas
+            'schemas' => $schemas,
         ];
 
         return apply_filters('fluent_community/color_config_api_response', $data, $request->all());
@@ -560,9 +566,11 @@ class SettingController extends Controller
         $settings = get_option('_fcom_crm_tagging', []);
         $settings = wp_parse_args($settings, $defaults);
 
-        $spaceGroups = SpaceGroup::with(['spaces' => function ($query) {
+        $spaceGroups = SpaceGroup::with([
+        'spaces' => function ($query) {
             $query->where('type', 'community');
-        }])
+        },
+        ])
             ->orderBy('serial', 'ASC')
             ->get();
 
@@ -586,7 +594,7 @@ class SettingController extends Controller
             $formattedSpaceGroups[] = [
                 'id'     => $spaceGroup->id,
                 'title'  => $spaceGroup->title,
-                'spaces' => $spaces
+                'spaces' => $spaces,
             ];
         }
 
@@ -607,7 +615,7 @@ class SettingController extends Controller
                         'slug'    => $space->slug,
                         'icon'    => $space->getIconMark(),
                     ];
-                })
+                }),
             ];
         }
 
@@ -626,7 +634,7 @@ class SettingController extends Controller
                         'icon'    => $course->getIconMark(),
                         'type'    => $course->type,
                     ];
-                })
+                }),
             ];
         }
 
@@ -639,7 +647,7 @@ class SettingController extends Controller
         }
 
         if (defined('FLUENTCRM')) {
-            $fluentCrmTags = \FluentCrm\App\Models\Tag::select(['id', 'title'])->orderBy('title', 'ASC')->get();
+            $fluentCrmTags = \FluentCrm\App\Models\Tag::select([ 'id', 'title' ])->orderBy('title', 'ASC')->get();
         } else {
             $fluentCrmTags = [];
         }
@@ -649,7 +657,7 @@ class SettingController extends Controller
             'settings'      => $settings,
             'spaceGroups'   => $formattedSpaceGroups,
             'crm_tags'      => $fluentCrmTags,
-            'has_fluentcrm' => defined('FLUENTCRM')
+            'has_fluentcrm' => defined('FLUENTCRM'),
         ];
         return apply_filters('fluent_community/crm_tagging_config_api_response', $data, $request->all());
     }

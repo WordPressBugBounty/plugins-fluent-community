@@ -32,7 +32,7 @@ class InsightsController extends Controller
         $pages = CardRegistry::pageDefinitions();
 
         if (empty($pages[$page]) || !$pages[$page]['available']) {
-            return $this->sendError(['message' => __('This Insights page does not exist.', 'fluent-community')], 404);
+            return $this->sendError([ 'message' => __('This Insights page does not exist.', 'fluent-community') ], 404);
         }
 
         $cards = CardRegistry::forPage($page, Scope::fromRequest([]));
@@ -69,7 +69,7 @@ class InsightsController extends Controller
         list($cardObject, $range, $scope, $options) = $resolved;
 
         if (!in_array('export', $cardObject->supports(), true)) {
-            return $this->sendError(['message' => __('This card cannot be exported.', 'fluent-community')], 422);
+            return $this->sendError([ 'message' => __('This card cannot be exported.', 'fluent-community') ], 422);
         }
 
         $payload = $cardObject->payload($range, $scope, $options);
@@ -89,7 +89,7 @@ class InsightsController extends Controller
         $cardObject = preg_match('/^[a-z0-9_.-]+$/', $cardKey) ? CardRegistry::find($cardKey) : null;
 
         if (!$cardObject || $cardObject->isLocked()) {
-            return $this->sendError(['message' => __('This Insights card does not exist.', 'fluent-community')], 404);
+            return $this->sendError([ 'message' => __('This Insights card does not exist.', 'fluent-community') ], 404);
         }
 
         $params = [
@@ -106,7 +106,7 @@ class InsightsController extends Controller
         ]);
 
         if (!$cardObject->canView($scope)) {
-            return $this->sendError(['message' => __('You do not have permission to view this card.', 'fluent-community')], 403);
+            return $this->sendError([ 'message' => __('You do not have permission to view this card.', 'fluent-community') ], 403);
         }
 
         $options = [
@@ -116,7 +116,7 @@ class InsightsController extends Controller
             'sort'     => sanitize_key((string)$request->get('sort', '')),
         ];
 
-        return [$cardObject, Range::fromRequest($params), $scope, $options];
+        return [ $cardObject, Range::fromRequest($params), $scope, $options ];
     }
 
     private function courseOptions()
@@ -126,7 +126,7 @@ class InsightsController extends Controller
         }
 
         return array_map(function ($course) {
-            return ['id' => (int)$course['id'], 'title' => $course['title']];
+            return [ 'id' => (int)$course['id'], 'title' => $course['title'] ];
         }, Sql::rows('SELECT id, title FROM ' . Sql::table('fcom_spaces') . " WHERE type = 'course' ORDER BY title ASC"));
     }
 

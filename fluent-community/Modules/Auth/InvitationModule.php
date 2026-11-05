@@ -9,7 +9,7 @@ class InvitationModule
 {
     public function register($app)
     {
-        (new InvitationHandler)->register();
+        (new InvitationHandler())->register();
         $this->initRouter($app);
 
         add_filter('fluent_community/portal_vars', function ($vars) {

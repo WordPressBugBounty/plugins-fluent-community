@@ -26,13 +26,13 @@ class CardRegistry
     public static function pageDefinitions()
     {
         $pages = [
-            'overview'   => ['title' => __('Overview', 'fluent-community'), 'tier' => 'free', 'order' => 10],
-            'engagement' => ['title' => __('Engagement', 'fluent-community'), 'tier' => 'pro', 'order' => 20],
-            'members'    => ['title' => __('Members', 'fluent-community'), 'tier' => 'pro', 'order' => 30],
-            'spaces'     => ['title' => __('Spaces', 'fluent-community'), 'tier' => 'pro', 'order' => 40],
-            'content'    => ['title' => __('Content', 'fluent-community'), 'tier' => 'pro', 'order' => 50],
-            'courses'    => ['title' => __('Courses', 'fluent-community'), 'tier' => 'free', 'order' => 60, 'available' => Helper::isFeatureEnabled('course_module')],
-            'moderation' => ['title' => __('Moderation', 'fluent-community'), 'tier' => 'pro', 'order' => 70, 'available' => Helper::isFeatureEnabled('content_moderation')],
+            'overview'   => [ 'title' => __('Overview', 'fluent-community'), 'tier' => 'free', 'order' => 10 ],
+            'engagement' => [ 'title' => __('Engagement', 'fluent-community'), 'tier' => 'pro', 'order' => 20 ],
+            'members'    => [ 'title' => __('Members', 'fluent-community'), 'tier' => 'pro', 'order' => 30 ],
+            'spaces'     => [ 'title' => __('Spaces', 'fluent-community'), 'tier' => 'pro', 'order' => 40 ],
+            'content'    => [ 'title' => __('Content', 'fluent-community'), 'tier' => 'pro', 'order' => 50 ],
+            'courses'    => [ 'title' => __('Courses', 'fluent-community'), 'tier' => 'free', 'order' => 60, 'available' => Helper::isFeatureEnabled('course_module') ],
+            'moderation' => [ 'title' => __('Moderation', 'fluent-community'), 'tier' => 'pro', 'order' => 70, 'available' => Helper::isFeatureEnabled('content_moderation') ],
         ];
 
         /**

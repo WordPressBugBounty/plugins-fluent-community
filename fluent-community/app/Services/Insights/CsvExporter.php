@@ -20,7 +20,7 @@ class CsvExporter
         // An in-memory stream, not a file: fputcsv() is the only correct CSV quoting in PHP.
         $handle = fopen('php://temp', 'r+'); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
         foreach ($rows as $row) {
-            fputcsv($handle, array_map([self::class, 'cell'], $row), ',', '"', '\\');
+            fputcsv($handle, array_map([ self::class, 'cell' ], $row), ',', '"', '\\');
         }
         rewind($handle);
         $csv = stream_get_contents($handle);
@@ -43,7 +43,7 @@ class CsvExporter
 
         $value = wp_strip_all_tags((string)$value);
 
-        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true) && !is_numeric($value)) {
+        if ($value !== '' && in_array($value[0], [ '=', '+', '-', '@', "\t", "\r" ], true) && !is_numeric($value)) {
             $value = "'" . $value;
         }
 
@@ -57,13 +57,13 @@ class CsvExporter
 
         switch ($type) {
             case 'timeseries':
-                $header = [__('Date', 'fluent-community')];
+                $header = [ __('Date', 'fluent-community') ];
                 foreach ($data['series'] as $series) {
                     $header[] = $series['label'];
                 }
-                $rows = [$header];
+                $rows = [ $header ];
                 foreach ($data['buckets'] as $index => $bucket) {
-                    $row = [$bucket];
+                    $row = [ $bucket ];
                     foreach ($data['series'] as $series) {
                         $row[] = $series['values'][$index];
                     }
@@ -74,7 +74,7 @@ class CsvExporter
 
             case 'table':
                 $columns = array_values(array_filter($data['columns'], function ($column) {
-                    return !in_array($column['type'], ['sparkline', 'avatar'], true);
+                    return !in_array($column['type'], [ 'sparkline', 'avatar' ], true);
                 }));
                 $rows = [
                     array_map(function ($column) {
@@ -90,25 +90,25 @@ class CsvExporter
                 return $rows;
 
             case 'kpi':
-                $rows = [[__('Metric', 'fluent-community'), __('Value', 'fluent-community'), __('Previous', 'fluent-community')]];
+                $rows = [ [ __('Metric', 'fluent-community'), __('Value', 'fluent-community'), __('Previous', 'fluent-community') ] ];
                 foreach ($data['items'] as $item) {
-                    $rows[] = [$item['label'], $item['value'], $item['previous']];
+                    $rows[] = [ $item['label'], $item['value'], $item['previous'] ];
                 }
 
                 return $rows;
 
             case 'distribution':
-                $rows = [[__('Group', 'fluent-community'), __('Value', 'fluent-community')]];
+                $rows = [ [ __('Group', 'fluent-community'), __('Value', 'fluent-community') ] ];
                 foreach ($data['buckets'] as $bucket) {
-                    $rows[] = [$bucket['label'], $bucket['value']];
+                    $rows[] = [ $bucket['label'], $bucket['value'] ];
                 }
 
                 return $rows;
 
             case 'attention':
-                $rows = [[__('Item', 'fluent-community'), __('Count', 'fluent-community')]];
+                $rows = [ [ __('Item', 'fluent-community'), __('Count', 'fluent-community') ] ];
                 foreach ($data['items'] as $item) {
-                    $rows[] = [$item['label'], $item['count']];
+                    $rows[] = [ $item['label'], $item['count'] ];
                 }
 
                 return $rows;

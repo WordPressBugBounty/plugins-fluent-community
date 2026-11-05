@@ -65,7 +65,8 @@ class PortalHandler
             if ($this->slug === '') {
                 global $wp;
                 $currentRequest = $wp->request;
-                if ($hookPath = Helper::getPortalRequestPath($currentRequest)) {
+                $hookPath = Helper::getPortalRequestPath($currentRequest);
+                if ($hookPath) {
                     $this->currentPath = $hookPath;
                     $this->renderFullApp();
                 }
@@ -97,12 +98,12 @@ class PortalHandler
             $css = Utility::getColorCssVariables();
             wp_add_inline_style('fluent_community_global', $css);
             wp_enqueue_script('portal_general', Vite::getStaticSrcUrl('portal_general.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, [
-                'in_footer' => true
+                'in_footer' => true,
             ]);
             wp_localize_script('portal_general', 'fcom_portal_general', $this->getGlobalScriptVars());
 
             if (Utility::isCustomizationEnabled('enable_sidebar_toggle')) {
-                add_action('fluent_community/before_portal_dom', [$this, 'renderSidebarCollapseFouc'], 1);
+                add_action('fluent_community/before_portal_dom', [ $this, 'renderSidebarCollapseFouc' ], 1);
             }
         });
 
@@ -116,11 +117,11 @@ class PortalHandler
                 'id'     => 'fluent-community-link',
                 'title'  => __('Visit Community Portal', 'fluent-community'),
                 'href'   => \FluentCommunity\App\Services\Helper::baseUrl('/'),
-                'parent' => 'site-name'
+                'parent' => 'site-name',
             ));
         }, 99);
 
-        add_action('fluent_community/top_menu_right_items', [$this, 'renderTopMenuRightItems']);
+        add_action('fluent_community/top_menu_right_items', [ $this, 'renderTopMenuRightItems' ]);
 
         add_action('fluent_community/after_portal_sidebar', function () {
 
@@ -131,7 +132,7 @@ class PortalHandler
                     <div style="display: flex;justify-content: space-between;" class="fcom_admin_menu">
                         <?php if (!defined('FLUENT_COMMUNITY_PRO')): ?>
                             <a target="_blank" rel="noopener" class="fcom_inline_icon_link_item"
-                               href="<?php echo esc_url(Utility::getProUpgradeUrl('sidebar_cta')) ?>">
+                               href="<?php echo esc_url(Utility::getProUpgradeUrl('sidebar_cta')); ?>">
                                 <span class="el-icon">
                                     <svg width="126" height="125" viewBox="0 0 126 125" fill="none"><rect x="0.22139"
                                                                                                           width="125"
@@ -196,10 +197,10 @@ class PortalHandler
                         </a>
                     </div>
                     <?php
-                } else if (Utility::isCustomizationEnabled('show_powered_by')) {
+                } elseif (Utility::isCustomizationEnabled('show_powered_by')) {
                     ?>
                     <a target="_blank" rel="noopener" style="font-size: 13px; cursor: pointer;"
-                       class="fcom_inline_icon_link_item" href="<?php echo esc_url(Utility::getProductUrl(true)) ?>">
+                       class="fcom_inline_icon_link_item" href="<?php echo esc_url(Utility::getProductUrl(true)); ?>">
                         <?php echo esc_html__('Powered by FluentCommunity', 'fluent-community'); ?>
                     </a>
                     <?php
@@ -223,16 +224,12 @@ class PortalHandler
                     <?php
                 });
             }
-
-            // echo '<div class="fcom_side_footer">';
-            // $this->renderTopMenuRightItems();
-            // echo '</div>';
         });
 
         add_action('fluent_community/portal_action_reactivate_account', function ($data) {
             $xprofile = Helper::getCurrentProfile();
 
-            if ($xprofile && $xprofile->status == '' && Utility::getPrivacySetting('can_deactive_account') === 'yes') {
+            if ($xprofile && (string) $xprofile->status === '' && Utility::getPrivacySetting('can_deactive_account') === 'yes') {
 
                 $nonce = Arr::get($data, '__nonce', '');
                 if (!wp_verify_nonce($nonce, 'fcom_reactivate_account')) {
@@ -261,41 +258,44 @@ class PortalHandler
         ?>
         <ul class="fcom_user_context_menu_items">
             <?php do_action('fluent_community/before_header_right_menu_items', $auth); ?>
+            <li class="top_menu_item fcom_search_holder"></li>
             <?php if ($has_color_scheme): ?>
-                <li class="top_menu_item fcom_color_mode">
-                    <button type="button" aria-label="<?php echo esc_attr__('Toggle dark mode', 'fluent-community'); ?>" class="fcom_color_mode_core fcom_mode_switch fcom_menu_button">
-                        <span class="fcom_color_mode_action el-icon">
-                            <svg class="show_on_light" width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M17.9163 11.7317C16.9166 12.2654 15.7748 12.5681 14.5623 12.5681C10.6239 12.5681 7.43128 9.37543 7.43128 5.43705C7.43128 4.22456 7.73388 3.08274 8.2677 2.08301C4.72272 2.91382 2.08301 6.09562 2.08301 9.89393C2.08301 14.3246 5.67476 17.9163 10.1054 17.9163C13.9038 17.9163 17.0855 15.2767 17.9163 11.7317Z"
-                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round"/>
-                            </svg>
-                            <svg class="show_on_dark" width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <g clip-path="url(#clip0_2906_20675)">
-                                    <path
-                                        d="M14.1663 10.0007C14.1663 12.3018 12.3009 14.1673 9.99967 14.1673C7.69849 14.1673 5.83301 12.3018 5.83301 10.0007C5.83301 7.69946 7.69849 5.83398 9.99967 5.83398C12.3009 5.83398 14.1663 7.69946 14.1663 10.0007Z"
-                                        stroke="currentColor" stroke-width="1.5"/>
-                                    <path
-                                        d="M9.99984 1.66699V2.91699M9.99984 17.0837V18.3337M15.8922 15.8931L15.0083 15.0092M4.99089 4.99137L4.107 4.10749M18.3332 10.0003H17.0832M2.9165 10.0003H1.6665M15.8926 4.10758L15.0087 4.99147M4.99129 15.0093L4.10741 15.8932"
-                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </g>
-                                <defs>
-                                    <clipPath id="clip0_2906_20675">
-                                        <rect width="20" height="20" fill="currentColor"/>
-                                    </clipPath>
-                                </defs>
-                            </svg>
-                        </span>
+                <li class="top_menu_item fcom_color_mode fcom_mode_switch fcom_theme_switcher" id="fcom_theme_switcher">
+                    <button type="button" class="fcom_menu_button fcom_theme_trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="fcom_theme_menu"
+                            aria-label="<?php echo esc_attr__('Color theme', 'fluent-community'); ?>"
+                            title="<?php echo esc_attr__('Color theme', 'fluent-community'); ?>">
+                        <span class="fcom_theme_icon fcom_theme_icon--light"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10 14.5C8.80653 14.5 7.66193 14.0259 6.81802 13.182C5.97411 12.3381 5.5 11.1935 5.5 10C5.5 8.80653 5.97411 7.66193 6.81802 6.81802C7.66193 5.97411 8.80653 5.5 10 5.5C11.1935 5.5 12.3381 5.97411 13.182 6.81802C14.0259 7.66193 14.5 8.80653 14.5 10C14.5 11.1935 14.0259 12.3381 13.182 13.182C12.3381 14.0259 11.1935 14.5 10 14.5ZM10 13C10.7956 13 11.5587 12.6839 12.1213 12.1213C12.6839 11.5587 13 10.7956 13 10C13 9.20435 12.6839 8.44129 12.1213 7.87868C11.5587 7.31607 10.7956 7 10 7C9.20435 7 8.44129 7.31607 7.87868 7.87868C7.31607 8.44129 7 9.20435 7 10C7 10.7956 7.31607 11.5587 7.87868 12.1213C8.44129 12.6839 9.20435 13 10 13ZM9.25 1.75H10.75V4H9.25V1.75ZM9.25 16H10.75V18.25H9.25V16ZM3.63625 4.69675L4.69675 3.63625L6.2875 5.227L5.227 6.2875L3.63625 4.6975V4.69675ZM13.7125 14.773L14.773 13.7125L16.3638 15.3032L15.3032 16.3638L13.7125 14.773ZM15.3032 3.6355L16.3638 4.69675L14.773 6.2875L13.7125 5.227L15.3032 3.63625V3.6355ZM5.227 13.7125L6.2875 14.773L4.69675 16.3638L3.63625 15.3032L5.227 13.7125ZM18.25 9.25V10.75H16V9.25H18.25ZM4 9.25V10.75H1.75V9.25H4Z" fill="currentColor"/></svg></span>
+                        <span class="fcom_theme_icon fcom_theme_icon--dark"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M8.5 6.25C8.49985 7.29298 8.81035 8.31237 9.39192 9.17816C9.97348 10.0439 10.7997 10.7169 11.7653 11.1112C12.7309 11.5055 13.7921 11.6032 14.8134 11.3919C15.8348 11.1807 16.7701 10.67 17.5 9.925V10C17.5 14.1423 14.1423 17.5 10 17.5C5.85775 17.5 2.5 14.1423 2.5 10C2.5 5.85775 5.85775 2.5 10 2.5H10.075C9.57553 2.98834 9.17886 3.57172 8.90836 4.21576C8.63786 4.8598 8.49902 5.55146 8.5 6.25ZM4 10C3.99945 11.3387 4.44665 12.6392 5.27042 13.6945C6.09419 14.7497 7.24723 15.4992 8.54606 15.8236C9.84489 16.148 11.2149 16.0287 12.4381 15.4847C13.6614 14.9407 14.6675 14.0033 15.2965 12.8215C14.1771 13.0852 13.0088 13.0586 11.9026 12.744C10.7964 12.4295 9.78888 11.8376 8.97566 11.0243C8.16244 10.2111 7.57048 9.20361 7.25596 8.09738C6.94144 6.99116 6.91477 5.82292 7.1785 4.7035C6.21818 5.2151 5.41509 5.97825 4.85519 6.91123C4.2953 7.84422 3.99968 8.91191 4 10Z" fill="currentColor"/></svg></span>
+                        <span class="fcom_theme_icon fcom_theme_icon--system"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.875 4.375V6.25H4.375V7.5H6.875V9.375H8.125V4.375H6.875ZM9.375 7.5H15.625V6.25H9.375V7.5ZM13.125 10.625V12.5H15.625V13.75H13.125V15.625H11.875V10.625H13.125ZM10.625 13.75H4.375V12.5H10.625V13.75Z" fill="currentColor"/></svg></span>
                     </button>
+                    <ul class="fcom_theme_menu" id="fcom_theme_menu" role="menu" aria-label="<?php echo esc_attr__('Color theme', 'fluent-community'); ?>" hidden>
+                            <li role="none">
+                                <button type="button" role="menuitemradio" aria-checked="false" class="fcom_theme_item" data-theme="light">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10 14.5C8.80653 14.5 7.66193 14.0259 6.81802 13.182C5.97411 12.3381 5.5 11.1935 5.5 10C5.5 8.80653 5.97411 7.66193 6.81802 6.81802C7.66193 5.97411 8.80653 5.5 10 5.5C11.1935 5.5 12.3381 5.97411 13.182 6.81802C14.0259 7.66193 14.5 8.80653 14.5 10C14.5 11.1935 14.0259 12.3381 13.182 13.182C12.3381 14.0259 11.1935 14.5 10 14.5ZM10 13C10.7956 13 11.5587 12.6839 12.1213 12.1213C12.6839 11.5587 13 10.7956 13 10C13 9.20435 12.6839 8.44129 12.1213 7.87868C11.5587 7.31607 10.7956 7 10 7C9.20435 7 8.44129 7.31607 7.87868 7.87868C7.31607 8.44129 7 9.20435 7 10C7 10.7956 7.31607 11.5587 7.87868 12.1213C8.44129 12.6839 9.20435 13 10 13ZM9.25 1.75H10.75V4H9.25V1.75ZM9.25 16H10.75V18.25H9.25V16ZM3.63625 4.69675L4.69675 3.63625L6.2875 5.227L5.227 6.2875L3.63625 4.6975V4.69675ZM13.7125 14.773L14.773 13.7125L16.3638 15.3032L15.3032 16.3638L13.7125 14.773ZM15.3032 3.6355L16.3638 4.69675L14.773 6.2875L13.7125 5.227L15.3032 3.63625V3.6355ZM5.227 13.7125L6.2875 14.773L4.69675 16.3638L3.63625 15.3032L5.227 13.7125ZM18.25 9.25V10.75H16V9.25H18.25ZM4 9.25V10.75H1.75V9.25H4Z" fill="currentColor"/></svg>
+                                    <span class="fcom_theme_label"><?php esc_html_e('Light', 'fluent-community'); ?></span>
+                                    <svg class="fcom_theme_check" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </li>
+                            <li role="none">
+                                <button type="button" role="menuitemradio" aria-checked="false" class="fcom_theme_item" data-theme="dark">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M8.5 6.25C8.49985 7.29298 8.81035 8.31237 9.39192 9.17816C9.97348 10.0439 10.7997 10.7169 11.7653 11.1112C12.7309 11.5055 13.7921 11.6032 14.8134 11.3919C15.8348 11.1807 16.7701 10.67 17.5 9.925V10C17.5 14.1423 14.1423 17.5 10 17.5C5.85775 17.5 2.5 14.1423 2.5 10C2.5 5.85775 5.85775 2.5 10 2.5H10.075C9.57553 2.98834 9.17886 3.57172 8.90836 4.21576C8.63786 4.8598 8.49902 5.55146 8.5 6.25ZM4 10C3.99945 11.3387 4.44665 12.6392 5.27042 13.6945C6.09419 14.7497 7.24723 15.4992 8.54606 15.8236C9.84489 16.148 11.2149 16.0287 12.4381 15.4847C13.6614 14.9407 14.6675 14.0033 15.2965 12.8215C14.1771 13.0852 13.0088 13.0586 11.9026 12.744C10.7964 12.4295 9.78888 11.8376 8.97566 11.0243C8.16244 10.2111 7.57048 9.20361 7.25596 8.09738C6.94144 6.99116 6.91477 5.82292 7.1785 4.7035C6.21818 5.2151 5.41509 5.97825 4.85519 6.91123C4.2953 7.84422 3.99968 8.91191 4 10Z" fill="currentColor"/></svg>
+                                    <span class="fcom_theme_label"><?php esc_html_e('Dark', 'fluent-community'); ?></span>
+                                    <svg class="fcom_theme_check" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </li>
+                            <li role="none">
+                                <button type="button" role="menuitemradio" aria-checked="false" class="fcom_theme_item" data-theme="system">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.875 4.375V6.25H4.375V7.5H6.875V9.375H8.125V4.375H6.875ZM9.375 7.5H15.625V6.25H9.375V7.5ZM13.125 10.625V12.5H15.625V13.75H13.125V15.625H11.875V10.625H13.125ZM10.625 13.75H4.375V12.5H10.625V13.75Z" fill="currentColor"/></svg>
+                                    <span class="fcom_theme_label"><?php esc_html_e('System', 'fluent-community'); ?></span>
+                                    <svg class="fcom_theme_check" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </li>
+                    </ul>
                 </li>
             <?php endif; ?>
-            <li class="top_menu_item fcom_search_holder"></li>
             <?php if ($auth): ?>
                 <li class="top_menu_item fcom_notification_holder fcom_countable_notification_holder">
-                    <?php if ($context != 'headless'): ?>
+                    <?php if ($context !== 'headless'): ?>
                         <?php
                         $notificationCount = NotificationSubscriber::unread()
                             ->where('user_id', $auth->user_id)
@@ -408,7 +408,7 @@ class PortalHandler
             if ($userModel->isCommunityModerator()) {
                 $userSpaces = Space::orderBy('serial', 'ASC')->get();
                 $spaceGroups = SpaceGroup::orderBy('serial', 'ASC')
-                    ->select(['id', 'title', 'slug', 'settings'])
+                    ->select([ 'id', 'title', 'slug', 'settings' ])
                     ->get();
             } else {
                 $userSpaces = Space::orderBy('serial', 'ASC')
@@ -421,7 +421,7 @@ class PortalHandler
                 $userSpaceParentIds = $userSpaces->pluck('parent_id')->filter()->unique()->toArray();
 
                 $spaceGroups = SpaceGroup::orderBy('serial', 'ASC')
-                    ->select(['id', 'title', 'slug', 'settings'])
+                    ->select([ 'id', 'title', 'slug', 'settings' ])
                     ->whereIn('id', $userSpaceParentIds)
                     ->get();
             }
@@ -430,7 +430,7 @@ class PortalHandler
 
             $userSpaces->each(function ($space) use ($userModel) {
                 $space = $space->formatSpaceData($userModel);
-                do_action_ref_array('fluent_community/space', [&$space]);
+                do_action_ref_array('fluent_community/space', [ &$space ]);
             });
 
             $userSpaces = $userSpaces->keyBy('slug');
@@ -453,7 +453,7 @@ class PortalHandler
                 'community_roles'   => $userModel->getCommunityRoles(),
                 'is_verified'       => $xprofile->is_verified,
                 'compilation_score' => $xprofile->getCompletionScore(),
-                'meta'              => $xprofile->meta
+                'meta'              => $xprofile->meta,
             ];
         } else {
             $authData = [
@@ -461,7 +461,7 @@ class PortalHandler
                 'user_id'           => 0,
                 'spaces'            => (object)[],
                 'community_roles'   => [],
-                'compilation_score' => 100
+                'compilation_score' => 100,
             ];
         }
 
@@ -473,7 +473,7 @@ class PortalHandler
 
         $isRtl = Helper::isRtl();
 
-        $isAbsoluteUrl = defined('FLUENT_COMMUNITY_PORTAL_SLUG') && FLUENT_COMMUNITY_PORTAL_SLUG == '';
+        $isAbsoluteUrl = defined('FLUENT_COMMUNITY_PORTAL_SLUG') && (string) FLUENT_COMMUNITY_PORTAL_SLUG === '';
 
         $editorFrameUrl = site_url('?fluent_community_block_editor=1');
 
@@ -491,7 +491,7 @@ class PortalHandler
             'rest'                       => $this->getRestInfo(),
             'user_id'                    => $userModel ? $userModel->ID : null,
             'assets_url'                 => FLUENT_COMMUNITY_PLUGIN_URL . 'assets/',
-            'permissions'                => $userModel ? $userModel->getPermissions() : ['read' => true],
+            'permissions'                => $userModel ? $userModel->getPermissions() : [ 'read' => true ],
             'logo'                       => Arr::get($settings, 'logo'),
             'site_title'                 => Arr::get($settings, 'site_title'),
             'access_level'               => Arr::get($settings, 'access.acess_level'),
@@ -502,23 +502,25 @@ class PortalHandler
                     'react-dom'             => Vite::getStaticSrcUrl(
                         'libs/isolated-editor/react-dom.production.min.js'
                     ),
-                    'isolated-block-editor' => Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.min.js')
+                    'isolated-block-editor' => Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.min.js'),
                 ],
                 'styles'  => [
                     $isRtl ? Vite::getStaticSrcUrl('libs/isolated-editor/core.rtl.css') : Vite::getStaticSrcUrl('libs/isolated-editor/core.css'),
                     $isRtl ? Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.rtl.css') : Vite::getStaticSrcUrl('libs/isolated-editor/isolated-block-editor.css'),
                     includes_url('css/dist/block-editor/content.min.css?ver=' . $wp_version),
-                ]
+                ],
             ],
             'features'                   => [
-                'disable_global_posts'    => Arr::get($settings, 'disable_global_posts', '') == 'yes',
+                'disable_global_posts'    => Arr::get($settings, 'disable_global_posts', '') === 'yes',
                 'has_survey_poll'         => true,
-                'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') == 'yes',
+                'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') === 'yes',
                 'can_switch_layout'       => Utility::getCustomizationSetting('disable_feed_layout') !== 'yes',
                 'mention_mail'            => Utility::hasEmailAnnouncementEnabled(),
                 'max_media_per_post'      => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
                 'has_post_title'          => Utility::postTitlePref(),
                 'has_course'              => Helper::isFeatureEnabled('course_module'),
+                'can_view_members_page'   => Utility::canViewMembersPage(),
+                'has_leaderboard'         => Helper::isFeatureEnabled('leader_board_module') && (Utility::canViewLeaderboardMembers() || is_user_logged_in()),
                 'followers_module'        => Helper::isFeatureEnabled('followers_module'),
                 'skicky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
                 'post_layout'             => Utility::getCustomizationSetting('rich_post_layout'),
@@ -534,7 +536,7 @@ class PortalHandler
                 'has_course_custom_order' => (bool) Utility::getOption('fluent_community_courses_order', []),
                 'video_embeder'           => apply_filters('fluent_community/has_video_embeder', true),
                 'has_inline_image_upload' => apply_filters('fluent_community/has_inline_image_upload', 'yes'),
-                'has_topics'              => !!Utility::getTopics(),
+                'has_topics'              => (bool)Utility::getTopics(),
                 'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
                 'insights_level'          => Utility::insightsLevel(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
@@ -542,7 +544,7 @@ class PortalHandler
             'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
                 'fcom_sticky_sidebar'          => Utility::isCustomizationEnabled('fixed_sidebar'),
-                'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu')
+                'fcom_has_icon_on_header_menu' => Utility::isCustomizationEnabled('icon_on_header_menu'),
             ]),
             'urls'                       => [
                 'site_url'      => home_url(),
@@ -607,7 +609,7 @@ class PortalHandler
                     /* translators: Relative Date Formats*/
                     'y'      => __('a year', 'fluent-community'),
                     /* translators: Relative Date Formats. Don't alter %d*/
-                    'yy'     => __('%d years', 'fluent-community')
+                    'yy'     => __('%d years', 'fluent-community'),
                 ],
                 'relativeTimeMobile' => [
                     /* translators: Relative Date Formats. Please do not alter %s*/
@@ -635,8 +637,8 @@ class PortalHandler
                     /* translators: Relative Date Formats*/
                     'y'      => __('1y', 'fluent-community'),
                     /* translators: Relative Date Formats. Don't alter %d*/
-                    'yy'     => __('%dy', 'fluent-community')
-                ]
+                    'yy'     => __('%dy', 'fluent-community'),
+                ],
             ]),
             'topicsConfig'               => Helper::getTopicsConfig(),
             'moderationConfig'           => Helper::getModerationConfig(),
@@ -751,7 +753,7 @@ class PortalHandler
                         'nov' => __('Nov', 'fluent-community'),
                         'dec' => __('Dec', 'fluent-community'),
                     ],
-                ]
+                ],
             ],
             'course_sections_collapsed'  => apply_filters('fluent_community/course_section_collapse_default', 'no'),
             'course_lesson_fullscreen'   => apply_filters('fluent_community/course_lesson_fullscreen_default', 'no'),
@@ -761,16 +763,16 @@ class PortalHandler
             'has_fluentcrm'              => defined('FLUENTCRM'),
             'lazy_styles'                => [
                 'wp-block-library-css'           => includes_url('css/dist/block-library/style.min.css?version=' . $wp_version),
-                'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION
+                'fcom-block-content-styling-css' => FLUENT_COMMUNITY_PLUGIN_URL . 'Modules/Gutenberg/editor/content_styling.css?version=' . FLUENT_COMMUNITY_PLUGIN_VERSION,
             ],
-            'debug_mode'                 => 1
+            'debug_mode'                 => 1,
         ]);
 
         $portalVars['welcome_banner'] = Helper::getWelcomeBanner($userModel ? 'login' : 'logout');
 
         if (!$xprofile) {
             $portalVars['auth_url'] = $this->getAuthUrl();
-            $portalVars['allow_signup'] = !!AuthHelper::isRegistrationEnabled();
+            $portalVars['allow_signup'] = (bool)AuthHelper::isRegistrationEnabled();
         }
 
         return $portalVars;
@@ -839,8 +841,8 @@ class PortalHandler
 
         if (!$userId && !Helper::isPublicAccessible()) {
             $adminAuthUrl = Arr::get(Helper::generalSettings(), 'auth_url', '');
-            $authPath     = wp_parse_url($adminAuthUrl, PHP_URL_PATH) ?: '';
-            $portalPath   = wp_parse_url(Helper::baseUrl(), PHP_URL_PATH) ?: '';
+            $authPath     = (string) wp_parse_url($adminAuthUrl, PHP_URL_PATH);
+            $portalPath   = (string) wp_parse_url(Helper::baseUrl(), PHP_URL_PATH);
 
             // Drop admin's URL if it points back into the portal (would infinite loop)
             $isPortalLoop = $authPath && $portalPath && strpos(trim($authPath, '/'), trim($portalPath, '/')) === 0;
@@ -849,7 +851,7 @@ class PortalHandler
                 $authUrl = $adminAuthUrl;
             } else {
                 $adminAuthUrl = '';
-                $parsedUrl    = wp_parse_url(home_url(add_query_arg(urlencode_deep(wp_unslash($_REQUEST)), $GLOBALS['wp']->request))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $parsedUrl    = wp_parse_url($this->getCurrentUrl());
                 $redirectPath = ($parsedUrl['path'] ?? '/') . (!empty($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
                 $authUrl      = $this->getLoginRedirectUrl($redirectPath);
             }
@@ -863,14 +865,14 @@ class PortalHandler
         do_action('fluent_community/portal/viewed');
         $xprofile = Helper::getCurrentProfile();
 
-        if ($xprofile && $xprofile->status != 'active') {
+        if ($xprofile && $xprofile->status !== 'active') {
 
-            if ($xprofile->status == 'pending') {
+            if ($xprofile->status === 'pending') {
                 $this->viewErrorPage(__('Your request is pending', 'fluent-community'), __('An admin needs to approve your join request. Please contact an admin to get approval', 'fluent-community'));
-            } else if ($xprofile->status == '') { // it's a self deactiavted account
+            } elseif ((string) $xprofile->status === '') { // it's a self deactiavted account
                 $this->viewErrorPage(__('Your account is deactivated', 'fluent-community'), __('You have deactivated your community profile.', 'fluent-community'), true, [
                     'btn_url'  => Helper::baseUrl('?fcom_action=reactivate_account&__nonce=' . wp_create_nonce('fcom_reactivate_account')),
-                    'btn_text' => __('Activate my account', 'fluent-community')
+                    'btn_text' => __('Activate my account', 'fluent-community'),
                 ]);
             } else {
                 $this->viewErrorPage(__('Access denied', 'fluent-community'), __('Sorry, you cannot access this community', 'fluent-community'));
@@ -893,7 +895,7 @@ class PortalHandler
             /*
              * Just in case if username is not sanitized
              */
-            if ($xprofile->username != CustomSanitizer::sanitizeUserName($xprofile->username)) {
+            if ((string) $xprofile->username !== (string) CustomSanitizer::sanitizeUserName($xprofile->username)) {
                 $xprofile->username = ProfileHelper::generateUserName($xprofile->user_id);
                 $xprofile->save();
             }
@@ -945,7 +947,7 @@ class PortalHandler
         $jsFiles = $data['js_files'];
         $jsTags = array_keys($jsFiles);
         add_filter('script_loader_tag', function ($tag, $handle) use ($jsTags) {
-            if (!in_array($handle, $jsTags)) {
+            if (!in_array($handle, $jsTags, true)) {
                 return $tag;
             }
             $tag = str_replace(' src', ' type="module" src', $tag);
@@ -954,7 +956,7 @@ class PortalHandler
         foreach ($jsFiles as $fileName => $jsFile) {
             wp_enqueue_script($fileName, $jsFile['url'], $jsFile['deps'], FLUENT_COMMUNITY_PLUGIN_VERSION, [
                 'in_footer' => true,
-                'strategy'  => 'defer'
+                'strategy'  => 'defer',
             ]);
         }
 
@@ -968,7 +970,7 @@ class PortalHandler
         $isRtl = Helper::isRtl();
 
         $userId = get_current_user_id();
-        $url = home_url(add_query_arg($_REQUEST, $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $url = $this->getCurrentUrl();
 
         $appVars = $this->appVars();
         $generalSettings = Helper::generalSettings();
@@ -992,68 +994,72 @@ class PortalHandler
             'user'            => $userId ? get_user_by('ID', $userId) : null,
             'route_group'     => Helper::getRouteNameByRequestPath($this->currentPath),
             'is_dev'          => $isDev,
-            'theme_color'     => Utility::getThemeColor()
+            'theme_color'     => Utility::getThemeColor(),
+            // Which shared runtime the import map points add-ons to; the portal settings page switches it to 'admin'
+            'module_runtime'  => 'portal',
         ];
 
         if ($isDev) {
             $dataVars['css_files'] = [
                 'fcom_theme_default' => [
-                    'url' => Vite::getDynamicSrcUrl('theme-default.scss')
+                    'url' => Vite::getDynamicSrcUrl('theme-default.scss'),
                 ],
                 'fcom_global'        => [
-                    'url' => Vite::getDynamicSrcUrl('global.scss')
+                    'url' => Vite::getDynamicSrcUrl('global.scss'),
                 ],
                 'fcom_vendor'        => [
-                    'url' => Vite::getDynamicSrcUrl('app_css.scss')
-                ]
+                    'url' => Vite::getDynamicSrcUrl('app_css.scss'),
+                ],
             ];
             $dataVars['js_files'] = [
                 'fcom_general' => [
                     'url'  => Vite::getDynamicSrcUrl('portal_general.js'),
-                    'deps' => []
+                    'deps' => [],
                 ],
                 'fcom_start'   => [
                     'url'  => Vite::getDynamicSrcUrl('start.js'),
-                    'deps' => []
+                    'deps' => [],
                 ],
                 'fcom_app'     => [
                     'url'  => Vite::getDynamicSrcUrl('app.js'),
-                    'deps' => []
-                ]
+                    'deps' => [],
+                ],
             ];
 
         } else {
             $dataVars['js_files'] = [
                 'fcom_general' => [
                     'url'  => Vite::getStaticSrcUrl('portal_general.js'),
-                    'deps' => []
+                    'deps' => [],
                 ],
                 'fcom_start'   => [
                     'url'  => Vite::getStaticSrcUrl('start.js'),
-                    'deps' => []
+                    'deps' => [],
                 ],
                 'fcom_app'     => [
                     'url'  => Vite::getStaticSrcUrl('app.js'),
-                    'deps' => []
-                ]
+                    'deps' => [],
+                ],
             ];
             $dataVars['css_files'] = [
                 'fcom_theme_default' => [
-                    'url' => Vite::getStaticSrcUrl('theme-default.css', $isRtl)
+                    'url' => Vite::getStaticSrcUrl('theme-default.css', $isRtl),
                 ],
                 'fcom_global'        => [
-                    'url' => Vite::getStaticSrcUrl('global.css', $isRtl)
+                    'url' => Vite::getStaticSrcUrl('global.css', $isRtl),
                 ],
                 'fcom_app_css'       => [
-                    'url' => Vite::getStaticSrcUrl('app.css', $isRtl)
+                    'url' => Vite::getStaticSrcUrl('app.css', $isRtl),
                 ],
                 'fcom_vendor'        => [
-                    'url' => Vite::getStaticSrcUrl('app_css.css', $isRtl)
+                    'url' => Vite::getStaticSrcUrl('app_css.css', $isRtl),
                 ],
             ];
         }
 
-        return apply_filters('fluent_community/portal_data_vars', $dataVars);
+        $dataVars = apply_filters('fluent_community/portal_data_vars', $dataVars);
+
+        return Vite::insertModuleScripts($dataVars);
     }
 
     protected function maybePushDynamicMetaData($data)
@@ -1067,14 +1073,14 @@ class PortalHandler
             'community_view',
             'course_view',
             'feed_view',
-            'lesson_view'
+            'lesson_view',
         ];
 
-        if (!in_array($dynamicRoute, $validGroups)) {
+        if (!in_array($dynamicRoute, $validGroups, true)) {
             return $data;
         }
 
-        if ($dynamicRoute == 'user_profile') {
+        if ($dynamicRoute === 'user_profile') {
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $userName = $uriParts[1];
@@ -1085,7 +1091,8 @@ class PortalHandler
                     if ($xProfile->short_description) {
                         $data['description'] = Helper::getHumanExcerpt($xProfile->short_description, 100);
                     }
-                    if ($coverPhoto = Arr::get($xProfile->meta, 'cover_photo')) {
+                    $coverPhoto = Arr::get($xProfile->meta, 'cover_photo');
+                    if ($coverPhoto) {
                         $data['featured_image'] = $coverPhoto;
                     }
                 }
@@ -1093,12 +1100,12 @@ class PortalHandler
             return $data;
         }
 
-        if ($dynamicRoute == 'community_view' || $dynamicRoute == 'course_view') {
+        if ($dynamicRoute === 'community_view' || $dynamicRoute === 'course_view') {
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $paceSlug = $uriParts[1];
                 $space = BaseSpace::query()->onlyMain()->where('slug', $paceSlug)->first();
-                if ($space && $space->privacy != 'secret') {
+                if ($space && $space->privacy !== 'secret') {
 
                     // matches the URL the sitemap submits, so tab variants consolidate onto it
                     $data['canonical_url'] = $space->getPermalink();
@@ -1109,7 +1116,7 @@ class PortalHandler
                         'path'  => $this->currentPath,
                     ];
 
-                    if ($dynamicRoute == 'course_view') {
+                    if ($dynamicRoute === 'course_view') {
                         /* translators: %s is replaced by the title of the space */
                         $data['title'] = sprintf(__('Enroll %s', 'fluent-community'), esc_html($space->title) . ' - ' . $data['title']);
                         /* translators: %s is replaced by the title of the space */
@@ -1124,13 +1131,14 @@ class PortalHandler
                     if ($space->description) {
                         $data['description'] = Helper::getHumanExcerpt($space->description, 100);
                     }
-                    if ($ogImage = Arr::get($space->settings, 'og_image')) {
+                    $ogImage = Arr::get($space->settings, 'og_image');
+                    if ($ogImage) {
                         $data['featured_image'] = $ogImage;
-                    } else if ($space->cover_photo) {
+                    } elseif ($space->cover_photo) {
                         $data['featured_image'] = $space->cover_photo;
                     }
 
-                    if ($dynamicRoute == 'course_view') {
+                    if ($dynamicRoute === 'course_view') {
                         $data['json_ld'] = apply_filters('fluent_community/course_view_json_ld', [], $space, $data);
                     }
                 }
@@ -1138,7 +1146,7 @@ class PortalHandler
             return $data;
         }
 
-        if ($dynamicRoute == 'feed_view') {
+        if ($dynamicRoute === 'feed_view') {
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $postSlug = end($uriParts);
@@ -1152,25 +1160,23 @@ class PortalHandler
                         'xprofile' => function ($q) {
                             $q->select(ProfileHelper::getXProfilePublicFields());
                         },
-                        'space'
+                        'space',
                     ])
                     ->whereDoesntHave('space', function ($q) {
-                        $q->whereIn('privacy', ['secret', 'private']);
+                        $q->whereIn('privacy', [ 'secret', 'private' ]);
                     })
+                    ->byActiveAuthor()
                     ->first();
 
                 if (!$feed) {
                     return $data;
                 }
 
-                if ($feed->title) {
-                    $data['title'] = esc_html($feed->title) . ' - ' . $data['title'];
-                    $data['og_title'] = esc_html($feed->title);
-                } else {
-                    $authorName = esc_html($feed->xprofile ? $feed->xprofile->display_name : 'Someone');
-                    $data['title'] = $authorName . ' posted at ' . $data['title'];
-                    $data['og_title'] = $authorName . ' posted at ' . $data['og_title'];
-                }
+                $baseTitle = $data['title'];
+                $seoTitle = esc_html(FeedsHelper::getSeoTitle($feed));
+
+                $data['title'] = $seoTitle . ' - ' . $baseTitle;
+                $data['og_title'] = $seoTitle;
 
                 $feedUrl = $feed->getPermalink();
                 $data['canonical_url'] = $feedUrl;
@@ -1179,15 +1185,19 @@ class PortalHandler
                     $data['description'] = esc_html(Helper::getHumanExcerpt($feed->message, 160));
                 }
 
-                if ($mediaPreview = Arr::get($feed->meta, 'media_preview.image')) {
+                $mediaPreview = Arr::get($feed->meta, 'media_preview.image');
+                $firstImage = Arr::get($feed->meta, 'media_items.0.url');
+
+                if ($mediaPreview) {
                     $data['featured_image'] = esc_url($mediaPreview);
-                } else if ($firstImage = Arr::get($feed->meta, 'media_items.0.url')) {
+                } elseif ($firstImage) {
                     $data['featured_image'] = esc_url($firstImage);
-                } else if ($feed->space) {
+                } elseif ($feed->space) {
                     $space = $feed->space;
-                    if ($ogImage = Arr::get($space->settings, 'og_image')) {
+                    $ogImage = Arr::get($space->settings, 'og_image');
+                    if ($ogImage) {
                         $data['featured_image'] = $ogImage;
-                    } else if ($space->cover_photo) {
+                    } elseif ($space->cover_photo) {
                         $data['featured_image'] = $space->cover_photo;
                     }
                 }
@@ -1203,47 +1213,44 @@ class PortalHandler
             return $data;
         }
 
-        if ($dynamicRoute == 'lesson_view') {
-            $uriParts = explode('/', $this->currentPath);
+        // The allow-list above leaves lesson_view as the only route here.
+        $uriParts = explode('/', $this->currentPath);
 
-            $lessonSlug = Arr::get($uriParts, 3);
-            $courseSlug = Arr::get($uriParts, 1);
-            if (!$lessonSlug || !$courseSlug) {
-                return $data;
-            }
-
-            // Resolve the course first: lesson slugs are only unique within one, so a
-            // slug-first lookup would answer with whichever course was created first
-            // and then fail the course comparison, costing the real lesson its metadata.
-            $course = BaseSpace::query()->onlyMain()
-                ->where('slug', $courseSlug)
-                ->where('status', 'published')
-                ->where('privacy', 'public')
-                ->first();
-
-            if (!$course) {
-                return $data;
-            }
-
-            $lesson = CourseLesson::query()
-                ->where('space_id', $course->id)
-                ->where('slug', $lessonSlug)
-                ->where('status', 'published')
-                ->first();
-
-            if (!$lesson) {
-                return $data;
-            }
-
-            $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
-            $data['og_title'] = esc_html($lesson->title);
-            $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
-            $data['canonical_url'] = $lesson->getPermalink();
-
-            $data['json_ld'] = apply_filters('fluent_community/lesson_view_json_ld', [], $lesson, $course, $data);
-
+        $lessonSlug = Arr::get($uriParts, 3);
+        $courseSlug = Arr::get($uriParts, 1);
+        if (!$lessonSlug || !$courseSlug) {
             return $data;
         }
+
+        // Resolve the course first: lesson slugs are only unique within one, so a
+        // slug-first lookup would answer with whichever course was created first
+        // and then fail the course comparison, costing the real lesson its metadata.
+        $course = BaseSpace::query()->onlyMain()
+            ->where('slug', $courseSlug)
+            ->where('status', 'published')
+            ->where('privacy', 'public')
+            ->first();
+
+        if (!$course) {
+            return $data;
+        }
+
+        $lesson = CourseLesson::query()
+            ->where('space_id', $course->id)
+            ->where('slug', $lessonSlug)
+            ->where('status', 'published')
+            ->first();
+
+        if (!$lesson) {
+            return $data;
+        }
+
+        $data['title'] = esc_html($lesson->title) . ' - ' . $data['title'];
+        $data['og_title'] = esc_html($lesson->title);
+        $data['description'] = esc_html(Helper::getHumanExcerpt($lesson->message, 120));
+        $data['canonical_url'] = $lesson->getPermalink();
+
+        $data['json_ld'] = apply_filters('fluent_community/lesson_view_json_ld', [], $lesson, $course, $data);
 
         return $data;
     }
@@ -1284,7 +1291,7 @@ class PortalHandler
 
         $logoPermalink = Helper::baseUrl('/');
         $logoPermalinkType = Arr::get($settings, 'logo_permalink_type');
-        if ($logoPermalinkType == 'custom') {
+        if ($logoPermalinkType === 'custom') {
             $logoPermalink = Arr::get($settings, 'logo_permalink');
         }
 
@@ -1298,7 +1305,7 @@ class PortalHandler
             'auth'           => $xprofile ? $xprofile : null,
             'auth_url'       => $authUrl,
             'menuItems'      => $this->getMainMenuItems('header'),
-            'context'        => $context
+            'context'        => $context,
         ]);
 
         if ($echo) {
@@ -1324,17 +1331,17 @@ class PortalHandler
                 '#{{user_url}}'   => Helper::baseUrl('u/' . $xprofile->username),
                 '#user_url'       => Helper::baseUrl('u/' . $xprofile->username),
                 '#{{logout_url}}' => wp_logout_url(Helper::baseUrl()),
-                '#logout_url'     => wp_logout_url(Helper::baseUrl())
+                '#logout_url'     => wp_logout_url(Helper::baseUrl()),
             ];
 
             foreach ($profileLinks as &$link) {
                 $slug = Arr::get($link, 'slug', '');
 
-                if ($slug == 'my_spaces') {
+                if ($slug === 'my_spaces') {
                     $link['permalink'] = Helper::baseUrl('u/' . $xprofile->username . '/spaces');
-                } else if ($slug == 'logout') {
+                } elseif ($slug === 'logout') {
                     $link['permalink'] = wp_logout_url(Helper::baseUrl());
-                } else if ($slug == 'profile') {
+                } elseif ($slug === 'profile') {
                     $link['permalink'] = Helper::baseUrl('u/' . $xprofile->username);
                 }
 
@@ -1371,7 +1378,15 @@ class PortalHandler
     {
         $internalUrl = $this->getAuthUrl();
 
-        return $internalUrl ? add_query_arg(['redirect_to' => rawurlencode($redirectPath)], $internalUrl) : wp_login_url($redirectPath);
+        return $internalUrl ? add_query_arg([ 'redirect_to' => rawurlencode($redirectPath) ], $internalUrl) : wp_login_url($redirectPath);
+    }
+
+    /**
+     * The current portal URL, built from the query string only (not POST fields).
+     */
+    protected function getCurrentUrl()
+    {
+        return home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     }
 
     public function viewErrorPage($title, $message = '', $showBtn = true, $btnData = [])
@@ -1380,7 +1395,7 @@ class PortalHandler
             'title'       => $title,
             'description' => $message,
             'btn_txt'     => Arr::get($btnData, 'btn_text', __('Go to home page', 'fluent-community')),
-            'url'         => Arr::get($btnData, 'btn_url', home_url())
+            'url'         => Arr::get($btnData, 'btn_url', home_url()),
         ];
 
         if (!$showBtn) {

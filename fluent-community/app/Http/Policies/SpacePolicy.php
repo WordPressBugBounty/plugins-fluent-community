@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\App\Http\Policies;
 
-use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Services\Helper;
@@ -18,14 +17,14 @@ class SpacePolicy extends BasePolicy
     public function verifyRequest(Request $request)
     {
         $xProfile = Helper::getCurrentProfile(true);
-        if ($xProfile && $xProfile->status != 'active') {
+        if ($xProfile && $xProfile->status !== 'active') {
             return false;
         }
 
         $userId = get_current_user_id();
 
-        if ($request->getMethod() == 'GET') {
-            return !!Helper::canAccessPortal($userId);
+        if ($request->getMethod() === 'GET') {
+            return (bool)Helper::canAccessPortal($userId);
         }
 
         if (!$userId) {
@@ -39,21 +38,21 @@ class SpacePolicy extends BasePolicy
     {
         $xProfile = Helper::getCurrentProfile(true);
 
-        return $xProfile && $xProfile->status == 'active';
+        return $xProfile && $xProfile->status === 'active';
     }
 
     public function leave(Request $request)
     {
         $xProfile = Helper::getCurrentProfile(true);
 
-        return $xProfile && $xProfile->status == 'active';
+        return $xProfile && $xProfile->status === 'active';
     }
 
     public function markSeen(Request $request)
     {
         $xProfile = Helper::getCurrentProfile(true);
 
-        return $xProfile && $xProfile->status == 'active';
+        return $xProfile && $xProfile->status === 'active';
     }
 
     public function create(Request $request)
@@ -94,21 +93,22 @@ class SpacePolicy extends BasePolicy
         return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
     }
 
+    // Deleting a whole space is for community admins only, as in the space menu.
     public function deleteBySlug(Request $request, $slug)
     {
-        return $this->canManageCommunity($request, Space::where('slug', $slug)->first());
+        return $this->canManageCommunity($request, null);
     }
 
     public function deleteById(Request $request, $id)
     {
-        return $this->canManageCommunity($request, Space::find($id));
+        return $this->canManageCommunity($request, null);
     }
 
     public function addMember(Request $request, $slug)
     {
         $space = Space::where('slug', $slug)->first();
 
-        $user = User::find(get_current_user_id());
+        $user = Helper::getCurrentUser();
 
         return $user && $user->verifySpacePermission('can_add_member', $space);
     }
@@ -117,15 +117,19 @@ class SpacePolicy extends BasePolicy
     {
         $space = Space::where('slug', $slug)->first();
 
-        $user = User::find(get_current_user_id());
+        $user = Helper::getCurrentUser();
 
         return $user && $user->verifySpacePermission('can_remove_member', $space);
     }
 
     public function getSpaceGroups(Request $request)
     {
+        // The options list feeds the menu group picker on space, course and sidebar link forms.
+        // course_creator also covers site, community and course admins, so check it before the space lookup.
         if ($request->get('options_only')) {
-            return !!Helper::canAccessPortal(get_current_user_id());
+            $user = Helper::getCurrentUser();
+
+            return $user && ($user->hasCourseCreatorAccess() || $this->canManageSpace($request));
         }
 
         return $this->canManageSpace($request, null);
@@ -178,7 +182,7 @@ class SpacePolicy extends BasePolicy
 
     protected function canManageCommunity(Request $request, $space = false)
     {
-        $user = User::find(get_current_user_id());
+        $user = Helper::getCurrentUser();
 
         if (!$user) {
             return false;
@@ -197,7 +201,7 @@ class SpacePolicy extends BasePolicy
 
     protected function canManageSpace(Request $request, $space = false)
     {
-        $user = User::find(get_current_user_id());
+        $user = Helper::getCurrentUser();
 
         if (!$user) {
             return false;
@@ -214,4 +218,3 @@ class SpacePolicy extends BasePolicy
         return $space && $user->getSpaceRole($space) === 'admin';
     }
 }
-

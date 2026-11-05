@@ -26,14 +26,14 @@ class CourseTopicCompletedTrigger extends BaseTrigger
             'label'       => __('Section/Topic Completed', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
             'svg_icon' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 6a3 3 0 0 1 3-3h4v14H7a3 3 0 0 0-3 3V6zM20 6a3 3 0 0 0-3-3h-4v14h4a3 3 0 0 1 3 3V6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M16.5 18l1.3 1.3L20 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-            'description' => __('This Automation runs when a student completes a Section/Topic', 'fluent-community')
+            'description' => __('This Automation runs when a student completes a Section/Topic', 'fluent-community'),
         ];
     }
 
     public function getFunnelSettingsDefaults()
     {
         return [
-            'subscription_status' => 'subscribed'
+            'subscription_status' => 'subscribed',
         ];
     }
 
@@ -48,7 +48,7 @@ class CourseTopicCompletedTrigger extends BaseTrigger
                     'option_key'  => 'editable_statuses',
                     'is_multiple' => false,
                     'label'       => __('Subscription Status', 'fluent-community'),
-                    'placeholder' => __('Select Status', 'fluent-community')
+                    'placeholder' => __('Select Status', 'fluent-community'),
                 ],
                 'subscription_status_info' => [
                     'type'       => 'html',
@@ -56,10 +56,10 @@ class CourseTopicCompletedTrigger extends BaseTrigger
                     'dependency' => [
                         'depends_on' => 'subscription_status',
                         'operator'   => '=',
-                        'value'      => 'pending'
-                    ]
-                ]
-            ]
+                        'value'      => 'pending',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -67,7 +67,7 @@ class CourseTopicCompletedTrigger extends BaseTrigger
     {
         return [
             'update_type' => 'update', // skip_all_actions, skip_update_if_exist
-            'topic_ids'   => []
+            'topic_ids'   => [],
         ];
     }
 
@@ -78,7 +78,7 @@ class CourseTopicCompletedTrigger extends BaseTrigger
                 'type'    => 'radio',
                 'label'   => __('If Contact Already Exists?', 'fluent-community'),
                 'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
-                'options' => FunnelHelper::getUpdateOptions()
+                'options' => FunnelHelper::getUpdateOptions(),
             ],
             'topic_ids'    => [
                 'type'        => 'grouped-select',
@@ -86,14 +86,14 @@ class CourseTopicCompletedTrigger extends BaseTrigger
                 'help'        => __('Select for which sections this automation will run', 'fluent-community'),
                 'options'     => $this->getTopicsByCourseGroup(),
                 'is_multiple' => true,
-                'inline_help' => __('Keep it blank to run on any section', 'fluent-community')
+                'inline_help' => __('Keep it blank to run on any section', 'fluent-community'),
             ],
             'run_multiple' => [
                 'type'        => 'yes_no_check',
                 'label'       => '',
                 'check_label' => __('Restart the Automation Multiple times for a contact for this event. (Only enable if you want to restart automation for the same contact)', 'fluent-community'),
-                'inline_help' => __('If you enable, it will restart the automation for a contact if the contact is already in the automation. Otherwise, it will skip if it already exists.', 'fluent-community')
-            ]
+                'inline_help' => __('If you enable, it will restart the automation for a contact if the contact is already in the automation. Otherwise, it will skip if it already exists.', 'fluent-community'),
+            ],
         ];
     }
 
@@ -124,7 +124,7 @@ class CourseTopicCompletedTrigger extends BaseTrigger
 
         (new FunnelProcessor())->startFunnelSequence($funnel, $subscriberData, [
             'source_trigger_name' => $this->triggerName,
-            'source_ref_id'       => $topic->id
+            'source_ref_id'       => $topic->id,
         ]);
 
     }
@@ -136,20 +136,20 @@ class CourseTopicCompletedTrigger extends BaseTrigger
         $updateType = Arr::get($conditions, 'update_type');
 
         $subscriber = FunnelHelper::getSubscriber($subscriberData['email']);
-        if ($subscriber && $updateType == 'skip_all_if_exist') {
+        if ($subscriber && $updateType === 'skip_all_if_exist') {
             return false;
         }
 
         // check the products ids
         if ($conditions['topic_ids']) {
-            return in_array($topicId, $conditions['topic_ids']);
+            return in_array((int) $topicId, array_map('intval', $conditions['topic_ids']), true);
         }
 
         // check run_only_one
         if ($subscriber && FunnelHelper::ifAlreadyInFunnel($funnel->id, $subscriber->id)) {
-            $multipleRun = Arr::get($conditions, 'run_multiple') == 'yes';
+            $multipleRun = Arr::get($conditions, 'run_multiple') === 'yes';
             if ($multipleRun) {
-                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [$subscriber->id]);
+                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [ $subscriber->id ]);
             } else {
                 return false;
             }
@@ -167,19 +167,19 @@ class CourseTopicCompletedTrigger extends BaseTrigger
             $group = [
                 'title'   => $course->title,
                 'slug'    => $course->slug,
-                'options' => []
+                'options' => [],
             ];
 
             $sections = CourseTopic::where('space_id', $course->id)
                 ->orderBy('priority', 'ASC')
-                ->with(['lessons'])
+                ->with([ 'lessons' ])
                 ->get();
 
 
             foreach ($sections as $section) {
                 $group['options'][] = [
                     'id'    => (string)$section->id,
-                    'title' => $section->title
+                    'title' => $section->title,
                 ];
             }
             $groups[] = $group;

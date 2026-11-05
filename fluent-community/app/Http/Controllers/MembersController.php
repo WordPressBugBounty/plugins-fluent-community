@@ -37,7 +37,7 @@ class MembersController extends Controller
                 if (!$space || !Helper::isUserInSpace(get_current_user_id(), $space->id)) {
                     return $this->sendError([
                         'message' => __('Please join the space first to view the members', 'fluent-community'),
-                        'permission_failed' => true
+                        'permission_failed' => true,
                     ]);
                 }
             }
@@ -49,7 +49,7 @@ class MembersController extends Controller
                     if (!$space || !Helper::isUserInSpace(get_current_user_id(), $space->id)) {
                         return $this->sendError([
                             'message' => __('Space not found', 'fluent-community'),
-                            'permission_failed' => true
+                            'permission_failed' => true,
                         ]);
                     }
                 }
@@ -57,16 +57,18 @@ class MembersController extends Controller
 
             if ($space) {
                 $members = $members->whereHas('spaces', function ($query) use ($space) {
-                    $query->withoutGlobalScopes()->where('space_id', $space->id);
+                    $query->withoutGlobalScopes()->where('space_id', $space->id)
+                        ->where('fcom_space_user.status', 'active');
                 });
-            } else if (!$canAccess) {
+            } elseif (!$canAccess) {
                 $sharedSpaceIds = SpaceUserPivot::where('user_id', get_current_user_id())
                     ->where('status', 'active')
                     ->pluck('space_id')
                     ->toArray();
 
                 $members = $members->whereHas('spaces', function ($query) use ($sharedSpaceIds) {
-                    $query->withoutGlobalScopes()->whereIn('space_id', $sharedSpaceIds);
+                    $query->withoutGlobalScopes()->whereIn('space_id', $sharedSpaceIds)
+                        ->where('fcom_space_user.status', 'active');
                 });
             }
 
@@ -78,9 +80,9 @@ class MembersController extends Controller
 
             $data = [
                 'members' => [
-                    'data' => $members
+                    'data' => $members,
                 ],
-                'execution_time' => microtime(true) - $start
+                'execution_time' => microtime(true) - $start,
             ];
             return apply_filters('fluent_community/mention_members_api_response', $data, $request->all());
         }
@@ -88,13 +90,13 @@ class MembersController extends Controller
         if(!$canAccess) {
             return $this->sendError([
                 'message' => __('You do not have permission to view members', 'fluent-community'),
-                'permission_failed' => true
+                'permission_failed' => true,
             ]);
         }
 
         $sortBy = $request->getSafe('sort_by', 'sanitize_text_field', 'last_activity');
 
-        $validSortFields = ['last_activity', 'display_name', 'created_at'];
+        $validSortFields = [ 'last_activity', 'display_name', 'created_at' ];
 
         $sortColumn = in_array($sortBy, $validSortFields, true) ? $sortBy : 'last_activity';
 
@@ -106,7 +108,7 @@ class MembersController extends Controller
 
         $sortDir = strtoupper($request->getSafe('sort_dir', 'sanitize_text_field', ''));
 
-        $sortDirection = in_array($sortDir, ['ASC', 'DESC'], true)
+        $sortDirection = in_array($sortDir, [ 'ASC', 'DESC' ], true)
             ? $sortDir
             : $defaultDirections[$sortColumn];
 
@@ -117,27 +119,27 @@ class MembersController extends Controller
 
         if($isMod) {
             $statuses = $request->getSafe('status', 'sanitize_text_field', 'active');
-            if ($statuses == 'pending') {
-                $statuses = ['pending'];
-            } else if ($statuses == 'blocked') {
-                $statuses = ['blocked'];
-            } else if($statuses == 'deactivated') {
-                $statuses = [''];
+            if ($statuses === 'pending') {
+                $statuses = [ 'pending' ];
+            } elseif ($statuses === 'blocked') {
+                $statuses = [ 'blocked' ];
+            } elseif($statuses === 'deactivated') {
+                $statuses = [ '' ];
             } else {
-                $statuses = ['active'];
+                $statuses = [ 'active' ];
             }
             $members = $members->whereIn('status', $statuses);
         } else {
             $members = $members->where('status', 'active');
         }
 
-        do_action_ref_array('fluent_community/members_query_ref', [&$members, $request->all()]);
+        do_action_ref_array('fluent_community/members_query_ref', [ &$members, $request->all() ]);
 
         $members = $members->paginate();
 
         return apply_filters('fluent_community/members_api_response', [
             'members' => $members,
-            'execution_time' => microtime(true) - $start
+            'execution_time' => microtime(true) - $start,
         ], $members, $request->all());
     }
 
@@ -150,9 +152,9 @@ class MembersController extends Controller
 
         $wpUser = User::findOrFail($userId);
 
-        if ($wpUser->isCommunityAdmin() && $newStatus != 'active') {
+        if ($wpUser->isCommunityAdmin() && $newStatus !== 'active') {
             return $this->sendError([
-                'message' => __('Sorry, you cannot change the status of another admin. Remove the user from moderators', 'fluent-community')
+                'message' => __('Sorry, you cannot change the status of another admin. Remove the user from moderators', 'fluent-community'),
             ]);
         }
 
@@ -166,7 +168,7 @@ class MembersController extends Controller
 
         return [
             'message' => __('Member status has been updated', 'fluent-community'),
-            'member'  => $xProfile
+            'member'  => $xProfile,
         ];
     }
 }

@@ -12,10 +12,10 @@ class ActivityMonitorHandler
 {
     public function register()
     {
-        add_action('fluent_community/comment_added', [$this, 'handleNewCommentEvent'], 10, 2);
-        add_action('fluent_community/feed/created', [$this, 'handleFeedCreated'], 10, 1);
+        add_action('fluent_community/comment_added', [ $this, 'handleNewCommentEvent' ], 10, 2);
+        add_action('fluent_community/feed/created', [ $this, 'handleFeedCreated' ], 10, 1);
 
-        add_action('fluent_community/track_activity', [$this, 'trackActivity'], 10);
+        add_action('fluent_community/track_activity', [ $this, 'trackActivity' ], 10);
 
         add_action('profile_update', function ($userId) {
             if (Utility::getPrivacySetting('enable_user_sync') === 'no') {
@@ -30,17 +30,17 @@ class ActivityMonitorHandler
             $firstName = $user->first_name;
             $lastName = $user->last_name;
             $displayName = trim($firstName . ' ' . $lastName);
-            if ($displayName && $xprofile->display_name != $displayName) {
+            if ($displayName && (string) $xprofile->display_name !== (string) $displayName) {
                 $xprofile->display_name = $displayName;
                 $xprofile->save();
             }
         });
 
-        add_action('wp_ajax_fluent_community_renew_nonce', [$this, 'renewNonce']);
+        add_action('wp_ajax_fluent_community_renew_nonce', [ $this, 'renewNonce' ]);
 
         // Logged-out: without this, WP returns "0"/200 and the SPA loops on a stale nonce.
         add_action('wp_ajax_nopriv_fluent_community_renew_nonce', function () {
-            wp_send_json(['message' => __('Your session has expired. Please log in again.', 'fluent-community')], 401);
+            wp_send_json([ 'message' => __('Your session has expired. Please log in again.', 'fluent-community') ], 401);
         });
     }
 
@@ -48,7 +48,7 @@ class ActivityMonitorHandler
     {
         $currentProfile = Helper::getCurrentProfile();
         if (!$currentProfile) {
-            wp_send_json(['message' => __('Invalid user', 'fluent-community')], 401);
+            wp_send_json([ 'message' => __('Invalid user', 'fluent-community') ], 401);
         }
 
         wp_send_json([

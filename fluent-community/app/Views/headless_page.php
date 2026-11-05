@@ -67,8 +67,8 @@ $fluentCommunityPortal = $portal ?? [];
 </head>
 <body class="fcom_headless_page fcom_headless_scope_<?php echo esc_attr($fluentCommunityScope); ?>">
 
-<?php if ($fluentCommunityLayout == 'signup'): ?>
-    <div class="fcom_full_layout fluent_com_auth <?php echo $fluentCommunityPortal['position'] == 'right' ? ' fcom_auth_page_row_reverse' : ' fcom_auth_page'; ?>">
+<?php if ($fluentCommunityLayout === 'signup'): ?>
+    <div class="fcom_full_layout fluent_com_auth <?php echo $fluentCommunityPortal['position'] === 'right' ? ' fcom_auth_page_row_reverse' : ' fcom_auth_page'; ?>">
         <div class="fcom_layout_side"
              style="<?php if (!empty($fluentCommunityPortal['background_image'])) { echo 'background-image: url(' . esc_url($fluentCommunityPortal['background_image']) . ');';} ?>
              <?php if (!empty($fluentCommunityPortal['background_color'])) { echo 'background-color: ' . esc_attr($fluentCommunityPortal['background_color']) . ';';} ?>

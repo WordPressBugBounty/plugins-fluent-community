@@ -30,7 +30,9 @@ class SpaceGroup extends Model
 
     protected static $type = 'space_group';
 
-    protected $guarded = ['id'];
+    const SIDEBAR_VISIBILITY = ['yes', 'no', 'joined'];
+
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'created_by',
@@ -44,12 +46,12 @@ class SpaceGroup extends Model
         'privacy',
         'status',
         'serial',
-        'settings'
+        'settings',
     ];
 
     protected $searchable = [
         'title',
-        'description'
+        'description',
     ];
 
     public static function boot()
@@ -156,8 +158,14 @@ class SpaceGroup extends Model
     {
         return [
             'hide_members'       => 'no',
-            'always_show_spaces' => 'yes'
+            'always_show_spaces' => 'yes',
         ];
+    }
+
+    // Any other value already behaves like 'no' in the sidebar.
+    public static function sanitizeSidebarVisibility($value)
+    {
+        return in_array($value, self::SIDEBAR_VISIBILITY, true) ? $value : 'no';
     }
 
     public function setSettingsAttribute($value)

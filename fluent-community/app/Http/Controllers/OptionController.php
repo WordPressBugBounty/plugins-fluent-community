@@ -19,7 +19,7 @@ class OptionController extends Controller
 
         $data = [
             'appVars'           => $appVars,
-            'menu_links_groups' => Utility::getPortalSidebarData('sidebar')
+            'menu_links_groups' => Utility::getPortalSidebarData('sidebar'),
         ];
 
         return apply_filters('fluent_community/app_vars_api_response', $data, $this->request->all());
@@ -59,10 +59,14 @@ class OptionController extends Controller
                 $space->permissions = $userModel->getSpacePermissions($space);
                 $space->membership = $space->getMembership($userModel->ID);
                 $space->description_rendered = wp_kses_post(FeedsHelper::mdToHtml($space->description));
-                if ($space->privacy == 'private' && !$space->membership) {
+                if ($space->privacy === 'private' && !$space->membership) {
                     $space->lockscreen_config = LockscreenService::getLockscreenConfig($space);
                 }
                 $space->topics = Utility::getTopicsBySpaceId($space->id);
+
+                if (!$space->isAdmin($userModel->ID, true)) {
+                    $space->settings = $space->getVisibleSettings($userModel);
+                }
             });
             $userSpaces = $userSpaces->keyBy('slug');
         } else {
@@ -71,7 +75,7 @@ class OptionController extends Controller
 
         $data = [
             'sidebar_html' => $html,
-            'auth_spaces'  => $userSpaces
+            'auth_spaces'  => $userSpaces,
         ];
         return apply_filters('fluent_community/sidebar_menu_html_api_response', $data, $request->all());
     }

@@ -41,7 +41,7 @@ class EnrollmentsCard extends AbstractCard
 
     public function supports()
     {
-        return ['compare', 'course_id', 'export'];
+        return [ 'compare', 'course_id', 'export' ];
     }
 
     public function compute(Range $range, Scope $scope, array $options)
@@ -65,7 +65,7 @@ class EnrollmentsCard extends AbstractCard
             ],
         ], 'count', [
             'chart'    => 'column',
-            'headline' => ['label' => __('Enrollments', 'fluent-community'), 'value' => array_sum($values), 'format' => 'number'],
+            'headline' => [ 'label' => __('Enrollments', 'fluent-community'), 'value' => array_sum($values), 'format' => 'number' ],
         ]);
     }
 }

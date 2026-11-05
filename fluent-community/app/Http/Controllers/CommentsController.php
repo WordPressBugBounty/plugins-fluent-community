@@ -13,7 +13,9 @@ use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\Framework\Foundation\Exceptions\ForbiddenHttpException;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Modules\Course\Services\CourseHelper;
 
 class CommentsController extends Controller
 {
@@ -23,10 +25,16 @@ class CommentsController extends Controller
             ->byUserAccess(get_current_user_id())
             ->findOrFail($feed_id);
 
-        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true) && !$feed->hasEditAccess($this->getUserId())) {
+        if (!$feed->isViewableBy($this->getUserId())) {
             return $this->sendError([
-                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
             ], 404);
+        }
+
+        if (CourseHelper::isLockedLesson($feed, $this->getUser())) {
+            return [
+                'comments' => [],
+            ];
         }
 
         /*
@@ -42,7 +50,7 @@ class CommentsController extends Controller
 
         if (!$canViewComments) {
             return [
-                'comments' => []
+                'comments' => [],
             ];
         }
 
@@ -52,7 +60,7 @@ class CommentsController extends Controller
             ->with([
                 'xprofile' => function ($q) {
                     $q->select(ProfileHelper::getXProfilePublicFields());
-                }
+                },
             ])
             ->whereHas('xprofile', function ($q) {
                 $q->where('status', 'active');
@@ -67,7 +75,7 @@ class CommentsController extends Controller
             $likedIds = FeedsHelper::getLikedIdsByUserFeedId($feed->id, get_current_user_id());
             if ($likedIds) {
                 $comments->each(function ($comment) use ($likedIds) {
-                    if (in_array($comment->id, $likedIds)) {
+                    if (in_array((int) $comment->id, array_map('intval', $likedIds), true)) {
                         $comment->liked = 1;
                     }
                 });
@@ -75,7 +83,7 @@ class CommentsController extends Controller
         }
 
         $data = [
-            'comments'       => $comments
+            'comments'       => $comments,
         ];
 
         return apply_filters('fluent_community/comments_api_response', $data, $request->all());
@@ -91,7 +99,7 @@ class CommentsController extends Controller
 
         if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
-                'message' => __('This post is not published yet', 'fluent-community')
+                'message' => __('This post is not published yet', 'fluent-community'),
             ]);
         }
 
@@ -113,7 +121,7 @@ class CommentsController extends Controller
 
             if (!$parentComment) {
                 return $this->sendError([
-                    'message' => __('Invalid parent comment', 'fluent-community')
+                    'message' => __('Invalid parent comment', 'fluent-community'),
                 ]);
             }
 
@@ -124,7 +132,8 @@ class CommentsController extends Controller
 
         $commentData['is_admin'] = $user->hasSpacePermission('community_moderator', $feed->space);
 
-        if ($mentionUserIds = Arr::get($mentions, 'user_ids', [])) {
+        $mentionUserIds = Arr::get($mentions, 'user_ids', []);
+        if ($mentionUserIds) {
             $commentData['meta']['mentioned_user_ids'] = $mentionUserIds;
         }
 
@@ -156,7 +165,7 @@ class CommentsController extends Controller
 
         if (!$comment) {
             return $this->sendError([
-                'message' => __('No duplicate comment please!', 'fluent-community')
+                'message' => __('No duplicate comment please!', 'fluent-community'),
             ]);
         }
 
@@ -166,7 +175,7 @@ class CommentsController extends Controller
 
 
         // Merge and save all media in one loop
-        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [$mediaItems]) : [];
+        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [ $mediaItems ]) : [];
 
         if ($inlineMedias) {
             $mediaItems = array_merge($mediaItems, $inlineMedias);
@@ -178,7 +187,7 @@ class CommentsController extends Controller
                     'is_active'     => 1,
                     'feed_id'       => $feed->id,
                     'object_source' => 'comment',
-                    'sub_object_id' => $comment->id
+                    'sub_object_id' => $comment->id,
                 ]);
                 $media->save();
             }
@@ -186,13 +195,13 @@ class CommentsController extends Controller
 
         $this->loadCommentRelations($comment);
 
-        if ($comment->status != 'published') {
+        if ($comment->status !== 'published') {
             do_action('fluent_community/comment/new_comment_' . $comment->status, $comment, $feed);
             /* translators: %$s is replaced by the status of the comment */
             $message = sprintf(__('Your comment has been marked as %s', 'fluent-community'), $comment->status);
             $response = [
                 'comment' => $comment,
-                'message' => $message
+                'message' => $message,
             ];
             return apply_filters('fluent_community/comment/new_comment_response', $response, $comment);
         }
@@ -213,12 +222,14 @@ class CommentsController extends Controller
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $this->verifySpacePermission($feed);
 
+        $this->verifyLessonAccess($feed);
+
         $requestData = $request->all();
         $comment = Comment::findOrFail($commentId);
 
-        if ($comment->post_id != $feed->id) {
+        if ((int) $comment->post_id !== (int) $feed->id) {
             return $this->sendError([
-                'message' => __('Invalid comment', 'fluent-community')
+                'message' => __('Invalid comment', 'fluent-community'),
             ]);
         }
 
@@ -226,13 +237,13 @@ class CommentsController extends Controller
 
         $requestData['is_admin'] = $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
 
-        if ($comment->user_id != get_current_user_id() && !$user->can('edit_any_comment', $feed->space)) {
+        if ((int) $comment->user_id !== get_current_user_id() && !$user->can('edit_any_comment', $feed->space)) {
             return $this->sendError([
-                'message' => __('You are not allowed to edit this comment', 'fluent-community')
+                'message' => __('You are not allowed to edit this comment', 'fluent-community'),
             ]);
         }
 
-        [$markdown, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($text, $feed);
+        [$markdown, $inlineMedias] = FeedsHelper::replaceImageUrlsWithRealMediaArchive($text, $feed, $comment);
 
         $mentions = FeedsHelper::getMentions($markdown, $feed->space_id);
 
@@ -253,7 +264,7 @@ class CommentsController extends Controller
         }
 
         // Merge and save all media in one loop
-        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [$mediaItems]) : [];
+        $mediaItems = $mediaItems ? (is_array($mediaItems) ? $mediaItems : [ $mediaItems ]) : [];
 
         if ($inlineMedias) {
             $mediaItems = array_merge($mediaItems, $inlineMedias);
@@ -267,7 +278,7 @@ class CommentsController extends Controller
                     'is_active'     => 1,
                     'feed_id'       => $feed->id,
                     'object_source' => 'comment',
-                    'sub_object_id' => $comment->id
+                    'sub_object_id' => $comment->id,
                 ]);
                 $media->save();
                 $allMediaIds[] = $media->id;
@@ -305,9 +316,9 @@ class CommentsController extends Controller
 
         $comment = Comment::findOrFail($commentId);
 
-        if ($comment->post_id != $feed->id) {
+        if ((int) $comment->post_id !== (int) $feed->id) {
             return $this->sendError([
-                'message' => __('Invalid comment', 'fluent-community')
+                'message' => __('Invalid comment', 'fluent-community'),
             ]);
         }
 
@@ -318,12 +329,12 @@ class CommentsController extends Controller
 
         if (!$isMod && !$isAdmin) {
             return $this->sendError([
-                'message' => __('You do not have permission to perform this action', 'fluent-community')
+                'message' => __('You do not have permission to perform this action', 'fluent-community'),
             ]);
         }
 
         $allData = $request->all();
-        $validKeys = ['is_sticky'];
+        $validKeys = [ 'is_sticky' ];
 
         $data = Arr::only($allData, $validKeys);
 
@@ -332,13 +343,13 @@ class CommentsController extends Controller
         if (isset($data['is_sticky'])) {
             if ($comment->parent_id) {
                 return $this->sendError([
-                    'message' => __('You cannot pin a reply comment', 'fluent-community')
+                    'message' => __('You cannot pin a reply comment', 'fluent-community'),
                 ]);
             }
 
             $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
             if ($data['is_sticky']) {
-                Comment::where('post_id', $feed->id)->update(['is_sticky' => 0]);
+                Comment::where('post_id', $feed->id)->update([ 'is_sticky' => 0 ]);
             }
         }
 
@@ -353,7 +364,7 @@ class CommentsController extends Controller
 
         return apply_filters('fluent_community/comment/patch_comment_response', [
             'comment' => $comment,
-            'message' => __('Comment updated', 'fluent-community')
+            'message' => __('Comment updated', 'fluent-community'),
         ], $comment, $feed, $request->all());
     }
 
@@ -373,6 +384,10 @@ class CommentsController extends Controller
                             ->find($id);
                     } else {
                         $media = Helper::getMediaFromUrl($mediaImage);
+                        // Skip media that is attached to anything other than this comment.
+                        if ($media && $media->is_active && !($media->object_source === 'comment' && (int) $media->sub_object_id === (int) $exisitngComment->id)) {
+                            $media = null;
+                        }
                     }
 
                     if ($media) {
@@ -383,12 +398,12 @@ class CommentsController extends Controller
                             'type'     => 'image',
                             'width'    => Arr::get($media->settings, 'width'),
                             'height'   => Arr::get($media->settings, 'height'),
-                            'provider' => Arr::get($media->settings, 'provider', 'uploader')
+                            'provider' => Arr::get($media->settings, 'provider', 'uploader'),
                         ];
                     }
                 }
                 $commentData['meta']['media_items'] = $mediaData;
-                return [$commentData, $mediaItems];
+                return [ $commentData, $mediaItems ];
             }
 
             $uploadedImages = Helper::getMediaByProvider($mediaImages);
@@ -403,19 +418,19 @@ class CommentsController extends Controller
                             'type'     => 'image',
                             'width'    => Arr::get($mediaItem->settings, 'width'),
                             'height'   => Arr::get($mediaItem->settings, 'height'),
-                            'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader')
+                            'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader'),
                         ];
 
                         $mediaPreviews[] = array_filter($mediaData);
                     }
                     $commentData['meta']['media_items'] = $mediaPreviews;
-                    return [$commentData, $mediaItems];
+                    return [ $commentData, $mediaItems ];
                 }
             }
         }
 
         if (empty($requestData['meta']['media_preview']['image'])) {
-            return [$commentData, []];
+            return [ $commentData, [] ];
         }
 
         if ($exisitngComment) {
@@ -427,7 +442,7 @@ class CommentsController extends Controller
 
             if ($existingMedia) {
                 $commentData['meta'] = $exisitngComment->meta;
-                return [$commentData, [$existingMedia]];
+                return [ $commentData, [ $existingMedia ] ];
             }
         }
 
@@ -442,7 +457,7 @@ class CommentsController extends Controller
             'width'    => (int) Arr::get($requestData, 'meta.media_preview.width', 0),
         ]);
 
-        return [$commentData, []];
+        return [ $commentData, [] ];
     }
 
     private function validateCommentText($data)
@@ -480,7 +495,16 @@ class CommentsController extends Controller
             throw new \Exception(esc_html__('Comments are disabled for this post', 'fluent-community'));
         }
 
+        $this->verifyLessonAccess($feed);
+
         $this->verifySpacePermission($feed);
+    }
+
+    private function verifyLessonAccess($feed)
+    {
+        if (CourseHelper::isLockedLesson($feed, $this->getUser())) {
+            throw new ForbiddenHttpException(esc_html__('This lesson is locked.', 'fluent-community'), 'lesson_locked');
+        }
     }
 
     private function verifySpacePermission($feed)
@@ -489,7 +513,7 @@ class CommentsController extends Controller
             $user = $this->getUser(true);
             $user->verifySpacePermission('can_comment', $feed->space);
 
-            if ($feed->space->type == 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
+            if ($feed->space->type === 'course' && Arr::get($feed->space->settings, 'disable_comments') === 'yes') {
                 throw new \Exception(esc_html__('Comments are disabled for this course', 'fluent-community'));
             }
         }
@@ -518,7 +542,7 @@ class CommentsController extends Controller
         $comment->load([
             'xprofile' => function ($q) {
                 $q->select(ProfileHelper::getXProfilePublicFields());
-            }
+            },
         ]);
     }
 
@@ -527,18 +551,18 @@ class CommentsController extends Controller
         $userId = get_current_user_id();
         $feed = Feed::withoutGlobalScopes()->byUserAccess($userId)->findOrFail($feed_id);
         $type = $request->get('react_type', 'like');
-        $type = in_array($type, ['like', 'bookmark'], true) ? $type : 'like';
+        $type = in_array($type, [ 'like', 'bookmark' ], true) ? $type : 'like';
         $willRemove = $request->get('remove');
 
         if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return $this->sendError([
-                'message' => __('This post is not published yet', 'fluent-community')
+                'message' => __('This post is not published yet', 'fluent-community'),
             ]);
         }
 
         if (!$willRemove && (int) $userId === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
-                'message' => __('You cannot react to your own post', 'fluent-community')
+                'message' => __('You cannot react to your own post', 'fluent-community'),
             ]);
         }
 
@@ -551,7 +575,7 @@ class CommentsController extends Controller
         if ($willRemove) {
             if ($react) {
                 $react->delete();
-                if ($type == 'like') {
+                if ($type === 'like') {
                     $feed->reactions_count = $feed->reactions_count - 1;
                     $feed->timestamps = false; // Don't update the updated_at timestamp
                     $feed->save();
@@ -561,14 +585,14 @@ class CommentsController extends Controller
 
             return [
                 'message'   => __('Reaction has been removed', 'fluent-community'),
-                'new_count' => $feed->reactions_count
+                'new_count' => $feed->reactions_count,
             ];
         }
 
         if ($react) {
             return [
                 'message'   => __('You have already reacted to this post', 'fluent-community'),
-                'new_count' => $feed->reactions_count
+                'new_count' => $feed->reactions_count,
             ];
         }
 
@@ -576,10 +600,10 @@ class CommentsController extends Controller
             'user_id'     => get_current_user_id(),
             'object_id'   => $feed->id,
             'type'        => $type,
-            'object_type' => 'feed'
+            'object_type' => 'feed',
         ]);
 
-        if ($type == 'like') {
+        if ($type === 'like') {
             $feed->reactions_count = $feed->reactions_count + 1;
             $feed->timestamps = false; // Don't update the updated_at timestamp
             $feed->save();
@@ -590,7 +614,7 @@ class CommentsController extends Controller
 
         return [
             'message'   => __('Reaction has been added', 'fluent-community'),
-            'new_count' => $feed->reactions_count
+            'new_count' => $feed->reactions_count,
         ];
     }
 
@@ -599,16 +623,16 @@ class CommentsController extends Controller
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
 
-        if ($comment->post_id != $feed->id) {
+        if ((int) $comment->post_id !== (int) $feed->id) {
             return $this->sendError([
-                'message' => __('Invalid comment', 'fluent-community')
+                'message' => __('Invalid comment', 'fluent-community'),
             ]);
         }
 
         $user = User::find(get_current_user_id());
-        if ($comment->user_id != get_current_user_id() && !$user->can('delete_any_comment', $feed->space)) {
+        if ((int) $comment->user_id !== get_current_user_id() && !$user->can('delete_any_comment', $feed->space)) {
             return $this->sendError([
-                'message' => __('You are not allowed to delete this comment', 'fluent-community')
+                'message' => __('You are not allowed to delete this comment', 'fluent-community'),
             ]);
         }
 
@@ -630,7 +654,7 @@ class CommentsController extends Controller
         do_action('fluent_community/comment_deleted', $commentId, $feed);
 
         return [
-            'message' => __('Selected comment has been deleted', 'fluent-community')
+            'message' => __('Selected comment has been deleted', 'fluent-community'),
         ];
     }
 
@@ -639,11 +663,19 @@ class CommentsController extends Controller
         $feed = Feed::withoutGlobalScopes()->byUserAccess(get_current_user_id())->findOrFail($feedId);
         $comment = Comment::findOrFail($commentId);
 
-        if ($comment->post_id != $feed->id) {
+        if ((int) $comment->post_id !== (int) $feed->id) {
             return $this->sendError([
-                'message' => __('Invalid comment', 'fluent-community')
+                'message' => __('Invalid comment', 'fluent-community'),
             ]);
         }
+
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
+            return $this->sendError([
+                'message' => __('This post is not published yet', 'fluent-community'),
+            ]);
+        }
+
+        $this->verifyLessonAccess($feed);
 
         $user = User::findOrFail(get_current_user_id());
 
@@ -652,11 +684,11 @@ class CommentsController extends Controller
         }
 
         $userId = get_current_user_id();
-        $reactionState = !!$request->get('state', false);
+        $reactionState = (bool)$request->get('state', false);
 
         if ($reactionState && (int) $userId === (int) $comment->user_id && apply_filters('fluent_community/disable_self_comment_react', false, $feed)) {
             return $this->sendError([
-                'message' => __('You cannot react to your own comment', 'fluent-community')
+                'message' => __('You cannot react to your own comment', 'fluent-community'),
             ]);
         }
 
@@ -670,7 +702,7 @@ class CommentsController extends Controller
                     'user_id'     => get_current_user_id(),
                     'object_id'   => $comment->id,
                     'object_type' => 'comment',
-                    'parent_id'   => $feed->id
+                    'parent_id'   => $feed->id,
                 ]);
 
                 if ($reaction->wasRecentlyCreated) {
@@ -701,7 +733,7 @@ class CommentsController extends Controller
         return [
             'message'         => __('Reaction has been toggled', 'fluent-community'),
             'reactions_count' => $comment->reactions_count,
-            'liked'           => $reactionState
+            'liked'           => $reactionState,
         ];
     }
 
@@ -711,18 +743,28 @@ class CommentsController extends Controller
         $testComment = Comment::query()->findOrFail($id);
 
         $comment = Comment::byContentModerationAccessStatus($this->getUser(), $testComment->space)
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
             ->with([
                 'xprofile' => function ($q) {
                     return $q->select(ProfileHelper::getXProfilePublicFields());
-                }
+                },
             ])->findOrFail($id);
 
-        // Just to verify the permission
-        Feed::withoutGlobalScopes()
+        $feed = Feed::withoutGlobalScopes()
             ->byUserAccess($this->getUserId())
             ->findOrFail($comment->post_id);
 
-        if ($request->get('context') == 'edit') {
+        if (!$feed->isViewableBy($this->getUserId())) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
+            ], 404);
+        }
+
+        $this->verifyLessonAccess($feed);
+
+        if ($request->get('context') === 'edit') {
             $meta = $comment->meta;
             unset($comment->meta);
             $images = Arr::get($meta, 'media_items', []);
@@ -733,7 +775,7 @@ class CommentsController extends Controller
                 if ($preview) {
                     $previewUrl = Arr::get($preview, 'image');
                     $provider = Arr::get($preview, 'provider');
-                    if ($previewUrl && $provider == 'uploader') {
+                    if ($previewUrl && $provider === 'uploader') {
                         $media = Media::where('media_url', $previewUrl)
                             ->where('object_source', 'comment')
                             ->where('sub_object_id', $comment->id)
@@ -746,13 +788,13 @@ class CommentsController extends Controller
                                     'type'     => $media->media_type,
                                     'width'    => Arr::get($media->settings, 'width'),
                                     'height'   => Arr::get($media->settings, 'height'),
-                                    'provider' => Arr::get($media->settings, 'provider', 'uploader')
-                                ]
+                                    'provider' => Arr::get($media->settings, 'provider', 'uploader'),
+                                ],
                             ];
                         }
                     } else {
                         $comment->meta = [
-                            'media_preview' => $preview
+                            'media_preview' => $preview,
                         ];
                     }
                 }
@@ -760,7 +802,7 @@ class CommentsController extends Controller
         }
 
         $data = [
-            'comment' => $comment
+            'comment' => $comment,
         ];
 
         return apply_filters('fluent_community/comment_api_response', $data, $request->all());

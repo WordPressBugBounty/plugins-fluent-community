@@ -69,7 +69,7 @@ class AuthHelper
         $data = [
             'user_login' => wp_slash($sanitized_user_login),
             'user_email' => wp_slash($user_email),
-            'user_pass'  => $user_pass
+            'user_pass'  => $user_pass,
         ];
 
         if (!empty($extraData['first_name'])) {
@@ -183,7 +183,7 @@ class AuthHelper
              * and this is what keeps the second factor arriving as a form there rather
              * than as the error message handleUserLogin() would otherwise print.
              */
-            ['fcom_user_login_form']
+            [ 'fcom_user_login_form' ]
         );
     }
 
@@ -201,7 +201,7 @@ class AuthHelper
         }
 
         \FluentAuth\App\Services\LoginBridge::adopt([
-            'host' => self::FLUENT_AUTH_HOST
+            'host' => self::FLUENT_AUTH_HOST,
         ]);
 
         return true;
@@ -243,7 +243,7 @@ class AuthHelper
                 'type'              => 'text',
                 'required'          => true,
                 'value'             => $invitation ? Arr::get($invitation->meta, 'invitee_name') : '',
-                'sanitize_callback' => 'sanitize_text_field'
+                'sanitize_callback' => 'sanitize_text_field',
             ],
             'email'         => [
                 'type'              => 'email',
@@ -252,14 +252,14 @@ class AuthHelper
                 'required'          => true,
                 'value'             => $invitation ? $invitation->message : '',
                 'readonly'          => $invitation && $invitation->message,
-                'sanitize_callback' => 'sanitize_email'
+                'sanitize_callback' => 'sanitize_email',
             ],
             'username'      => [
                 'type'              => 'text',
                 'placeholder'       => __('No space or special characters', 'fluent-community'),
                 'label'             => __('Username', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_user'
+                'sanitize_callback' => 'sanitize_user',
             ],
             'password'      => [
                 'type'              => 'password',
@@ -267,20 +267,20 @@ class AuthHelper
                 'label'             => __('Account Password', 'fluent-community'),
                 'required'          => true,
                 // kept as typed, like WordPress core: a password is only ever hashed
-                'sanitize_callback' => ''
+                'sanitize_callback' => '',
             ],
             'conf_password' => [
                 'type'              => 'password',
                 'placeholder'       => __('Password Confirmation', 'fluent-community'),
                 'label'             => __('Re-type Account Password', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => ''
+                'sanitize_callback' => '',
             ],
             'terms'         => [
                 'type'         => 'inline_checkbox',
                 'inline_label' => self::getTermsText(),
-                'required'     => true
-            ]
+                'required'     => true,
+            ],
         ], $invitation);
 
         if (!self::isPasswordConfRequired()) {
@@ -294,10 +294,10 @@ class AuthHelper
     {
         if (self::isFluentAuthAvailable()) {
             $url = add_query_arg([
-                'form' => 'reset_password'
+                'form' => 'reset_password',
             ], Helper::getAuthUrl());
         } else {
-            $url = wp_lostpassword_url($redirectUrl);;
+            $url = wp_lostpassword_url($redirectUrl);
         }
 
         return apply_filters('fluent_community/auth/lost_password_url', $url);
@@ -311,21 +311,21 @@ class AuthHelper
                 'placeholder'       => __('Your account email address', 'fluent-community'),
                 'label'             => __('Email Address', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_user'
+                'sanitize_callback' => 'sanitize_user',
             ],
             'password' => [
                 'type'              => 'password',
                 'placeholder'       => __('Your account password', 'fluent-community'),
                 'label'             => __('Password', 'fluent-community'),
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_text_field'
-            ]
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
         ]);
     }
 
     public static function isPasswordConfRequired()
     {
-        $isRequired = apply_filters_deprecated('fluent_community/autg/password_confirmation', [true], '2.7.8', 'fluent_community/auth/password_confirmation');
+        $isRequired = apply_filters_deprecated('fluent_community/autg/password_confirmation', [ true ], '2.7.8', 'fluent_community/auth/password_confirmation');
 
         return apply_filters('fluent_community/auth/password_confirmation', $isRequired);
     }
@@ -333,7 +333,7 @@ class AuthHelper
     public static function isRegistrationEnabled()
     {
 
-        $enabled = !!get_option('users_can_register');
+        $enabled = (bool)get_option('users_can_register');
 
         if (!$enabled) {
             $generalSettinsg = Helper::generalSettings();
@@ -390,15 +390,15 @@ class AuthHelper
         $message = (string)App::make('view')->make('email.template', [
             'logo'        => [
                 'url' => $generalSettings['logo'],
-                'alt' => $generalSettings['site_title']
+                'alt' => $generalSettings['site_title'],
             ],
             'bodyContent' => $message,
             'pre_header'  => __('Activate your account', 'fluent-community'),
             'footerLines' => [
                 __('If you did not initiate this request, please ignore this email.', 'fluent-community'),
                 /* translators: %1$s is replaced by the title of the site, %2$s is replaced by the home URL */
-                sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), home_url())
-            ]
+                sprintf(__('This email has been sent from %1$s. Site: %2$s', 'fluent-community'), Arr::get($generalSettings, 'site_title'), home_url()),
+            ],
         ]);
 
         $mailer = new Mailer($formData['email'], $mailSubject, $message);
@@ -415,7 +415,7 @@ class AuthHelper
         <div class="fls_signup_verification">
             <input type="hidden" name="__two_fa_signed_token" value="<?php echo esc_attr($signedToken); ?>"/>
             <?php /* translators: %s is replaced by the email address */ ?>
-            <p><?php echo esc_html(\sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])) ?></p>
+            <p><?php echo esc_html(\sprintf(__('A verification code has been sent to %s. Please provide the code below: ', 'fluent-community'), $formData['email'])); ?></p>
             <div class="fcom_form-group fcom_field_verification">
                 <div class="fcom_form_label">
                     <label for="fcom_field_verification"><?php esc_html_e('Verification Code', 'fluent-community'); ?></label>
@@ -507,7 +507,7 @@ class AuthHelper
             return new \WP_Error('rate_limit', __('Too many requests. Please try again later', 'fluent-community'));
         }
 
-        $rateLimit = $rateLimit + 1;
+        ++$rateLimit;
         set_transient($transientKey, $rateLimit, 300); // per 5 minutes
         return true;
     }

@@ -28,15 +28,15 @@ class DymmyCommands
         $postReactionCount = $postCount * 5;
         $commentReactionCount = $commentCount * 3;
 
-        $this->create_users($args, ['count' => $userCount]);
-        $this->create_spaces($args, ['count' => 5]);
+        $this->create_users($args, [ 'count' => $userCount ]);
+        $this->create_spaces($args, [ 'count' => 5 ]);
         $this->assign_users_to_spaces($args, []);
-        $this->create_posts($args, ['count' => $postCount, 'with_space' => 'yes']);
-        $this->create_comments($args, ['count' => $commentCount]);
-        $this->add_post_reactions($args, ['count' => $postReactionCount]);
-        $this->add_comment_reactions($args, ['count' => $commentReactionCount]);
+        $this->create_posts($args, [ 'count' => $postCount, 'with_space' => 'yes' ]);
+        $this->create_comments($args, [ 'count' => $commentCount ]);
+        $this->add_post_reactions($args, [ 'count' => $postReactionCount ]);
+        $this->add_comment_reactions($args, [ 'count' => $commentReactionCount ]);
 
-        (new Commands)->recalculate_user_points();
+        (new Commands())->recalculate_user_points();
     }
 
     /*
@@ -46,19 +46,19 @@ class DymmyCommands
     public function create_spaces($args, $assoc_args = [])
     {
         $count = Arr::get($assoc_args, 'count', 5);
-        $count += 1;
+        ++$count;
         $groupIds = SpaceGroup::query()->get()->pluck('id')->toArray();
 
         if (!$groupIds) {
             $group = SpaceGroup::create([
                 'title'       => 'Get Started',
-                'description' => 'Default Group Description'
+                'description' => 'Default Group Description',
             ]);
             $groupIds[] = $group->id;
 
             $group = SpaceGroup::create([
                 'title'       => 'Product Team',
-                'description' => 'Product team Group Description'
+                'description' => 'Product team Group Description',
             ]);
 
             $groupIds[] = $group->id;
@@ -72,11 +72,11 @@ class DymmyCommands
                 'description' => $this->getRandomStatus(10, 20),
                 'privacy'     => 'private',
                 'created_by'  => 1,
-                'settings'
+                'settings',
             ]);
 
             $community->members()->attach(1, [
-                'role' => 'admin'
+                'role' => 'admin',
             ]);
         }
 
@@ -108,7 +108,7 @@ class DymmyCommands
                 'display_name' => $firstName . ' ' . $lastName,
                 'first_name'   => $firstName,
                 'last_name'    => $lastName,
-                'role'         => 'subscriber'
+                'role'         => 'subscriber',
             ]);
             $user = User::find($userId);
             $user->syncXProfile();
@@ -153,7 +153,7 @@ class DymmyCommands
                 }
                 $space->members()->attach($profile->ID, [
                     'role'   => 'member',
-                    'status' => 'active'
+                    'status' => 'active',
                 ]);
             }
         }
@@ -171,7 +171,7 @@ class DymmyCommands
 
         $totalUsersCount = XProfile::query()->count();
 
-        $withSpace = Arr::get($assoc_args, 'with_space', 'yes') == 'yes';
+        $withSpace = Arr::get($assoc_args, 'with_space', 'yes') === 'yes';
         $count = Arr::get($assoc_args, 'count', 1000);
 
         if ($withSpace) {
@@ -199,10 +199,10 @@ class DymmyCommands
                 'content_type'     => 'text',
                 'privacy'          => 'public',
                 'status'           => 'published',
-                'space_id'         => $withSpace ? Arr::random($spaceIds) : NULL,
+                'space_id'         => $withSpace ? Arr::random($spaceIds) : null,
                 'created_at'       => $randomDate,
                 'updated_at'       => $randomDate,
-                'user_id'          => $randomUserId
+                'user_id'          => $randomUserId,
             ];
 
             $feed = new Feed();
@@ -241,7 +241,7 @@ class DymmyCommands
             if (!$feed) {
                 continue;
             }
-            $createdCount++;
+            ++$createdCount;
 
             $message = $this->getRandomStatus(20, 80);
             $commentData = [
@@ -302,7 +302,7 @@ class DymmyCommands
                 'updated_at'  => current_time('mysql'),
             ];
 
-            if ($post->reactions()->where('user_id', $userId)->count() == 0) {
+            if ($post->reactions()->where('user_id', $userId)->count() === 0) {
                 $reaction = Reaction::create($reactionData);
             } else {
                 continue;
@@ -311,7 +311,7 @@ class DymmyCommands
             $post->reactions_count = $post->reactions_count + 1;
             $post->save();
 
-            $createdCount++;
+            ++$createdCount;
         }
 
         $progress->finish();
@@ -354,7 +354,7 @@ class DymmyCommands
                 'updated_at'  => gmdate('Y-m-d H:i:s', wp_rand(strtotime('-1 years'), current_time('timestamp'))),
             ];
 
-            if ($comment->reactions()->where('user_id', $userId)->count() == 0) {
+            if ($comment->reactions()->where('user_id', $userId)->count() === 0) {
                 $reaction = Reaction::create($reactionData);
             } else {
                 continue;
@@ -363,7 +363,7 @@ class DymmyCommands
             $comment->reactions_count = $comment->reactions_count + 1;
             $comment->save();
 
-            $createdCount++;
+            ++$createdCount;
         }
 
         $progress->finish();
@@ -377,7 +377,7 @@ class DymmyCommands
         $words = [];
         for ($i = 0; $i < $count; $i++) {
 
-            if ($count % 10 == 0) {
+            if ($count % 10 === 0) {
                 // add a new line
                 $words[] = PHP_EOL;
             }
@@ -489,7 +489,7 @@ class DymmyCommands
             "Effective waste management strategies are crucial for reducing environmental impact.",
             "The expansion of online education provides access to learning opportunities regardless of location.",
             "Understanding market trends is essential for businesses to adapt and thrive.",
-            "The role of quantum computing in future technological developments is highly anticipated."
+            "The role of quantum computing in future technological developments is highly anticipated.",
         ];
 
         // Shuffle sentences for variety
@@ -622,12 +622,12 @@ class DymmyCommands
             "Finch", "Head", "Burt", "Hendrix", "Sosa", "Haney", "Franks", "Sargent", "Nieves", "Downs",
             "Rasmussen", "Bird", "Hewitt", "Lindsay", "Le", "Foreman", "Valencia", "Oneil", "Delacruz", "Vinson",
             "Dejesus", "Hyde", "Forbes", "Gilliam", "Guthrie", "Wooten", "Huber", "Barlow", "Boyle", "McMahon",
-            "Buckner", "Rocha", "Puckett", "Langley", "Knowles", "Cooke", "Velazquez", "Whitley", "Noel", "Vang"
+            "Buckner", "Rocha", "Puckett", "Langley", "Knowles", "Cooke", "Velazquez", "Whitley", "Noel", "Vang",
         ];
 
         return [
             'first_name' => Arr::random($firstNames),
-            'last_name'  => Arr::random($lastNames)
+            'last_name'  => Arr::random($lastNames),
         ];
     }
 }

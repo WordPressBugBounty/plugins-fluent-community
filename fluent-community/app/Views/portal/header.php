@@ -1,4 +1,4 @@
-<?php if (!defined('ABSPATH')) exit; // Exit if accessed directly ?>
+<?php if (!defined('ABSPATH')) { exit;} // Exit if accessed directly ?>
 
 <?php
 /**
@@ -55,6 +55,6 @@
         <?php do_action('fluent_community/after_header_menu', $context); ?>
     </div>
     <div class="top_menu_right">
-        <?php  do_action('fluent_community/top_menu_right_items', $context); ?>
+        <?php do_action('fluent_community/top_menu_right_items', $context); ?>
     </div>
 </div>

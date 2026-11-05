@@ -13,12 +13,13 @@ use FluentCommunity\Framework\Database\Orm\Model as BaseModel;
  */
 class Model extends BaseModel
 {
-    protected $guarded = ['id', 'ID'];
+    protected $guarded = [ 'id', 'ID' ];
 
     public function getPerPage()
     {
         if(isset($_REQUEST['per_page'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $this->perPage = (int) $_REQUEST['per_page']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            // 150 is the largest page size the portal tables offer (src/Bits/Pagination.vue).
+            $this->perPage = max(1, min(150, (int) $_REQUEST['per_page'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         }
         return $this->perPage;
     }

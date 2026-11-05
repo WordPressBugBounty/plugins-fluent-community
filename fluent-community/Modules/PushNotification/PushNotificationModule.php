@@ -15,16 +15,16 @@ class PushNotificationModule
     const SETUP_INCOMPLETE = 'incomplete';
     const SETUP_READY = 'ready';
 
-    const PROMPT_PLACEMENTS = ['feed_sidebar','profile_notification_prefs','profile_sidebar','notification_popover'];
+    const PROMPT_PLACEMENTS = [ 'feed_sidebar', 'profile_notification_prefs', 'profile_sidebar', 'notification_popover' ];
 
     const COMMENT_ACTIONS = [
         'fluent_community/notification/comment/notifed_to_author',
         'fluent_community/notification/comment/notifed_to_mentions',
         'fluent_community/notification/comment/notifed_to_thread_commetenter',
-        'fluent_community/notification/comment/notifed_to_other_users'
+        'fluent_community/notification/comment/notifed_to_other_users',
     ];
 
-    const PUSHED_ACTIONS = ['comment_added', 'child_comment_added', 'mention_added'];
+    const PUSHED_ACTIONS = [ 'comment_added', 'child_comment_added', 'mention_added' ];
 
     public static function isFluentNotifyActive()
     {
@@ -85,7 +85,7 @@ class PushNotificationModule
             ->where('fn_subscriptions.user_id', $userId)
             ->where('fn_notifications.source', 'community_comment')
             ->whereIn('fn_notifications.source_id', $commentIds)
-            ->whereNotIn('fn_notifications.status', ['fcm_failed', 'fcm_skipped'])
+            ->whereNotIn('fn_notifications.status', [ 'fcm_failed', 'fcm_skipped' ])
             ->pluck('fn_notifications.source_id')
             ->toArray();
 
@@ -94,10 +94,11 @@ class PushNotificationModule
 
     public function register()
     {
-        if (!self::isAvailable()) return;
+        if (!self::isAvailable()) { return;
+        }
 
         foreach (self::COMMENT_ACTIONS as $action) {
-            add_action($action, [$this, 'handleCommentNotification'], 10, 1);
+            add_action($action, [ $this, 'handleCommentNotification' ], 10, 1);
         }
 
         // let's load the assets
@@ -134,14 +135,15 @@ class PushNotificationModule
         $comment = Arr::get($eventData, 'comment');
         $feed = Arr::get($eventData, 'feed');
 
-        if (!$feed || !$comment) return;
+        if (!$feed || !$comment) { return;
+        }
 
         // Hook event key => notification event in NotificationPref::NOTIFICATION_EVENTS.
         $hookToEvent = [
             'notifed_to_author'             => 'comment',
             'notifed_to_thread_commetenter' => 'reply',
             'notifed_to_mentions'           => 'mention',
-            'notifed_to_other_users'        => 'co_comment'
+            'notifed_to_other_users'        => 'co_comment',
         ];
 
         $userIds = NotificationPref::filterPushUserIds(
@@ -149,12 +151,13 @@ class PushNotificationModule
             Arr::get($hookToEvent, $key, '')
         );
 
-        if (!$userIds) return;
+        if (!$userIds) { return;
+        }
 
         $xprofile = $comment->xprofile;
 
         $notification = Arr::get($eventData, 'notification');
-        $content = Helper::getHumanExcerpt($comment->message_rendered ?: $comment->message, 100);
+        $content = Helper::getHumanExcerpt($comment->message_rendered ? $comment->message_rendered : $comment->message, 100);
         if (!$content) {
             // The co-comment hook passes the notification as an array, the others as a model.
             $fallback = is_array($notification) ? Arr::get($notification, 'content') : $notification->content;

@@ -6,6 +6,7 @@ namespace FluentCommunity\Modules\Auth\Classes;
 use FluentCommunity\App\App;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\Libs\EmailComposer;
 use FluentCommunity\App\Services\Libs\Mailer;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -63,7 +64,7 @@ class InvitationService
         $data = [
             'user_login' => wp_slash($sanitized_user_login),
             'user_email' => wp_slash($user_email),
-            'user_pass'  => $user_pass
+            'user_pass'  => $user_pass,
         ];
 
         if (!empty($extraData['first_name'])) {
@@ -184,8 +185,8 @@ class InvitationService
             'post_id'          => $spaceId,
             'message_rendered' => md5($inviatationData['email'] . '_' . time() . '_' . wp_generate_uuid4(10) . '_' . $inviatationData['user_id']),
             'meta'             => [
-                'invitee_name' => sanitize_text_field(Arr::get($inviatationData, 'invitee_name'))
-            ]
+                'invitee_name' => sanitize_text_field(Arr::get($inviatationData, 'invitee_name')),
+            ],
         ]);
 
         $inviation = Invitation::create($formattedData);
@@ -203,7 +204,7 @@ class InvitationService
             'status'           => 'active',
             'post_id'          => $data['space_id'],
             'message_rendered' => md5($data['space_id'] . '_' . time() . '_' . wp_generate_uuid4(10) . '_' . $data['user_id']),
-            'meta'             => Arr::only($data, ['title', 'limit', 'expire_date'])
+            'meta'             => Arr::only($data, [ 'title', 'limit', 'expire_date' ]),
         ]);
 
         $inviation = Invitation::create($formattedData);
@@ -244,11 +245,12 @@ class InvitationService
         $invitation->reactions_count += 1;
         $invitation->save();
 
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+        $emailComposer = new EmailComposer();
 
         $emailComposer->addBlock('html_content', self::getInviationEmailHtml($invitation));
         $emailComposer->setDefaultLogo();
-        $emailComposer->setDefaultFooter();
+        // The invitee may have no account yet, so the footer gets the plain settings link.
+        $emailComposer->setDefaultFooter(false);
 
         $emailBody = $emailComposer->getHtml();
 
@@ -272,7 +274,7 @@ class InvitationService
             'by_email'     => $invitation->user->user_email,
             'site_title'   => $siteTitle,
             'access_url'   => $invitation->getAccessUrl(),
-            'invitee_name' => Arr::get($invitation->meta, 'invitee_name', 'there')
+            'invitee_name' => Arr::get($invitation->meta, 'invitee_name', 'there'),
         ]);
     }
 }

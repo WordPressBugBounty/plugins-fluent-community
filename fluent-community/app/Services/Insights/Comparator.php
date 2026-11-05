@@ -15,7 +15,7 @@ namespace FluentCommunity\App\Services\Insights;
  */
 class Comparator
 {
-    const KINDS = ['count', 'rate', 'duration'];
+    const KINDS = [ 'count', 'rate', 'duration' ];
 
     /**
      * @param int|float|null $current
@@ -29,12 +29,12 @@ class Comparator
         $kind = in_array($kind, self::KINDS, true) ? $kind : 'count';
 
         if ($current === null || $previous === null) {
-            return ['delta' => null, 'delta_kind' => $kind, 'good' => null];
+            return [ 'delta' => null, 'delta_kind' => $kind, 'good' => null ];
         }
 
         // Percentage points stay meaningful from a 0% base; a ratio does not.
         if ($kind !== 'rate' && (float)$previous === 0.0) {
-            return ['delta' => (float)$current === 0.0 ? 0.0 : null, 'delta_kind' => $kind, 'good' => null];
+            return [ 'delta' => (float)$current === 0.0 ? 0.0 : null, 'delta_kind' => $kind, 'good' => null ];
         }
 
         if ($kind === 'rate') {
@@ -52,6 +52,6 @@ class Comparator
             $good = $higherIsBetter ? $delta > 0 : $delta < 0;
         }
 
-        return ['delta' => $delta, 'delta_kind' => $kind, 'good' => $good];
+        return [ 'delta' => $delta, 'delta_kind' => $kind, 'good' => $good ];
     }
 }

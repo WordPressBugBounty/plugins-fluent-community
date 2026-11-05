@@ -32,11 +32,11 @@ class FormBuilder
         $readonly = $field['readonly'] ?? false;
 
         $atts = array_filter([
-            'type'        => in_array($type, ['text', 'email', 'password']) ? $type : '',
+            'type'        => in_array($type, [ 'text', 'email', 'password' ], true) ? $type : '',
             'id'          => 'fcom_' . $name,
             'name'        => $name,
             'value'       => $value,
-            'required'    => '',//$required ? 'required' : '',
+            'required'    => '',
             'readonly'    => $readonly ? 'readonly' : '',
             'placeholder' => $field['placeholder'] ?? '',
             'class'       => $field['input_class'] ?? '',
@@ -57,12 +57,12 @@ class FormBuilder
                 echo "<option value='" . esc_attr($option) . "'>" . esc_html($option) . "</option>";
             }
             echo "</select>";
-        } else if ($type === 'inline_checkbox') {
+        } elseif ($type === 'inline_checkbox') {
             echo "<div class='fcom_inline_checkbox'>";
             echo "<input type='checkbox' " . $this->printAtts($atts) . ">"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo "<label for='" . esc_attr($atts['id']) . "'>" . wp_kses_post($field['inline_label']) . "</label>";
             echo "</div>";
-        } else if ($type === 'textarea') {
+        } elseif ($type === 'textarea') {
             echo "<textarea " . $this->printAtts($atts) . "></textarea>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
         echo "</div></div>";

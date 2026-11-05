@@ -15,24 +15,24 @@ class InsightsTrackingHandler
 {
     public function register()
     {
-        add_action('fluent_community/feed/created', [$this, 'onFeedCreated'], 20, 1);
-        add_action('fluent_community/comment_added', [$this, 'onCommentAdded'], 20, 2);
-        add_action('fluent_community/feed/react_added', [$this, 'onReactionAdded'], 20, 2);
-        add_action('fluent_community/course/lesson_completed', [$this, 'onLessonCompleted'], 20, 2);
-        add_action('fluent_messaging/after_add_message', [$this, 'onMessageAdded'], 20, 1);
+        add_action('fluent_community/feed/created', [ $this, 'onFeedCreated' ], 20, 1);
+        add_action('fluent_community/comment_added', [ $this, 'onCommentAdded' ], 20, 2);
+        add_action('fluent_community/feed/react_added', [ $this, 'onReactionAdded' ], 20, 2);
+        add_action('fluent_community/course/lesson_completed', [ $this, 'onLessonCompleted' ], 20, 2);
+        add_action('fluent_messaging/after_add_message', [ $this, 'onMessageAdded' ], 20, 1);
 
-        add_action('fluent_community/space/joined', [$this, 'onSpaceJoined'], 20, 2);
-        add_action('fluent_community/space/user_left', [$this, 'onSpaceLeft'], 20, 2);
-        add_action('fluent_community/course/enrolled', [$this, 'onCourseEnrolled'], 20, 2);
-        add_action('fluent_community/course/student_left', [$this, 'onCourseLeft'], 20, 2);
+        add_action('fluent_community/space/joined', [ $this, 'onSpaceJoined' ], 20, 2);
+        add_action('fluent_community/space/user_left', [ $this, 'onSpaceLeft' ], 20, 2);
+        add_action('fluent_community/course/enrolled', [ $this, 'onCourseEnrolled' ], 20, 2);
+        add_action('fluent_community/course/student_left', [ $this, 'onCourseLeft' ], 20, 2);
 
-        add_action('deleted_user', [$this, 'onUserDeleted'], 20, 1);
-        add_filter('wp_privacy_personal_data_exporters', [$this, 'registerExporter']);
-        add_filter('wp_privacy_personal_data_erasers', [$this, 'registerEraser']);
+        add_action('deleted_user', [ $this, 'onUserDeleted' ], 20, 1);
+        add_filter('wp_privacy_personal_data_exporters', [ $this, 'registerExporter' ]);
+        add_filter('wp_privacy_personal_data_erasers', [ $this, 'registerEraser' ]);
 
-        add_action(Backfill::HOOK, [Backfill::class, 'handleJob']);
-        add_action(InsightsMigrator::INDEX_JOB_HOOK, [$this, 'buildPendingIndexes']);
-        add_action('fluent_community_daily_jobs', [$this, 'dailyMaintenance'], 20);
+        add_action(Backfill::HOOK, [ Backfill::class, 'handleJob' ]);
+        add_action(InsightsMigrator::INDEX_JOB_HOOK, [ $this, 'buildPendingIndexes' ]);
+        add_action('fluent_community_daily_jobs', [ $this, 'dailyMaintenance' ], 20);
     }
 
     public function onFeedCreated($feed)
@@ -55,7 +55,7 @@ class InsightsTrackingHandler
 
     public function onReactionAdded($reaction, $feed = null)
     {
-        if (!$reaction || $reaction->type !== 'like' || !in_array($reaction->object_type, ['feed', 'comment'], true)) {
+        if (!$reaction || $reaction->type !== 'like' || !in_array($reaction->object_type, [ 'feed', 'comment' ], true)) {
             return;
         }
 
@@ -113,7 +113,7 @@ class InsightsTrackingHandler
     {
         $exporters['fluent-community-insights'] = [
             'exporter_friendly_name' => __('Community activity history', 'fluent-community'),
-            'callback'               => [$this, 'exportPersonalData'],
+            'callback'               => [ $this, 'exportPersonalData' ],
         ];
 
         return $exporters;
@@ -123,7 +123,7 @@ class InsightsTrackingHandler
     {
         $erasers['fluent-community-insights'] = [
             'eraser_friendly_name' => __('Community activity history', 'fluent-community'),
-            'callback'             => [$this, 'erasePersonalData'],
+            'callback'             => [ $this, 'erasePersonalData' ],
         ];
 
         return $erasers;
@@ -137,8 +137,8 @@ class InsightsTrackingHandler
         if ($user) {
             foreach (ActivityTracker::getUserRows($user->ID) as $row) {
                 $data = [];
-                foreach (array_merge(['stat_date'], ActivityTracker::COLUMNS) as $column) {
-                    $data[] = ['name' => $column, 'value' => $row[$column]];
+                foreach (array_merge([ 'stat_date' ], ActivityTracker::COLUMNS) as $column) {
+                    $data[] = [ 'name' => $column, 'value' => $row[$column] ];
                 }
 
                 $items[] = [
@@ -150,7 +150,7 @@ class InsightsTrackingHandler
             }
         }
 
-        return ['data' => $items, 'done' => true];
+        return [ 'data' => $items, 'done' => true ];
     }
 
     public function erasePersonalData($email, $page = 1)

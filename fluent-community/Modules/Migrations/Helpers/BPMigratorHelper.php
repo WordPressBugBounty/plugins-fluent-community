@@ -11,6 +11,7 @@ use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
+use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -22,7 +23,7 @@ class BPMigratorHelper
             'groups'                => fluentCommunityApp('db')->table('bp_groups')->count(),
             'total_posts'           => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_update')->count(),
             'total_comments'        => fluentCommunityApp('db')->table('bp_activity')->where('type', 'activity_comment')->count(),
-            'total_reactions'       => class_exists('\BB_Reaction') ? fluentCommunityApp('db')->table('bb_user_reactions')->whereIn('item_type', ['activity_comment', 'activity'])->count() : 0,
+            'total_reactions'       => class_exists('\BB_Reaction') ? fluentCommunityApp('db')->table('bb_user_reactions')->whereIn('item_type', [ 'activity_comment', 'activity' ])->count() : 0,
             'total_community_users' => User::count(),
         ];
     }
@@ -60,12 +61,16 @@ class BPMigratorHelper
 
     public static function insertBBComment($comment, $feed, $parentId = null)
     {
+        // Render from the markdown, as PostMigrator::insertBBComment() does: the raw
+        // BuddyPress HTML is not sanitized and must not reach message_rendered.
+        $content = self::toMarkdown($comment['content']);
+
         $comemntData = [
             'user_id'          => $comment['user_id'],
             'post_id'          => $feed->id,
-            'message'          => self::toMarkdown($comment['content']),
-            'message_rendered' => $comment['content'],
-            'type'             => 'comment'
+            'message'          => $content,
+            'message_rendered' => FeedsHelper::mdToHtml($content),
+            'type'             => 'comment',
         ];
 
         $media = self::getActivityMediaPreview($comment['id']);
@@ -101,7 +106,7 @@ class BPMigratorHelper
                 'date_recorded' => $comment->date_recorded,
                 'mptt_left'     => $comment->mptt_left,
                 'mptt_right'    => $comment->mptt_right,
-                'children'      => []
+                'children'      => [],
             ];
         }
 
@@ -109,7 +114,7 @@ class BPMigratorHelper
         foreach ($comments as $comment) {
             $parentId = $comment->secondary_item_id;
 
-            if ($parentId == $comment->item_id) {
+            if ((int) $parentId === (int) $comment->item_id) {
                 // This is a top-level comment
                 $commentTree[] = &$commentMap[$comment->id];
             } else {
@@ -164,7 +169,7 @@ class BPMigratorHelper
         $content = preg_replace($pattern, $replacement, $content);
 
         // replace \" or \' with " or '
-        $content = str_replace(['\"', "\'"], ['"', "'"], $content);
+        $content = str_replace([ '\"', "\'" ], [ '"', "'" ], $content);
 
         // Shortcut: decode all HTML entities (including hex and decimal) to their UTF-8 characters, including emoji
         $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -224,9 +229,9 @@ class BPMigratorHelper
     {
         $mediaPreviews = [];
         $mediaMetas = fluentCommunityApp('db')->table('bp_activity_meta')
-            ->select(['meta_value', 'meta_key'])
+            ->select([ 'meta_value', 'meta_key' ])
             ->where('activity_id', $activityId)
-            ->whereIn('meta_key', ['bp_media_ids', '_gif_raw_data'])
+            ->whereIn('meta_key', [ 'bp_media_ids', '_gif_raw_data' ])
             ->get()
             ->keyBy('meta_key')
             ->toArray();
@@ -240,7 +245,7 @@ class BPMigratorHelper
             $mediaIds = explode(',', $mediaMeta->meta_value);
 
             $mediaItems = fluentCommunityApp('db')->table('bp_media')
-                ->select(['attachment_id'])
+                ->select([ 'attachment_id' ])
                 ->whereIn('id', $mediaIds)
                 ->get()
                 ->pluck('attachment_id')
@@ -257,15 +262,15 @@ class BPMigratorHelper
                 }
                 $meta = (array)get_post_meta($mediaPost->ID, '_wp_attachment_metadata', true);
                 $mediaPreviews[] = [
-                    'media_id' => NULL,
+                    'media_id' => null,
                     'url'      => $mediaPost->guid,
                     'type'     => 'image',
                     'width'    => Arr::get($meta, 'width'),
                     'height'   => Arr::get($meta, 'height'),
-                    'provider' => 'external'
+                    'provider' => 'external',
                 ];
             }
-        } else if (!empty($mediaMetas['_gif_raw_data'])) {
+        } elseif (!empty($mediaMetas['_gif_raw_data'])) {
             $giphyMeta = Utility::safeUnserialize($mediaMetas['_gif_raw_data']->meta_value);
             $giphyMedia = Arr::get($giphyMeta, 'images.downsized_medium', []);
             if (!$giphyMedia || empty($giphyMedia['url'])) {
@@ -279,7 +284,7 @@ class BPMigratorHelper
                     'provider' => 'giphy',
                     'height'   => (int)Arr::get($giphyMedia, 'height', 0),
                     'width'    => (int)Arr::get($giphyMedia, 'width', 0),
-                ])
+                ]),
             ];
         }
 
@@ -287,17 +292,17 @@ class BPMigratorHelper
             return null;
         }
 
-        if (count($mediaPreviews) == 1) {
+        if (count($mediaPreviews) === 1) {
             $media = $mediaPreviews[0];
             $media['image'] = $media['url'];
             unset($media['url']);
             return [
-                'media_preview' => $media
+                'media_preview' => $media,
             ];
         }
 
         return [
-            'media_items' => $mediaPreviews
+            'media_items' => $mediaPreviews,
         ];
     }
 
@@ -314,7 +319,7 @@ class BPMigratorHelper
 
         // feed likes
         $reactions = fluentCommunityApp('db')->table('bb_user_reactions')
-            ->select(['user_id', 'date_created', 'item_id'])
+            ->select([ 'user_id', 'date_created', 'item_id' ])
             ->where('item_id', $postsId)
             ->where('item_type', 'activity')
             ->get();
@@ -327,7 +332,7 @@ class BPMigratorHelper
                 'object_type' => 'feed',
                 'type'        => 'like',
                 'created_at'  => $reaction->date_created,
-                'updated_at'  => $reaction->date_created
+                'updated_at'  => $reaction->date_created,
             ];
         }
 
@@ -349,7 +354,7 @@ class BPMigratorHelper
         }
 
         $reactions = fluentCommunityApp('db')->table('bb_user_reactions')
-            ->select(['user_id', 'date_created', 'item_id'])
+            ->select([ 'user_id', 'date_created', 'item_id' ])
             ->whereIn('item_id', $bbCommentIds)
             ->where('item_type', 'activity_comment')
             ->get();
@@ -370,7 +375,7 @@ class BPMigratorHelper
                     'parent_id'   => $feedId,
                     'type'        => 'like',
                     'created_at'  => $reaction->date_created,
-                    'updated_at'  => $reaction->date_created
+                    'updated_at'  => $reaction->date_created,
                 ];
             }
         }
@@ -378,7 +383,7 @@ class BPMigratorHelper
         if ($likesArray) {
             Reaction::insert($likesArray);
             foreach ($likesCount as $commentId => $count) {
-                Comment::where('id', $commentId)->update(['reactions_count' => $count]);
+                Comment::where('id', $commentId)->update([ 'reactions_count' => $count ]);
             }
         }
     }
@@ -410,10 +415,10 @@ class BPMigratorHelper
                 if ($path) {
                     $media = self::createMediaFromPath($path, [
                         'object_source' => 'user_cover_photo',
-                        'user_id'       => $user->ID
+                        'user_id'       => $user->ID,
                     ]);
                     if ($media) {
-                        $meta = $xprofile->meta;
+                        $meta = $xprofile->getRawMeta();
                         $meta['cover_photo'] = $coverPhoto;
                         $xprofile->meta = $meta;
                         $hasChange = true;
@@ -426,7 +431,7 @@ class BPMigratorHelper
                 if ($path) {
                     $media = self::createMediaFromPath($path, [
                         'object_source' => 'user_photo',
-                        'user_id'       => $user->ID
+                        'user_id'       => $user->ID,
                     ]);
                     if ($media) {
                         $avatar = $media->media_url;
@@ -446,7 +451,7 @@ class BPMigratorHelper
             if ($favIds) {
                 $favFeedIds = fluentCommunityApp('db')->table('bp_activity_meta')
                     ->whereIn('activity_id', $favIds)
-                    ->select(['meta_value'])
+                    ->select([ 'meta_value' ])
                     ->where('meta_key', '_fcom_feed_id')
                     ->get()
                     ->pluck('meta_value')
@@ -466,7 +471,7 @@ class BPMigratorHelper
                                 'user_id'     => get_current_user_id(),
                                 'object_id'   => $favPost->id,
                                 'type'        => 'like',
-                                'object_type' => 'feed'
+                                'object_type' => 'feed',
                             ]);
 
                             $favPost->reactions_count = (int)$favPost->reactions_count + 1;
@@ -503,13 +508,13 @@ class BPMigratorHelper
 
         $serial = BaseSpace::when($spaceGroup, function ($q) use ($spaceGroup) {
                 $q->where('parent_id', $spaceGroup->id);
-            })->max('serial') + 1;
+        })->max('serial') + 1;
 
         $privacy = $group->status;
 
-        if ($privacy == 'hidden') {
+        if ($privacy === 'hidden') {
             $privacy = 'secret';
-        } else if (!in_array($privacy, ['public', 'private'])) {
+        } elseif (!in_array($privacy, [ 'public', 'private' ], true)) {
             $privacy = 'private';
         }
 
@@ -519,12 +524,12 @@ class BPMigratorHelper
             ->first();
 
         $restrictedPostOnly = 'no';
-        if ($postBy && $postBy->meta_value != 'members') {
+        if ($postBy && $postBy->meta_value !== 'members') {
             $restrictedPostOnly = 'yes';
         }
 
         $settings = [
-            'restricted_post_only' => $restrictedPostOnly
+            'restricted_post_only' => $restrictedPostOnly,
         ];
 
         $documentStatus = fluentCommunityApp('db')->table('bp_groups_groupmeta')
@@ -536,7 +541,7 @@ class BPMigratorHelper
             $settings = wp_parse_args($settings, [
                 'document_library' => 'yes',
                 'document_access'  => 'members_only',
-                'document_upload'  => $documentStatus === 'mods' ? 'admin_only' : 'members_only'
+                'document_upload'  => $documentStatus === 'mods' ? 'admin_only' : 'members_only',
             ]);
         }
 
@@ -547,7 +552,7 @@ class BPMigratorHelper
             'description' => wp_kses_post(wp_unslash($group->description)),
             'settings'    => $settings,
             'parent_id'   => $spaceGroup ? $spaceGroup->id : null,
-            'serial'      => $serial ?: 1
+            'serial'      => $serial ? $serial : 1,
         ];
 
         if ($existingSpace) {
@@ -567,7 +572,7 @@ class BPMigratorHelper
                 ->insert([
                     'group_id'   => $group->id,
                     'meta_key'   => '_fcom_space_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                    'meta_value' => $existingSpace->id // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                    'meta_value' => $existingSpace->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ]);
         }
 
@@ -585,7 +590,7 @@ class BPMigratorHelper
             if ($filePath) {
                 $media = self::createMediaFromPath($filePath, [
                     'object_source' => 'space_logo',
-                    'sub_object_id' => $existingSpace->id
+                    'sub_object_id' => $existingSpace->id,
                 ]);
                 if ($media) {
                     $existingSpace->logo = $media->media_url;
@@ -606,7 +611,7 @@ class BPMigratorHelper
                 if ($filePath) {
                     $media = self::createMediaFromPath($filePath, [
                         'object_source' => 'space_cover_photo',
-                        'sub_object_id' => $existingSpace->id
+                        'sub_object_id' => $existingSpace->id,
                     ]);
                     if ($media) {
                         $existingSpace->cover_photo = $media->media_url;
@@ -752,7 +757,7 @@ class BPMigratorHelper
             'media_path'    => '',
             'media_url'     => '',
             'settings'      => [],
-            'object_source' => ''
+            'object_source' => '',
         ];
 
         $mediaArgs = wp_parse_args($mediaArgs, $defaults);
@@ -822,7 +827,7 @@ class BPMigratorHelper
         }
 
         if (fluentCommunityApp('db')->table('bp_friends')->exists()) {
-            \FluentCommunityPro\App\Modules\Followers\FollowerHelper::updateSettings(['is_enabled' => 'yes']);
+            \FluentCommunityPro\App\Modules\Followers\FollowerHelper::updateSettings([ 'is_enabled' => 'yes' ]);
         }
     }
 }

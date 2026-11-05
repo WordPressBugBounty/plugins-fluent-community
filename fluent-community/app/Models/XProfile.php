@@ -44,7 +44,7 @@ use FluentCrm\App\Models\Subscriber;
  */
 class XProfile extends Model
 {
-    const STATUSES = ['active', 'pending', 'blocked'];
+    const STATUSES = [ 'active', 'pending', 'blocked' ];
 
     protected $table = 'fcom_xprofile';
 
@@ -175,7 +175,7 @@ class XProfile extends Model
      */
     public function getAvatarAttribute()
     {
-        $gravatarEnabled = Utility::getPrivacySetting('enable_gravatar') != 'no';
+        $gravatarEnabled = Utility::getPrivacySetting('enable_gravatar') !== 'no';
 
         if (!empty($this->attributes['avatar'])) {
             $url = $this->attributes['avatar'];
@@ -280,6 +280,19 @@ class XProfile extends Model
         return $settings;
     }
 
+    /**
+     * The stored meta, without the viewer filter of the `meta` accessor.
+     * Read this when you write the meta back: the accessor trims the meta
+     * for viewers who cannot see the profile, and saving that trimmed copy
+     * erases the other fields.
+     */
+    public function getRawMeta()
+    {
+        $settings = Utility::safeUnserialize(Arr::get($this->attributes, 'meta'));
+
+        return is_array($settings) ? $settings : [];
+    }
+
     public function setMetaAttribute($value)
     {
         if (!$value) {
@@ -305,7 +318,7 @@ class XProfile extends Model
 
     public function setCustomFieldsAttribute($value)
     {
-        $this->attributes['custom_fields'] = is_array($value) ? json_encode($value) : $value;
+        $this->attributes['custom_fields'] = is_array($value) ? wp_json_encode($value) : $value;
     }
 
     public function getFirstName()
@@ -329,7 +342,7 @@ class XProfile extends Model
         // remove the first name
         array_shift($fullName);
 
-        if (count($fullName) == 0) {
+        if (count($fullName) === 0) {
             return '';
         }
         return implode(' ', $fullName);

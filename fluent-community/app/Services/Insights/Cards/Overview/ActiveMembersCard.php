@@ -72,7 +72,7 @@ class ActiveMembersCard extends AbstractCard
             ],
         ], 'count', [
             'chart'          => 'area',
-            'headline'       => ['label' => $label, 'value' => $active['total'], 'format' => 'number'],
+            'headline'       => [ 'label' => $label, 'value' => $active['total'], 'format' => 'number' ],
             'visits_tracked' => $withVisits,
         ]);
     }

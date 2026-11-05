@@ -52,7 +52,7 @@ class Helper
     }
 
     /**
-     * Check if POST content length exceeds PHP limits
+     * Check if the request or an uploaded file exceeds PHP size limits
      *
      * @return array|false Error array if limit exceeded, false otherwise
      */
@@ -61,15 +61,18 @@ class Helper
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Server variable check
         $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
         $postMaxSize = wp_convert_hr_to_bytes(ini_get('post_max_size'));
+        // A file over upload_max_filesize stays in $_FILES with an error and no tmp_name, so validation would report it as missing.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- read-only check of PHP's upload error codes
+        $overFileLimit = in_array(UPLOAD_ERR_INI_SIZE, array_column($_FILES, 'error'), true);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- read-only existence check on superglobals, no state mutation
-        if ($contentLength > 0 && ($contentLength > $postMaxSize || (empty($_FILES) && empty($_POST)))) {
+        if ($overFileLimit || ($contentLength > 0 && ($contentLength > $postMaxSize || (empty($_FILES) && empty($_POST))))) {
             return [
                 'message' => sprintf(
                     /* translators: %s: max size */
                     __('Upload failed: File exceeds server limit (%s). Please upload a smaller file.', 'fluent-community'),
-                    size_format($postMaxSize)
-                )
+                    size_format($overFileLimit ? wp_max_upload_size() : $postMaxSize)
+                ),
             ];
         }
 
@@ -160,7 +163,7 @@ class Helper
         $settings = Utility::getCustomizationSettings();
         $mode = isset($settings['default_theme_mode']) ? $settings['default_theme_mode'] : 'light';
 
-        if (!in_array($mode, ['light', 'dark', 'system'], true)) {
+        if (!in_array($mode, [ 'light', 'dark', 'system' ], true)) {
             $mode = 'light';
         }
 
@@ -169,13 +172,15 @@ class Helper
 
     /**
      * Pre-paint script that sets the theme before first render (no flash).
-     * Precedence mirrors runtime: host-theme cookie → user pick → admin default.
+     * Precedence mirrors runtime: user pick `system` (unless the host-theme cookie changed since
+     * the portal wrote it) → host-theme cookie → user pick `light` / `dark` → admin default.
      * Not persisted. Gate on hasColorScheme().
+     * `data-fcom-theme` holds the selected mode, so the switcher icon is right before paint.
      */
     public static function renderColorSchemePrePaintScript()
     {
         $defaultMode = self::getDefaultThemeMode();
-        $portalVars = apply_filters('fluent_community/general_portal_vars', ['color_switch_cookie_name' => '']);
+        $portalVars = apply_filters('fluent_community/general_portal_vars', [ 'color_switch_cookie_name' => '' ]);
         $cookieName = isset($portalVars['color_switch_cookie_name']) ? $portalVars['color_switch_cookie_name'] : '';
         ?>
         <script>
@@ -183,39 +188,56 @@ class Helper
                 var root = document.documentElement;
                 var cookieName = '<?php echo esc_js($cookieName); ?>';
                 var mode = null;
+                var selected = null;
+                var stored = '';
+                var written = '';
+                var cookieMode = '';
+                var systemMode = function () {
+                    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                };
 
-                // host-theme integration cookie (Blocksy/Kadence) wins when present
+                try {
+                    var states = JSON.parse(localStorage.getItem('fcom_global_storage') || '{}');
+                    stored = states.fcom_color_mode || '';
+                    written = states.fcom_color_mode_cookie || '';
+                } catch (error) {}
+
                 if (cookieName) {
                     var safeName = cookieName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     var match = document.cookie.match('(?:^|; )' + safeName + '=([^;]*)');
                     if (match) {
-                        var cookieMode = decodeURIComponent(match[1]);
-                        if (cookieMode === 'dark' || cookieMode === 'light') {
-                            mode = cookieMode;
+                        var value = decodeURIComponent(match[1]);
+                        if (value === 'dark' || value === 'light') {
+                            cookieMode = value;
                         }
                     }
                 }
 
+                // a user pick of System beats the host-theme cookie while the cookie still holds
+                // the value the portal wrote; a different value means the host theme's switch was used
+                if (stored === 'system' && (!cookieMode || cookieMode === written)) {
+                    selected = 'system';
+                    mode = systemMode();
+                }
+
+                // host-theme integration cookie (Blocksy/Kadence) wins when present
+                if (!mode && cookieMode) {
+                    mode = selected = cookieMode;
+                }
+
                 // explicit user pick
-                if (!mode) {
-                    try {
-                        var stored = JSON.parse(localStorage.getItem('fcom_global_storage') || '{}').fcom_color_mode;
-                        if (stored === 'dark' || stored === 'light') {
-                            mode = stored;
-                        }
-                    } catch (error) {}
+                if (!mode && (stored === 'dark' || stored === 'light')) {
+                    mode = selected = stored;
                 }
 
                 // admin default
                 if (!mode) {
                     var defaultMode = '<?php echo esc_js($defaultMode); ?>';
-                    if (defaultMode === 'system') {
-                        mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                    } else {
-                        mode = defaultMode;
-                    }
+                    selected = defaultMode;
+                    mode = defaultMode === 'system' ? systemMode() : defaultMode;
                 }
 
+                root.setAttribute('data-fcom-theme', selected);
                 root.setAttribute('data-color-mode', mode === 'dark' ? 'dark' : 'light');
                 if (mode === 'dark') {
                     root.classList.add('dark');
@@ -266,6 +288,22 @@ class Helper
         return $user && Arr::get($user->getPermissions(), 'community_admin');
     }
 
+    /**
+     * Clamp a requested page size for feed-style lists.
+     *
+     * @param mixed $perPage The requested page size.
+     * @return int A value from 1 to the `fluent_community/max_per_page` limit (100 by default).
+     */
+    public static function clampPerPage($perPage)
+    {
+        $maxPerPage = (int) apply_filters('fluent_community/max_per_page', 100);
+        if ($maxPerPage < 1) {
+            $maxPerPage = 100;
+        }
+
+        return min($maxPerPage, max(1, (int) $perPage));
+    }
+
     public static function isModerator($user = null)
     {
         if (!$user) {
@@ -297,7 +335,7 @@ class Helper
         $baseUrl = apply_filters('fluent_community/base_url', home_url(self::getPortalSlug()));
         $baseUrl = rtrim($baseUrl, '/');
 
-        if (self::getPortalRouteType() != 'hash') {
+        if (self::getPortalRouteType() !== 'hash') {
             return $baseUrl . '/' . ltrim($path, '/');
         }
 
@@ -391,7 +429,7 @@ class Helper
         if (is_array($url) && isset($url['provider'])) {
             $provider = Arr::get($url, 'provider');
 
-            if ($provider == 'giphy') {
+            if ($provider === 'giphy') {
                 return null;
             }
 
@@ -426,7 +464,7 @@ class Helper
             return;
         }
 
-        do_action('fluent_community/remove_medias_by_url', [$url], [
+        do_action('fluent_community/remove_medias_by_url', [ $url ], [
             'sub_object_id' => $subObjectId,
         ]);
     }
@@ -444,7 +482,8 @@ class Helper
         foreach ($urls as $url) {
             $media = self::getMediaFromUrl($url);
 
-            if ($media) {
+            // Only fresh uploads; an active row already belongs to another post or comment.
+            if ($media && !$media->is_active) {
                 $mediaItems[] = $media;
             }
         }
@@ -477,8 +516,8 @@ class Helper
             'logo_permalink'          => '',
             'featured_image'          => '',
             'access'                  => [
-                'acess_level'  => 'public', // logged_in, public, role_based
-                'access_roles' => []
+                'acess_level'  => 'public', // One of: logged_in or public or role_based
+                'access_roles' => [],
             ],
             'auth_form_type'          => 'default',
             'explicit_registration'   => 'no',
@@ -489,11 +528,11 @@ class Helper
             'auth_url'                => '',
             'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth'),
             'use_custom_signup_page'  => 'no',
-            'custom_signup_url'       => ''
+            'custom_signup_url'       => '',
         ];
 
         $settings = wp_parse_args($settings, $defaults);
-        if ($settings['auth_form_type'] != 'custom' || empty($settings['auth_form_type'])) {
+        if ($settings['auth_form_type'] !== 'custom' || empty($settings['auth_form_type'])) {
             $settings['cutsom_auth_url'] = self::baseUrl('?fcom_action=auth');
         }
 
@@ -510,7 +549,7 @@ class Helper
     public static function hasGlobalPost()
     {
         $settings = self::generalSettings();
-        $status = Arr::get($settings, 'disable_global_posts', '') != 'yes';
+        $status = Arr::get($settings, 'disable_global_posts', '') !== 'yes';
 
         return apply_filters('fluent_community/has_global_post', $status);
     }
@@ -526,7 +565,7 @@ class Helper
         $settings = self::generalSettings();
         $accessLevel = Arr::get($settings, 'access.acess_level');
 
-        if ($accessLevel == 'public') {
+        if ($accessLevel === 'public') {
             return apply_filters('fluent_community/can_access_portal', true);
         }
 
@@ -538,7 +577,7 @@ class Helper
             return apply_filters('fluent_community/can_access_portal', false);
         }
 
-        if ($accessLevel == 'logged_in') {
+        if ($accessLevel === 'logged_in') {
             return apply_filters('fluent_community/can_access_portal', true);
         }
 
@@ -554,7 +593,7 @@ class Helper
             return apply_filters('fluent_community/can_access_portal', false);
         }
 
-        $result = !!array_intersect(array_values($user->roles), $roles);
+        $result = (bool)array_intersect(array_values($user->roles), $roles);
 
         if (!$result) {
             return apply_filters('fluent_community/can_access_portal', false);
@@ -564,9 +603,9 @@ class Helper
             return apply_filters('fluent_community/can_access_portal', true);
         }
 
-        $xProfile = Helper::getCurrentProfile();
+        $xProfile = self::getCurrentProfile();
 
-        $result = $xProfile && $xProfile->status == 'active';
+        $result = $xProfile && $xProfile->status === 'active';
 
         return apply_filters('fluent_community/can_access_portal', $result);
     }
@@ -593,7 +632,8 @@ class Helper
             'post',
             'admin',
             'course',
-            'site-maps'
+            'site-maps',
+            'feed-settings',
         ]);
     }
 
@@ -640,7 +680,9 @@ class Helper
             return $users[$userId];
         }
 
-        return $users[$userId] = User::find($userId);
+        $users[$userId] = User::find($userId);
+
+        return $users[$userId];
     }
 
     /**
@@ -803,19 +845,19 @@ class Helper
             return [];
         }
 
-        $urlKeys = ['url', 'image', 'thumbnail', 'src', 'provider_url', 'content_url'];
-        $intKeys = ['media_id'];
+        $urlKeys = [ 'url', 'image', 'thumbnail', 'src', 'provider_url', 'content_url' ];
+        $intKeys = [ 'media_id' ];
 
         foreach ($media as $key => $value) {
             if ('html' === $key) {
                 $media[$key] = is_string($value) ? RemoteUrlParser::sanitizeOembedHtml($value) : '';
-            } else if (in_array($key, $urlKeys, true)) {
-                $media[$key] = is_string($value) ? esc_url_raw($value, ['http', 'https']) : '';
-            } else if (in_array($key, $intKeys, true)) {
+            } elseif (in_array($key, $urlKeys, true)) {
+                $media[$key] = is_string($value) ? esc_url_raw($value, [ 'http', 'https' ]) : '';
+            } elseif (in_array($key, $intKeys, true)) {
                 $media[$key] = is_numeric($value) ? (int) $value : '';
-            } else if (is_array($value)) {
+            } elseif (is_array($value)) {
                 $media[$key] = self::sanitizeMediaPreview($value);
-            } else if (is_bool($value)) {
+            } elseif (is_bool($value)) {
                 $media[$key] = $value;
             } else {
                 $media[$key] = is_scalar($value) ? sanitize_text_field((string) $value) : '';
@@ -865,7 +907,7 @@ class Helper
             // remove all tags
             $content = wp_strip_all_tags($content);
             // remove new lines and tabs
-            $content = str_replace(["\r", "\n", "\t"], ' ', $content);
+            $content = str_replace([ "\r", "\n", "\t" ], ' ', $content);
             // remove multiple spaces
             $content = preg_replace('/\s+/', ' ', $content);
 
@@ -893,7 +935,7 @@ class Helper
     public static function isPublicAccessible()
     {
         $settings = self::generalSettings();
-        return Arr::get($settings, 'access.acess_level') == 'public';
+        return Arr::get($settings, 'access.acess_level') === 'public';
     }
 
     /**
@@ -909,7 +951,7 @@ class Helper
             return array_filter($images, function ($image) use ($provider) {
                 if (is_array($image)) {
                     if (isset($image['provider'])) {
-                        return Arr::get($image, 'provider') == $provider;
+                        return (string) Arr::get($image, 'provider') === (string) $provider;
                     }
 
                     return $provider === 'uploader'; // for existing images when no provider was set.
@@ -941,13 +983,17 @@ class Helper
         $userSpaceIds = $user ? self::getUserSpaceIds($user->ID) : [];
         $isComModerator = $user && $user->hasCommunityModeratorAccess();
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
+        $canManageAllCourses = $user && $user->hasSpaceManageAccess();
         $isSpaceModerator = $user && $user->isSpaceModerator();
 
         $formattedGroups = [];
         foreach ($communityGroups as $communityGroup) {
             $validSpaces = [];
             $spaces = $communityGroup->spaces;
-            $isShowAll = Arr::get($communityGroup->settings, 'always_show_spaces') === 'yes';
+            $visibility = Arr::get($communityGroup->settings, 'always_show_spaces');
+            $isShowAll = $visibility === 'yes';
+            // Custom links can't be joined, so 'joined' keeps their own audience rule.
+            $isJoinedOnly = $visibility === 'joined' && !$isSpaceModerator;
 
             if (!$isShowAll && !$isSpaceModerator) {
                 $spaceIds = $spaces->pluck('id')->toArray();
@@ -962,6 +1008,10 @@ class Helper
             }
 
             foreach ($spaces as $space) {
+                if ($isJoinedOnly && $space->type !== 'sidebar_link' && !in_array($space->id, $userSpaceIds)) {
+                    continue;
+                }
+
                 $validSpace = $view ? self::transformSpaceToLink($space, $user) : $space;
                 if (!$validSpace) {
                     continue;
@@ -977,30 +1027,32 @@ class Helper
                     }
                 }
 
-                if ($isComModerator && $space->type != 'course') {
+                if ($isComModerator && $space->type !== 'course') {
                     $validSpaces[] = $validSpace;
                     continue;
                 }
 
-                if ($isCourseCreator && $space->type == 'course') {
+                // Another creator's secret course follows the member rules below, like the course lists.
+                if ($isCourseCreator && $space->type === 'course'
+                    && ($space->privacy !== 'secret' || $canManageAllCourses || (int) $space->created_by === (int) $user->ID)) {
                     $validSpaces[] = $validSpace;
                     continue;
                 }
 
-                if ($space->privacy == 'public') {
+                if ($space->privacy === 'public') {
                     $validSpaces[] = $validSpace;
                     continue;
                 }
 
-                $hasMembership = $user && $space->getMembership($user->ID);
+                $hasMembership = $user && $space->isActiveMember($user->ID);
 
-                if ($space->privacy == 'private') {
+                if ($space->privacy === 'private') {
                     if (!$user || !$hasMembership) {
                         $validSpace['show_lock'] = true;
                     }
                 }
 
-                if ($space->privacy == 'secret') {
+                if ($space->privacy === 'secret') {
                     if (!$user || !$hasMembership) {
                         continue;
                     }
@@ -1018,7 +1070,7 @@ class Helper
                 'title'    => $communityGroup->title,
                 'slug'     => $communityGroup->slug,
                 'logo'     => $communityGroup->logo,
-                'children' => $validSpaces
+                'children' => $validSpaces,
             ];
         }
 
@@ -1127,7 +1179,7 @@ class Helper
             ->where('space_id', $spaceId)
             ->where('user_id', $userId)
             ->where('status', 'active')
-            ->update(['updated_at' => current_time('mysql')]);
+            ->update([ 'updated_at' => current_time('mysql') ]);
 
         return $updated > 0;
     }
@@ -1145,7 +1197,7 @@ class Helper
         }
 
         // add_option() keeps the first value if two requests race here.
-        add_option(SpaceUserPivot::SEEN_SINCE_OPTION, current_time('mysql'), '', 'yes');
+        add_option(SpaceUserPivot::SEEN_SINCE_OPTION, current_time('mysql'), '', true);
 
         return get_option(SpaceUserPivot::SEEN_SINCE_OPTION);
     }
@@ -1159,7 +1211,7 @@ class Helper
      */
     private static function transformSpaceToLink($space, $user = null)
     {
-        $isCustomLink = $space->type == 'sidebar_link';
+        $isCustomLink = $space->type === 'sidebar_link';
         if ($isCustomLink && !self::canViewSideLinkLink($space, $user)) {
             return null;
         }
@@ -1167,7 +1219,7 @@ class Helper
         $logo = $space->logo;
         $title = $space->title;
 
-        if ($space->status == 'draft') {
+        if ($space->status === 'draft') {
             $title = $title . ' ' . __('(Draft)', 'fluent-community');
         }
 
@@ -1179,7 +1231,7 @@ class Helper
             'permalink'    => $space->getPermalink(),
             'is_custom'    => $isCustomLink ? 'yes' : 'no',
             'new_tab'      => ($isCustomLink && Arr::get($space, 'settings.new_tab', 'no') === 'yes') ? 'yes' : 'no',
-            'link_classes' => 'space_menu_item route_url fcom_space_id_' . $space->id . ' fcom_space_' . $space->slug
+            'link_classes' => 'space_menu_item route_url fcom_space_id_' . $space->id . ' fcom_space_' . $space->slug,
         ];
     }
 
@@ -1187,15 +1239,15 @@ class Helper
     {
         $privacy = $space->privacy;
 
-        if ($privacy == 'public') {
+        if ($privacy === 'public') {
             return true;
         }
 
-        if ($privacy == 'logged_in') {
-            return !!$user;
+        if ($privacy === 'logged_in') {
+            return (bool)$user;
         }
 
-        if ($privacy == 'logged_out_only') {
+        if ($privacy === 'logged_out_only') {
             return !$user;
         }
 
@@ -1209,13 +1261,14 @@ class Helper
             return true;
         }
 
-        // Live ids, memoized per request: this runs once per sidebar link
+        // Live ids, memoized per request: this runs once per sidebar link.
+        // Joined spaces only: a public space the user never joined is no membership.
         static $userSpaces = [];
         if (!isset($userSpaces[$user->ID])) {
-            $userSpaces[$user->ID] = $user->getAccessSpaceIds();
+            $userSpaces[$user->ID] = $user->getJoinedSpaceIds();
         }
 
-        return !!array_intersect($userSpaces[$user->ID], $accessIds);
+        return (bool)array_intersect($userSpaces[$user->ID], $accessIds);
     }
 
     public static function isAlreadyOnboarded()
@@ -1245,7 +1298,7 @@ class Helper
                         $query->where('status', 'published')
                             ->orderBy('serial', 'ASC');
                     }
-                }
+                },
             ])
             ->get();
 
@@ -1254,7 +1307,7 @@ class Helper
 
             if ($createdSpace) {
                 Space::where('type', 'community')->update([
-                    'parent_id' => $createdSpace->id
+                    'parent_id' => $createdSpace->id,
                 ]);
             }
 
@@ -1306,7 +1359,7 @@ class Helper
                 'enabled'      => 'yes',
                 'permalink'    => self::baseUrl('/'),
                 'link_classes' => 'fcom_dashboard route_url',
-                'shape_svg'    => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"/><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"/><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+                'shape_svg'    => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"/><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"/><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             ],
             'spaces'      => [
                 'slug'         => 'spaces',
@@ -1316,7 +1369,7 @@ class Helper
                 'enabled'      => 'yes',
                 'permalink'    => self::baseUrl('discover/spaces'),
                 'link_classes' => 'fcom_spaces route_url',
-                'shape_svg'    => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"/><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"/><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"/><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"/><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"/><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"/></g></svg>'
+                'shape_svg'    => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"/><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"/><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"/><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"/><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"/><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"/></g></svg>',
             ],
             'all_courses' => [
                 'slug'           => 'all_courses',
@@ -1327,14 +1380,14 @@ class Helper
                 'enabled'        => 'yes',
                 'is_unavailable' => self::isFeatureEnabled('course_module') ? 'no' : 'yes',
                 'permalink'      => self::baseUrl('courses'),
-                'shape_svg'      => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10.734 5.84746L14.7114 6.9072M9.88139 9.01146L11.8701 9.54132M9.98031 14.9723L10.7758 15.1843C13.0258 15.7838 14.1508 16.0835 15.037 15.5747C15.9233 15.0659 16.2247 13.9473 16.8276 11.71L17.6802 8.54599C18.2831 6.3087 18.5845 5.19006 18.0728 4.30879C17.5611 3.42752 16.4362 3.12778 14.1862 2.52831L13.3907 2.31636C11.1407 1.71688 10.0157 1.41714 9.12948 1.92594C8.24322 2.43474 7.94178 3.55338 7.3389 5.79067L6.4863 8.95466C5.88342 11.1919 5.58198 12.3106 6.09367 13.1919C6.60536 14.0731 7.73034 14.3729 9.98031 14.9723Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.99996 17.4559L9.20634 17.672C6.96165 18.2832 5.83931 18.5889 4.95512 18.0701C4.07093 17.5513 3.7702 16.4107 3.16874 14.1295L2.31814 10.9035C1.71668 8.62232 1.41595 7.48174 1.92643 6.58318C2.36802 5.80591 3.33329 5.83421 4.58329 5.83411" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+                'shape_svg'      => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10.734 5.84746L14.7114 6.9072M9.88139 9.01146L11.8701 9.54132M9.98031 14.9723L10.7758 15.1843C13.0258 15.7838 14.1508 16.0835 15.037 15.5747C15.9233 15.0659 16.2247 13.9473 16.8276 11.71L17.6802 8.54599C18.2831 6.3087 18.5845 5.19006 18.0728 4.30879C17.5611 3.42752 16.4362 3.12778 14.1862 2.52831L13.3907 2.31636C11.1407 1.71688 10.0157 1.41714 9.12948 1.92594C8.24322 2.43474 7.94178 3.55338 7.3389 5.79067L6.4863 8.95466C5.88342 11.1919 5.58198 12.3106 6.09367 13.1919C6.60536 14.0731 7.73034 14.3729 9.98031 14.9723Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.99996 17.4559L9.20634 17.672C6.96165 18.2832 5.83931 18.5889 4.95512 18.0701C4.07093 17.5513 3.7702 16.4107 3.16874 14.1295L2.31814 10.9035C1.71668 8.62232 1.41595 7.48174 1.92643 6.58318C2.36802 5.80591 3.33329 5.83421 4.58329 5.83411" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             ],
             'all_members' => [
                 'slug'           => 'all_members',
                 'title'          => __('Members', 'fluent-community'),
                 'is_system'      => 'yes',
                 'is_locked'      => 'yes',
-                'is_unavailable' => $membersPageStatus == 'yes' ? 'no' : 'yes',
+                'is_unavailable' => $membersPageStatus === 'yes' ? 'no' : 'yes',
                 'enabled'        => $membersPageStatus,
                 'permalink'      => self::baseUrl('members'),
                 'link_classes'   => 'fcom_all_members route_url',
@@ -1345,12 +1398,12 @@ class Helper
                 'is_system'      => 'yes',
                 'is_locked'      => 'yes',
                 'enabled'        => $leaderboardPageVisibility,
-                'is_unavailable' => self::isFeatureEnabled('leader_board_module') && $leaderboardPageVisibility == 'yes' ? 'no' : 'yes',
+                'is_unavailable' => self::isFeatureEnabled('leader_board_module') && $leaderboardPageVisibility === 'yes' ? 'no' : 'yes',
                 'title'          => __('Leaderboard', 'fluent-community'),
                 'link_classes'   => 'fcom_leaderboards route_url',
                 'permalink'      => self::baseUrl('leaderboards'),
-                'shape_svg'      => '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M160-200h160v-320H160v320Zm240 0h160v-560H400v560Zm240 0h160v-240H640v240ZM80-120v-480h240v-240h320v320h240v400H80Z"/></svg>'
-            ]
+                'shape_svg'      => '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M160-200h160v-320H160v320Zm240 0h160v-560H400v560Zm240 0h160v-240H640v240ZM80-120v-480h240v-240h320v320h240v400H80Z"/></svg>',
+            ],
         ];
 
         $mainItems = Arr::get($menuGroups, 'mainMenuItems', []);
@@ -1368,7 +1421,7 @@ class Helper
                 }
                 $defaultItem = Arr::get($defaultMainMenuItems, $item['slug'], []);
                 if ($defaultItem) {
-                    $preservedKeys = ['is_system', 'is_locked', 'is_unavailable', 'slug'];
+                    $preservedKeys = [ 'is_system', 'is_locked', 'is_unavailable', 'slug' ];
                     foreach ($preservedKeys as $key) {
                         if (isset($defaultItem[$key])) {
                             $item[$key] = Arr::get($defaultItem, $key);
@@ -1395,7 +1448,7 @@ class Helper
                 'is_locked' => 'yes',
                 'enabled'   => 'yes',
                 'permalink' => '#{{user_url}}/spaces',
-                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.5 16.5C0.5 14.9087 1.13214 13.3826 2.25736 12.2574C3.38258 11.1321 4.9087 10.5 6.5 10.5C8.0913 10.5 9.61742 11.1321 10.7426 12.2574C11.8679 13.3826 12.5 14.9087 12.5 16.5H11C11 15.3065 10.5259 14.1619 9.68198 13.318C8.83807 12.4741 7.69347 12 6.5 12C5.30653 12 4.16193 12.4741 3.31802 13.318C2.47411 14.1619 2 15.3065 2 16.5H0.5ZM6.5 9.75C4.01375 9.75 2 7.73625 2 5.25C2 2.76375 4.01375 0.75 6.5 0.75C8.98625 0.75 11 2.76375 11 5.25C11 7.73625 8.98625 9.75 6.5 9.75ZM6.5 8.25C8.1575 8.25 9.5 6.9075 9.5 5.25C9.5 3.5925 8.1575 2.25 6.5 2.25C4.8425 2.25 3.5 3.5925 3.5 5.25C3.5 6.9075 4.8425 8.25 6.5 8.25ZM12.713 11.0273C13.767 11.5019 14.6615 12.2709 15.2889 13.2418C15.9164 14.2126 16.2501 15.344 16.25 16.5H14.75C14.7502 15.633 14.4999 14.7844 14.0293 14.0562C13.5587 13.328 12.8878 12.7512 12.0972 12.3953L12.7123 11.0273H12.713ZM12.197 2.55975C12.9526 2.87122 13.5987 3.40015 14.0533 4.07942C14.5078 4.75869 14.7503 5.55768 14.75 6.375C14.7503 7.40425 14.3658 8.39642 13.6719 9.15662C12.978 9.91682 12.025 10.3901 11 10.4835V8.97375C11.5557 8.89416 12.0713 8.63851 12.471 8.24434C12.8707 7.85017 13.1335 7.33824 13.2209 6.7837C13.3082 6.22916 13.2155 5.66122 12.9563 5.16327C12.6971 4.66531 12.2851 4.26356 11.7808 4.017L12.197 2.55975Z" fill="currentColor"/></svg>'
+                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.5 16.5C0.5 14.9087 1.13214 13.3826 2.25736 12.2574C3.38258 11.1321 4.9087 10.5 6.5 10.5C8.0913 10.5 9.61742 11.1321 10.7426 12.2574C11.8679 13.3826 12.5 14.9087 12.5 16.5H11C11 15.3065 10.5259 14.1619 9.68198 13.318C8.83807 12.4741 7.69347 12 6.5 12C5.30653 12 4.16193 12.4741 3.31802 13.318C2.47411 14.1619 2 15.3065 2 16.5H0.5ZM6.5 9.75C4.01375 9.75 2 7.73625 2 5.25C2 2.76375 4.01375 0.75 6.5 0.75C8.98625 0.75 11 2.76375 11 5.25C11 7.73625 8.98625 9.75 6.5 9.75ZM6.5 8.25C8.1575 8.25 9.5 6.9075 9.5 5.25C9.5 3.5925 8.1575 2.25 6.5 2.25C4.8425 2.25 3.5 3.5925 3.5 5.25C3.5 6.9075 4.8425 8.25 6.5 8.25ZM12.713 11.0273C13.767 11.5019 14.6615 12.2709 15.2889 13.2418C15.9164 14.2126 16.2501 15.344 16.25 16.5H14.75C14.7502 15.633 14.4999 14.7844 14.0293 14.0562C13.5587 13.328 12.8878 12.7512 12.0972 12.3953L12.7123 11.0273H12.713ZM12.197 2.55975C12.9526 2.87122 13.5987 3.40015 14.0533 4.07942C14.5078 4.75869 14.7503 5.55768 14.75 6.375C14.7503 7.40425 14.3658 8.39642 13.6719 9.15662C12.978 9.91682 12.025 10.3901 11 10.4835V8.97375C11.5557 8.89416 12.0713 8.63851 12.471 8.24434C12.8707 7.85017 13.1335 7.33824 13.2209 6.7837C13.3082 6.22916 13.2155 5.66122 12.9563 5.16327C12.6971 4.66531 12.2851 4.26356 11.7808 4.017L12.197 2.55975Z" fill="currentColor"/></svg>',
             ],
             'bookmarks' => [
                 'slug'      => 'bookmarks',
@@ -1404,7 +1457,7 @@ class Helper
                 'is_locked' => 'yes',
                 'enabled'   => 'yes',
                 'permalink' => self::baseUrl('bookmarks'),
-                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 0.5H11.25C11.4489 0.5 11.6397 0.579018 11.7803 0.71967C11.921 0.860322 12 1.05109 12 1.25V15.6073C12.0001 15.6743 11.9822 15.7402 11.9482 15.7979C11.9142 15.8557 11.8653 15.9033 11.8066 15.9358C11.7479 15.9683 11.6816 15.9844 11.6146 15.9826C11.5476 15.9807 11.4823 15.9609 11.4255 15.9252L6 12.5225L0.5745 15.9245C0.517776 15.9601 0.452541 15.9799 0.385576 15.9818C0.318612 15.9837 0.252365 15.9676 0.193721 15.9352C0.135078 15.9029 0.0861801 15.8554 0.0521121 15.7977C0.0180441 15.74 4.98531e-05 15.6742 0 15.6073V1.25C0 1.05109 0.0790178 0.860322 0.21967 0.71967C0.360322 0.579018 0.551088 0.5 0.75 0.5ZM10.5 2H1.5V13.574L6 10.7533L10.5 13.574V2Z" fill="currentColor"/></svg>'
+                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 0.5H11.25C11.4489 0.5 11.6397 0.579018 11.7803 0.71967C11.921 0.860322 12 1.05109 12 1.25V15.6073C12.0001 15.6743 11.9822 15.7402 11.9482 15.7979C11.9142 15.8557 11.8653 15.9033 11.8066 15.9358C11.7479 15.9683 11.6816 15.9844 11.6146 15.9826C11.5476 15.9807 11.4823 15.9609 11.4255 15.9252L6 12.5225L0.5745 15.9245C0.517776 15.9601 0.452541 15.9799 0.385576 15.9818C0.318612 15.9837 0.252365 15.9676 0.193721 15.9352C0.135078 15.9029 0.0861801 15.8554 0.0521121 15.7977C0.0180441 15.74 4.98531e-05 15.6742 0 15.6073V1.25C0 1.05109 0.0790178 0.860322 0.21967 0.71967C0.360322 0.579018 0.551088 0.5 0.75 0.5ZM10.5 2H1.5V13.574L6 10.7533L10.5 13.574V2Z" fill="currentColor"/></svg>',
             ],
             'logout'    => [
                 'slug'      => 'logout',
@@ -1413,8 +1466,8 @@ class Helper
                 'is_locked' => 'yes',
                 'enabled'   => 'yes',
                 'permalink' => '#{{logout_url}}',
-                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 15.5C0.551088 15.5 0.360322 15.421 0.21967 15.2803C0.0790178 15.1397 0 14.9489 0 14.75V1.25C0 1.05109 0.0790178 0.860322 0.21967 0.71967C0.360322 0.579018 0.551088 0.5 0.75 0.5H11.25C11.4489 0.5 11.6397 0.579018 11.7803 0.71967C11.921 0.860322 12 1.05109 12 1.25V3.5H10.5V2H1.5V14H10.5V12.5H12V14.75C12 14.9489 11.921 15.1397 11.7803 15.2803C11.6397 15.421 11.4489 15.5 11.25 15.5H0.75ZM10.5 11V8.75H5.25V7.25H10.5V5L14.25 8L10.5 11Z" fill="currentColor"/></svg>'
-            ]
+                'shape_svg' => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 15.5C0.551088 15.5 0.360322 15.421 0.21967 15.2803C0.0790178 15.1397 0 14.9489 0 14.75V1.25C0 1.05109 0.0790178 0.860322 0.21967 0.71967C0.360322 0.579018 0.551088 0.5 0.75 0.5H11.25C11.4489 0.5 11.6397 0.579018 11.7803 0.71967C11.921 0.860322 12 1.05109 12 1.25V3.5H10.5V2H1.5V14H10.5V12.5H12V14.75C12 14.9489 11.921 15.1397 11.7803 15.2803C11.6397 15.421 11.4489 15.5 11.25 15.5H0.75ZM10.5 11V8.75H5.25V7.25H10.5V5L14.25 8L10.5 11Z" fill="currentColor"/></svg>',
+            ],
         ];
 
         $profileDropDownItems = Arr::get($menuGroups, 'profileDropdownItems', []);
@@ -1428,7 +1481,7 @@ class Helper
                 }
                 $defaultItem = Arr::get($defaultProfileDropDownItems, $item['slug'], []);
                 if ($defaultItem) {
-                    $preservedKeys = ['is_system', 'is_locked', 'is_unavailable', 'slug'];
+                    $preservedKeys = [ 'is_system', 'is_locked', 'is_unavailable', 'slug' ];
                     foreach ($preservedKeys as $key) {
                         if (isset($defaultItem[$key])) {
                             $item[$key] = Arr::get($defaultItem, $key);
@@ -1457,7 +1510,7 @@ class Helper
             $afterCommunityMenuGroups = [];
         }
 
-        if ($context == 'view') {
+        if ($context === 'view') {
 
             $currentUser = self::getCurrentUser();
 
@@ -1496,7 +1549,7 @@ class Helper
         $menuGroups['beforeCommunityMenuItems'] = $beforeCommunityMenuItems;
         $menuGroups['afterCommunityLinkGroups'] = $afterCommunityMenuGroups;
 
-        if ($context == 'view') {
+        if ($context === 'view') {
             $menuGroups = apply_filters('fluent_community/menu_groups', $menuGroups);
         }
 
@@ -1540,21 +1593,22 @@ class Helper
             return true;
         }
 
-        if ($privacy == 'logged_in') {
-            return !!$currentUser;
+        if ($privacy === 'logged_in') {
+            return (bool)$currentUser;
         }
 
-        if ($privacy == 'logged_out_only') {
+        if ($privacy === 'logged_out_only') {
             return !$currentUser;
+        }
+
+        // A members-only link never shows to a logged-out visitor, even with no spaces selected.
+        if (!$currentUser) {
+            return false;
         }
 
         $membershipIds = Arr::get($link, 'membership_ids', []);
         if (!$membershipIds) {
             return true;
-        }
-
-        if (!$currentUser) {
-            return false;
         }
 
         static $userSpacesIds = [];
@@ -1564,7 +1618,7 @@ class Helper
 
         $ids = $userSpacesIds[$currentUser->ID];
 
-        return $ids && !!array_intersect($ids, $membershipIds);
+        return $ids && (bool)array_intersect($ids, $membershipIds);
     }
 
     /**
@@ -1612,7 +1666,7 @@ class Helper
                 'object_type' => 'space',
                 'object_id'   => $spaceId,
                 'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'value'       => $value
+                'value'       => $value,
             ]);
         }
 
@@ -1649,7 +1703,7 @@ class Helper
             $key = (defined('LOGGED_IN_KEY') && '' !== LOGGED_IN_KEY) ? LOGGED_IN_KEY : 'this-is-a-fallback-key-but-not-secure';
         }
 
-        if ($type == 'e') {
+        if ($type === 'e') {
             $method = 'aes-256-ctr';
             $ivlen = openssl_cipher_iv_length($method);
             $iv = openssl_random_pseudo_bytes($ivlen);
@@ -1700,9 +1754,9 @@ class Helper
                     'provider'     => '',
                     'title'        => '',
                     'author_name'  => '',
-                    'html'         => ''
+                    'html'         => '',
                 ],
-                'ctaButtons'  => []
+                'ctaButtons'  => [],
             ],
             'logout' => [
                 'enabled'      => 'no',
@@ -1717,10 +1771,10 @@ class Helper
                     'provider'     => '',
                     'title'        => '',
                     'author_name'  => '',
-                    'html'         => ''
+                    'html'         => '',
                 ],
-                'ctaButtons'   => []
-            ]
+                'ctaButtons'   => [],
+            ],
         ];
 
         $settings = Utility::getOption('welcome_banner_settings', []);
@@ -1742,13 +1796,13 @@ class Helper
     {
         $settings = self::getWelcomeBannerSettings();
         $welcomeBanner = Arr::get($settings, $view, []);
-        if (Arr::get($welcomeBanner, 'enabled') != 'yes') {
+        if (Arr::get($welcomeBanner, 'enabled') !== 'yes') {
             return null;
         }
 
         unset($welcomeBanner['description']);
 
-        if ($view == 'login') {
+        if ($view === 'login') {
             return apply_filters('fluent_community/welcome_banner_for_logged_in', $welcomeBanner);
         }
 
@@ -1757,22 +1811,18 @@ class Helper
 
     public static function getEnabledFeedLinks()
     {
-        $links = array_filter(self::getFeedLinks(), function ($item) {
-            return self::isLinkAccessible($item);
-        });
-
-        return array_values($links);
+        return self::filterAccessibleLinks(self::getFeedLinks(), self::getCurrentUser());
     }
 
     public static function getMobileMenuItems($context = 'headless')
     {
-        $xprofile = Helper::getCurrentProfile();
+        $xprofile = self::getCurrentProfile();
 
         $mainMenuItems = Arr::get(self::getMenuItemsGroup('view'), 'mainMenuItems', []);
 
         $defaultMobileIcons = [
             'all_feeds' => '<svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 13.166H10.0075H10Z" fill="currentColor"></path><path d="M10 13.166H10.0075" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.6666 6.08301V10.2497C16.6666 13.3924 16.6666 14.9637 15.6903 15.94C14.714 16.9163 13.1426 16.9163 9.99992 16.9163C6.85722 16.9163 5.28587 16.9163 4.30956 15.94C3.33325 14.9637 3.33325 13.3924 3.33325 10.2497V6.08301" stroke="currentColor" stroke-width="1.5"></path><path d="M18.3333 7.74967L14.714 4.27925C12.4918 2.14842 11.3807 1.08301 9.99996 1.08301C8.61925 1.08301 7.50814 2.14842 5.28592 4.27924L1.66663 7.74967" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>',
-            'spaces'    => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>'
+            'spaces'    => '<svg version="1.1" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64,42c-13.2,0-24,10.8-24,24s10.8,24,24,24s24-10.8,24-24S77.2,42,64,42z M64,82c-8.8,0-16-7.2-16-16s7.2-16,16-16   s16,7.2,16,16S72.8,82,64,82z"></path><path d="M64,100.8c-14.9,0-29.2,6.2-39.4,17.1l-2.7,2.9l5.8,5.5l2.7-2.9c8.8-9.4,20.7-14.6,33.6-14.6s24.8,5.2,33.6,14.6l2.7,2.9   l5.8-5.5l-2.7-2.9C93.2,107.1,78.9,100.8,64,100.8z"></path><path d="M97,47.9v8c9.4,0,18.1,3.8,24.6,10.7l5.8-5.5C119.6,52.7,108.5,47.9,97,47.9z"></path><path d="M116.1,20c0-10.5-8.6-19.1-19.1-19.1S77.9,9.5,77.9,20S86.5,39.1,97,39.1S116.1,30.5,116.1,20z M85.9,20   c0-6.1,5-11.1,11.1-11.1s11.1,5,11.1,11.1s-5,11.1-11.1,11.1S85.9,26.1,85.9,20z"></path><path d="M31,47.9c-11.5,0-22.6,4.8-30.4,13.2l5.8,5.5c6.4-6.9,15.2-10.7,24.6-10.7V47.9z"></path><path d="M50.1,20C50.1,9.5,41.5,0.9,31,0.9S11.9,9.5,11.9,20S20.5,39.1,31,39.1S50.1,30.5,50.1,20z M31,31.1   c-6.1,0-11.1-5-11.1-11.1S24.9,8.9,31,8.9s11.1,5,11.1,11.1S37.1,31.1,31,31.1z"></path></g></svg>',
         ];
 
         $mobileMenuItems = [];
@@ -1787,10 +1837,10 @@ class Helper
 
             $mobileMenuItems[] = [
                 'route'    => [
-                    'name' => $slug
+                    'name' => $slug,
                 ],
                 'title'    => Arr::get($menuItem, 'title'),
-                'icon_svg' => $iconSvg ? CustomSanitizer::sanitizeSvg($iconSvg) : $defaultIcon
+                'icon_svg' => $iconSvg ? CustomSanitizer::sanitizeSvg($iconSvg) : $defaultIcon,
             ];
         }
 
@@ -1799,18 +1849,18 @@ class Helper
                 'route'    => [
                     'name'   => 'user_profile',
                     'params' => [
-                        'username' => $xprofile->username
-                    ]
+                        'username' => $xprofile->username,
+                    ],
                 ],
                 'title'    => __('Profile', 'fluent-community'),
-                'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
+                'icon_svg' => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>',
             ];
-        } else if (!get_current_user_id()) {
+        } elseif (!get_current_user_id()) {
             $mobileMenuItems[] = [
                 'name'      => 'login',
                 'title'     => __('Login', 'fluent-community'),
-                'permalink' => Helper::getAuthUrl(),
-                'icon_svg'  => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>'
+                'permalink' => self::getAuthUrl(),
+                'icon_svg'  => '<svg viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path></svg>',
             ];
         }
 
@@ -1835,7 +1885,7 @@ class Helper
      */
     public static function getWpUserFullName($id = null)
     {
-        $id = $id ?: get_current_user_id();
+        $id = $id ? $id : get_current_user_id();
         $user = get_user_by('ID', $id);
 
         $fullName = $user->display_name;
@@ -1914,7 +1964,7 @@ class Helper
             $user->syncXProfile();
         }
 
-        if ($role == 'member' && $space->type == 'course') {
+        if ($role === 'member' && $space->type === 'course') {
             $role = 'student';
         }
 
@@ -1923,16 +1973,16 @@ class Helper
             ->first();
 
         if ($exist) {
-            if ($exist->status != 'active') {
+            if ($exist->status !== 'active') {
                 $exist->status = 'active';
 
-                if (!in_array($exist->role, ['admin', 'moderator'])) {
+                if (!in_array($exist->role, [ 'admin', 'moderator' ], true)) {
                     $exist->role = $role;
                 }
 
                 $exist->save();
 
-                if ($space->type == 'course') {
+                if ($space->type === 'course') {
                     do_action('fluent_community/course/enrolled', $space, $userId, $by);
                 } else {
                     do_action('fluent_community/space/joined', $space, $userId, $by);
@@ -1947,10 +1997,10 @@ class Helper
         $created = SpaceUserPivot::create([
             'space_id' => $space->id,
             'role'     => $role,
-            'user_id'  => $userId
+            'user_id'  => $userId,
         ]);
 
-        if ($space->type == 'course') {
+        if ($space->type === 'course') {
             if (!$space instanceof Course) {
                 $space = Course::find($space->id); // we are renewing the model to have access to course relations
             }
@@ -1998,7 +2048,7 @@ class Helper
 
         $user->cacheAccessSpaces();
 
-        if ($space->type == 'course') {
+        if ($space->type === 'course') {
             if (!$space instanceof Course) {
                 $space = Course::find($space->id); //  we are renewing the model to have access to course relations
             }
@@ -2029,7 +2079,7 @@ class Helper
             return;
         }
 
-        $isCustom = Arr::get($link, 'is_custom') == 'yes';
+        $isCustom = Arr::get($link, 'is_custom') === 'yes';
 
         $linkAtts = array_filter([
             'class'  => trim($linkClass . ' ' . Arr::get($link, 'link_classes')) . ' fcom_compt_link' . ($isCustom ? ' fcom_custom_link' : ''),
@@ -2039,13 +2089,20 @@ class Helper
 
         ?>
         <a data-fcom-hint="<?php echo esc_attr(Arr::get($link, 'title')); ?>"
-           href="<?php echo esc_url($link['permalink']); ?>"<?php foreach ($linkAtts as $key => $value) {
-            echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
-        } ?>>
+           href="<?php echo esc_url($link['permalink']); ?>"
+           <?php
+            foreach ($linkAtts as $key => $value) {
+                echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+            }
+            ?>
+        >
             <?php $renderIcon && self::printLinkIcon($link, $fallback); ?>
             <?php // The native title sits on the label span (not the anchor) so it can not duplicate the link's accessible name for screen readers. ?>
             <span class="community_name" title="<?php echo esc_attr(Arr::get($link, 'title')); ?>"><?php echo wp_kses_post((string) Arr::get($link, 'title', '')); ?></span>
-            <?php if (Arr::get($link, 'show_lock')) : ?>
+            <?php
+            $unreadBardge = Arr::get($link, 'unread_badge');
+            if (Arr::get($link, 'show_lock')) :
+                ?>
                 <span class="fcom_space_lock">
                     <i class="el-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -2056,7 +2113,7 @@ class Helper
                         </svg>
                     </i>
                 </span>
-            <?php elseif ($unreadBardge = Arr::get($link, 'unread_badge')) : ?>
+            <?php elseif ($unreadBardge) : ?>
                 <span class="fcom_space_lock fcom_unread_count">
                     <?php echo wp_kses_post($unreadBardge); ?>
                 </span>
@@ -2073,16 +2130,19 @@ class Helper
 
         $renderIcon = $renderIcon || Utility::isCustomizationEnabled('icon_on_header_menu');
 
-        foreach ($menuItems as $itemKey => $item): ?>
+        foreach ($menuItems as $itemKey => $item):
+            ?>
             <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
                 <?php self::renderLink($item, $linkClass, $fallback, $renderIcon); ?>
             </li>
-        <?php endforeach;
+            <?php
+        endforeach;
     }
 
     public static function renderSettingsItems($settingsItems = [])
     {
-        foreach ($settingsItems as $itemKey => $item): ?>
+        foreach ($settingsItems as $itemKey => $item):
+            ?>
             <li class="<?php echo esc_attr('fcom_menu_item_' . $itemKey); ?>">
                 <a class="fcom_menu_link <?php echo esc_attr(Arr::get($item, 'link_classes')); ?>"
                    href="<?php echo esc_url($item['permalink']); ?>">
@@ -2094,7 +2154,8 @@ class Helper
                     <span class="community_name"><?php echo wp_kses_post($item['title']); ?></span>
                 </a>
             </li>
-        <?php endforeach;
+            <?php
+        endforeach;
     }
 
     /**
@@ -2105,21 +2166,25 @@ class Helper
      */
     public static function printLinkIcon($link, $fallback = '<span class="fcom_no_avatar"></span>')
     {
+        $img = Arr::get($link, 'icon_image');
+        $emoji = Arr::get($link, 'emoji');
+        $svg = Arr::get($link, 'shape_svg');
         ?>
-        <?php if ($img = Arr::get($link, 'icon_image')): ?>
+        <?php if ($img): ?>
         <div class="community_avatar">
             <img alt="" src="<?php echo esc_url($img); ?>"/>
         </div>
-    <?php elseif ($emoji = Arr::get($link, 'emoji')): ?>
+    <?php elseif ($emoji): ?>
         <div class="community_avatar">
             <span class="fcom_emoji"><?php echo esc_html($emoji); ?></span>
         </div>
-    <?php elseif ($svg = Arr::get($link, 'shape_svg')): ?>
+    <?php elseif ($svg): ?>
         <div class="community_avatar">
             <span class="fcom_shape"><i
-                    class="el-icon"><?php echo \FluentCommunity\App\Services\CustomSanitizer::sanitizeSvg($svg); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped  ?></i></span>
+                    class="el-icon"><?php echo \FluentCommunity\App\Services\CustomSanitizer::sanitizeSvg($svg); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></i></span>
         </div>
-    <?php else:
+        <?php
+    else:
         echo '<div class="community_avatar">' . wp_kses_post($fallback) . '</div>';
     endif;
     }
@@ -2171,7 +2236,7 @@ class Helper
     {
         $remoteAddr = preg_replace('/^(\d+\.\d+\.\d+\.\d+):\d+$/', '\1', (string)Arr::get($serverData, 'REMOTE_ADDR'));
         $cloudflareIp = (string)Arr::get($serverData, 'HTTP_CF_CONNECTING_IP');
-        $trustedProxies = (array)apply_filters('fluent_community/trusted_proxies', ['127.0.0.1']);
+        $trustedProxies = (array)apply_filters('fluent_community/trusted_proxies', [ '127.0.0.1' ]);
 
         // A proxy appends the peer it saw, so only the right-most hop is reliable;
         // anything to its left is whatever the client chose to send
@@ -2251,12 +2316,12 @@ class Helper
                 // $netmask is a 255.255.0.0 format
                 $netmask = str_replace('*', '0', $netmask);
                 $netmask_dec = ip2long($netmask);
-                return ((ip2long($ip) & $netmask_dec) == (ip2long($range) & $netmask_dec));
+                return ((ip2long($ip) & $netmask_dec) === (ip2long($range) & $netmask_dec));
             } else {
                 // $netmask is a CIDR size block
                 // fix the range argument
                 $x = explode('.', $range);
-                while (count($x) < 4) $x[] = '0';
+                $x = array_pad($x, 4, '0');
                 list($a, $b, $c, $d) = $x;
                 $range = sprintf("%u.%u.%u.%u", empty($a) ? '0' : $a, empty($b) ? '0' : $b, empty($c) ? '0' : $c, empty($d) ? '0' : $d);
                 $range_dec = ip2long($range);
@@ -2269,7 +2334,7 @@ class Helper
                 $wildcard_dec = pow(2, (32 - $netmask)) - 1;
                 $netmask_dec = ~$wildcard_dec;
 
-                return (($ip_dec & $netmask_dec) == ($range_dec & $netmask_dec));
+                return (($ip_dec & $netmask_dec) === ($range_dec & $netmask_dec));
             }
         } else {
             // range might be 255.255.*.* or 1.2.3.0-1.2.3.255
@@ -2301,7 +2366,7 @@ class Helper
             return false;
         }
 
-        if ($portalSlug == $requestUri) {
+        if ((string) $portalSlug === (string) $requestUri) {
             return 'portal_home';
         }
 
@@ -2317,13 +2382,13 @@ class Helper
         $parts = explode('/', $requestUri);
         $start = $parts[0];
 
-        if (!$portalSlug && $start == 'fcom_route') {
+        if (!$portalSlug && $start === 'fcom_route') {
             return $start;
         }
 
         $routeStats = self::portalRoutePaths();
 
-        if (in_array($start, $routeStats)) {
+        if (in_array($start, $routeStats, true)) {
             return $requestUri;
         }
 
@@ -2340,7 +2405,7 @@ class Helper
         $supportedParams = (array) apply_filters('fluent_community/portal_supported_query_params', [
             'customizer_panel',
             'create_space',
-            'status'
+            'status',
         ]);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -2361,7 +2426,7 @@ class Helper
         $default = [
             'max_topics_per_post'  => 1,
             'max_topics_per_space' => 20,
-            'show_on_post_card'    => 'yes'
+            'show_on_post_card'    => 'yes',
         ];
         return wp_parse_args($config, $default);
     }
@@ -2433,7 +2498,7 @@ class Helper
             'wed' => 'wednesday',
             'thu' => 'thursday',
             'fri' => 'friday',
-            'sat' => 'saturday'
+            'sat' => 'saturday',
         ];
 
         return isset($dayMap[$day]) ? $dayMap[$day] : $day . 'day';
@@ -2476,6 +2541,7 @@ class Helper
             'j' => 'D',   // Day of the month without leading zeros
             'l' => 'dddd', // A full textual representation of the day of the week
             'N' => '',    // Not supported in Day.js (ISO-8601 numeric day of the week)
+            'S' => '',    // Only after "j"/"d", where it becomes "Do" (see below)
             'w' => 'd',   // Numeric representation of the day of the week
             'z' => 'DDD', // The day of the year (starting from 0)
 
@@ -2525,7 +2591,9 @@ class Helper
         // Replace each PHP date format character with Day.js equivalent
         $dayjsFormat = "";
 
-        for ($i = 0; $i < strlen($phpFormat); $i++) {
+        $formatLength = strlen($phpFormat);
+
+        for ($i = 0; $i < $formatLength; $i++) {
             $char = $phpFormat[$i];
 
             // Special handling for G\hi pattern
@@ -2539,19 +2607,17 @@ class Helper
             // Check if the character is escaped
             if ($char === "\\") {
                 // Day.js escapes literal text with square brackets, not backslashes
-                $i++;
+                ++$i;
                 if ($i < strlen($phpFormat)) {
                     $dayjsFormat .= "[" . $phpFormat[$i] . "]";
                 }
                 continue;
             }
 
-            // Day.js only has an ordinal for the day of month ("Do"), so "jS"/"dS" become "Do".
-            if ($char === 'S') {
-                $prev = $i > 0 ? $phpFormat[$i - 1] : '';
-                if ($prev === 'j' || $prev === 'd') {
-                    $dayjsFormat = substr($dayjsFormat, 0, -strlen($replacements[$prev])) . 'Do';
-                }
+            // Day.js only has an ordinal for the day of month, so "jS"/"dS" become "Do".
+            if (($char === 'j' || $char === 'd') && ($phpFormat[$i + 1] ?? '') === 'S') {
+                $dayjsFormat .= 'Do';
+                ++$i;
                 continue;
             }
 
@@ -2650,7 +2716,7 @@ class Helper
             }
         }
 
-        return [$collapsed, $expanded];
+        return [ $collapsed, $expanded ];
     }
 
     public static function getCollapsedSidebarGroups($groups = [])
@@ -2680,7 +2746,7 @@ class Helper
             if ($isDefaultCollapse || in_array($id, $collapsedByUser, true)) {
                 $collapsed[] = $id;
             }
-            // else (6) => expanded, do nothing
+            // Otherwise (case 6) the group stays expanded.
         }
 
         return $collapsed;
@@ -2692,7 +2758,7 @@ class Helper
             return [];
         }
 
-        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') != 'yes') {
+        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') !== 'yes') {
             return [];
         }
 
@@ -2702,7 +2768,7 @@ class Helper
          *
          * @param array $statuses Contact statuses to skip. Default: bounced, complained, spammed.
          */
-        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', ['bounced', 'complained', 'spammed']);
+        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', [ 'bounced', 'complained', 'spammed' ]);
 
         if (!$skippableStatuses) {
             return [];
@@ -2722,11 +2788,11 @@ class Helper
             return '';
         }
 
-        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') != 'yes') {
+        if (Utility::getPrivacySetting('skip_crm_undeliverable_emails') !== 'yes') {
             return '';
         }
 
-        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', ['bounced', 'complained', 'spammed']);
+        $skippableStatuses = apply_filters('fluent_community/undeliverable_crm_contact_statuses', [ 'bounced', 'complained', 'spammed' ]);
 
         if (!$skippableStatuses) {
             return '';

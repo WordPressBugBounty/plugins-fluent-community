@@ -25,7 +25,7 @@ class LockscreenService
                 'button_text_color' => '#FFFFFF',
                 'background_image'  => '',
                 'overlay_color'     => '#798398',
-                'new_tab'           => 'no'
+                'new_tab'           => 'no',
             ],
             [
                 'hidden'  => false,
@@ -33,7 +33,7 @@ class LockscreenService
                 'label'   => 'Description',
                 'name'    => 'description',
                 'content' => '<!-- wp:paragraph --><p>Description</p><!-- /wp:paragraph -->',
-            ]
+            ],
         ];
 
         if ($space->isCourseSpace()) {
@@ -41,7 +41,7 @@ class LockscreenService
                 'hidden' => true,
                 'type'   => 'lesson',
                 'label'  => 'Lessons',
-                'name'   => 'lesson'
+                'name'   => 'lesson',
             ];
         }
 
@@ -60,7 +60,7 @@ class LockscreenService
             'button_text_color' => '#FFFFFF',
             'background_image'  => '',
             'overlay_color'     => '#798398',
-            'new_tab'           => 'no'
+            'new_tab'           => 'no',
         ];
 
         $settings = (array) $space->getCustomMeta('lockscreen_settings', $defaultSettings);
@@ -72,7 +72,7 @@ class LockscreenService
                 $setting['content'] = (new SmartCodeParser())->parse($content, $user);
             }
 
-            if (Arr::get($setting, 'type') == 'image' && empty($setting['new_tab'])) {
+            if (Arr::get($setting, 'type') === 'image' && empty($setting['new_tab'])) {
                 $setting['new_tab'] = 'no';
             }
         }
@@ -102,8 +102,8 @@ class LockscreenService
     {
         $currentSettings = self::getLockscreenSettings($space);
 
-        $textFields = ['type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color', 'new_tab', 'background_color'];
-        $urlFields = ['button_link'];
+        $textFields = [ 'type', 'name', 'label', 'heading', 'description', 'button_text', 'heading_color', 'text_color', 'button_color', 'button_text_color', 'overlay_color', 'new_tab', 'background_color' ];
+        $urlFields = [ 'button_link' ];
 
         $formattedFields = [];
 
@@ -115,7 +115,7 @@ class LockscreenService
 
             $formattedField['hidden'] = Arr::isTrue($value, 'hidden');
 
-            if (Arr::get($value, 'type') == 'block') {
+            if (Arr::get($value, 'type') === 'block') {
                 $formattedField['content'] = CustomSanitizer::santizeEditorBody(Arr::get($value, 'content'));
             }
 
@@ -135,15 +135,15 @@ class LockscreenService
 
     public static function getLockscreenConfig(BaseSpace $space, $membership = null, $viewOnly = false)
     {
-        if ($space->privacy != 'private') {
+        if ($space->privacy !== 'private') {
             return null;
         }
 
         if($membership) {
             if($membership->pivot->status) {
-                if($membership->pivot->status == 'pending') {
+                if($membership->pivot->status === 'pending') {
                     return [
-                        'is_pending' => true
+                        'is_pending' => true,
                     ];
                 }
                 return null;
@@ -154,7 +154,7 @@ class LockscreenService
         $showPaywalls = Arr::get($space->settings, 'show_paywalls', 'no') === 'yes' && defined('FLUENTCART_VERSION');
         $canSendRequest = Arr::get($space->settings, 'can_request_join', 'no') === 'yes';
 
-        $isRedirect = Arr::get($space->settings, 'custom_lock_screen', 'no') == 'redirect' && Arr::get($space->settings, 'onboard_redirect_url', false);
+        $isRedirect = Arr::get($space->settings, 'custom_lock_screen', 'no') === 'redirect' && Arr::get($space->settings, 'onboard_redirect_url', false);
         $redirectUrl = '';
         if($isRedirect) {
             $redirectUrl = Arr::get($space->settings, 'onboard_redirect_url', false);
@@ -166,7 +166,7 @@ class LockscreenService
             'showWelcomeBanner' => Arr::get($space->settings, 'show_welcome_banner', 'no') === 'yes',
             'canSendRequest'    => $canSendRequest,
             'lockScreen'        => $showCustom ? self::getLockscreenSettings($space, $viewOnly) : null,
-            'redirect_url'      => $redirectUrl
+            'redirect_url'      => $redirectUrl,
         ];
     }
 
@@ -196,7 +196,7 @@ class LockscreenService
                 'is_active'     => true,
                 'user_id'       => get_current_user_id(),
                 'sub_object_id' => $spaceId,
-                'object_source' => 'lockscreen_' . $fieldName
+                'object_source' => 'lockscreen_' . $fieldName,
             ]);
         }
 

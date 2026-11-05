@@ -43,7 +43,7 @@ class Mailer
 
         if ($sendFromName && $sendFromEmail) {
             $this->from = $sendFromName . ' <' . $sendFromEmail . '>';
-        } else if ($sendFromEmail) {
+        } elseif ($sendFromEmail) {
             $this->from = $sendFromEmail;
         }
 
@@ -52,7 +52,7 @@ class Mailer
 
         if ($replyToEmail && $replyToName) {
             $this->replyTo = $replyToName . ' <' . $replyToEmail . '>';
-        } else if ($replyToEmail) {
+        } elseif ($replyToEmail) {
             $this->replyTo = $replyToEmail;
         }
 
@@ -73,19 +73,24 @@ class Mailer
 
     public function to($email, $name = '')
     {
-        // wp_mail() splits a To string on commas, so a display name carrying a
-        // comma/semicolon injects extra recipients; angle brackets/quotes reframe
-        // the address and CR/LF inject headers. Strip them before building it.
+        $this->to = static::formatAddress($email, $name);
+        return $this;
+    }
+
+    /**
+     * Build a "Name <email>" value for To, Cc or Bcc.
+     *
+     * wp_mail() splits To, Cc and Bcc on commas, so a display name carrying a
+     * comma/semicolon injects extra recipients; angle brackets/quotes reframe
+     * the address and CR/LF inject headers. Strip them before building it.
+     */
+    public static function formatAddress($email, $name = '')
+    {
         if ($name) {
             $name = trim(preg_replace('/[,;<>"\r\n\t]+/', ' ', $name));
         }
 
-        if ($name) {
-            $this->to = $name . ' <' . $email . '>';
-        } else {
-            $this->to = $email;
-        }
-        return $this;
+        return $name ? $name . ' <' . $email . '>' : $email;
     }
 
     public function setIsHtml($isHtml)
@@ -134,7 +139,7 @@ class Mailer
 
         // A CR/LF in any header value starts an attacker-controlled header line.
         $stripCrlf = function ($value) {
-            return str_replace(["\r", "\n"], '', $value);
+            return str_replace([ "\r", "\n" ], '', $value);
         };
 
         if ($this->from) {

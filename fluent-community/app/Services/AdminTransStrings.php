@@ -158,7 +158,7 @@ class AdminTransStrings
             'expires today' => __('expires today', 'fluent-community'),
             /* translators: %d is the number of days until expiry */
             'in %d days' => __('in %d days', 'fluent-community'),
-            'in 1 day' => __('in 1 day', 'fluent-community')
-];
+            'in 1 day' => __('in 1 day', 'fluent-community'),
+        ];
     }
 }

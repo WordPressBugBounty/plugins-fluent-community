@@ -49,6 +49,11 @@ class PostMigrator
 
     public function migrate()
     {
+        // A group post without its space would become a public feed post.
+        if ($this->post->component === 'groups' && !$this->spaceId) {
+            return false;
+        }
+
         $documentIds = Arr::get($this->metas, 'bp_document_ids', '');
         $mediaIds = Arr::get($this->metas, 'bp_media_ids', '');
         $videoIds = Arr::get($this->metas, 'bp_video_ids', '');
@@ -76,7 +81,7 @@ class PostMigrator
 
                     $this->attachments[] = [
                         'path'  => $file,
-                        'title' => $document->title
+                        'title' => $document->title,
                     ];
                 }
             }
@@ -100,13 +105,13 @@ class PostMigrator
 
 
                     // check if the image is a valid image
-                    if (!in_array($mediaType, ['image', 'video'])) {
+                    if (!in_array($mediaType, [ 'image', 'video' ], true)) {
                         continue;
                     }
 
                     $image_data = [];
 
-                    if ($mediaType == 'image') {
+                    if ($mediaType === 'image') {
                         $image_data = wp_get_attachment_image_src($media->attachment_id, 'full');
                         if (!$image_data) {
                             $image_data = [];
@@ -120,7 +125,7 @@ class PostMigrator
                         'title'      => $media->title,
                         'media_type' => $mediaType,
                         'width'      => Arr::get($image_data, 1, ''),
-                        'height'     => Arr::get($image_data, 2, '')
+                        'height'     => Arr::get($image_data, 2, ''),
                     ];
                 }
             }
@@ -138,7 +143,7 @@ class PostMigrator
                 'description' => $linkPreview['description'] ?? '',
                 'url'         => $linkPreview['url'],
                 'type'        => 'meta_data',
-                'image'       => $linkPreview['image_url'] ?? ''
+                'image'       => $linkPreview['image_url'] ?? '',
             ]);
 
             if (!$content) {
@@ -147,7 +152,6 @@ class PostMigrator
         }
 
         if (!$content && !$this->attachments && !$this->mediaItems) {
-            // error_log('Missing Post: ' . $this->post->id);
             return false;
         }
 
@@ -161,7 +165,7 @@ class PostMigrator
             'content_type'     => 'text',
             'privacy'          => 'public',
             'status'           => 'published',
-            'space_id'         => $this->spaceId
+            'space_id'         => $this->spaceId,
         ];
 
         [$feedData, $media] = FeedsHelper::processFeedMetaData($feedData, []);
@@ -232,11 +236,12 @@ class PostMigrator
     private function syncComments()
     {
 
-        $itemIds = array_filter(array_merge([$this->post->id], $this->childPostIds));
+        $itemIds = array_filter(array_merge([ $this->post->id ], $this->childPostIds));
 
         // Let's manage the comments
         $comments = fluentCommunityApp('db')->table('bp_activity')
             ->where('type', 'activity_comment')
+            ->where('is_spam', 0)
             ->whereIn('item_id', $itemIds)
             ->orderBy('id', 'ASC')
             ->get();
@@ -264,11 +269,11 @@ class PostMigrator
             return;
         }
 
-        $allItemIds = array_filter(array_merge([$this->post->id], $this->childPostIds));
+        $allItemIds = array_filter(array_merge([ $this->post->id ], $this->childPostIds));
 
         // feed likes
         $reactions = fluentCommunityApp('db')->table('bb_user_reactions')
-            ->select(['user_id', 'date_created', 'item_id'])
+            ->select([ 'user_id', 'date_created', 'item_id' ])
             ->whereIn('item_id', $allItemIds)
             ->where('item_type', 'activity')
             ->get();
@@ -281,7 +286,7 @@ class PostMigrator
                 'object_type' => 'feed',
                 'type'        => 'like',
                 'created_at'  => $reaction->date_created,
-                'updated_at'  => $reaction->date_created
+                'updated_at'  => $reaction->date_created,
             ];
         }
 
@@ -303,7 +308,7 @@ class PostMigrator
         }
 
         $reactions = fluentCommunityApp('db')->table('bb_user_reactions')
-            ->select(['user_id', 'date_created', 'item_id'])
+            ->select([ 'user_id', 'date_created', 'item_id' ])
             ->whereIn('item_id', $bbCommentIds)
             ->where('item_type', 'activity_comment')
             ->get();
@@ -324,7 +329,7 @@ class PostMigrator
                     'parent_id'   => $this->createdFeedId,
                     'type'        => 'like',
                     'created_at'  => $reaction->date_created,
-                    'updated_at'  => $reaction->date_created
+                    'updated_at'  => $reaction->date_created,
                 ];
             }
         }
@@ -332,7 +337,7 @@ class PostMigrator
         if ($likesArray) {
             Reaction::insert($likesArray);
             foreach ($likesCount as $commentId => $count) {
-                Comment::where('id', $commentId)->update(['reactions_count' => $count]);
+                Comment::where('id', $commentId)->update([ 'reactions_count' => $count ]);
             }
         }
     }
@@ -351,7 +356,7 @@ class PostMigrator
                 'date_recorded' => $comment->date_recorded,
                 'mptt_left'     => $comment->mptt_left,
                 'mptt_right'    => $comment->mptt_right,
-                'children'      => []
+                'children'      => [],
             ];
         }
 
@@ -359,7 +364,7 @@ class PostMigrator
         foreach ($comments as $comment) {
             $parentId = $comment->secondary_item_id;
 
-            if ($parentId == $comment->item_id) {
+            if ((int) $parentId === (int) $comment->item_id) {
                 // This is a top-level comment
                 $commentTree[] = &$commentMap[$comment->id];
             } else {
@@ -416,7 +421,7 @@ class PostMigrator
             'post_id'          => $this->createdFeedId,
             'message'          => $content,
             'message_rendered' => FeedsHelper::mdToHtml($content),
-            'type'             => 'comment'
+            'type'             => 'comment',
         ];
 
         $media = BPMigratorHelper::getActivityMediaPreview($comment['id']);
@@ -480,8 +485,8 @@ class PostMigrator
                 'media_path'    => $newPath,
                 'media_url'     => $newUrl,
                 'settings'      => [
-                    'original_name' => $originalName
-                ]
+                    'original_name' => $originalName,
+                ],
             ];
 
             $newMedia = new Media();
@@ -495,7 +500,7 @@ class PostMigrator
                 'url'       => $newMedia->getPrivateDownloadUrl(),
                 'media_key' => $newMedia->media_key,
                 'title'     => $originalName,
-                'type'      => $mediaType
+                'type'      => $mediaType,
             ];
         }
 
@@ -566,7 +571,7 @@ class PostMigrator
             $settings = array_filter([
                 'original_name' => $originalName,
                 'width'         => $mediaItem['width'] ?? null,
-                'height'        => $mediaItem['height'] ?? null
+                'height'        => $mediaItem['height'] ?? null,
             ]);
 
             $mediaData = [
@@ -579,7 +584,7 @@ class PostMigrator
                 'driver'        => 'local',
                 'media_path'    => $newPath,
                 'media_url'     => $newUrl,
-                'settings'      => $settings
+                'settings'      => $settings,
             ];
 
             $newMedia = new Media();
@@ -595,7 +600,7 @@ class PostMigrator
                 'type'     => $mediaItem['media_type'],
                 'width'    => $mediaItem['width'] ?? null,
                 'height'   => $mediaItem['height'] ?? null,
-                'provider' => 'uploader'
+                'provider' => 'uploader',
             ]);
         }
 
@@ -615,7 +620,7 @@ class PostMigrator
     private function resizeImage($path)
     {
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        if (!in_array(strtolower($extension), ['jpg', 'jpeg', 'png'])) {
+        if (!in_array(strtolower($extension), [ 'jpg', 'jpeg', 'png' ], true)) {
             return $path;
         }
 
@@ -626,7 +631,7 @@ class PostMigrator
             return $path;
         }
 
-        $imageExtensions = ['jpg', 'jpeg', 'png'];
+        $imageExtensions = [ 'jpg', 'jpeg', 'png' ];
 
 
         $newFilePath = $path;

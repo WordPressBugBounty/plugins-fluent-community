@@ -7,6 +7,7 @@ use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Models\Activity;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\Libs\EmailComposer;
 
 /**
  * @property int             $id
@@ -266,9 +267,9 @@ class Comment extends Model
 
     public function getCommentHtml($withPlaceholder = false, $buttonText = null)
     {
-        $emailComposer = new \FluentCommunity\App\Services\Libs\EmailComposer();
+        $emailComposer = new EmailComposer();
         if ($withPlaceholder) {
-            $postPermalink = '##feed_permalink##';
+            $postPermalink = EmailComposer::slot('feed_permalink');
         } else {
             $postPermalink = $this->post->getPermalink() . '?comment_id=' . $this->id;
         }

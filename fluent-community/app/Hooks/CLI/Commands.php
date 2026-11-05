@@ -15,29 +15,6 @@ class Commands
     {
         $migrator = new BuddyPressMigrator();
 
-//        $migrator->migrateGroups();
-//
-//        die();
-
-
-//        $migrator->migratePosts();
-//
-//        die('Yap');
-//
-//
-
-//        $postMigrator = new PostMigrator(13461);
-//        $feed = $postMigrator->migrate();
-//        dd($feed);
-
-
-//        \WP_CLI::line('Starting BuddyPress Data Migration...');
-//        BPMigratorHelper::deleteCurrentData();
-//        \WP_CLI::line('Deleted existing Fluent Community data.');
-//        $migrator->migrateGroups();
-//
-//        die();
-
         \WP_CLI::line('Starting BuddyPress Data Migration...');
         BPMigratorHelper::deleteCurrentData();
         \WP_CLI::line('Deleted existing Fluent Community data.');
@@ -56,63 +33,6 @@ class Commands
         \WP_CLI::success('BuddyPress Data Migration Completed Successfully.');
 
         die();
-
-//
-//        die();
-
-//        $migrator->migratePosts();
-//        die();
-
-        $postMigrator = new PostMigrator(13052);
-
-        $feed = $postMigrator->migrate();
-
-        dd($feed);
-
-        die();
-
-
-//        $stats = $migrator->getStats();
-//        \WP_CLI::line('BuddyPress Data Stats:');
-//        \WP_CLI\Utils\format_items('table', $stats, ['key', 'count']);
-
-        BPMigratorHelper::deleteCurrentData();
-        $migrator->migratePosts();
-
-        die('OK');
-
-        $migrator->migrateGroups();
-        $migrator->syncGroupMembers();
-        $migrator->migratePosts();
-        $migrator->syncUsers();
-
-        $fluentStats = [
-            [
-                'key'   => 'Total Users',
-                'count' => XProfile::count()
-            ],
-            [
-                'key'   => 'Total Spaces',
-                'count' => \FluentCommunity\App\Models\Space::count()
-            ],
-            [
-                'key'   => 'Total Posts',
-                'count' => \FluentCommunity\App\Models\Feed::count()
-            ],
-            [
-                'key'   => 'Total Comments',
-                'count' => \FluentCommunity\App\Models\Comment::count()
-            ],
-            [
-                'key'   => 'Total Reactions',
-                'count' => \FluentCommunity\App\Models\Reaction::whereIn('object_type', ['feed', 'comment'])
-                    ->where('type', 'like')
-                    ->count()
-            ]
-        ];
-
-        \WP_CLI\Utils\format_items('table', $fluentStats, ['key', 'count']);
-
     }
 
     /**
@@ -120,7 +40,7 @@ class Commands
      */
     public function sync_x_profile($args, $assoc_args = [])
     {
-        $isForced = Arr::get($assoc_args, 'force', false) == 1;
+        $isForced = (int) Arr::get($assoc_args, 'force', false) === 1;
 
         $users = User::orderBy('ID', 'ASC')->get();
 
@@ -192,12 +112,12 @@ class Commands
             }
 
             // save the json to a file
-            file_put_contents($dumpDir . '/' . $page . '.json', $json);
+            file_put_contents($dumpDir . '/' . $page . '.json', $json); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
             \WP_CLI::line('Downloaded page ' . $page);
 
 
-            $page++;
+            ++$page;
         }
 
         \WP_CLI::success('Download Completed');

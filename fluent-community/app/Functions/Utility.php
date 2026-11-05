@@ -130,7 +130,7 @@ class Utility
             $exist = \FluentCommunity\App\Models\Meta::create([
                 'meta_key'    => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'object_type' => 'option',
-                'value'       => $value
+                'value'       => $value,
             ]);
         }
 
@@ -161,6 +161,10 @@ class Utility
         $defaults = [
             'leader_board_module'   => 'yes',
             'course_module'         => 'yes',
+            'certificates_module'   => 'yes', // Pro course certificates; needs course_module
+            // Pro: who else sees a member's certificates on their profile (own|logged_in|everyone)
+            'certificate_profile_visibility' => 'own',
+            'certificate_issue_email' => 'yes', // Pro: email the student when a certificate is issued
             'giphy_module'          => 'no',
             'giphy_api_key'         => '',
             'emoji_module'          => 'yes',
@@ -268,7 +272,7 @@ class Utility
             'affiliate_id'         => '',
             'rich_post_layout'     => 'classic',
             'member_list_layout'   => 'classic', // grid, classic
-            'default_feed_layout'  => 'timeline', // list, timeline
+            'default_feed_layout'  => 'timeline', // One of: list or timeline
             'disable_feed_layout'  => 'no',
             'post_title_pref'      => 'optional',
             'max_media_per_post'   => 4,
@@ -280,12 +284,12 @@ class Utility
             'disable_course_sort_by' => 'no',
             'collapse_sidebar_groups' => 'no',
             'hide_header_on_scroll'   => 'no',
-            'enable_sidebar_toggle' => 'no'
+            'enable_sidebar_toggle' => 'no',
         ];
         $settings = self::getOption('customization_settings', $defaults);
 
         $settings = wp_parse_args($settings, $defaults);
-		$settings = apply_filters('fluent_community/customization_settings', $settings);
+        $settings = apply_filters('fluent_community/customization_settings', $settings);
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             $settings['show_powered_by'] = 'yes';
             $settings['affiliate_id'] = '';
@@ -328,6 +332,7 @@ class Utility
             'enable_gravatar'                => 'yes',
             'enable_user_sync'               => 'yes',
             'skip_crm_undeliverable_emails'  => 'yes',
+            'strip_image_meta'               => 'no',
             'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
             'profile_page_visibility'        => 'everybody', // everybody, logged_in, admin_only
             'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
@@ -353,11 +358,11 @@ class Utility
     {
         $pageStatus = self::getPrivacySetting('members_page_status');
 
-        if ($pageStatus == 'everybody') {
+        if ($pageStatus === 'everybody') {
             return apply_filters('fluent_community/can_view_members_page', true, $pageStatus);
         }
 
-        if ($pageStatus == 'logged_in') {
+        if ($pageStatus === 'logged_in') {
             return apply_filters('fluent_community/can_view_members_page', is_user_logged_in(), $pageStatus);
         }
 
@@ -368,11 +373,11 @@ class Utility
     {
         $pageStatus = self::getPrivacySetting('leaderboard_members_visibility');
 
-        if ($pageStatus == 'everybody') {
+        if ($pageStatus === 'everybody') {
             return apply_filters('fluent_community/can_view_leaderboard_members', true, $pageStatus);
         }
 
-        if ($pageStatus == 'logged_in') {
+        if ($pageStatus === 'logged_in') {
             return apply_filters('fluent_community/can_view_leaderboard_members', is_user_logged_in(), $pageStatus);
         }
 
@@ -383,11 +388,11 @@ class Utility
     {
         $pageStatus = self::getPrivacySetting('profile_page_visibility');
 
-        if ($pageStatus == 'everybody') {
+        if ($pageStatus === 'everybody') {
             return apply_filters('fluent_community/can_view_user_profile', true, $pageStatus, $targetUserId);
         }
 
-        if ($pageStatus == 'logged_in') {
+        if ($pageStatus === 'logged_in') {
             return apply_filters('fluent_community/can_view_user_profile', is_user_logged_in(), $pageStatus, $targetUserId);
         }
 
@@ -436,7 +441,7 @@ class Utility
             $defaultParams = [
                 'utm_source'   => 'power_footer',
                 'utm_medium'   => 'site',
-                'utm_campaign' => 'powered_by'
+                'utm_campaign' => 'powered_by',
             ];
             $params = wp_parse_args($params, $defaultParams);
 
@@ -452,7 +457,7 @@ class Utility
         return add_query_arg([
             'utm_source'   => 'plugin',
             'utm_medium'   => 'site',
-            'utm_campaign' => 'plugin_ui'
+            'utm_campaign' => 'plugin_ui',
         ], $url);
     }
 
@@ -519,7 +524,7 @@ class Utility
             'reply_to_name'       => '',
             'email_footer'        => 'You are getting this email because you are a member of {{site_name_with_url}}.' . PHP_EOL . PHP_EOL . '{{manage_email_notification_url|Manage Your Email Notifications Preference}}.',
             'disable_powered_by'  => 'no',
-            'logo'                => ''
+            'logo'                => '',
         ];
 
         $settings = array_filter(self::getOption('global_email_settings', $default));
@@ -539,7 +544,8 @@ class Utility
     public static function getPushNotificationSettings()
     {
         static $settings;
-        if ($settings) return $settings;
+        if ($settings) { return $settings;
+        }
 
         $default = [
             'push_enabled'      => 'yes',
@@ -547,7 +553,7 @@ class Utility
             'reply_my_com_push' => 'yes',
             'mention_push'      => 'yes',
             'co_com_push'       => 'yes',
-            'prompt_placements' => PushNotificationModule::PROMPT_PLACEMENTS
+            'prompt_placements' => PushNotificationModule::PROMPT_PLACEMENTS,
         ];
 
         $settings = self::getOption('global_push_settings', $default);
@@ -567,7 +573,7 @@ class Utility
     {
         $pref = self::getCustomizationSetting('post_title_pref');
 
-        if ($pref == 'disabled') {
+        if ($pref === 'disabled') {
             $pref = '';
         }
 
@@ -630,7 +636,7 @@ class Utility
              *  object_id = term_id
              *  meta_key = space_id
              */
-            $topicSpaceRelations = Meta::select(['id', 'object_id', 'meta_key'])->where('object_type', 'term_space_relation')
+            $topicSpaceRelations = Meta::select([ 'id', 'object_id', 'meta_key' ])->where('object_type', 'term_space_relation')
                 ->get();
 
             $relations = [];
@@ -651,7 +657,7 @@ class Utility
                     'slug'        => $topic->slug,
                     'admin_only'  => Arr::get($topic->settings, 'admin_only', 'no'),
                     'serial'      => Arr::get($topic->settings, 'serial'),
-                    'space_ids'   => isset($relations[$topic->id]) ? $relations[$topic->id] : []
+                    'space_ids'   => isset($relations[$topic->id]) ? $relations[$topic->id] : [],
                 ];
             }
 
@@ -665,7 +671,7 @@ class Utility
     {
         $topics = self::getTopics();
         $topics = array_filter($topics, function ($topic) use ($spaceId) {
-            return in_array($spaceId, $topic['space_ids']);
+            return in_array((int) $spaceId, array_map('intval', $topic['space_ids']), true);
         });
         return array_values($topics);
     }
@@ -702,7 +708,7 @@ class Utility
             'selectors' => [
                 'body'          => [],
                 'fcom_top_menu' => [],
-                'spaces'        => []
+                'spaces'        => [],
             ],
         ];
         $shemas = apply_filters('fluent-community/color_schemas', [
@@ -745,7 +751,7 @@ class Utility
                             'menu_text_hover'  => '#545861',
                             'menu_bg_hover'    => '#f0f3f5',
                             'active_bg'        => '#f0f3f5',
-                        ]
+                        ],
                     ],
                 ],
                 'sunset_sands'    => [
@@ -786,8 +792,8 @@ class Utility
                             'menu_bg_hover'    => '#FFF5EC',
                             'menu_text_active' => '#FFFFFF',
                             'active_bg'        => '#E67E22',
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
                 'ocean_blue'      => [
                     'title'     => __('Ocean Blue', 'fluent-community'),
@@ -808,7 +814,7 @@ class Utility
                             'primary_button_text'  => '#FFFFFF',
                             'primary_border'       => '#DADDE1',
                             'secondary_border'     => '#CED0D4',
-                            'highlight_bg'         => '#E7F3FF'
+                            'highlight_bg'         => '#E7F3FF',
                         ],
                         'fcom_top_menu' => [
                             'primary_bg'       => '#FFFFFF',
@@ -826,9 +832,9 @@ class Utility
                             'menu_text_hover'  => '#1877F2',
                             'menu_bg_hover'    => '#E7F3FF',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#1877F2'
-                        ]
-                    ]
+                            'active_bg'        => '#1877F2',
+                        ],
+                    ],
                 ],
                 'sky_blue'        => [
                     'title'     => __('Sky Blue', 'fluent-community'),
@@ -849,7 +855,7 @@ class Utility
                             'primary_button_text'  => '#FFFFFF',
                             'primary_border'       => '#EFF3F4',
                             'secondary_border'     => '#CFD9DE',
-                            'highlight_bg'         => '#E8F5FD'
+                            'highlight_bg'         => '#E8F5FD',
                         ],
                         'fcom_top_menu' => [
                             'primary_bg'       => '#FFFFFF',
@@ -867,9 +873,9 @@ class Utility
                             'menu_text_hover'  => '#1D9BF0',
                             'menu_bg_hover'    => '#E8F5FD',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#1D9BF0'
-                        ]
-                    ]
+                            'active_bg'        => '#1D9BF0',
+                        ],
+                    ],
                 ],
                 'emerald_essence' => [
                     'title'     => __('Emerald Essence', 'fluent-community'),
@@ -890,7 +896,7 @@ class Utility
                             'primary_button_text'  => '#FFFFFF',
                             'primary_border'       => '#D1E7DD',
                             'secondary_border'     => '#A7C4BC',
-                            'highlight_bg'         => '#ECFDF5'
+                            'highlight_bg'         => '#ECFDF5',
                         ],
                         'fcom_top_menu' => [
                             'primary_bg'       => '#FFFFFF',
@@ -908,10 +914,10 @@ class Utility
                             'menu_text_hover'  => '#059669',
                             'menu_bg_hover'    => '#ECFDF5',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#10B981'
-                        ]
-                    ]
-                ]
+                            'active_bg'        => '#10B981',
+                        ],
+                    ],
+                ],
             ],
             'darkSkins'  => [
                 'default'         => [
@@ -954,7 +960,7 @@ class Utility
                             'active_bg'        => '#42464D',
                             'menu_bg_hover'    => '#42464D',
                             'menu_text_hover'  => '#fff',
-                        ]
+                        ],
                     ],
                 ],
                 'sunset_sands'    => [
@@ -995,8 +1001,8 @@ class Utility
                             'menu_bg_hover'    => '#2A2420',
                             'menu_text_active' => '#1A1A1A',
                             'active_bg'        => '#F39C12',
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
                 'ocean_blue'      => [
                     'title'     => __('Ocean Blue (Dark)', 'fluent-community'),
@@ -1038,9 +1044,9 @@ class Utility
                             'menu_text_hover'  => '#2D88FF',
                             'menu_bg_hover'    => '#263951',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#2D88FF'
-                        ]
-                    ]
+                            'active_bg'        => '#2D88FF',
+                        ],
+                    ],
                 ],
                 'sky_blue'        => [
                     'title'     => __('Sky Blue (Dark)', 'fluent-community'),
@@ -1061,7 +1067,7 @@ class Utility
                             'primary_button_text'  => '#15202B',
                             'primary_border'       => '#38444D',
                             'secondary_border'     => '#536471',
-                            'highlight_bg'         => '#1D2F41'
+                            'highlight_bg'         => '#1D2F41',
                         ],
                         'fcom_top_menu' => [
                             'primary_bg'       => '#15202B',
@@ -1079,9 +1085,9 @@ class Utility
                             'menu_text_hover'  => '#1D9BF0',
                             'menu_bg_hover'    => '#1D2F41',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#1D9BF0'
-                        ]
-                    ]
+                            'active_bg'        => '#1D9BF0',
+                        ],
+                    ],
                 ],
                 'emerald_essence' => [
                     'title'     => __('Emerald Essence (Dark)', 'fluent-community'),
@@ -1102,7 +1108,7 @@ class Utility
                             'primary_border'       => '#2F4C41',
                             'primary_button_text'  => '#1A2B32',
                             'secondary_border'     => '#3D5C52',
-                            'highlight_bg'         => '#064E3B'
+                            'highlight_bg'         => '#064E3B',
                         ],
                         'fcom_top_menu' => [
                             'primary_bg'       => '#1A2B32',
@@ -1120,23 +1126,23 @@ class Utility
                             'menu_text_hover'  => '#34D399',
                             'menu_bg_hover'    => '#064E3B',
                             'menu_text_active' => '#FFFFFF',
-                            'active_bg'        => '#10B981'
-                        ]
-                    ]
-                ]
-            ]
+                            'active_bg'        => '#10B981',
+                        ],
+                    ],
+                ],
+            ],
         ]);
 
         $customSchemaConfig = self::getColorConfig('edit');
 
         $shemas['lightSkins']['custom'] = [
             'title'     => __('Custom', 'fluent-community'),
-            'selectors' => $customSchemaConfig['light_config'] ?? $defaultCustom
+            'selectors' => $customSchemaConfig['light_config'] ?? $defaultCustom,
         ];
 
         $shemas['darkSkins']['custom'] = [
             'title'     => __('Custom', 'fluent-community'),
-            'selectors' => $customSchemaConfig['dark_config'] ?? $defaultCustom
+            'selectors' => $customSchemaConfig['dark_config'] ?? $defaultCustom,
         ];
 
         return $shemas;
@@ -1155,7 +1161,7 @@ class Utility
 
         $elementPlusMap = [
             'primary_text' => '--el-color-primary',
-            'secondary_bg' => '--el-color-white'
+            'secondary_bg' => '--el-color-white',
         ];
 
         $css = '';
@@ -1188,14 +1194,14 @@ class Utility
             'light_config' => [
                 'body'          => [],
                 'fcom_top_menu' => [],
-                'spaces'        => []
+                'spaces'        => [],
             ],
             'dark_config'  => [
                 'body'          => [],
                 'fcom_top_menu' => [],
-                'spaces'        => []
+                'spaces'        => [],
             ],
-            'version'      => FLUENT_COMMUNITY_PLUGIN_VERSION
+            'version'      => FLUENT_COMMUNITY_PLUGIN_VERSION,
         ], $context);
     }
 
@@ -1204,7 +1210,7 @@ class Utility
         $customSchemaConfig = self::getColorConfig('view');
 
         if (!empty($customSchemaConfig['cached_css'])) {
-            if ($customSchemaConfig['version'] != FLUENT_COMMUNITY_PLUGIN_VERSION) {
+            if ($customSchemaConfig['version'] !== FLUENT_COMMUNITY_PLUGIN_VERSION) {
                 do_action('fluent_community/recache_color_schema');
             }
 
@@ -1229,10 +1235,10 @@ class Utility
         }
 
         $map = [
-            'theme'             => ['key' => 'primary_button', 'default' => '#2B2E33'],
-            'theme_button_text' => ['key' => 'primary_button_text', 'default' => '#ffffff'],
+            'theme'             => [ 'key' => 'primary_button', 'default' => '#2B2E33' ],
+            'theme_button_text' => [ 'key' => 'primary_button_text', 'default' => '#ffffff' ],
         ];
-        $entry = Arr::get($map, $scope, ['key' => $scope, 'default' => '']);
+        $entry = Arr::get($map, $scope, [ 'key' => $scope, 'default' => '' ]);
 
         $schemas = self::getColorSchemas();
         $lightName = Arr::get(self::getColorConfig('view'), 'light_schema', 'default');
@@ -1289,7 +1295,7 @@ class Utility
         }
 
         if (!$colors) {
-            $colors = ['#000000', '#abb8c3', '#ffffff', '#f78da7', '#ff6900', '#fcb900', '#7bdcb5', '#00d084', '#8ed1fc', '#0693e3', '#9b51e0'];
+            $colors = [ '#000000', '#abb8c3', '#ffffff', '#f78da7', '#ff6900', '#fcb900', '#7bdcb5', '#00d084', '#8ed1fc', '#0693e3', '#9b51e0' ];
         }
 
         return apply_filters('fluent_community/suggested_colors', $colors);
@@ -1379,7 +1385,7 @@ class Utility
         }
 
         if (is_serialized($data)) { // Don't attempt to unserialize data that wasn't serialized going in.
-            return @unserialize(trim($data), [
+            return @unserialize(trim($data), [ // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
                 'allowed_classes' => false,
             ]);
         }

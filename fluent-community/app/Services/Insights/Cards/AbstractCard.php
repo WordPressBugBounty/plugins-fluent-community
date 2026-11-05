@@ -45,7 +45,7 @@ abstract class AbstractCard implements Card
 
     public function supports()
     {
-        return ['compare', 'space_id', 'export'];
+        return [ 'compare', 'space_id', 'export' ];
     }
 
     /**
@@ -122,8 +122,8 @@ abstract class AbstractCard implements Card
             'granularity'  => $range->granularity(),
             'timezone'     => wp_timezone_string(),
             'week_start'   => $bucketer->weekStart(),
-            'compare'      => $comparison ? ['mode' => $options['compare'], 'from' => $comparison->fromDate(), 'to' => $comparison->toDate()] : null,
-            'data_since'   => ['visits' => get_option(InsightsMigrator::TRACKING_SINCE_OPTION, null)],
+            'compare'      => $comparison ? [ 'mode' => $options['compare'], 'from' => $comparison->fromDate(), 'to' => $comparison->toDate() ] : null,
+            'data_since'   => [ 'visits' => get_option(InsightsMigrator::TRACKING_SINCE_OPTION, null) ],
             'generated_at' => Clock::now()->format(DATE_ATOM),
             'cached'       => false,
         ];
@@ -134,7 +134,7 @@ abstract class AbstractCard implements Card
         $compare = isset($options['compare']) ? $options['compare'] : 'previous';
 
         return [
-            'compare'  => in_array($compare, ['previous', 'year', 'none'], true) ? $compare : 'previous',
+            'compare'  => in_array($compare, [ 'previous', 'year', 'none' ], true) ? $compare : 'previous',
             'page'     => max(1, isset($options['page']) ? (int)$options['page'] : 1),
             'per_page' => min(100, max(1, isset($options['per_page']) ? (int)$options['per_page'] : 20)),
             'sort'     => isset($options['sort']) ? sanitize_key($options['sort']) : '',

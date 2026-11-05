@@ -13,11 +13,11 @@ class Paywalls
             require_once __DIR__ . '/Http/cart_api.php';
         });
 
-        add_filter('fluent_community/portal_vars', [$this, 'addPortalVars'], 10, 1);
-        add_action('fluent_community/paywall_added', [$this, 'maybeCreateIntegration'], 10, 2);
-        add_action('fluent_community/paywall_removed', [$this, 'maybeRemoveIntegration'], 10, 3);
-        add_filter('fluent_community/lockscreen_fields', [$this, 'maybeAddPaywallField'], 10, 2);
-        add_filter('fluent_community/lockscreen_formatted_field', [$this, 'maybeFormatPaywallField'], 10, 2);
+        add_filter('fluent_community/portal_vars', [ $this, 'addPortalVars' ], 10, 1);
+        add_action('fluent_community/paywall_added', [ $this, 'maybeCreateIntegration' ], 10, 2);
+        add_action('fluent_community/paywall_removed', [ $this, 'maybeRemoveIntegration' ], 10, 3);
+        add_filter('fluent_community/lockscreen_fields', [ $this, 'maybeAddPaywallField' ], 10, 2);
+        add_filter('fluent_community/lockscreen_formatted_field', [ $this, 'maybeFormatPaywallField' ], 10, 2);
     }
 
     public function addPortalVars($vars)
@@ -34,23 +34,23 @@ class Paywalls
             ->where('meta_key', 'fluent_community')
             ->get();
 
-        $checkIds = $space->type == 'course' ? 'course_ids' : 'space_ids';
+        $checkIds = $space->type === 'course' ? 'course_ids' : 'space_ids';
 
         foreach ($communityIntegrations as $integration) {
             /** @var \FluentCart\App\Models\ProductMeta $integration */
             $data = $integration->meta_value;
             $isEnabled = Arr::get($data, 'enabled', 'no');
             $eventTrigger = Arr::get($data, 'event_trigger');
-            if ($isEnabled != 'yes' || !$eventTrigger || !in_array('order_paid_done', $eventTrigger)) {
+            if ($isEnabled !== 'yes' || !$eventTrigger || !in_array('order_paid_done', $eventTrigger, true)) {
                 continue;
             }
 
             $existingIds = Arr::get($data, $checkIds, []);
-            if (in_array($space->id, $existingIds)) {
+            if (in_array((int) $space->id, array_map('intval', $existingIds), true)) {
                 return;
             }
 
-            $data[$checkIds] = array_merge($existingIds, [(string)$space->id]);
+            $data[$checkIds] = array_merge($existingIds, [ (string)$space->id ]);
             $integration->meta_value = $data;
             $integration->save();
 
@@ -66,19 +66,19 @@ class Paywalls
             'remove_space_ids'       => [],
             'course_ids'             => [],
             'remove_course_ids'      => [],
-            'event_trigger'          => ['order_paid_done'],
+            'event_trigger'          => [ 'order_paid_done' ],
             'tag_ids_selection_type' => 'simple',
             'mark_as_verified'       => 'no',
-            'watch_on_access_revoke' => 'yes'
+            'watch_on_access_revoke' => 'yes',
         ];
 
-        $integrationFeedData[$checkIds] = [(string) $space->id];
+        $integrationFeedData[$checkIds] = [ (string) $space->id ];
 
         $communityIntegration = ProductMeta::create([
             'object_id'   => $productId,
             'object_type' => 'product_integration',
             'meta_key'    => 'fluent_community', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-            'meta_value'  => $integrationFeedData // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+            'meta_value'  => $integrationFeedData, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
         ]);
 
         do_action('fluent_community/product_integration_feed_created', $communityIntegration->id ?? null, $productId);
@@ -97,23 +97,23 @@ class Paywalls
             ->where('meta_key', 'fluent_community')
             ->get();
 
-        $checkIds = $space->type == 'course' ? 'course_ids' : 'space_ids';
+        $checkIds = $space->type === 'course' ? 'course_ids' : 'space_ids';
 
         foreach ($communityIntegrations as $integration) {
             /** @var \FluentCart\App\Models\ProductMeta $integration */
             $data = $integration->meta_value;
             $isEnabled = Arr::get($data, 'enabled', 'no');
             $eventTrigger = Arr::get($data, 'event_trigger');
-            if ($isEnabled != 'yes' || !$eventTrigger || !in_array('order_paid_done', $eventTrigger)) {
+            if ($isEnabled !== 'yes' || !$eventTrigger || !in_array('order_paid_done', $eventTrigger, true)) {
                 continue;
             }
             
             $existingIds = Arr::get($data, $checkIds, []);
-            if (!in_array($space->id, $existingIds)) {
+            if (!in_array((int) $space->id, array_map('intval', $existingIds), true)) {
                 continue;
             }
 
-            $data[$checkIds] = array_diff($existingIds, [(string)$space->id]);
+            $data[$checkIds] = array_diff($existingIds, [ (string)$space->id ]);
             $integration->meta_value = $data;
             $integration->save();
 
@@ -136,26 +136,24 @@ class Paywalls
             'button_color'      => '#2B2E33',
             'background_color'  => '',
             'button_text_color' => '#FFFFFF',
-            'show_description'  => 'no'
+            'show_description'  => 'no',
         ];
 
         $existingNames = array_column($fields, 'name');
 
         if ($space->hasPaywallIntegration()) {
-            if (!in_array('paywall', $existingNames)) {
-                $actionIndex = array_search('action', $existingNames);
+            if (!in_array('paywall', $existingNames, true)) {
+                $actionIndex = array_search('action', $existingNames, true);
                 if ($actionIndex !== false) {
-                    array_splice($fields, $actionIndex, 0, [$paywallField]);
+                    array_splice($fields, $actionIndex, 0, [ $paywallField ]);
                 } else {
                     $fields[] = $paywallField;
                 }
             }
-        } else {
-            if (in_array('paywall', $existingNames)) {
-                $fields = array_values(array_filter($fields, function($field) {
-                    return $field['name'] != 'paywall';
+        } elseif (in_array('paywall', $existingNames, true)) {
+                $fields = array_values(array_filter($fields, function ($field) {
+                    return $field['name'] !== 'paywall';
                 }));
-            }
         }
 
         return $fields;
@@ -163,20 +161,20 @@ class Paywalls
 
     public function maybeFormatPaywallField($field, $value)
     {
-        if (Arr::get($value, 'type') != 'paywall') {
+        if (Arr::get($value, 'type') !== 'paywall') {
             return $field;
         }
 
         $field['paywalls'] = array_values(array_filter(
-            array_map(function($paywall) {
+            array_map(function ($paywall) {
                 return sanitize_text_field($paywall);
             }, $value['paywalls'] ?? []),
-            function($paywall) {
+            function ($paywall) {
                 return !empty($paywall) && is_numeric($paywall);
             }
         ));
 
-        $field['show_description'] = Arr::get($value, 'show_description') == 'yes' ? 'yes' : 'no';
+        $field['show_description'] = Arr::get($value, 'show_description') === 'yes' ? 'yes' : 'no';
 
         return $field;
     }

@@ -41,7 +41,7 @@ class CourseSummaryCard extends AbstractCard
 
     public function supports()
     {
-        return ['course_id', 'export'];
+        return [ 'course_id', 'export' ];
     }
 
     public function compute(Range $range, Scope $scope, array $options)
@@ -80,12 +80,12 @@ class CourseSummaryCard extends AbstractCard
 
         return [
             'columns'  => [
-                ['key' => 'title', 'label' => __('Course', 'fluent-community'), 'type' => 'link', 'link_key' => 'link'],
-                ['key' => 'students', 'label' => __('Students', 'fluent-community'), 'type' => 'number', 'sortable' => true],
-                ['key' => 'enrollments', 'label' => __('Enrollments', 'fluent-community'), 'type' => 'number', 'sortable' => true],
-                ['key' => 'completions', 'label' => __('Completions', 'fluent-community'), 'type' => 'number', 'sortable' => true],
-                ['key' => 'completion_rate', 'label' => __('Completion rate', 'fluent-community'), 'type' => 'percent', 'sortable' => true],
-                ['key' => 'avg_progress', 'label' => __('Average progress', 'fluent-community'), 'type' => 'progress', 'sortable' => true],
+                [ 'key' => 'title', 'label' => __('Course', 'fluent-community'), 'type' => 'link', 'link_key' => 'link' ],
+                [ 'key' => 'students', 'label' => __('Students', 'fluent-community'), 'type' => 'number', 'sortable' => true ],
+                [ 'key' => 'enrollments', 'label' => __('Enrollments', 'fluent-community'), 'type' => 'number', 'sortable' => true ],
+                [ 'key' => 'completions', 'label' => __('Completions', 'fluent-community'), 'type' => 'number', 'sortable' => true ],
+                [ 'key' => 'completion_rate', 'label' => __('Completion rate', 'fluent-community'), 'type' => 'percent', 'sortable' => true ],
+                [ 'key' => 'avg_progress', 'label' => __('Average progress', 'fluent-community'), 'type' => 'progress', 'sortable' => true ],
             ],
             'rows'     => $rows,
             'total'    => count($rows),

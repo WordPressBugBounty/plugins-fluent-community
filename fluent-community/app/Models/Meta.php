@@ -25,13 +25,13 @@ class Meta extends Model
 
     protected $primaryKey = 'id';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'object_type',
         'object_id',
         'meta_key',
-        'value'
+        'value',
     ];
 
     public function setValueAttribute($value)

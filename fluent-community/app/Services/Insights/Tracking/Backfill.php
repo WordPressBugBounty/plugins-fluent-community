@@ -35,10 +35,10 @@ class Backfill
         global $wpdb;
 
         $sources = [
-            'posts'     => [$wpdb->prefix . 'fcom_posts', "`type` = 'text' AND `status` = 'published'"],
-            'comments'  => [$wpdb->prefix . 'fcom_post_comments', "`type` = 'comment' AND `status` = 'published'"],
-            'reactions' => [$wpdb->prefix . 'fcom_post_reactions', "`object_type` IN ('feed', 'comment') AND `type` = 'like'"],
-            'lessons'   => [$wpdb->prefix . 'fcom_post_reactions', "`object_type` = 'lesson_completed' AND `type` = 'completed'"],
+            'posts'     => [ $wpdb->prefix . 'fcom_posts', "`type` = 'text' AND `status` = 'published'" ],
+            'comments'  => [ $wpdb->prefix . 'fcom_post_comments', "`type` = 'comment' AND `status` = 'published'" ],
+            'reactions' => [ $wpdb->prefix . 'fcom_post_reactions', "`object_type` IN ('feed', 'comment') AND `type` = 'like'" ],
+            'lessons'   => [ $wpdb->prefix . 'fcom_post_reactions', "`object_type` = 'lesson_completed' AND `type` = 'completed'" ],
         ];
 
         // Fluent Messaging owns this table; use it only when it is there.
@@ -46,7 +46,7 @@ class Backfill
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $chatTable)) === $chatTable) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             // No created_at index there (we must not migrate it), so one pass
             // over the whole table instead of one full scan per window.
-            $sources['messages'] = [$chatTable, '1 = 1', 'single_pass'];
+            $sources['messages'] = [ $chatTable, '1 = 1', 'single_pass' ];
         }
 
         return $sources;

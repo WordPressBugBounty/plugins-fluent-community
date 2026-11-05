@@ -62,8 +62,10 @@ class BuddyPressMigrator
 
         $posts = fluentCommunityApp('db')->table('bp_activity')
             ->where('type', 'activity_update')
+            ->where('is_spam', 0)
             ->when($isBuddyBoss, function ($q) {
-                $q->whereNotIn('privacy', [ 'media', 'onlyme', 'document' ]);
+                // Posts shared only with friends or logged-in members have no public audience here.
+                $q->whereNotIn('privacy', [ 'media', 'onlyme', 'document', 'friends', 'loggedin' ]);
             })
             ->when($lastPostId, function ($q) use ($lastPostId) {
                 $q->where('id', '>', $lastPostId);
@@ -181,14 +183,15 @@ class BuddyPressMigrator
 
             $lastMemberId = $entry->id;
 
-            if (!$spaceId) {
+            // Banned members, join requests and pending invites are not group members.
+            if (!$spaceId || (int) $entry->is_confirmed !== 1 || (int) $entry->is_banned === 1) {
                 continue;
             }
 
             $role = 'member';
-            if ($entry->is_admin == 1) {
+            if ((int) $entry->is_admin === 1) {
                 $role = 'admin';
-            } elseif ($entry->is_mod == 1) {
+            } elseif ((int) $entry->is_mod === 1) {
                 $role = 'moderator';
             }
 

@@ -16,6 +16,7 @@ use FluentCommunity\App\Services\NotificationPref;
 use FluentCommunity\App\Services\ProfileHelper;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
+use FluentCommunity\Framework\Support\Collection;
 use FluentCommunity\Modules\Course\Model\CourseLesson;
 use FluentCommunity\Modules\Course\Model\CourseTopic;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
@@ -30,9 +31,9 @@ class ProfileController extends Controller
         $xprofile = XProfile::where('username', $userName)
             ->firstOrFail();
 
-        if ($xprofile->status != 'active' && !Helper::isModerator()) {
+        if ($xprofile->status !== 'active' && !Helper::isModerator()) {
             return $this->sendError([
-                'message' => __('This profile is not active', 'fluent-community')
+                'message' => __('This profile is not active', 'fluent-community'),
             ], 403);
         }
 
@@ -53,7 +54,7 @@ class ProfileController extends Controller
             'badge_slugs'       => (array)Arr::get($xprofile->meta, 'badge_slug', []),
             'status'            => $xprofile->status,
             'is_restricted'     => !$canViewProfile,
-            'canViewUserSpaces' => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser())
+            'canViewUserSpaces' => ProfileHelper::canViewUserSpaces($xprofile->user_id, $this->getUser()),
         ];
 
         if (Utility::showLastActivity()) {
@@ -70,7 +71,7 @@ class ProfileController extends Controller
 
         $currentUserId = get_current_user_id();
 
-        $isOwn = $xprofile->user_id == $currentUserId;
+        $isOwn = (int) $xprofile->user_id === (int) $currentUserId;
 
         $isAdmin = Helper::isSiteAdmin($currentUserId);
 
@@ -98,8 +99,8 @@ class ProfileController extends Controller
                 'url'           => $profileBaseUrl,
                 'wrapper_class' => 'fcom_profile_about',
                 'route'         => [
-                    'name' => 'user_profile'
-                ]
+                    'name' => 'user_profile',
+                ],
             ],
             [
                 'slug'          => 'user_profile_feeds',
@@ -107,9 +108,9 @@ class ProfileController extends Controller
                 'wrapper_class' => 'fcom_profile_posts',
                 'url'           => $profileBaseUrl . 'posts',
                 'route'         => [
-                    'name' => 'user_profile_feeds'
-                ]
-            ]
+                    'name' => 'user_profile_feeds',
+                ],
+            ],
         ];
 
         if ($profile['canViewUserSpaces']) {
@@ -119,8 +120,8 @@ class ProfileController extends Controller
                 'title'         => __('Spaces', 'fluent-community'),
                 'url'           => $profileBaseUrl . 'spaces',
                 'route'         => [
-                    'name' => 'user_spaces'
-                ]
+                    'name' => 'user_spaces',
+                ],
             ];
 
             if (Helper::isFeatureEnabled('course_module')) {
@@ -130,8 +131,8 @@ class ProfileController extends Controller
                     'title'         => __('Courses', 'fluent-community'),
                     'url'           => $profileBaseUrl . 'courses',
                     'route'         => [
-                        'name' => 'user_courses'
-                    ]
+                        'name' => 'user_courses',
+                    ],
                 ];
             }
         }
@@ -142,8 +143,8 @@ class ProfileController extends Controller
             'title'         => __('Comments', 'fluent-community'),
             'url'           => $profileBaseUrl . 'comments',
             'route'         => [
-                'name' => 'user_comments'
-            ]
+                'name' => 'user_comments',
+            ],
         ];
 
         $profile['profile_nav_actions'] = [];
@@ -151,7 +152,7 @@ class ProfileController extends Controller
         $profile = apply_filters('fluent_community/profile_view_data', $profile, $xprofile, $isAdmin);
 
         return [
-            'profile' => $profile
+            'profile' => $profile,
         ];
     }
 
@@ -166,7 +167,7 @@ class ProfileController extends Controller
             $canDeactivate = Utility::getPrivacySetting('can_deactive_account') === 'yes' || Helper::isSiteAdmin();
             if (!$canDeactivate) {
                 return $this->sendError([
-                    'message' => __('You are not allowed to deactivate this account.', 'fluent-community')
+                    'message' => __('You are not allowed to deactivate this account.', 'fluent-community'),
                 ]);
             }
 
@@ -176,18 +177,18 @@ class ProfileController extends Controller
             do_action('fluent_community/profile_deactivated', $xprofile);
 
             return [
-                'message' => __('Your profile has been deactivated successfully.', 'fluent-community')
+                'message' => __('Your profile has been deactivated successfully.', 'fluent-community'),
             ];
         }
 
-        $mediaTypes = ['cover_photo', 'avatar'];
+        $mediaTypes = [ 'cover_photo', 'avatar' ];
 
         foreach ($mediaTypes as $type) {
             if (!empty($updateData[$type])) {
                 $media = Helper::getMediaFromUrl($updateData[$type]);
                 if (!$media || $media->is_active) {
                     return $this->sendError([
-                        'message' => __('Invalid media image. Please upload a new one.', 'fluent-community')
+                        'message' => __('Invalid media image. Please upload a new one.', 'fluent-community'),
                     ]);
                 }
 
@@ -196,7 +197,7 @@ class ProfileController extends Controller
                 $media->update([
                     'is_active'     => true,
                     'user_id'       => $xprofile->user_id,
-                    'object_source' => 'user_' . $type
+                    'object_source' => 'user_' . $type,
                 ]);
             }
         }
@@ -216,7 +217,7 @@ class ProfileController extends Controller
 
                 if ($contact) {
                     $contact->update([
-                        'avatar' => $updateData['avatar'] ?: null
+                        'avatar' => $updateData['avatar'] ? $updateData['avatar'] : null,
                     ]);
                 }
             }
@@ -228,20 +229,21 @@ class ProfileController extends Controller
 
         if (isset($updateData['cover_photo'])) {
             $deletedMedias[] = Arr::get($xprofile->meta, 'cover_photo');
-            $xprofile->meta = wp_parse_args(['cover_photo' => $updateData['cover_photo']], $xprofile->meta);
+            $xprofile->meta = wp_parse_args([ 'cover_photo' => $updateData['cover_photo'] ], $xprofile->meta);
         }
 
         $xprofile->save();
 
-        if ($deletedMedias = array_filter($deletedMedias)) {
+        $deletedMedias = array_filter($deletedMedias);
+        if ($deletedMedias) {
             do_action('fluent_community/remove_medias_by_url', $deletedMedias, [
                 'user_id'        => $xprofile->user_id,
-                'object_sources' => ['user_avatar', 'user_cover_photo']
+                'object_sources' => [ 'user_avatar', 'user_cover_photo' ],
             ]);
         }
 
         return [
-            'message' => __('Profile updated', 'fluent-community')
+            'message' => __('Profile updated', 'fluent-community'),
         ];
     }
 
@@ -253,10 +255,18 @@ class ProfileController extends Controller
         /** @var XProfile $xProfile */
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
-        if ($xProfile->user_id != get_current_user_id()) {
+        if ((int) $xProfile->user_id !== get_current_user_id()) {
             if(!$currentUser->isCommunityModerator()) {
                 return $this->sendError([
-                    'message' => __('You are not allowed to update this profile', 'fluent-community')
+                    'message' => __('You are not allowed to update this profile', 'fluent-community'),
+                ]);
+            }
+
+            // Moderators can edit members and other moderators, but not admins.
+            $targetUser = $xProfile->user;
+            if ($targetUser && $targetUser->isCommunityAdmin() && !$currentUser->isCommunityAdmin()) {
+                return $this->sendError([
+                    'message' => __('Sorry, you cannot edit the profile of a community admin', 'fluent-community'),
                 ]);
             }
         }
@@ -264,10 +274,10 @@ class ProfileController extends Controller
         $this->validate($data, [
             'first_name' => 'required',
         ], [
-            'first_name.required' => __('First name is required', 'fluent-community')
+            'first_name.required' => __('First name is required', 'fluent-community'),
         ]);
 
-        $updateData = Arr::only($data, ['first_name', 'last_name', 'short_description', 'website']);
+        $updateData = Arr::only($data, [ 'first_name', 'last_name', 'short_description', 'website' ]);
 
         $updateData = apply_filters('fluent_community/update_profile_data', $updateData, $data, $xProfile, $currentUser);
 
@@ -291,26 +301,26 @@ class ProfileController extends Controller
 
                 if (!$userName) {
                     return $this->sendError([
-                        'message' => __('Invalid username. Only Latin characters with _ & - are allowed.', 'fluent-community')
+                        'message' => __('Invalid username. Only Latin characters with _ & - are allowed.', 'fluent-community'),
                     ]);
                 }
 
                 if (XProfile::where('username', $userName)->where('user_id', '!=', $xProfile->user_id)->exists()) {
                     return $this->sendError([
-                        'message' => __('Community Username already taken by someone else', 'fluent-community')
+                        'message' => __('Community Username already taken by someone else', 'fluent-community'),
                     ]);
                 }
 
                 $userExist = get_user_by('login', $userName);
 
-                if ($userExist && $userExist->ID != $xProfile->user_id) {
+                if ($userExist && (int) $userExist->ID !== (int) $xProfile->user_id) {
                     return $this->sendError([
-                        'message' => __('Username already taken by someone else. Please use a different username.', 'fluent-community')
+                        'message' => __('Username already taken by someone else. Please use a different username.', 'fluent-community'),
                     ]);
                 }
 
                 $updateData['username'] = $userName;
-                $userNameChanged = $userName != $xProfile->username;
+                $userNameChanged = (string) $userName !== (string) $xProfile->username;
             }
 
             if (Helper::isFeatureEnabled('user_badge')) {
@@ -320,20 +330,20 @@ class ProfileController extends Controller
                 $definedBadges = (array) Utility::getOption('user_badges', []);
                 $meta['badge_slug'] = array_values(array_intersect($badgeSlug, array_keys($definedBadges)));
             }
-        } else if (Utility::getPrivacySetting('can_customize_username') === 'yes') {
+        } elseif (Utility::getPrivacySetting('can_customize_username') === 'yes') {
             $userName = Arr::get($data, 'username');
 
-            if ($xProfile->username != $userName) {
+            if ((string) $xProfile->username !== (string) $userName) {
                 $userName = strtolower(CustomSanitizer::sanitizeUserName($userName));
                 if (!$userName) {
                     return $this->sendError([
-                        'message' => __('Invalid username. Only Latin characters with _ & - are allowed.', 'fluent-community')
+                        'message' => __('Invalid username. Only Latin characters with _ & - are allowed.', 'fluent-community'),
                     ]);
                 }
 
                 if (XProfile::where('username', $userName)->where('user_id', '!=', $xProfile->user_id)->exists()) {
                     return $this->sendError([
-                        'message' => __('Community Username already taken by someone else', 'fluent-community')
+                        'message' => __('Community Username already taken by someone else', 'fluent-community'),
                     ]);
                 }
 
@@ -341,20 +351,20 @@ class ProfileController extends Controller
 
                 if ($userExist && (int) $userExist->ID !== (int) $xProfile->user_id) {
                     return $this->sendError([
-                        'message' => __('Username already taken by someone else. Please use a different username.', 'fluent-community')
+                        'message' => __('Username already taken by someone else. Please use a different username.', 'fluent-community'),
                     ]);
                 }
 
                 if (strlen($userName) < 3) {
                     return $this->sendError([
-                        'message' => __('Username should be at least 3 characters long.', 'fluent-community')
+                        'message' => __('Username should be at least 3 characters long.', 'fluent-community'),
                     ]);
                 }
 
                 $reservedUserNames = ProfileHelper::getReservedUserNames();
-                if (in_array($userName, $reservedUserNames)) {
+                if (in_array($userName, $reservedUserNames, true)) {
                     return $this->sendError([
-                        'message' => __('Please use another username. This username is reserved', 'fluent-community')
+                        'message' => __('Please use another username. This username is reserved', 'fluent-community'),
                     ]);
                 }
 
@@ -377,7 +387,7 @@ class ProfileController extends Controller
                     /* translators: %d: Maximum number of characters allowed in the profile bio. */
                     __('Profile bio should not exceed %d characters.', 'fluent-community'),
                     $maxDescriptionLength
-                )
+                ),
             ]);
         }
 
@@ -388,7 +398,7 @@ class ProfileController extends Controller
                     /* translators: %d: Maximum number of characters allowed in the profile headline. */
                     __('Headline should not exceed %d characters.', 'fluent-community'),
                     $maxHeadlineLength
-                )
+                ),
             ]);
         }
 
@@ -411,7 +421,7 @@ class ProfileController extends Controller
         $xProfile->fill($updateData);
         $xProfile->save();
 
-        $isOwn = $xProfile->user_id == get_current_user_id();
+        $isOwn = (int) $xProfile->user_id === get_current_user_id();
         $canEditUser = current_user_can('edit_user', $xProfile->user_id);
 
         // Let's update the user's details
@@ -424,7 +434,7 @@ class ProfileController extends Controller
             return [
                 'message'      => __('Profile has been updated', 'fluent-community'),
                 'profile'      => $xProfile,
-                'redirect_url' => Helper::baseUrl('u/' . $xProfile->username . '/update')
+                'redirect_url' => Helper::baseUrl('u/' . $xProfile->username . '/update'),
             ];
         }
 
@@ -432,11 +442,11 @@ class ProfileController extends Controller
         if ($canEditUsers || (Utility::getPrivacySetting('can_change_email') === 'yes' && $isOwn)) {
             $emailAddress = Arr::get($data, 'email');
 
-            if ($emailAddress && is_email($emailAddress) && $emailAddress != $xProfile->user->user_email) {
+            if ($emailAddress && is_email($emailAddress) && (string) $emailAddress !== (string) $xProfile->user->user_email) {
                 $owner_id = email_exists($emailAddress);
-                if ($owner_id && $owner_id != $xProfile->user_id) {
+                if ($owner_id && (int) $owner_id !== (int) $xProfile->user_id) {
                     return $this->sendError([
-                        'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community')
+                        'message' => __('Email address already taken by someone else. Please use a different email address.', 'fluent-community'),
                     ]);
                 }
 
@@ -447,20 +457,20 @@ class ProfileController extends Controller
                     ProfileHelper::sendConfirmationOnProfileEmailChange($currentUser, $emailAddress);
                     return [
                         'message' => __('Email address change is pending. Please check your inbox to verify the new email address.', 'fluent-community'),
-                        'profile' => $xProfile
+                        'profile' => $xProfile,
                     ];
                 }
 
                 wp_update_user([
                     'user_email' => $emailAddress,
-                    'ID'         => $xProfile->user_id
+                    'ID'         => $xProfile->user_id,
                 ]);
             }
         }
 
         return [
             'message' => __('Profile has been updated', 'fluent-community'),
-            'profile' => $xProfile
+            'profile' => $xProfile,
         ];
     }
 
@@ -469,15 +479,15 @@ class ProfileController extends Controller
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
         // Password can only be changed by the account owner, never by moderators/admins here.
-        if ($xProfile->user_id != get_current_user_id()) {
+        if ((int) $xProfile->user_id !== get_current_user_id()) {
             return $this->sendError([
-                'message' => __('You are not allowed to change this password', 'fluent-community')
+                'message' => __('You are not allowed to change this password', 'fluent-community'),
             ]);
         }
 
         if (Utility::getPrivacySetting('can_change_password') !== 'yes') {
             return $this->sendError([
-                'message' => __('Password change is disabled', 'fluent-community')
+                'message' => __('Password change is disabled', 'fluent-community'),
             ]);
         }
 
@@ -500,19 +510,19 @@ class ProfileController extends Controller
 
         if (strlen($newPassword) < 8) {
             return $this->sendError([
-                'message' => __('New password must be at least 8 characters long', 'fluent-community')
+                'message' => __('New password must be at least 8 characters long', 'fluent-community'),
             ]);
         }
 
         if ($newPassword !== $confirmPassword) {
             return $this->sendError([
-                'message' => __('New password and confirmation do not match', 'fluent-community')
+                'message' => __('New password and confirmation do not match', 'fluent-community'),
             ]);
         }
 
         if ($newPassword === $currentPassword) {
             return $this->sendError([
-                'message' => __('New password must be different from your current password', 'fluent-community')
+                'message' => __('New password must be different from your current password', 'fluent-community'),
             ]);
         }
 
@@ -525,14 +535,14 @@ class ProfileController extends Controller
 
         if ($failedAttempts >= 5) {
             return $this->sendError([
-                'message' => __('Too many failed attempts. Please try again later', 'fluent-community')
+                'message' => __('Too many failed attempts. Please try again later', 'fluent-community'),
             ]);
         }
 
         if (!$user || !wp_check_password($currentPassword, $user->user_pass, $user->ID)) {
             set_transient($attemptsKey, $failedAttempts + 1, 15 * MINUTE_IN_SECONDS);
             return $this->sendError([
-                'message' => __('Your current password is incorrect', 'fluent-community')
+                'message' => __('Your current password is incorrect', 'fluent-community'),
             ]);
         }
 
@@ -577,23 +587,23 @@ class ProfileController extends Controller
         if (!ProfileHelper::canViewUserSpaces($xProfile->user_id, $currentUser)) {
             return $this->sendError([
                 'message'           => __('You are not allowed to view this profile\'s membership.', 'fluent-community'),
-                'permission_failed' => true
+                'permission_failed' => true,
             ]);
         }
 
-        $canSeeSecret = $xProfile->user_id == get_current_user_id()
+        $canSeeSecret = (int) $xProfile->user_id === get_current_user_id()
             || ($currentUser && $currentUser->isCommunityModerator());
 
         $memberships = $xProfile->spaces()
             ->wherePivot('status', 'active')
             ->when(!$canSeeSecret, function ($q) {
-                $q->whereIn('privacy', ['public', 'private']);
+                $q->whereIn('privacy', [ 'public', 'private' ]);
             })
             ->get()
             ->pluck('id');
 
         return apply_filters('fluent_community/profile_all_memberships_api_response', [
-            'memberships' => $memberships
+            'memberships' => $memberships,
         ], $request->all());
     }
 
@@ -606,23 +616,25 @@ class ProfileController extends Controller
         if (!ProfileHelper::canViewUserSpaces($xProfile->user_id, $currentUser)) {
             return $this->sendError([
                 'message'           => __('You are not allowed to view this profile\'s spaces.', 'fluent-community'),
-                'permission_failed' => true
+                'permission_failed' => true,
             ]);
         }
 
-        if ($xProfile->user_id == get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator())) {
+        if ((int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator())) {
             $spaces = $xProfile->spaces()
                 ->wherePivot('status', 'active')
                 ->get();
         } else {
             $spaces = $xProfile->spaces()
-                ->whereIn('privacy', ['public', 'private'])
+                ->whereIn('privacy', [ 'public', 'private' ])
                 ->wherePivot('status', 'active')
                 ->get();
         }
 
         foreach ($spaces as $space) {
-            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') == 'yes';
+            $space->settings = $space->getVisibleSettings($currentUser);
+
+            $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') === 'yes';
             $canViewMembers = $currentUser && $space->verifyUserPermisson($currentUser, 'can_view_members', false);
             if ($shouldHideMembersCount && !$canViewMembers) {
                 $space->members_count = 0;
@@ -632,7 +644,7 @@ class ProfileController extends Controller
         }
 
             $data = [
-                'spaces' => $spaces
+                'spaces' => $spaces,
             ];
 
             return apply_filters('fluent_community/profile_spaces_api_response', $data, $request->all());
@@ -642,7 +654,7 @@ class ProfileController extends Controller
     {
         if (!Helper::isFeatureEnabled('course_module')) {
             return $this->sendError([
-                'message' => __('Course module is disabled.', 'fluent-community')
+                'message' => __('Course module is disabled.', 'fluent-community'),
             ]);
         }
 
@@ -653,21 +665,22 @@ class ProfileController extends Controller
         if (!ProfileHelper::canViewUserSpaces($xProfile->user_id, $currentUser)) {
             return $this->sendError([
                 'message'           => __('You are not allowed to view this profile\'s courses.', 'fluent-community'),
-                'permission_failed' => true
+                'permission_failed' => true,
             ]);
         }
 
-        $hasAllAccess = $xProfile->user_id == get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
+        $hasAllAccess = (int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
 
         $courses = $xProfile->courses()
             ->wherePivot('status', 'active')
             ->where('fcom_spaces.status', 'published')
             ->when(!$hasAllAccess, function ($q) {
-                $q->whereIn('fcom_spaces.privacy', ['public', 'private']);
+                $q->whereIn('fcom_spaces.privacy', [ 'public', 'private' ]);
             })
             ->get();
 
         foreach ($courses as $course) {
+            $course->settings = $course->getVisibleSettings($currentUser);
             $course->isEnrolled = CourseHelper::isEnrolled($course->id, $xProfile->user_id);
             if ($course->isEnrolled) {
                 $course->progress = CourseHelper::getCourseProgress($course->id, $xProfile->user_id);
@@ -679,17 +692,17 @@ class ProfileController extends Controller
 
             $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
-            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
+            if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
                 $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
             } else {
                 $course->studentsCount = 0;
             }
 
-            do_action_ref_array('fluent_community/course', [&$course]);
+            do_action_ref_array('fluent_community/course', [ &$course ]);
         }
 
         $data = [
-            'courses' => $courses
+            'courses' => $courses,
         ];
 
         return apply_filters('fluent_community/profile_courses_api_response', $data, $request->all());
@@ -701,44 +714,50 @@ class ProfileController extends Controller
 
         if (!$xProfile) {
             return $this->sendError([
-                'message' => __('Profile not found', 'fluent-community')
+                'message' => __('Profile not found', 'fluent-community'),
             ]);
         }
 
         $currentUser = $this->getUser();
-        $hasAllAccess = $xProfile->user_id == get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
+        $hasAllAccess = (int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
 
         $comments = Comment::where('user_id', $xProfile->user_id)
             ->where('status', 'published')
             ->with([
                 'post' => function ($q) use ($currentUser) {
                     // Eager load the full feed so the post opens in the modal without a per-click fetch.
-                    $q->select(array_merge(Feed::$publicColumns, ['message']))
+                    $q->select(array_merge(Feed::$publicColumns, [ 'message' ]))
                         ->with(Feed::withPublicRelations($currentUser));
-                }
+                },
             ])
             ->when(!$hasAllAccess, function ($q) {
                 $q->whereHas('post', function ($query) {
                     $query->byUserAccess(get_current_user_id());
                     $query->where('type', 'text');
+                    $query->whereIn('status', FeedsHelper::getViewableByLinkStatuses());
+                    $query->byActiveAuthor();
                 });
             })
             ->orderBy('id', 'desc')
             ->paginate();
 
-            $posts = $comments->getCollection()
+            $posts = Collection::make($comments->items())
                 ->pluck('post')
                 ->filter()
                 ->unique('id')
                 ->values();
 
-            if ($posts->isNotEmpty()) {
-                FeedsHelper::transformFeedsCollection($posts);
-            }
+        $posts->where('type', 'course_lesson')->each(function ($post) {
+            $post->makeHidden([ 'message', 'message_rendered', 'meta', 'comments' ]);
+        });
+
+        if ($posts->isNotEmpty()) {
+            FeedsHelper::transformFeedsCollection($posts);
+        }
 
             $data = [
                 'comments' => $comments,
-                'xprofile' => $xProfile
+                'xprofile' => Arr::only($xProfile->toArray(), ProfileHelper::getXProfilePublicFields()),
             ];
 
             return apply_filters('fluent_community/profile_comments_api_response', $data, $request->all());
@@ -761,7 +780,7 @@ class ProfileController extends Controller
             0 => 'disabled',
             1 => 'hourly',
             2 => 'daily',
-            3 => 'weekly'
+            3 => 'weekly',
         ];
 
         $userGlobalPrefs = [];
@@ -787,7 +806,7 @@ class ProfileController extends Controller
         }
 
         $messagingConfig = Utility::getOption('_messaging_settings', []);
-        $isGlobalPerUser = Arr::get($messagingConfig, 'messaging_email_frequency') == 'disabled';
+        $isGlobalPerUser = Arr::get($messagingConfig, 'messaging_email_frequency') === 'disabled';
 
         $pushAvailable = PushNotificationModule::isAvailable();
 
@@ -796,7 +815,7 @@ class ProfileController extends Controller
             'mention_mail'            => Arr::get($globalPreferances, 'mention_mail') ? 'yes' : 'no',
             'reply_my_com_mail'       => Arr::get($globalPreferances, 'reply_my_com_mail') ? 'yes' : 'no',
             'com_my_post_mail'        => Arr::get($globalPreferances, 'com_my_post_mail') ? 'yes' : 'no',
-            'message_email_frequency' => $isGlobalPerUser ? 'disabled' : 'default'
+            'message_email_frequency' => $isGlobalPerUser ? 'disabled' : 'default',
         ];
 
         if ($pushAvailable) {
@@ -811,13 +830,15 @@ class ProfileController extends Controller
         $userGlobalPrefs = wp_parse_args($userGlobalPrefs, $userGlobalPrefsDefaults);
 
         $profileUserId = $xProfile->user_id;
-        $spaceGroups = SpaceGroup::with(['spaces' => function ($query) use ($profileUserId) {
+        $spaceGroups = SpaceGroup::with([
+        'spaces' => function ($query) use ($profileUserId) {
             $query->whereHas('members', function ($q) use ($profileUserId) {
                 $q->where('user_id', $profileUserId)
                   ->where('status', 'active');
             })
                 ->where('type', 'community');
-        }])
+        },
+        ])
             ->orderBy('serial', 'ASC')
             ->get();
 
@@ -832,9 +853,9 @@ class ProfileController extends Controller
                 $pref = '';
                 if (isset($spaceWisePrefs[$space->id])) {
                     $perfs = (array)$spaceWisePrefs[$space->id];
-                    if (!empty($perfs['np_by_member_mail'])) {
+                    if (Arr::get($perfs, 'np_by_member_mail')) {
                         $pref = 'all_member_posts';
-                    } else if (!empty($perfs['np_by_admin_mail'])) {
+                    } elseif (Arr::get($perfs, 'np_by_admin_mail')) {
                         $pref = 'admin_only_posts';
                     }
                 }
@@ -843,14 +864,14 @@ class ProfileController extends Controller
                     'id'    => $space->id,
                     'title' => $space->title,
                     'icon'  => $space->getIconMark(),
-                    'pref'  => $pref
+                    'pref'  => $pref,
                 ];
             }
             if ($formattedSpaces) {
                 $formattedSpaceGroups[] = [
                     'id'     => $group->id,
                     'title'  => $group->title,
-                    'spaces' => $formattedSpaces
+                    'spaces' => $formattedSpaces,
                 ];
             }
         }
@@ -869,9 +890,9 @@ class ProfileController extends Controller
                 $pref = '';
                 if (isset($spaceWisePrefs[$space->id])) {
                     $perfs = (array)$spaceWisePrefs[$space->id];
-                    if (!empty($perfs['np_by_member_mail'])) {
+                    if (Arr::get($perfs, 'np_by_member_mail')) {
                         $pref = 'all_member_posts';
-                    } else if (!empty($perfs['np_by_admin_mail'])) {
+                    } elseif (Arr::get($perfs, 'np_by_admin_mail')) {
                         $pref = 'admin_only_posts';
                     }
                 }
@@ -880,14 +901,14 @@ class ProfileController extends Controller
                     'id'    => $space->id,
                     'title' => $space->title,
                     'icon'  => $space->getIconMark(),
-                    'pref'  => $pref
+                    'pref'  => $pref,
                 ];
             }
 
             $formattedSpaceGroups[] = [
                 'id'     => 'other_space_group',
                 'title'  => __('Other Spaces', 'fluent-community'),
-                'spaces' => $formattedSpaces
+                'spaces' => $formattedSpaces,
             ];
         }
 
@@ -908,7 +929,7 @@ class ProfileController extends Controller
         }
 
         $crmEmailStatus = '';
-        if ($xProfile->user_id == get_current_user_id()) {
+        if ((int) $xProfile->user_id === get_current_user_id()) {
             $profileUser = get_user_by('ID', $xProfile->user_id);
             if ($profileUser && $profileUser->user_email) {
                 $crmEmailStatus = Helper::getCrmUndeliverableStatus($profileUser->user_email);
@@ -938,16 +959,16 @@ class ProfileController extends Controller
         $messagingPref = Arr::get($userPrefs, 'message_email_frequency');
 
         $userPrefs = array_map(function ($item) {
-            return $item == 'yes' ? 1 : 0;
+            return $item === 'yes' ? 1 : 0;
         }, $userPrefs);
 
-        if ($messagingPref == 'hourly') {
+        if ($messagingPref === 'hourly') {
             $userPrefs['message_email_frequency'] = 1;
-        } else if ($messagingPref == 'daily') {
+        } elseif ($messagingPref === 'daily') {
             $userPrefs['message_email_frequency'] = 2;
-        } else if ($messagingPref == 'disabled') {
+        } elseif ($messagingPref === 'disabled') {
             $userPrefs['message_email_frequency'] = 0;
-        } else if ($messagingPref == 'weekly') {
+        } elseif ($messagingPref === 'weekly') {
             $userPrefs['message_email_frequency'] = 3;
         } else {
             unset($userPrefs['message_email_frequency']);
@@ -959,10 +980,10 @@ class ProfileController extends Controller
                 continue;
             }
 
-            if ($pref == 'all_member_posts') {
+            if ($pref === 'all_member_posts') {
                 $userPrefs['np_by_member_mail_' . $spaceId] = 1;
                 $userPrefs['np_by_admin_mail_' . $spaceId] = 1;
-            } else if ($pref == 'admin_only_posts') {
+            } elseif ($pref === 'admin_only_posts') {
                 $userPrefs['np_by_admin_mail_' . $spaceId] = 1;
             }
         }
@@ -971,7 +992,7 @@ class ProfileController extends Controller
 
         return [
             'prefs'   => $userPrefs,
-            'message' => __('Email Notification preferences have been updated', 'fluent-community')
+            'message' => __('Email Notification preferences have been updated', 'fluent-community'),
         ];
     }
 
@@ -979,15 +1000,15 @@ class ProfileController extends Controller
     {
         if (!defined('FLUENTCRM')) {
             return $this->sendError([
-                'message' => __('FluentCRM is not available on this site', 'fluent-community')
+                'message' => __('FluentCRM is not available on this site', 'fluent-community'),
             ]);
         }
 
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
-        if ($xProfile->user_id != get_current_user_id()) {
+        if ((int) $xProfile->user_id !== get_current_user_id()) {
             return $this->sendError([
-                'message' => __('You can only re-confirm your own email address', 'fluent-community')
+                'message' => __('You can only re-confirm your own email address', 'fluent-community'),
             ]);
         }
 
@@ -996,7 +1017,7 @@ class ProfileController extends Controller
 
         if (!$email || !Helper::getCrmUndeliverableStatus($email)) {
             return $this->sendError([
-                'message' => __('Your email address does not need re-confirmation', 'fluent-community')
+                'message' => __('Your email address does not need re-confirmation', 'fluent-community'),
             ]);
         }
 
@@ -1004,7 +1025,7 @@ class ProfileController extends Controller
 
         if (!$subscriber) {
             return $this->sendError([
-                'message' => __('Your email address does not need re-confirmation', 'fluent-community')
+                'message' => __('Your email address does not need re-confirmation', 'fluent-community'),
             ]);
         }
 
@@ -1015,12 +1036,12 @@ class ProfileController extends Controller
 
         if (!$subscriber->sendDoubleOptinEmail()) {
             return $this->sendError([
-                'message' => __('The confirmation email could not be sent right now. Please try again after a few minutes.', 'fluent-community')
+                'message' => __('The confirmation email could not be sent right now. Please try again after a few minutes.', 'fluent-community'),
             ]);
         }
 
         return [
-            'message' => __('A confirmation email has been sent. Please check your inbox and click the confirmation link to resume email notifications.', 'fluent-community')
+            'message' => __('A confirmation email has been sent. Please check your inbox and click the confirmation link to resume email notifications.', 'fluent-community'),
         ];
     }
 
@@ -1029,7 +1050,7 @@ class ProfileController extends Controller
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
         $currentUserId = get_current_user_id();
-        if ($xProfile->user_id != $currentUserId && !Helper::isSuperAdmin($currentUserId)) {
+        if ((int) $xProfile->user_id !== (int) $currentUserId && !Helper::isSuperAdmin($currentUserId)) {
             throw new \Exception('You are not allowed to update this profile');
         }
 
@@ -1040,7 +1061,7 @@ class ProfileController extends Controller
     {
         $xProfile = XProfile::where('username', $userName)->firstOrFail();
 
-        if (!get_current_user_id() || $xProfile->user_id != get_current_user_id()) {
+        if (!get_current_user_id() || (int) $xProfile->user_id !== get_current_user_id()) {
             throw new HttpException(403, esc_html__('You are not allowed to access these notification preferences.', 'fluent-community'));
         }
 

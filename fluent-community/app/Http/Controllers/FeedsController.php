@@ -2,7 +2,6 @@
 
 namespace FluentCommunity\App\Http\Controllers;
 
-use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Notification;
 use FluentCommunity\App\Models\NotificationSubscriber;
@@ -35,7 +34,7 @@ class FeedsController extends Controller
             // just for validation
             $space = BaseSpace::where('slug', $bySpace)->first();
             if (!$space) {
-                return $this->sendError(['message' => __('Invalid space slug', 'fluent-community')]);
+                return $this->sendError([ 'message' => __('Invalid space slug', 'fluent-community') ]);
             }
         }
 
@@ -52,18 +51,17 @@ class FeedsController extends Controller
             && in_array($statusFilter, $filterableStatuses, true)
             && (Helper::isModerator() || $isOwnProfile);
 
-        $maxPerPage = (int) apply_filters('fluent_community/max_per_page', 100) ?: 100;
-
         $queryArgs = [
             'selected_topic' => $selectedTopic,
-            'per_page'       => min($maxPerPage, max(1, (int)$request->get('per_page', 10))),
+            'per_page'       => Helper::clampPerPage($request->get('per_page', 10)),
             'page'           => max(1, (int)$request->get('page', 1)),
             'search'         => $search,
         ];
 
-        $feedsQuery = Feed::select(Feed::$publicColumns)
+        // message is selected for the SEO title and dropped again before the response.
+        $feedsQuery = Feed::select(array_merge(Feed::$publicColumns, ['message']))
             ->with(Feed::withPublicRelations($currentUserModel, $space))
-            ->searchBy($search, (array)$request->get('search_in', ['post_content']))
+            ->searchBy($search, (array)$request->get('search_in', [ 'post_content' ]))
             ->byTopicSlug($selectedTopic)
             ->customOrderBy($request->getSafe('order_by_type'));
 
@@ -75,7 +73,7 @@ class FeedsController extends Controller
 
         $stickyFeed = null;
 
-        $disableSticky = $request->get('disable_sticky', '') == 'yes' || !!$search || !!$selectedTopic;
+        $disableSticky = $request->get('disable_sticky', '') === 'yes' || (bool)$search || (bool)$selectedTopic;
 
         if ($bySpace) {
             $feedsQuery = $feedsQuery->filterBySpaceSlug($bySpace);
@@ -88,6 +86,7 @@ class FeedsController extends Controller
                 $stickyFeed = Feed::where('space_id', $space->id)
                     ->where('is_sticky', 1)
                     ->byUserAccess($currentUserId)
+                    ->byActiveAuthor()
                     ->byContentModerationAccessStatus($currentUserModel, $space)
                     ->with(Feed::withPublicRelations($this->getUser(), $space))
                     ->first();
@@ -98,26 +97,22 @@ class FeedsController extends Controller
             $feedsQuery = $feedsQuery->where('user_id', $userId);
 
             if (!Helper::isModerator()) {
-                $feedsQuery = $feedsQuery->whereHas('xprofile', function ($q) {
-                    $q->where('status', 'active');
-                });
+                $feedsQuery = $feedsQuery->byActiveAuthor();
             }
 
-            if ($userId != $currentUserId) {
+            if ((int) $userId !== (int) $currentUserId) {
                 $feedsQuery = $feedsQuery->byUserAccess($currentUserId);
             }
 
             $queryArgs['user_id'] = $userId;
         } else {
-            $feedsQuery->byUserAccess($currentUserId)->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            });
+            $feedsQuery->byUserAccess($currentUserId)->byActiveAuthor();
         }
 
         $queryArgs = array_filter($queryArgs);
         $queryArgs['is_main_query'] = empty($queryArgs['space_slug']) && empty($queryArgs['user_id']) && empty($queryArgs['search']);
 
-        do_action_ref_array('fluent_community/feeds_query', [&$feedsQuery, $request->all(), $queryArgs]);
+        do_action_ref_array('fluent_community/feeds_query', [ &$feedsQuery, $request->all(), $queryArgs ]);
 
         $feedsQuery->limit($queryArgs['per_page'])->offset(($queryArgs['page'] - 1) * $queryArgs['per_page']);
         $feeds = $feedsQuery->get();
@@ -132,7 +127,7 @@ class FeedsController extends Controller
         $currentCount = $feeds->count();
         $to = ($queryArgs['page'] - 1) * $queryArgs['per_page'] + $currentCount;
 
-        $hasMore = $currentCount == $queryArgs['per_page'];
+        $hasMore = (int) $currentCount === (int) $queryArgs['per_page'];
 
         $data = [
             'feeds'  => [
@@ -142,9 +137,9 @@ class FeedsController extends Controller
                 'from'         => $currentCount ? ($queryArgs['page'] - 1) * $queryArgs['per_page'] + 1 : 0,
                 'to'           => $to,
                 'has_more'     => $hasMore,
-                'total'        => $currentCount == $queryArgs['per_page'] ? $to + $currentCount : $to
+                'total'        => (int) $currentCount === (int) $queryArgs['per_page'] ? $to + $currentCount : $to,
             ],
-            'sticky' => $stickyFeed
+            'sticky' => $stickyFeed,
         ];
 
         $isMainFeed = $queryArgs['page'] === 1 && !$search && !$userId;
@@ -162,34 +157,33 @@ class FeedsController extends Controller
     public function getFeedBySlug(Request $request, $feed_slug)
     {
         $start = microtime(true);
-        if ($request->get('context') == 'edit') {
+        if ($request->get('context') === 'edit') {
             $feed = Feed::where('slug', $feed_slug)->first();
 
             if (!$feed || !$feed->hasEditAccess(get_current_user_id())) {
                 return $this->sendError([
-                    'message' => __('You do not have permission to edit this feed', 'fluent-community')
+                    'message' => __('You do not have permission to edit this feed', 'fluent-community'),
                 ]);
             }
 
             $data = [
-                'feed' => FeedsHelper::transformForEdit($feed)
+                'feed' => FeedsHelper::transformForEdit($feed),
             ];
 
             return apply_filters('fluent_community/feed_api_response', $data, $request->all());
         }
 
         $feed = Feed::where('slug', $feed_slug)
-            ->select(Feed::$publicColumns)
+            // message rides along for the SEO title; list endpoints keep the lean set.
+            ->select(array_merge(Feed::$publicColumns, ['message']))
             ->with(Feed::withPublicRelations($this->getUser()))
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })
+            ->byActiveAuthor()
             ->byUserAccess($this->getUserId())
             ->first();
 
         if (!$feed) {
             return $this->sendError([
-                'message' => __('The feed could not be found', 'fluent-community')
+                'message' => __('The feed could not be found', 'fluent-community'),
             ], 404);
         }
 
@@ -197,7 +191,7 @@ class FeedsController extends Controller
 
         if (!in_array($feed->status, $viewableByLinkStatuses, true) && !$feed->hasEditAccess($this->getUserId())) {
             return $this->sendError([
-                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community')
+                'message' => __('Sorry, you do not have permission to view this post', 'fluent-community'),
             ], 404);
         }
 
@@ -205,7 +199,7 @@ class FeedsController extends Controller
 
         return apply_filters('fluent_community/feed_api_response', [
             'feed'           => $feed,
-            'execution_time' => microtime(true) - $start
+            'execution_time' => microtime(true) - $start,
         ], $request->all());
 
     }
@@ -221,21 +215,23 @@ class FeedsController extends Controller
         $userId = $this->getUserId();
 
         $feedsQuery = Feed::where('status', 'published')
-            ->select(Feed::$publicColumns)
+            ->select(array_merge(Feed::$publicColumns, ['message']))
             ->with(Feed::withPublicRelations($this->getUser()))
             ->byBookMarked($userId)
             ->byUserAccess($userId)
+            ->byActiveAuthor()
             ->byTopicSlug($request->getSafe('topic_slug'))
             ->customOrderBy($request->getSafe('order_by_type'))
             ->searchBy($request->getSafe('search'));
 
-        if ($type = $request->get('type')) {
+        $type = $request->get('type');
+        if ($type) {
             $feedsQuery = $feedsQuery->where('type', $type);
         }
 
         $queryArgs = [
-            'per_page' => (int)$request->get('per_page', 10),
-            'page'     => (int)$request->get('page', 1)
+            'per_page' => Helper::clampPerPage($request->get('per_page', 10)),
+            'page'     => max(1, (int)$request->get('page', 1)),
         ];
 
         $feeds = $feedsQuery->orderBy('id', 'DESC')
@@ -246,7 +242,7 @@ class FeedsController extends Controller
         $currentCount = $feeds->count();
         $to = ($queryArgs['page'] - 1) * $queryArgs['per_page'] + $currentCount;
 
-        $hasMore = $currentCount == $queryArgs['per_page'];
+        $hasMore = (int) $currentCount === (int) $queryArgs['per_page'];
 
         $feeds = FeedsHelper::transformFeedsCollection($feeds);
 
@@ -258,8 +254,8 @@ class FeedsController extends Controller
                 'from'         => $currentCount ? ($queryArgs['page'] - 1) * $queryArgs['per_page'] + 1 : 0,
                 'to'           => $to,
                 'has_more'     => $hasMore,
-                'total'        => $currentCount == $queryArgs['per_page'] ? $to + $currentCount : $to
-            ]
+                'total'        => (int) $currentCount === (int) $queryArgs['per_page'] ? $to + $currentCount : $to,
+            ],
         ];
 
         if ($queryArgs['page'] === 1) {
@@ -290,41 +286,37 @@ class FeedsController extends Controller
         $feed->user_id = $user->ID;
         $space = null;
 
-        if ($spaceSlug = $request->get('space')) {
+        $spaceSlug = $request->get('space');
+        if ($spaceSlug) {
             $data['space_id'] = $this->validateAndSetSpace($spaceSlug, $user);
             if ($data['space_id']) {
                 $space = Space::where('id', $data['space_id'])->first();
                 if (!$space) {
                     return $this->sendError([
-                        'message' => __('Please select a valid space to post in.', 'fluent-community')
+                        'message' => __('Please select a valid space to post in.', 'fluent-community'),
                     ]);
                 }
             }
 
-            if ($space && Arr::get($space->settings, 'topic_required') == 'yes') {
+            // The topic picker only shows with Pro, and hides admin-only topics from members,
+            // so only require a topic the user can actually pick; otherwise nobody could post.
+            if ($space && Arr::get($space->settings, 'topic_required') === 'yes' && defined('FLUENT_COMMUNITY_PRO')) {
                 $topicIds = (array)$request->get('topic_ids', []);
-                $spaceTopics = Utility::getTopicsBySpaceId($space->id);
-                $spaceTopicsIds = [];
+                $spaceTopicsIds = $space->getPickableTopicIds($user->ID);
 
-                foreach ($spaceTopics as $topic) {
-                    $spaceTopicsIds[] = $topic['id'];
-                }
-
-                $validTopicIds = array_intersect($topicIds, $spaceTopicsIds);
-
-                if (!$validTopicIds) {
+                if ($spaceTopicsIds && !array_intersect($topicIds, $spaceTopicsIds)) {
                     return $this->sendError([
                         'message' => __('Please select at least one topic to post in this space.', 'fluent-community'),
                         'shakes'  => [
-                            'topic_ids' => true
-                        ]
+                            'topic_ids' => true,
+                        ],
                     ]);
                 }
             }
 
-        } else if (!Helper::hasGlobalPost()) {
+        } elseif (!Helper::hasGlobalPost()) {
             return $this->sendError([
-                'message' => __('Please select a valid space to post in.', 'fluent-community')
+                'message' => __('Please select a valid space to post in.', 'fluent-community'),
             ]);
         }
 
@@ -352,9 +344,9 @@ class FeedsController extends Controller
             $mediaItems = array_merge($mediaItems, $inlineMedias);
         }
 
-        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
+        if (Arr::get($requestData, 'send_announcement_email') === 'yes' && $requestData['is_admin']) {
             $data['meta']['send_announcement_email'] = 'yes';
-        } else if (isset($data['meta']['send_announcement_email'])) {
+        } elseif (isset($data['meta']['send_announcement_email'])) {
             $data['meta']['send_announcement_email'] = 'no';
         }
 
@@ -373,7 +365,7 @@ class FeedsController extends Controller
         if (is_wp_error($data)) {
             return $this->sendError([
                 'message' => $data->get_error_message(),
-                'errors'  => $data->get_error_data()
+                'errors'  => $data->get_error_data(),
             ]);
         }
 
@@ -384,7 +376,8 @@ class FeedsController extends Controller
         $isDuplicate = Helper::dbTransaction(function () use ($feed, $user, $spaceId, $duplicateCheckMessage) {
             XProfile::where('user_id', $user->ID)->lockForUpdate()->first();
 
-            if ($duplicate = $this->checkForDuplicatePost($user->ID, $duplicateCheckMessage, $spaceId)) {
+            $duplicate = $this->checkForDuplicatePost($user->ID, $duplicateCheckMessage, $spaceId);
+            if ($duplicate) {
                 return $duplicate;
             }
 
@@ -411,21 +404,21 @@ class FeedsController extends Controller
             $this->saveMediaItems($feed, $mediaItems);
         }
 
-        $feed->load(['xprofile', 'comments.xprofile']);
+        $feed->load([ 'xprofile', 'comments.xprofile' ]);
         if ($feed->space_id) {
-            $feed->load(['space']);
-            $topicIds = (array)$request->get('topic_ids', []);
+            $feed->load([ 'space' ]);
+            $topicIds = array_intersect((array)$request->get('topic_ids', []), $feed->space->getPickableTopicIds($user->ID));
             // take only max topics per post
             if ($topicIds) {
                 $topicsConfig = Helper::getTopicsConfig();
                 $topicIds = array_slice($topicIds, 0, $topicsConfig['max_topics_per_post']);
                 $feed->attachTopics($topicIds, false);
-                $feed->load(['terms']);
+                $feed->load([ 'terms' ]);
             }
         }
 
 
-        if ($feed->status == 'scheduled') {
+        if ($feed->status === 'scheduled') {
             do_action('fluent_community/feed/scheduled', $feed);
             /* translators: %s: The scheduled date and time for the post */
             $message = sprintf(__('Your post has been scheduled for %s', 'fluent-community'), $feed->scheduled_at);
@@ -433,18 +426,18 @@ class FeedsController extends Controller
                 'feed'                   => FeedsHelper::transformFeed($feed),
                 'scheduled_at'           => $feed->scheduled_at,
                 'message'                => $message,
-                'last_fetched_timestamp' => current_time('timestamp')
+                'last_fetched_timestamp' => current_time('timestamp'),
             ];
         }
 
-        if (!in_array($feed->status, ['published', 'unlisted'])) {
+        if (!in_array($feed->status, [ 'published', 'unlisted' ], true)) {
             do_action('fluent_community/feed/new_feed_' . $feed->status, $feed);
             /* translators: %s: The status of the post */
             $message = sprintf(__('Your post has been marked as %s', 'fluent-community'), $feed->status);
             return apply_filters('fluent_community/feed/new_feed_response', [
                 'feed'                   => FeedsHelper::transformFeed($feed),
                 'message'                => $message,
-                'last_fetched_timestamp' => current_time('timestamp')
+                'last_fetched_timestamp' => current_time('timestamp'),
             ], $feed, $request->all());
         }
 
@@ -461,7 +454,7 @@ class FeedsController extends Controller
         return apply_filters('fluent_community/feed/new_feed_response', [
             'feed'                   => FeedsHelper::transformFeed($feed),
             'message'                => $message,
-            'last_fetched_timestamp' => current_time('timestamp')
+            'last_fetched_timestamp' => current_time('timestamp'),
         ], $feed, $request->all());
     }
 
@@ -473,11 +466,11 @@ class FeedsController extends Controller
         $existingFeed = Feed::findOrFail($feedId);
         /** @var Feed $existingFeed */
 
-        $editableStatuses = ['published', 'unlisted', 'scheduled', 'pending'];
+        $editableStatuses = [ 'published', 'unlisted', 'scheduled', 'pending' ];
 
-        if (!in_array($existingFeed->status, $editableStatuses)) {
+        if (!in_array($existingFeed->status, $editableStatuses, true)) {
             return $this->sendError([
-                'message' => __('Sorry, this post is not in an editable state.', 'fluent-community')
+                'message' => __('Sorry, this post is not in an editable state.', 'fluent-community'),
             ]);
         }
 
@@ -487,16 +480,18 @@ class FeedsController extends Controller
         $isModerator = $user->hasPermissionOrInCurrentSpace('community_moderator', $existingFeed->space);
         $requestData['is_admin'] = $isModerator;
 
-        if ($surveyOptionError = FeedsHelper::getSurveyOptionsUpdateError(
+        $surveyOptionError = FeedsHelper::getSurveyOptionsUpdateError(
             Arr::get($existingFeed->meta, 'survey_config.options', []),
             Arr::get($requestData, 'survey', [])
-        )) {
+        );
+        if ($surveyOptionError) {
             return $this->sendError([
-                'message' => $surveyOptionError
+                'message' => $surveyOptionError,
             ]);
         }
 
-        if ($isModerator && ($status = Arr::get($requestData, 'status'))) {
+        $status = Arr::get($requestData, 'status');
+        if ($isModerator && $status) {
             if (in_array($status, $editableStatuses, true)) {
                 $fallbackStatus = $status === 'unlisted' ? $existingFeed->status : $status;
                 $data['status'] = apply_filters('fluent_community/feed/save_status', $fallbackStatus, $requestData, $existingFeed);
@@ -525,9 +520,9 @@ class FeedsController extends Controller
             $data['meta']['comments_disabled'] = $existingFeed->meta['comments_disabled'];
         }
 
-        if (Arr::get($requestData, 'send_announcement_email') == 'yes' && $requestData['is_admin']) {
+        if (Arr::get($requestData, 'send_announcement_email') === 'yes' && $requestData['is_admin']) {
             $data['meta']['send_announcement_email'] = 'yes';
-        } else if (Arr::get($existingFeed->meta, 'send_announcement_email')) {
+        } elseif (Arr::get($existingFeed->meta, 'send_announcement_email')) {
             $data['meta']['send_announcement_email'] = Arr::get($existingFeed->meta, 'send_announcement_email');
         }
 
@@ -536,7 +531,7 @@ class FeedsController extends Controller
         if (is_wp_error($data)) {
             return $this->sendError([
                 'message' => $data->get_error_message(),
-                'errors'  => $data->get_error_data()
+                'errors'  => $data->get_error_data(),
             ]);
         }
 
@@ -544,46 +539,52 @@ class FeedsController extends Controller
         $existingContentType = $existingFeed->content_type;
 
         if (($newContentType === 'document' && empty($requestData['document_ids'])) || ($newContentType === '' && $existingContentType === 'document' && empty($requestData['survey']))) {
-            $newContentType = $data['content_type'] = 'text';
+            $newContentType = 'text';
+            $data['content_type'] = 'text';
         }
 
-        if ($newContentType != $existingContentType) {
+        if ((string) $newContentType !== (string) $existingContentType) {
             // Content Type Changed
             do_action('fluent_community/feed/updating_content_type_old_' . $existingContentType, $existingFeed, $newContentType, $requestData);
         }
 
-        if ($newContentType != 'text') {
+        if ($newContentType !== 'text') {
             $data = apply_filters('fluent_community/feed/update_feed_data_type_' . $newContentType, $data, $requestData, $existingFeed);
             if (is_wp_error($data)) {
                 return $this->sendError([
                     'message' => $data->get_error_message(),
-                    'errors'  => $data->get_error_data()
+                    'errors'  => $data->get_error_data(),
                 ]);
             }
         }
 
-        if ($message != $existingFeed->message) {
+        if ((string) $message !== (string) $existingFeed->message) {
             $data['meta']['last_edited'] = [
                 'user_id' => $user->ID,
-                'time'    => current_time('mysql')
+                'time'    => current_time('mysql'),
             ];
         }
 
         $movingToProfile = false;
 
-        if ($newSpaceId = $request->get('new_space_id')) {
+        $newSpaceId = $request->get('new_space_id');
+        if ($newSpaceId) {
             if (!Helper::isUserInSpace($existingFeed->user_id, $newSpaceId)) {
                 return $this->sendError([
-                    'message' => __('The author is not a member of the selected space', 'fluent-community')
+                    'message' => __('The author is not a member of the selected space', 'fluent-community'),
                 ]);
             }
 
             $newSpace = Space::findOrFail($newSpaceId);
 
-            // check if the current user is admin
-            if (!$user->hasPermissionOrInCurrentSpace('community_admin', $newSpace)) {
+            // Needs admin rights on both spaces. The author can move a profile post.
+            $canLeaveSource = $existingFeed->space_id
+                ? $user->hasPermissionOrInCurrentSpace('community_admin', $existingFeed->space)
+                : (int) $existingFeed->user_id === (int) $user->ID || $user->hasCommunityAdminAccess();
+
+            if (!$canLeaveSource || !$user->hasPermissionOrInCurrentSpace('community_admin', $newSpace)) {
                 return $this->sendError([
-                    'message' => __('Sorry, you do not have permission to change the space for this post', 'fluent-community')
+                    'message' => __('Sorry, you do not have permission to change the space for this post', 'fluent-community'),
                 ]);
             }
 
@@ -594,10 +595,10 @@ class FeedsController extends Controller
                     'space_id'  => $newSpaceId,
                     'is_public' => $newSpace->isPublic() ? 1 : 0,
                 ]);
-        } else if ($request->get('move_to_profile')) {
+        } elseif ($request->get('move_to_profile')) {
             if (!$user->hasPermissionOrInCurrentSpace('community_admin', $existingFeed->space)) {
                 return $this->sendError([
-                    'message' => __('Sorry, you do not have permission to move this post to a profile', 'fluent-community')
+                    'message' => __('Sorry, you do not have permission to move this post to a profile', 'fluent-community'),
                 ]);
             }
 
@@ -615,7 +616,7 @@ class FeedsController extends Controller
         $existingFeed->fill($data);
         $existingFeed->save();
 
-        if ($message != $existingFeed->message) {
+        if ((string) $message !== (string) $existingFeed->message) {
             $editHistory = $existingFeed->getCustomMeta('_edit_history', []);
             if (!$editHistory) {
                 $editHistory = [];
@@ -625,7 +626,7 @@ class FeedsController extends Controller
                 'user_id'      => $user->ID,
                 'time'         => current_time('mysql'),
                 'prev_message' => $existingFeed->message,
-                'prev_title'   => $existingFeed->title
+                'prev_title'   => $existingFeed->title,
             ]);
 
             // get last 5 edit history
@@ -647,30 +648,37 @@ class FeedsController extends Controller
                 $deactivateQuery->where('media_type', '!=', 'fluent_player');
             }
 
-            $deactivateQuery->update(['is_active' => 0]);
+            $deactivateQuery->update([ 'is_active' => 0 ]);
         }
 
         if ($mediaItems) {
             $this->saveMediaItems($existingFeed, $mediaItems);
         }
 
-        $existingFeed->load(['xprofile', 'comments.xprofile']);
+        $existingFeed->load([ 'xprofile', 'comments.xprofile' ]);
 
         if ($existingFeed->space_id) {
-            $existingFeed->load(['space']);
+            $existingFeed->load([ 'space' ]);
             $space = $existingFeed->space;
-            $topicIds = (array)Arr::get($requestData, 'topic_ids', []);
+            // Topics already on the post stay valid, so a member's edit does not drop a moderator's topic.
+            $allowedTopicIds = array_merge(
+                $space ? $space->getPickableTopicIds($user->ID) : [],
+                $existingFeed->terms()->get()->where('taxonomy_name', 'post_topic')->pluck('id')->toArray()
+            );
+            $requestedTopicIds = array_filter((array)Arr::get($requestData, 'topic_ids', []));
+            $topicIds = array_intersect($requestedTopicIds, $allowedTopicIds);
             $topicsConfig = Helper::getTopicsConfig();
             // take only max topics per post
             if ($topicIds) {
                 $topicIds = array_slice($topicIds, 0, $topicsConfig['max_topics_per_post']);
                 $existingFeed->attachTopics($topicIds, true);
-            } else {
-                if ($space && Arr::get($space->settings, 'topic_required') != 'yes') {
+            } elseif (!$requestedTopicIds) {
+                // Clear topics only when none were sent. If every sent topic was filtered out, keep the current ones.
+                if ($space && Arr::get($space->settings, 'topic_required') !== 'yes') {
                     $existingFeed->terms()->where('taxonomy_name', 'post_topic')->detach();
                 }
             }
-        } else if ($movingToProfile) {
+        } elseif ($movingToProfile) {
             // Topics are space-scoped; a post moved to the profile must not keep them.
             $existingFeed->terms()->where('taxonomy_name', 'post_topic')->detach();
         }
@@ -684,7 +692,7 @@ class FeedsController extends Controller
 
         $data = [
             'feed'    => FeedsHelper::transformFeed($existingFeed),
-            'message' => __('Your post has been updated', 'fluent-community')
+            'message' => __('Your post has been updated', 'fluent-community'),
         ];
 
         return apply_filters('fluent_community/feed/update_feed_response', $data, $request->all());
@@ -695,21 +703,21 @@ class FeedsController extends Controller
         $feed = Feed::findOrFail($feedId);
         $user = $this->getUser(true);
 
-        $isAuthor = $feed->user_id == $user->ID;
+        $isAuthor = (int) $feed->user_id === (int) $user->ID;
         $isMod = $user->hasPermissionOrInCurrentSpace('community_moderator', $feed->space);
         $isAdmin = $user->hasPermissionOrInCurrentSpace('community_admin', $feed->space);
 
         if (!$isMod && !$isAuthor && !$isAdmin) {
             return $this->sendError([
-                'message' => __('You do not have permission to perform this action', 'fluent-community')
+                'message' => __('You do not have permission to perform this action', 'fluent-community'),
             ]);
         }
 
         $allData = $request->all();
-        $validKeys = ['is_sticky', 'priority', 'comments_disabled'];
+        $validKeys = [ 'is_sticky', 'priority', 'comments_disabled' ];
 
         if (!$isMod) {
-            $validKeys = ['comments_disabled'];
+            $validKeys = [ 'comments_disabled' ];
         }
 
         $data = Arr::only($allData, $validKeys);
@@ -717,10 +725,11 @@ class FeedsController extends Controller
         $data = array_map('intval', $data);
 
         // List/unlist toggle — community-moderator only, routed through the shared save_status filter.
+        $reqStatus = Arr::get($allData, 'status');
         if (Helper::isModerator($user)
-            && ($reqStatus = Arr::get($allData, 'status'))
-            && in_array($reqStatus, ['published', 'unlisted'], true)
-            && in_array($feed->status, ['published', 'unlisted'], true)
+            && $reqStatus
+            && in_array($reqStatus, [ 'published', 'unlisted' ], true)
+            && in_array($feed->status, [ 'published', 'unlisted' ], true)
         ) {
             $fallbackStatus = $reqStatus === 'unlisted' ? $feed->status : $reqStatus;
             $data['status'] = apply_filters('fluent_community/feed/save_status', $fallbackStatus, $allData, $feed);
@@ -733,7 +742,7 @@ class FeedsController extends Controller
                 Feed::where('space_id', $feed->space_id)
                     ->where('is_sticky', 1)
                     ->toBase()
-                    ->update(['is_sticky' => 0]);
+                    ->update([ 'is_sticky' => 0 ]);
             }
         }
 
@@ -759,7 +768,7 @@ class FeedsController extends Controller
 
         return apply_filters('fluent_community/feed/patch_feed_response', [
             'feed'    => $feed,
-            'message' => __('Feed updated', 'fluent-community')
+            'message' => __('Feed updated', 'fluent-community'),
         ], $feed, $request->all());
     }
 
@@ -768,7 +777,7 @@ class FeedsController extends Controller
         $scope = get_current_user_id() ? 'login' : 'logout';
 
         $data = [
-            'welcome_banner' => Helper::getWelcomeBanner($scope)
+            'welcome_banner' => Helper::getWelcomeBanner($scope),
         ];
 
         return apply_filters('fluent_community/welcome_banner_api_response', $data, $request->all());
@@ -778,16 +787,17 @@ class FeedsController extends Controller
     {
         $scope = $request->getSafe('scope');
 
-        if ($scope == 'view') {
+        // The raw config holds disabled and restricted links, so only the admins who manage it get it.
+        if ($scope === 'view' || !Helper::isSiteAdmin()) {
             $data = [
-                'links' => Helper::getEnabledFeedLinks()
+                'links' => Helper::getEnabledFeedLinks(),
             ];
 
             return apply_filters('fluent_community/feed_links_api_response', $data, $request->all());
         }
 
         $data = [
-            'links' => Helper::getFeedLinks()
+            'links' => Helper::getFeedLinks(),
         ];
 
         return apply_filters('fluent_community/feed_links_api_response', $data, $request->all());
@@ -805,7 +815,7 @@ class FeedsController extends Controller
 
         return [
             'message' => __('Links have been updated.', 'fluent-community'),
-            'links'   => $links
+            'links'   => $links,
         ];
     }
 
@@ -824,7 +834,7 @@ class FeedsController extends Controller
         $data['type'] = 'text';
 
         $this->validate($data, [
-            'message' => 'required'
+            'message' => 'required',
         ], [
             'message.required' => __('Message is required', 'fluent-community'),
         ]);
@@ -849,7 +859,7 @@ class FeedsController extends Controller
             ->first();
 
         if ($exist) {
-            return $this->sendError(['message' => __('No duplicate post please!', 'fluent-community')]);
+            return $this->sendError([ 'message' => __('No duplicate post please!', 'fluent-community') ]);
         }
 
         return false;
@@ -857,7 +867,7 @@ class FeedsController extends Controller
 
     private function validateAndSetSpace($spaceSlug, $user)
     {
-        if ($spaceSlug == '__self__post__') {
+        if ($spaceSlug === '__self__post__') {
             if (!Helper::hasGlobalPost()) {
                 throw new \Exception(esc_html__('Please select a valid space to post in', 'fluent-community'));
             }
@@ -888,7 +898,7 @@ class FeedsController extends Controller
         do_action('fluent_community/feed/deleted', $feed_id);
 
         return [
-            'message' => __('Feed has been deleted successfully', 'fluent-community')
+            'message' => __('Feed has been deleted successfully', 'fluent-community'),
         ];
     }
 
@@ -898,8 +908,6 @@ class FeedsController extends Controller
         $user = User::find(get_current_user_id());
         $user->canDeleteFeed($feed, true);
 
-        //do_action('fluent_community/feed/media_deleted', $feed->media);
-
         $meta = $feed->meta;
         $meta['media_preview'] = null;
 
@@ -907,13 +915,14 @@ class FeedsController extends Controller
         $feed->save();
 
         return [
-            'message' => __('Media preview image has been removed successfully.', 'fluent-community')
+            'message' => __('Media preview image has been removed successfully.', 'fluent-community'),
         ];
     }
 
     public function handleMediaUpload(Request $request)
     {
-        if ($error = Helper::checkUploadSizeError()) {
+        $error = Helper::checkUploadSizeError();
+        if ($error) {
             return $this->sendError($error, 413);
         }
 
@@ -940,12 +949,12 @@ class FeedsController extends Controller
             if ($ext === 'pjpeg') {
                 $ext = 'jpeg';
             }
-            if ($ext && $ext !== 'webp' && !in_array($ext, $convertibleExtensions)) {
+            if ($ext && $ext !== 'webp' && !in_array($ext, $convertibleExtensions, true)) {
                 $convertibleExtensions[] = $ext;
             }
         }
         // jpg is a common alias for jpeg — add only if jpeg is allowed
-        if (in_array('jpeg', $convertibleExtensions)) {
+        if (in_array('jpeg', $convertibleExtensions, true)) {
             $convertibleExtensions[] = 'jpg';
         }
 
@@ -953,9 +962,9 @@ class FeedsController extends Controller
         $maxFileSize = apply_filters('fluent_community/media_upload_max_file_size', 100);
 
         $allowedFileSize = $maxFileSize;
-        if (strtoupper($maxFileUnit) == 'MB') {
+        if (strtoupper($maxFileUnit) === 'MB') {
             $allowedFileSize = $maxFileSize * 1024;
-        } else if (strtoupper($maxFileUnit) == 'GB') {
+        } elseif (strtoupper($maxFileUnit) === 'GB') {
             $allowedFileSize = $maxFileSize * 1024 * 1024;
         }
 
@@ -965,33 +974,33 @@ class FeedsController extends Controller
             'file.required'  => __('No upload file was received. Please try again.', 'fluent-community'),
             'file.mimetypes' => __('The file must be an image type.', 'fluent-community'),
             /* translators: %$1s is replaced by the maximum allowed file size, %2$s is replaced by the file size unit (e.g. MB) */
-            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit)
+            'file.max'       => sprintf(__('The file size must be less than %1$s%2$s.', 'fluent-community'), $maxFileSize, $maxFileUnit),
         ]);
 
         if (Arr::get($files, 'file.type') === 'image/heic'
-            && (!extension_loaded('imagick') || !class_exists('Imagick') || !in_array('HEIC', \Imagick::queryFormats('HEIC')))
+            && (!extension_loaded('imagick') || !class_exists('Imagick') || !in_array('HEIC', \Imagick::queryFormats('HEIC'), true))
         ) {
             return $this->sendError([
-                'message' => __('HEIC image format is not supported on this system.', 'fluent-community')
+                'message' => __('HEIC image format is not supported on this system.', 'fluent-community'),
             ]);
         }
 
-        add_filter('wp_handle_upload', [UploadHelper::class, 'fixImageOrientation']);
+        add_filter('wp_handle_upload', [ UploadHelper::class, 'fixImageOrientation' ]);
         $uploadedFiles = FileSystem::put($files);
-        remove_filter('wp_handle_upload', [UploadHelper::class, 'fixImageOrientation']);
+        remove_filter('wp_handle_upload', [ UploadHelper::class, 'fixImageOrientation' ]);
 
         $file = Arr::get($uploadedFiles, 0);
 
         if (is_wp_error($file)) {
             return $this->sendError([
-                'message' => $file->get_error_message()
+                'message' => $file->get_error_message(),
             ]);
         }
 
         // an empty request body reaches here with nothing uploaded; never build media data from it
         if (!is_array($file) || empty($file['url']) || empty($file['file']) || empty($file['type'])) {
             return $this->sendError([
-                'message' => __('No upload file was received. Please try again.', 'fluent-community')
+                'message' => __('No upload file was received. Please try again.', 'fluent-community'),
             ]);
         }
 
@@ -1002,7 +1011,7 @@ class FeedsController extends Controller
         $originalFileType = $file['type'];
         $originalFileName = $file['file'];
 
-        $willWebPConvert = $request->get('disable_convert') != 'yes';
+        $willWebPConvert = $request->get('disable_convert') !== 'yes';
 
         $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
         $willResize = $request->get('resize');
@@ -1010,7 +1019,8 @@ class FeedsController extends Controller
 
         $willResize = apply_filters('fluent_community/media_upload_resize', $willResize, $file);
 
-        if ($context = $request->get('context')) {
+        $context = $request->get('context');
+        if ($context) {
             $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
         }
 
@@ -1023,7 +1033,7 @@ class FeedsController extends Controller
             if (!is_wp_error($editor) && $editor->get_size()['width'] > $maxWidth) {
                 // Current file extension
                 $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
-                $willConvert = in_array($ext, $convertibleExtensions) && $willWebPConvert;
+                $willConvert = in_array($ext, $convertibleExtensions, true) && $willWebPConvert;
 
                 if ($willConvert) {
                     $dottedExtensions = array_map(function ($ext) {
@@ -1041,7 +1051,7 @@ class FeedsController extends Controller
                 $editor->set_quality(90);
                 if ($willConvert) {
                     $result = $editor->save($fileUrl, 'image/webp');
-                    if ($result['mime-type'] == 'image/webp') {
+                    if ($result['mime-type'] === 'image/webp') {
                         // remove original file now
                         wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
                     }
@@ -1050,7 +1060,7 @@ class FeedsController extends Controller
                     $result = $editor->save($fileUrl);
                 }
 
-                if ($result['mime-type'] != 'image/webp') {
+                if ($result['mime-type'] !== 'image/webp') {
                     $file['file'] = $originalFileName;
                     $file['url'] = $originalUrl;
                     $file['type'] = $result['mime-type'];
@@ -1058,7 +1068,7 @@ class FeedsController extends Controller
 
                 $file['meta'] = [
                     'width'  => $editor->get_size()['width'],
-                    'height' => $editor->get_size()['height']
+                    'height' => $editor->get_size()['height'],
                 ];
             }
             $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
@@ -1071,7 +1081,7 @@ class FeedsController extends Controller
             $path = $file['path'];
             $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-            if ($extension != 'webp' && in_array($extension, $convertibleExtensions)) {
+            if ($extension !== 'webp' && in_array($extension, $convertibleExtensions, true)) {
                 // Let's convert to webp
                 $editor = wp_get_image_editor($file['path']);
                 if (!is_wp_error($editor)) {
@@ -1080,7 +1090,7 @@ class FeedsController extends Controller
                     $file['type'] = 'image/webp';
                     $result = $editor->save($file['path'], 'image/webp');
 
-                    if ($result['mime-type'] != 'image/webp') {
+                    if ($result['mime-type'] !== 'image/webp') {
                         $file['path'] = $orginalPath;
                         $file['url'] = $originalUrl;
                         $file['type'] = $result['mime-type'];
@@ -1090,10 +1100,16 @@ class FeedsController extends Controller
 
                     $file['meta'] = [
                         'width'  => $editor->get_size()['width'],
-                        'height' => $editor->get_size()['height']
+                        'height' => $editor->get_size()['height'],
                     ];
                 }
             }
+        }
+
+        // WP's Imagick editor keeps EXIF/XMP when converting, so a HEIC whose own strip
+        // failed would pass its GPS on to the WebP; strip the converted file too
+        if ($file['type'] !== $originalFileType) {
+            UploadHelper::stripImageMeta([ 'file' => $file['path'], 'type' => $file['type'] ]);
         }
 
         $mediaData = [
@@ -1101,7 +1117,7 @@ class FeedsController extends Controller
             'driver'     => 'local',
             'media_path' => $file['path'],
             'media_url'  => $file['url'],
-            'settings'   => Arr::get($file, 'meta', [])
+            'settings'   => Arr::get($file, 'meta', []),
         ];
 
         $mediaData = apply_filters('fluent_community/media_upload_data', $mediaData, $file);
@@ -1109,13 +1125,13 @@ class FeedsController extends Controller
         if (is_wp_error($mediaData)) {
             return $this->sendError([
                 'message' => $mediaData->get_error_message(),
-                'errors'  => $mediaData->get_error_data()
+                'errors'  => $mediaData->get_error_data(),
             ]);
         }
 
         if (!$mediaData) {
             return $this->sendError([
-                'message' => __('Error while uploading the media', 'fluent-community')
+                'message' => __('Error while uploading the media', 'fluent-community'),
             ]);
         }
 
@@ -1134,8 +1150,8 @@ class FeedsController extends Controller
                 'media_key' => $media->media_key,
                 'type'      => $media->media_type,
                 'width'     => Arr::get($media->settings, 'width'),
-                'height'    => Arr::get($media->settings, 'height')
-            ]
+                'height'    => Arr::get($media->settings, 'height'),
+            ],
         ];
     }
 
@@ -1149,7 +1165,7 @@ class FeedsController extends Controller
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
                 'error'       => __('User not authenticated', 'fluent-community'),
-                'feeds'       => []
+                'feeds'       => [],
             ];
         }
 
@@ -1177,6 +1193,7 @@ class FeedsController extends Controller
             $updatedFeeds = Feed::where('updated_at', '>', $since)
                 ->where('status', 'published')
                 ->byUserAccess($userId)
+                ->byActiveAuthor()
                 ->with(Feed::withPublicRelations($currentUserModel, null))
                 ->orderBy('updated_at', 'desc')
                 ->limit(20) // Reduced limit since we're sending full data
@@ -1200,7 +1217,7 @@ class FeedsController extends Controller
                     'action'     => $isNew ? 'created' : 'updated',
                     'context'    => $context,
                     'user_id'    => $feed->user_id,
-                    'feed_data'  => $feed // Include full feed data
+                    'feed_data'  => $feed, // Include full feed data
                 ];
             }
 
@@ -1219,10 +1236,10 @@ class FeedsController extends Controller
             'notifications'  => [
                 'unread_count' => $notificationCount,
                 'new_count'    => count($newNotifications),
-                'new_items'    => $newNotifications
+                'new_items'    => $newNotifications,
             ],
             'spaces'         => [], // For future use
-            'execution_time' => microtime(true) - $start
+            'execution_time' => microtime(true) - $start,
         ];
 
         return apply_filters('fluent_community/feed_ticker', $response, $request->all());
@@ -1273,16 +1290,18 @@ class FeedsController extends Controller
                 'fcom_notifications.action',
                 'fcom_notifications.content',
                 'fcom_notifications.route',
-                'fcom_notification_users.updated_at as notified_at'
+                'fcom_notification_users.updated_at as notified_at',
             ])
             ->join('fcom_notification_users', 'fcom_notification_users.object_id', '=', 'fcom_notifications.id')
             ->where('fcom_notification_users.user_id', $userId)
             ->where('fcom_notification_users.is_read', 0)
             ->where('fcom_notification_users.object_type', 'notification')
             ->where('fcom_notification_users.updated_at', '>', $since)
-            ->with(['xprofile' => function ($q) {
-                return $q->select(['user_id', 'display_name', 'username', 'avatar']);
-            }])
+            ->with([
+        'xprofile' => function ($q) {
+                return $q->select([ 'user_id', 'display_name', 'username', 'avatar' ]);
+        },
+        ])
             ->orderBy('fcom_notification_users.updated_at', 'DESC')
             ->limit($limit)
             ->get();
@@ -1325,7 +1344,7 @@ class FeedsController extends Controller
                 'text'        => $this->getToastText($notification->content),
                 'notified_at' => $notification->notified_at,
                 'avatar'      => $xprofile ? $xprofile->avatar : '',
-                'name'        => $xprofile ? $xprofile->display_name : ''
+                'name'        => $xprofile ? $xprofile->display_name : '',
             ];
         }
 
@@ -1362,7 +1381,7 @@ class FeedsController extends Controller
         if (empty($feedIds) || !is_array($feedIds)) {
             return [
                 'feeds' => [],
-                'error' => __('No feed IDs provided', 'fluent-community')
+                'error' => __('No feed IDs provided', 'fluent-community'),
             ];
         }
 
@@ -1374,7 +1393,8 @@ class FeedsController extends Controller
         // Build query based on context
         $query = Feed::whereIn('id', $feedIds)
             ->where('status', 'published')
-            ->byUserAccess($userId);
+            ->byUserAccess($userId)
+            ->byActiveAuthor();
 
         $currentUserModel = $this->getUser();
 
@@ -1386,7 +1406,7 @@ class FeedsController extends Controller
 
         return [
             'feeds' => $feeds,
-            'count' => $feeds->count()
+            'count' => $feeds->count(),
         ];
     }
 
@@ -1401,7 +1421,7 @@ class FeedsController extends Controller
                 'updates'     => [],
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
-                'error'       => __('User not authenticated', 'fluent-community')
+                'error'       => __('User not authenticated', 'fluent-community'),
             ];
         }
 
@@ -1413,7 +1433,7 @@ class FeedsController extends Controller
                 'updates'     => [],
                 'timestamp'   => current_time('mysql', true),
                 'has_changes' => false,
-                'error'       => __('Invalid timestamp format', 'fluent-community')
+                'error'       => __('Invalid timestamp format', 'fluent-community'),
             ];
         }
 
@@ -1441,7 +1461,7 @@ class FeedsController extends Controller
             $updatedFeeds = (clone $query)
                 ->where('updated_at', '>', $sinceDate->format('Y-m-d H:i:s'))
                 ->where('status', 'published')
-                ->select(['id', 'updated_at', 'created_at'])
+                ->select([ 'id', 'updated_at', 'created_at' ])
                 ->orderBy('updated_at', 'desc')
                 ->limit(100)
                 ->get();
@@ -1452,15 +1472,15 @@ class FeedsController extends Controller
                 $updates[] = [
                     'id'         => $feed->id,
                     'updated_at' => gmdate('c', strtotime($feed->updated_at)),
-                    'action'     => $isNew ? 'created' : 'updated'
+                    'action'     => $isNew ? 'created' : 'updated',
                 ];
             }
 
             // Check for deleted feeds (status changed to deleted)
             $deletedFeeds = (clone $query)
                 ->where('updated_at', '>', $sinceDate->format('Y-m-d H:i:s'))
-                ->whereIn('status', ['deleted', 'draft'])
-                ->select(['id', 'updated_at'])
+                ->whereIn('status', [ 'deleted', 'draft' ])
+                ->select([ 'id', 'updated_at' ])
                 ->limit(50)
                 ->get();
 
@@ -1468,7 +1488,7 @@ class FeedsController extends Controller
                 $updates[] = [
                     'id'         => $feed->id,
                     'updated_at' => gmdate('c', strtotime($feed->updated_at)),
-                    'action'     => 'deleted'
+                    'action'     => 'deleted',
                 ];
             }
         }
@@ -1476,7 +1496,7 @@ class FeedsController extends Controller
         return [
             'updates'     => $updates,
             'timestamp'   => current_time('mysql', true),
-            'has_changes' => !empty($updates)
+            'has_changes' => !empty($updates),
         ];
     }
 
@@ -1492,14 +1512,14 @@ class FeedsController extends Controller
 
         if ($metaData && !is_wp_error($metaData)) {
             $data = [
-                'oembed' => $metaData
+                'oembed' => $metaData,
             ];
             return apply_filters('fluent_community/feed_oembed_api_response', $data, $request->all());
         }
 
         return $this->sendError([
             'message' => __('No oembed data found', 'fluent-community'),
-            'url'     => $url
+            'url'     => $url,
         ]);
     }
 
@@ -1510,13 +1530,23 @@ class FeedsController extends Controller
         $html = wp_kses_post(FeedsHelper::mdToHtml($message));
 
         $data = [
-            'html' => $html
+            'html' => $html,
         ];
 
         $data['message_rendered'] = $html;
 
-        if (in_array('meta', $request->get('with', [])) && $request->get('feed')) {
-            [$data,] = FeedsHelper::processFeedMetaData($data, $request->get('feed'));
+        $feed = $request->get('feed');
+
+        if (in_array('meta', (array) $request->get('with', []), true) && is_array($feed)) {
+            // canEmbedRawHtml() trusts a precomputed is_admin, so it must be resolved
+            // server-side from the space. The preview modal sends the space as an object.
+            unset($feed['is_admin']);
+
+            if (empty($feed['space_id'])) {
+                $feed['space_id'] = (int) Arr::get($feed, 'space.id');
+            }
+
+            [$data,] = FeedsHelper::processFeedMetaData($data, $feed);
         }
 
         return $data;

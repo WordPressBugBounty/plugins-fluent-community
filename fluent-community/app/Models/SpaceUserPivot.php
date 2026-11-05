@@ -21,7 +21,7 @@ class SpaceUserPivot extends Model
 
     protected $table = 'fcom_space_user';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     // The last visit is private: the members API returns these rows to other members.
     protected $hidden = [ 'updated_at' ];

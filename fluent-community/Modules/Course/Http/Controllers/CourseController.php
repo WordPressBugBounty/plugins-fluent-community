@@ -26,7 +26,7 @@ class CourseController extends Controller
 
         $search = $request->getSafe('search');
         $topicSlug = $request->getSafe('topic_slug');
-        $isEnrolled = $request->getSafe('type') == 'enrolled';
+        $isEnrolled = $request->getSafe('type') === 'enrolled';
         $sortBy = Utility::getListingSort('course', $request->getSafe('sort_by', 'sanitize_text_field', ''));
 
         $query = Course::searchBy($search)
@@ -40,28 +40,29 @@ class CourseController extends Controller
             })
             ->byPostTopic($topicSlug)
             ->where(function ($q) use ($enrolledIds) {
-                $q->whereIn('privacy', ['public', 'private']);
+                $q->whereIn('privacy', [ 'public', 'private' ]);
                 $q->orWhereIn('id', $enrolledIds);
             })
             ->when($isEnrolled, function ($q) use ($enrolledIds) {
                 $q->whereIn('id', $enrolledIds);
             })
-            ->when($sortBy == 'alphabetical', function ($q) {
+            ->when($sortBy === 'alphabetical', function ($q) {
                 $q->orderBy('title', 'ASC');
             })
-            ->when($sortBy == 'oldest', function ($q) {
+            ->when($sortBy === 'oldest', function ($q) {
                 $q->orderBy('created_at', 'ASC');
             })
-            ->when($sortBy == 'latest', function ($q) {
+            ->when($sortBy === 'latest', function ($q) {
                 $q->orderBy('created_at', 'DESC');
             })
-            ->when($sortBy == 'custom', function ($q) {
+            ->when($sortBy === 'custom', function ($q) {
                 Utility::applyCustomOrder($q, 'fluent_community_courses_order');
             });
 
         $courses = $query->paginate();
 
         foreach ($courses as $course) {
+            $course->settings = $course->getVisibleSettings($user);
             $course->isEnrolled = CourseHelper::isEnrolled($course->id);
             if ($course->isEnrolled) {
                 $course->progress = CourseHelper::getCourseProgress($course->id);
@@ -73,18 +74,18 @@ class CourseController extends Controller
 
             $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
-            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
+            if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
                 $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
             } else {
                 $course->studentsCount = 0;
             }
 
-            do_action_ref_array('fluent_community/course', [&$course]);
+            do_action_ref_array('fluent_community/course', [ &$course ]);
         }
 
         $data = [
             'courses'           => $courses,
-            'course_categories' => $request->get('with_categories') ? CourseHelper::getCourseCategories() : []
+            'course_categories' => $request->get('with_categories') ? CourseHelper::getCourseCategories() : [],
         ];
 
         return apply_filters('fluent_community/courses_api_response', $data, $request->all());
@@ -101,7 +102,7 @@ class CourseController extends Controller
 
         if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community'),
             ]);
         }
 
@@ -123,14 +124,14 @@ class CourseController extends Controller
 
         if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community'),
             ]);
         }
 
-        $hideInstructorView = Arr::get($course->settings, 'hide_instructor_view') == 'yes';
-        $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') == 'yes';
+        $hideInstructorView = Arr::get($course->settings, 'hide_instructor_view') === 'yes';
+        $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') === 'yes';
         if (!$hideInstructorView) {
-            $course->load(['creator']);
+            $course->load([ 'creator' ]);
             if ($course->creator) {
                 $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
                 $course->creator->total_courses = count($creatorCourseIds);
@@ -161,7 +162,7 @@ class CourseController extends Controller
 
         if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community'),
             ]);
         }
 
@@ -170,57 +171,36 @@ class CourseController extends Controller
             ->when(!$isCourseCreator, function ($q) {
                 $q->where('status', 'published');
             })
-            ->with(['topic'])
+            ->with([ 'topic' ])
             ->firstOrFail();
 
         if (!$lesson || !$lesson->topic) {
             return $this->sendError([
-                'message' => __('Lesson not found. maybe the lesson is not published yet!', 'fluent-community')
+                'message' => __('Lesson not found. maybe the lesson is not published yet!', 'fluent-community'),
             ]);
         }
 
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
 
-        if ($course->privacy == 'secret' && !$enrollment && !$isCourseCreator) {
+        if ($course->privacy === 'secret' && !$enrollment && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('You must need to be invited to view this course', 'fluent-community')
+                'message' => __('You must need to be invited to view this course', 'fluent-community'),
             ]);
         }
 
-        $section = $lesson->topic;
-        $hasAcessSectionAcess = !!$enrollment;
-        $unlockDate = '';
-        $courseType = $course->getCourseType();
-        $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
-        if ($hasAcessSectionAcess) {
-            $unlockDate = CourseHelper::getSectionAccessDate($section, $courseType, $enrollment);
-            if ($unlockDate && strtotime($unlockDate) > current_time('timestamp')) {
-                $hasAcessSectionAcess = false;
-            } else {
-                $unlockDate = null;
-            }
-        }
-
-        $initialCanView = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
-        $accessInfo     = CourseHelper::resolveLessonAccess($initialCanView, $lesson, $course, $this->getUser(), [
-            'enrollment'         => $enrollment,
-            'is_admin'           => $isCourseCreator,
-            'has_section_access' => $hasAcessSectionAcess,
-            'has_public_access'  => $hasPublicViewAccess,
-        ]);
-        $canViewLesson  = $accessInfo['can_view'];
-        $lockType       = $accessInfo['lock_type'];
+        $access = CourseHelper::getLessonAccess($lesson, $course, $user, $enrollment);
+        $canViewLesson = $access['can_view'];
 
         $formattedLesson = CourseHelper::formatLessonData($course, $lesson, $user, [
             'can_view'      => $canViewLesson,
             'parse_content' => $canViewLesson,
             'is_locked'     => !$canViewLesson && !$isCourseCreator,
-            'unlock_date'   => $unlockDate,
-            'lock_type'     => $lockType
+            'unlock_date'   => $access['unlock_date'],
+            'lock_type'     => $access['lock_type'],
         ]);
 
         $data = [
-            'lesson' => $formattedLesson
+            'lesson' => $formattedLesson,
         ];
 
         return apply_filters('fluent_community/course_lesson_api_response', $data, $request->all());
@@ -231,24 +211,26 @@ class CourseController extends Controller
         $sections = CourseTopic::where('space_id', $course->id)
             ->orderBy('priority', 'ASC')
             ->orderBy('id', 'ASC')
-            ->with(['lessons' => function ($query) use ($isCourseCreator) {
-                if (!$isCourseCreator) {
-                    $query->where('status', 'published');
-                }
-            }])
+            ->with([
+        'lessons' => function ($query) use ($isCourseCreator) {
+            if (!$isCourseCreator) {
+                $query->where('status', 'published');
+            }
+        },
+        ])
             ->get();
 
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
 
         $currentUser = Helper::getCurrentUser();
 
-        if ($course->privacy == 'private' && !$enrollment) {
+        if ($course->privacy === 'private' && !$enrollment) {
             $course->lockscreen_config = LockscreenService::getLockscreenConfig($course, null, true);
         }
 
-        if ($course->privacy == 'secret' && !$enrollment && !$isCourseCreator) {
+        if ($course->privacy === 'secret' && !$enrollment && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('You must need to be invited to view this course', 'fluent-community')
+                'message' => __('You must need to be invited to view this course', 'fluent-community'),
             ]);
         }
 
@@ -256,51 +238,49 @@ class CourseController extends Controller
         $course->can_self_enroll = $isCourseCreator || ($course->status === 'published' && $course->privacy === 'public');
 
         $course = apply_filters('fluent_community/course/processed', $course, [
-            'is_enrolled' => !!$enrollment,
+            'is_enrolled' => (bool)$enrollment,
         ]);
 
-        $courseSettings = $course->settings;
+        $courseSettings = $isCourseCreator ? $course->settings : $course->getVisibleSettings($currentUser);
         if (Arr::get($courseSettings, 'course_details')) {
             $courseSettings['course_details_rendered'] = wp_kses_post(FeedsHelper::mdToHtml($courseSettings['course_details']));
-            $course->settings = $courseSettings;
         }
-
-        $courseType = $course->getCourseType();
-
-        $hasPublicViewAccess = $course->privacy == 'public' && Arr::get($course->settings, 'public_lesson_view') == 'yes' && $courseType == 'self_paced';
+        $course->settings = $courseSettings;
 
         $formattedSections = [];
+
+        // A visitor who may not see the lesson list still gets the lessons they can open
+        // (a free preview, for example), so a direct link to one keeps working.
+        $canSeeLessonList = CourseHelper::canSeeLessonList($course, $enrollment, $isCourseCreator);
+
+        // Every lesson's place in the full course, counted before any is hidden, so "Lesson 3 of 12"
+        // stays right for a visitor who sees only some lessons. The count is public anyway (course list).
+        $position = 0;
 
         foreach ($sections as $section) {
             if ($section->lessons->isEmpty()) {
                 continue;
             }
 
-            $hasAcessSectionAcess = !!$enrollment;
-            $unlockDate = '';
-
-            if ($hasAcessSectionAcess) {
-                $unlockDate = CourseHelper::getSectionAccessDate($section, $courseType, $enrollment);
-                if ($unlockDate && strtotime($unlockDate) > current_time('timestamp')) {
-                    $hasAcessSectionAcess = false;
-                } else {
-                    $unlockDate = null;
-                }
-            }
-
-            $sectionCtx = [
-                'enrollment'         => $enrollment,
-                'is_admin'           => $isCourseCreator,
-                'has_section_access' => $hasAcessSectionAcess,
-                'has_public_access'  => $hasPublicViewAccess,
-            ];
-
             $formattedLessons = [];
+            $sectionAccess = null;
             foreach ($section->lessons as $lesson) {
-                $initialCanView = $hasAcessSectionAcess || $isCourseCreator || $hasPublicViewAccess;
-                $accessInfo     = CourseHelper::resolveLessonAccess($initialCanView, $lesson, $course, $this->getUser(), $sectionCtx);
-                $canViewLesson  = $accessInfo['can_view'];
-                $lockType       = $accessInfo['lock_type'];
+                // The section is already loaded: hand it over so the access check does not query it per lesson
+                $lesson->setRelation('topic', $section);
+                ++$position;
+
+                $access = CourseHelper::getLessonAccess($lesson, $course, $this->getUser(), $enrollment);
+                // The section lock and unlock date are the same for every lesson in the section
+                if ($sectionAccess === null) {
+                    $sectionAccess = $access;
+                }
+                $canViewLesson = $access['can_view'];
+                $lockType = $access['lock_type'];
+
+                // The requested lesson stays (locked, no content) so a direct link still shows its lock message
+                if (!$canSeeLessonList && !$canViewLesson && $lesson->slug !== $intendtedLessonSlug) {
+                    continue;
+                }
 
                 $parseContent = $intendtedLessonSlug === $lesson->slug && $canViewLesson;
 
@@ -308,8 +288,8 @@ class CourseController extends Controller
                     'can_view'      => $canViewLesson,
                     'parse_content' => $parseContent,
                     'is_locked'     => !$canViewLesson && !$isCourseCreator,
-                    'unlock_date'   => $unlockDate,
-                    'lock_type'     => $lockType
+                    'unlock_date'   => $access['unlock_date'],
+                    'lock_type'     => $lockType,
                 ]);
 
                 $isLazyLoad = !$parseContent;
@@ -318,8 +298,13 @@ class CourseController extends Controller
                 }
 
                 $formattedLesson['lazy_load'] = $isLazyLoad;
+                $formattedLesson['position'] = $position;
 
                 $formattedLessons[] = $formattedLesson;
+            }
+
+            if (!$formattedLessons) {
+                continue;
             }
 
             $formattedSections[] = [
@@ -329,15 +314,17 @@ class CourseController extends Controller
                 'created_at'  => $section->created_at,
                 'slug'        => $section->slug,
                 'type'        => 'section',
-                'is_locked'   => !$hasAcessSectionAcess && !$isCourseCreator,
-                'unlock_date' => $unlockDate
+                'is_locked'   => !$sectionAccess['has_section_access'] && !$isCourseCreator,
+                'unlock_date' => $sectionAccess['unlock_date'],
             ];
         }
+
+        $course->lessons_total = $position;
 
         return [
             'course'   => $course,
             'sections' => $formattedSections,
-            'track'    => CourseHelper::getCourseProgressTrack($course->id)
+            'track'    => CourseHelper::getCourseProgressTrack($course->id),
         ];
     }
 
@@ -347,7 +334,7 @@ class CourseController extends Controller
 
         if (!$user) {
             return $this->sendError([
-                'message' => __('You need to login to enroll in this course.', 'fluent-community')
+                'message' => __('You need to login to enroll in this course.', 'fluent-community'),
             ]);
         }
 
@@ -358,13 +345,13 @@ class CourseController extends Controller
 
         if ($course->status !== 'published' && !$isCourseCreator) {
             return $this->sendError([
-                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community')
+                'message' => __('Course not found. maybe the course is not published yet!', 'fluent-community'),
             ]);
         }
 
-        if (!$isCourseCreator && $course->privacy != 'public') {
+        if (!$isCourseCreator && $course->privacy !== 'public') {
             return $this->sendError([
-                'message' => __('You are not allowed to enroll in this course.', 'fluent-community')
+                'message' => __('You are not allowed to enroll in this course.', 'fluent-community'),
             ]);
         }
 
@@ -373,13 +360,13 @@ class CourseController extends Controller
         if (!$enrolled) {
             return [
                 'message' => __('You are already enrolled in this course.', 'fluent-community'),
-                'track'   => CourseHelper::getCourseProgressTrack($courseId)
+                'track'   => CourseHelper::getCourseProgressTrack($courseId),
             ];
         }
 
         return [
             'message' => __('You have been enrolled in this course.', 'fluent-community'),
-            'track'   => CourseHelper::getCourseProgressTrack($courseId)
+            'track'   => CourseHelper::getCourseProgressTrack($courseId),
         ];
     }
 
@@ -387,16 +374,16 @@ class CourseController extends Controller
     {
         $course = Course::findOrFail($courseId);
 
-        if ($course->status != 'published') {
+        if ($course->status !== 'published') {
             return $this->sendError([
-                'message' => __('Course is not in published state.', 'fluent-community')
+                'message' => __('Course is not in published state.', 'fluent-community'),
             ]);
         }
 
 
         if (!CourseHelper::isEnrolled($courseId)) {
             return $this->sendError([
-                'message' => __('Please enroll this course first', 'fluent-community')
+                'message' => __('Please enroll this course first', 'fluent-community'),
             ]);
         }
 
@@ -407,15 +394,15 @@ class CourseController extends Controller
 
         if (!$lesson) {
             return $this->sendError([
-                'message' => __('Lesson is not on published state.', 'fluent-community')
+                'message' => __('Lesson is not on published state.', 'fluent-community'),
             ]);
         }
 
         $state = $request->get('state');
 
-        if (!in_array($state, ['completed', 'incomplete'])) {
+        if (!in_array($state, [ 'completed', 'incomplete' ], true)) {
             return $this->sendError([
-                'message' => __('Invalid state.', 'fluent-community')
+                'message' => __('Invalid state.', 'fluent-community'),
             ]);
         }
 
@@ -432,7 +419,7 @@ class CourseController extends Controller
 
         if (!$isAllowed) {
             $errorData = [
-                'message' => __('You are not allowed to complete this lesson.', 'fluent-community')
+                'message' => __('You are not allowed to complete this lesson.', 'fluent-community'),
             ];
 
             if (LessonVideoGateService::isCompletionBlockedFor($lesson, Helper::getCurrentUser())) {
@@ -445,32 +432,37 @@ class CourseController extends Controller
 
         CourseHelper::updateLessonCompletion($lesson, get_current_user_id(), $state);
         $track = CourseHelper::getCourseProgressTrack($courseId);
-        $isCompleted = $track['progress'] == 100;
+        $isCompleted = (int) $track['progress'] === 100;
 
         if ($isCompleted) {
             CourseHelper::completeCourse($course, $lesson, get_current_user_id());
         }
 
-        return [
+        /*
+         * Add to the response of a lesson completion. When the lesson completes the course,
+         * the course/completed actions have already run, so their results (Pro: the issued
+         * certificate) can be returned here.
+         */
+        return apply_filters('fluent_community/course/lesson_completion_response', [
             'message'      => __('Lesson completion state updated.', 'fluent-community'),
             'track'        => $track,
-            'is_completed' => $isCompleted
-        ];
+            'is_completed' => $isCompleted,
+        ], $course, $lesson, $isCompleted);
     }
 
     public function markLessonVideoWatched(Request $request, $courseId, $lessonId)
     {
         $course = Course::findOrFail($courseId);
 
-        if ($course->status != 'published') {
+        if ($course->status !== 'published') {
             return $this->sendError([
-                'message' => __('Course is not in published state.', 'fluent-community')
+                'message' => __('Course is not in published state.', 'fluent-community'),
             ]);
         }
 
         if (!CourseHelper::isEnrolled($courseId)) {
             return $this->sendError([
-                'message' => __('Please enroll this course first', 'fluent-community')
+                'message' => __('Please enroll this course first', 'fluent-community'),
             ]);
         }
 
@@ -481,7 +473,7 @@ class CourseController extends Controller
 
         if (!$lesson) {
             return $this->sendError([
-                'message' => __('Lesson is not on published state.', 'fluent-community')
+                'message' => __('Lesson is not on published state.', 'fluent-community'),
             ]);
         }
 
@@ -496,7 +488,7 @@ class CourseController extends Controller
             return [
                 'message'  => __('This lesson does not require video completion.', 'fluent-community'),
                 'is_gated' => false,
-                'watched'  => false
+                'watched'  => false,
             ];
         }
 
@@ -506,7 +498,7 @@ class CourseController extends Controller
         if ($watchedPercent < $threshold) {
             return $this->sendError([
                 /* translators: %d is the watched percentage required to complete the lesson */
-                'message' => sprintf(__('Please watch at least %d%% of the video.', 'fluent-community'), $threshold)
+                'message' => sprintf(__('Please watch at least %d%% of the video.', 'fluent-community'), $threshold),
             ]);
         }
 
@@ -515,7 +507,7 @@ class CourseController extends Controller
         return [
             'message'  => __('Video watch progress has been recorded.', 'fluent-community'),
             'is_gated' => true,
-            'watched'  => true
+            'watched'  => true,
         ];
     }
 
@@ -525,19 +517,19 @@ class CourseController extends Controller
 
         if ($course->status !== 'published') {
             return $this->sendError([
-                'message' => __('Course is not in published state.', 'fluent-community')
+                'message' => __('Course is not in published state.', 'fluent-community'),
             ]);
         }
 
         if (!CourseHelper::isEnrolled($courseId)) {
             return $this->sendError([
-                'message' => __('Please enroll this course first', 'fluent-community')
+                'message' => __('Please enroll this course first', 'fluent-community'),
             ]);
         }
 
         if (!CourseHelper::resetCourseProgress($courseId, get_current_user_id())) {
             return $this->sendError([
-                'message' => __('Your course progress could not be reset. Please try again.', 'fluent-community')
+                'message' => __('Your course progress could not be reset. Please try again.', 'fluent-community'),
             ]);
         }
 
@@ -546,8 +538,8 @@ class CourseController extends Controller
             'track'   => [
                 'completed_lessons' => [],
                 'isEnrolled'        => true,
-                'progress'          => 0
-            ]
+                'progress'          => 0,
+            ],
         ];
     }
 
@@ -557,18 +549,18 @@ class CourseController extends Controller
         $isCourseCreator = $user && $user->hasCourseCreatorAccess();
 
         $coursesQuery = Course::where(function ($q) use ($isCourseCreator, $user) {
-                if ($isCourseCreator) {
-                    $q->where('status', 'published')
-                      ->orWhere('created_by', $user->ID);
-                } else {
-                    $q->where('status', 'published');
-                }
-            });
+            if ($isCourseCreator) {
+                $q->where('status', 'published')
+                  ->orWhere('created_by', $user->ID);
+            } else {
+                $q->where('status', 'published');
+            }
+        });
 
         if (!($user && $user->isCommunityModerator())) {
             $userId = get_current_user_id();
             $coursesQuery->where(function ($q) use ($userId) {
-                $q->whereIn('privacy', ['public', 'private'])
+                $q->whereIn('privacy', [ 'public', 'private' ])
                     ->orWhereHas('space_pivot', function ($sub) use ($userId) {
                         $sub->where('user_id', $userId)
                             ->where('role', 'student');
@@ -577,21 +569,21 @@ class CourseController extends Controller
             });
         }
 
-        $courses = $coursesQuery->with(['creator'])->paginate();
+        $courses = $coursesQuery->with([ 'creator' ])->paginate();
 
         $formattedCourses = [];
         foreach ($courses as $course) {
             $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
             $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
 
-            if (Arr::get($course->settings, 'hide_members_count') != 'yes') {
+            if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
                 $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
             } else {
                 $course->studentsCount = 0;
             }
 
-            $showInstructorView = Arr::get($course->settings, 'hide_instructor_view') != 'yes';
-            $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') == 'yes';
+            $showInstructorView = Arr::get($course->settings, 'hide_instructor_view') !== 'yes';
+            $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') === 'yes';
             if ($showInstructorView) {
                 if ($course->creator) {
                     $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
@@ -610,7 +602,7 @@ class CourseController extends Controller
 
         return apply_filters('fluent_community/all_courses_api_response', [
             'courses' => $formattedCourses,
-            'total'   => $courses->total()
+            'total'   => $courses->total(),
         ], $request->all());
     }
 }

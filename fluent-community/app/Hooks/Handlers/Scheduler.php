@@ -45,7 +45,7 @@ class Scheduler
         $notificationSettings = Utility::getEmailNotificationSettings();
         $globalStatus = Arr::get($notificationSettings, 'digest_email_status', 'no');
 
-        if ($globalStatus != 'yes') {
+        if ($globalStatus !== 'yes') {
             // Global Status is false
             // Check if any user enabled that or not
             // Answered from a denormalized option refreshed on the preference
@@ -142,7 +142,7 @@ class Scheduler
     private function getNextOccurrenceTimestamp($dayname, $time)
     {
         $dayname = strtolower($dayname);
-        $valid_days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        $valid_days = [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ];
         if (!in_array($dayname, $valid_days, true)) {
             return false;
         }

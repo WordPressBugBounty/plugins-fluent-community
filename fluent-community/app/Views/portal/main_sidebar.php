@@ -27,7 +27,7 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
 
 ?>
 
-<?php if ($fluentCommunityContext != 'ajax'): ?>
+<?php if ($fluentCommunityContext !== 'ajax'): ?>
     <?php do_action('fluent_community/before_sidebar_wrap', $fluentCommunityContext); ?>
 <?php endif; ?>
 
@@ -155,7 +155,7 @@ $fluentCommunityCollapsedGroups = Helper::getCollapsedSidebarGroups(array_merge(
 </div>
 
 
-<?php if ($fluentCommunityContext != 'ajax'): ?>
+<?php if ($fluentCommunityContext !== 'ajax'): ?>
     <?php do_action('fluent_community/after_sidebar_wrap', $fluentCommunityContext); ?>
     <div id="fcom_menu_sidebar"></div>
     <?php do_action('fluent_community/after_portal_sidebar', $fluentCommunityContext); ?>

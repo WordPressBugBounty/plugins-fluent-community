@@ -1,4 +1,4 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+<?php if ( ! defined( 'ABSPATH' ) ) { exit;} // Exit if accessed directly ?>
 <div class="fhr_wrap">
     <a class="screen-reader-shortcut" href="#fluent_com_portal"><?php esc_html_e('Skip to main content', 'fluent-community'); ?></a>
     <?php do_action('fluent_community/portal_header', 'headless'); ?>

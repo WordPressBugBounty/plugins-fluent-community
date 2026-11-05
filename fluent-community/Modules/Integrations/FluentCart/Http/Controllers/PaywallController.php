@@ -10,6 +10,7 @@ use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Services\Helper;
 use FluentCart\App\Helpers\Helper as CartHelper;
+use FluentCart\App\Helpers\Status as CartStatus;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Http\Controllers\Controller;
 
@@ -17,12 +18,13 @@ class PaywallController extends Controller
 {
     public function getPaywalls(Request $request, $spaceId)
     {
+        /** @var BaseSpace $space */
         $space = BaseSpace::withoutGlobalScopes()->findOrFail($spaceId);
 
         $userId = get_current_user_id();
-        if ($space->privacy === 'secret' && !$space->getMembership($userId) && !$space->isAdmin($userId, true)) {
+        if ($space->privacy === 'secret' && !$space->isActiveMember($userId) && !$space->isAdmin($userId, true)) {
             return $this->sendError([
-                'message' => __('The space could not be found', 'fluent-community')
+                'message' => __('The space could not be found', 'fluent-community'),
             ], 404);
         }
 
@@ -32,9 +34,11 @@ class PaywallController extends Controller
         $paywallQuery = Product::whereIn('ID', $productIds)
             ->select('ID', 'post_title', 'post_status', 'post_excerpt')
             ->where('post_status', 'publish')
-            ->with(['detail', 'variants' => function ($query) {
+            ->with([
+        'detail', 'variants' => function ($query) {
                 $query->select('id', 'post_id', 'item_price', 'variation_title', 'other_info');
-            }]);
+        },
+        ]);
 
         if (!empty($paywallIds)) {
             $paywallQuery->whereHas('variants', function ($query) use ($paywallIds) {
@@ -50,7 +54,7 @@ class PaywallController extends Controller
         $paywalls = $paywalls->map(function ($paywall) use ($baseUrl, $cartAdminUrl, $spaceId) {
             $paywall->view_url = $paywall->view_url;
             $paywall->admin_url = $cartAdminUrl . 'products/' . $paywall->ID;
-            $isSimple = Arr::get($paywall->detail, 'variation_type') == 'simple';
+            $isSimple = Arr::get($paywall->detail, 'variation_type') === 'simple';
             $paywall->variants->map(function ($variant) use ($baseUrl, $spaceId, $isSimple, $paywall) {
                 $variant->photo = $isSimple ? $paywall->thumbnail : $variant->thumbnail;
                 $variant->total_price = $variant->formatted_total;
@@ -58,7 +62,7 @@ class PaywallController extends Controller
                     'fluent-cart' => 'instant_checkout',
                     'item_id'     => $variant->id,
                     'quantity'    => 1,
-                    'redirect_to' => $baseUrl . 'checkout?space_id=' . $spaceId
+                    'redirect_to' => $baseUrl . 'checkout?space_id=' . $spaceId,
                 ], site_url());
                 return $variant;
             });
@@ -66,29 +70,77 @@ class PaywallController extends Controller
         });
 
         return [
-            'paywalls' => $paywalls
+            'paywalls'             => $paywalls,
+            'unavailable_paywalls' => $paywallIds ? [] : $this->getUnavailablePaywalls($space, array_diff($productIds, $paywalls->pluck('ID')->all()), $cartAdminUrl),
         ];
+    }
+
+    // Unbuyable attached products, for admins to remove.
+    private function getUnavailablePaywalls($space, $productIds, $cartAdminUrl)
+    {
+        if (!$productIds || !$space->isAdmin(get_current_user_id())) {
+            return [];
+        }
+
+        $products = Product::whereIn('ID', $productIds)
+            ->select('ID', 'post_title', 'post_status')
+            ->get()
+            ->keyBy('ID');
+
+        $statusLabels = CartStatus::getProductStatuses();
+
+        $unavailable = [];
+        foreach ($productIds as $productId) {
+            $product = $products->get($productId);
+            if ($product && $product->post_status === 'publish') {
+                continue;
+            }
+
+            $unavailable[] = [
+                'ID'           => $productId,
+                /* translators: %d is the ID of a FluentCart product that is deleted or has no title */
+                'post_title'   => $product && $product->post_title ? $product->post_title : sprintf(__('Product #%d', 'fluent-community'), $productId),
+                'status'       => $product ? $product->post_status : 'deleted',
+                'status_label' => $product ? Arr::get($statusLabels, $product->post_status, $product->post_status) : __('Deleted', 'fluent-community'),
+                'admin_url'    => $product ? $cartAdminUrl . 'products/' . $productId : '',
+            ];
+        }
+
+        return $unavailable;
     }
 
     public function addPaywall(Request $request, $spaceId)
     {
+        // Adding a paywall also writes the product's integration feed, which belongs to the shop.
+        if (!CartPermissionManager::hasPermission('products/edit')) {
+            return $this->sendError([
+                'message' => __('You do not have permission to edit products', 'fluent-community'),
+            ], 403);
+        }
+
         $space = BaseSpace::withoutGlobalScopes()->findOrFail($spaceId);
 
         $productId = $request->getSafe('cart_product_id', 'intval');
 
-        $product = Product::where('post_status', 'publish')->where('ID', $productId)->first();
+        $product = Product::where('ID', $productId)->first();
         if (!$product) {
             return $this->sendError([
-                'message' => __('Product not found', 'fluent-community')
+                'message' => __('Product not found', 'fluent-community'),
+            ]);
+        }
+
+        if ($product->post_status !== 'publish') {
+            return $this->sendError([
+                'message' => __('Product must be published to be used as a paywall', 'fluent-community'),
             ]);
         }
 
         $spaceSettings = $space->settings;
         $cartProductIds = Arr::get($spaceSettings, 'cart_product_ids', []);
 
-        if (in_array($productId, $cartProductIds)) {
+        if (in_array((int) $productId, array_map('intval', $cartProductIds), true)) {
             return $this->sendError([
-                'message' => __('Product already exists', 'fluent-community')
+                'message' => __('Product already exists', 'fluent-community'),
             ]);
         }
 
@@ -101,7 +153,7 @@ class PaywallController extends Controller
 
         return [
             'message' => __('Paywall has been added', 'fluent-community'),
-            'paywall' => $product
+            'paywall' => $product,
         ];
     }
 
@@ -111,23 +163,17 @@ class PaywallController extends Controller
 
         $productId = $request->getSafe('cart_product_id', 'intval');
 
-        $product = Product::where('post_status', 'publish')->where('ID', $productId)->first();
-        if (!$product) {
-            return $this->sendError([
-                'message' => __('Product not found', 'fluent-community')
-            ]);
-        }
-
         $spaceSettings = $space->settings;
         $cartProductIds = Arr::get($spaceSettings, 'cart_product_ids', []);
 
-        if (!in_array($productId, $cartProductIds)) {
+        // Draft or deleted products must stay removable.
+        if (!in_array((int) $productId, array_map('intval', $cartProductIds), true)) {
             return $this->sendError([
-                'message' => __('Product not added to this community', 'fluent-community')
+                'message' => __('Product not added to this community', 'fluent-community'),
             ]);
         }
 
-        $cartProductIds = array_diff($cartProductIds, [$productId]);
+        $cartProductIds = array_diff($cartProductIds, [ $productId ]);
         $spaceSettings['cart_product_ids'] = array_values($cartProductIds);
         $space->settings = $spaceSettings;
         $space->save();
@@ -152,9 +198,11 @@ class PaywallController extends Controller
             ->where('post_status', 'publish')
             ->whereHas('detail')
             ->whereHas('variants')
-            ->with(['variants' => function ($query) {
+            ->with([
+        'variants' => function ($query) {
                 $query->select('id', 'post_id', 'item_price');
-            }])
+        },
+        ])
             ->get();
 
         $formattedProducts = $products->map(function ($product) {
@@ -162,12 +210,12 @@ class PaywallController extends Controller
                 'id'    => $product->ID,
                 'title' => $product->post_title,
                 'image' => $product->thumbnail,
-                'price' => $this->getFormattedPrice($product)
+                'price' => $this->getFormattedPrice($product),
             ];
         });
 
         return [
-            'products' => $formattedProducts
+            'products' => $formattedProducts,
         ];
     }
 
@@ -175,7 +223,7 @@ class PaywallController extends Controller
     {
         if (!CartPermissionManager::hasPermission('products/create')) {
             return $this->sendError([
-                'message' => __('You do not have permission to create products', 'fluent-community')
+                'message' => __('You do not have permission to create products', 'fluent-community'),
             ], 422);
         }
 
@@ -194,7 +242,7 @@ class PaywallController extends Controller
         if (is_wp_error($createdPostId)) {
             return $this->sendError([
                 'code'    => 403,
-                'message' => $createdPostId->get_error_message()
+                'message' => $createdPostId->get_error_message(),
             ]);
         }
 
@@ -228,7 +276,7 @@ class PaywallController extends Controller
                 'signup_fee_name'    => '',
                 'signup_fee'         => '',
                 'setup_fee_per_item' => 'no',
-            ]
+            ],
         ];
 
         $variation = ProductVariation::create($variationData);
@@ -236,7 +284,7 @@ class PaywallController extends Controller
         if (!$productDetail || !$variation) {
             return $this->sendError([
                 'code'    => 403,
-                'message' => __('Failed to create product', 'fluent-community')
+                'message' => __('Failed to create product', 'fluent-community'),
             ]);
         }
 
@@ -248,11 +296,11 @@ class PaywallController extends Controller
             'id'    => $product->ID,
             'title' => $product->post_title,
             'image' => $product->thumbnail,
-            'price' => $this->getFormattedPrice($product)
+            'price' => $this->getFormattedPrice($product),
         ];
 
         return [
-            'product' => $productData
+            'product' => $productData,
         ];
     }
 

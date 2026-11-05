@@ -30,11 +30,11 @@ use FluentCommunity\Framework\Support\Arr;
 class NotificationPref
 {
     const NOTIFICATION_EVENTS = [
-        'comment' => ['mail' => 'com_my_post_mail', 'push' => 'com_my_post_push'],
-        'reply'   => ['mail' => 'reply_my_com_mail', 'push' => 'reply_my_com_push'],
-        'mention' => ['mail' => 'mention_mail', 'push' => 'mention_push'],
-        'co_comment' => ['push' => 'co_com_push'],
-        'digest'  => ['mail' => 'digest_mail']
+        'comment' => [ 'mail' => 'com_my_post_mail', 'push' => 'com_my_post_push' ],
+        'reply'   => [ 'mail' => 'reply_my_com_mail', 'push' => 'reply_my_com_push' ],
+        'mention' => [ 'mail' => 'mention_mail', 'push' => 'mention_push' ],
+        'co_comment' => [ 'push' => 'co_com_push' ],
+        'digest'  => [ 'mail' => 'digest_mail' ],
     ];
 
     /**
@@ -42,7 +42,7 @@ class NotificationPref
      * the member's row key. Everything else falls back to NOTIFICATION_EVENTS.
      */
     const GLOBAL_KEY_OVERRIDES = [
-        'digest.mail' => 'digest_email_status'
+        'digest.mail' => 'digest_email_status',
     ];
 
     /**
@@ -52,9 +52,9 @@ class NotificationPref
      * flat key => [channel, event_key, is_object_scoped]
      */
     const EXTRA_PREF_KEYS = [
-        'message_email_frequency' => ['mail', 'message_frequency', false],
-        'np_by_member_mail'       => ['mail', 'np_by_member', true],
-        'np_by_admin_mail'        => ['mail', 'np_by_admin', true],
+        'message_email_frequency' => [ 'mail', 'message_frequency', false ],
+        'np_by_member_mail'       => [ 'mail', 'np_by_member', true ],
+        'np_by_admin_mail'        => [ 'mail', 'np_by_admin', true ],
     ];
 
     const AGGREGATE_OPTION = 'fluent_community_pref_aggregates';
@@ -102,11 +102,13 @@ class NotificationPref
 
         foreach (self::NOTIFICATION_EVENTS as $event => $channels) {
             foreach ($channels as $channel => $flatKey) {
-                $map[$flatKey] = [$channel, $event, false];
+                $map[$flatKey] = [ $channel, $event, false ];
             }
         }
 
-        return $map = array_merge($map, self::EXTRA_PREF_KEYS);
+        $map = array_merge($map, self::EXTRA_PREF_KEYS);
+
+        return $map;
     }
 
     /**
@@ -148,7 +150,7 @@ class NotificationPref
             return $cached;
         }
 
-        $prefs = Arr::get(self::loadUserPrefs([$userId]), $userId, []);
+        $prefs = Arr::get(self::loadUserPrefs([ $userId ]), $userId, []);
 
         // setCache rather than getFromCache's callback: a member with no overrides
         // at all is the common case, and getFromCache only stores truthy values, so
@@ -188,7 +190,7 @@ class NotificationPref
         }
 
         $rows = NotificationPreference::whereIn('user_id', $userIds)
-            ->select(['user_id', 'channel', 'event_key', 'object_id', 'value'])
+            ->select([ 'user_id', 'channel', 'event_key', 'object_id', 'value' ])
             ->get();
 
         $cellKeys = self::cellKeyMap();
@@ -215,12 +217,12 @@ class NotificationPref
         $validPrefs = [];
 
         foreach ((array)$prefs as $key => $value) {
-            if (in_array($key, self::validPrefKeys())) {
+            if (in_array($key, self::validPrefKeys(), true)) {
                 $validPrefs[$key] = $value ? 1 : 0;
-            } else if (strpos($key, 'np_by_') === 0) {
+            } elseif (strpos($key, 'np_by_') === 0) {
                 // This is the notification by object. We are processing per key when updating
                 $validPrefs[$key] = $value ? 1 : 0;
-            } else if ($key == 'message_email_frequency') {
+            } elseif ($key === 'message_email_frequency') {
                 $validPrefs[$key] = $value;
             }
         }
@@ -242,7 +244,7 @@ class NotificationPref
             list($channel, $eventKey, $isScoped) = $map[$key];
 
             // A scoped subscription without an object id addresses nothing.
-            return $isScoped ? null : [$channel, $eventKey, 0];
+            return $isScoped ? null : [ $channel, $eventKey, 0 ];
         }
 
         if (!preg_match('/^(.+)_(\d+)$/', $key, $matches)) {
@@ -262,7 +264,7 @@ class NotificationPref
             return null;
         }
 
-        return [$channel, $eventKey, $objectId];
+        return [ $channel, $eventKey, $objectId ];
     }
 
     /**
@@ -341,7 +343,7 @@ class NotificationPref
                 continue;
             }
 
-            $created = NotificationPreference::create(array_merge($cell, ['user_id' => $userId]));
+            $created = NotificationPreference::create(array_merge($cell, [ 'user_id' => $userId ]));
 
             $keptIds[] = $created->id;
         }
@@ -407,7 +409,9 @@ class NotificationPref
     {
         $path = $event . '.' . $type;
 
-        return Arr::get(self::GLOBAL_KEY_OVERRIDES, $path) ?: Arr::get(self::NOTIFICATION_EVENTS, $path);
+        $override = Arr::get(self::GLOBAL_KEY_OVERRIDES, $path);
+
+        return $override ? $override : Arr::get(self::NOTIFICATION_EVENTS, $path);
     }
 
     public static function willGetNotification($userId, $event, $type = 'mail', $globalStatus = null)
@@ -415,7 +419,8 @@ class NotificationPref
         $prefKey = Arr::get(self::NOTIFICATION_EVENTS, $event . '.' . $type);
 
         // This event has no such channel, e.g. digest.push (event = digest, type = push)
-        if (!$prefKey) return false;
+        if (!$prefKey) { return false;
+        }
 
         if ($globalStatus === null) {
             $globalKey = self::getGlobalKeyFor($event, $type);
@@ -435,7 +440,8 @@ class NotificationPref
             }
         }
 
-        if (!$missing) return;
+        if (!$missing) { return;
+        }
 
         foreach (self::loadUserPrefs($missing) as $userId => $userPrefs) {
             Utility::setCache(self::CACHE_PREFIX . $userId, $userPrefs, 86400 * 30);
@@ -444,11 +450,13 @@ class NotificationPref
 
     public static function filterPushUserIds($userIds, $event)
     {
-        if (!$userIds || !$event) return [];
+        if (!$userIds || !$event) { return [];
+        }
 
         $prefKey = Arr::get(self::NOTIFICATION_EVENTS, $event . '.push');
 
-        if (!$prefKey) return [];
+        if (!$prefKey) { return [];
+        }
 
         $userIds = array_filter(array_map('intval', (array)$userIds), function ($userId) {
             return $userId > 0;
@@ -456,7 +464,8 @@ class NotificationPref
 
         $userIds = array_values(array_unique($userIds));
 
-        if (!$userIds) return [];
+        if (!$userIds) { return [];
+        }
 
         $globalKey = self::getGlobalKeyFor($event, 'push');
         $globalStatus = (bool)Arr::get(self::getGlobalPrefs('push'), $globalKey, false);
@@ -489,7 +498,7 @@ class NotificationPref
     public static function getAggregatedPrefs()
     {
         return apply_filters('fluent_community/aggregated_notification_prefs', [
-            ['mail', 'digest'],
+            [ 'mail', 'digest' ],
         ]);
     }
 

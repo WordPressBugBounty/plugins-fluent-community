@@ -22,8 +22,9 @@ use FluentCommunity\Framework\Support\Arr;
  *
  * @version 1.1.0
  *
- * @property int         $id
- * @property int|null    $user_id
+ * @property int              $id
+ * @property int|null         $user_id
+ * @property CourseTopic|null $topic
  * @property string|null $title
  * @property string|null $slug
  * @property string|null $message
@@ -297,7 +298,7 @@ class CourseLesson extends Model
 
     public function isQuizType()
     {
-        return $this->content_type == 'quiz';
+        return $this->content_type === 'quiz';
     }
     
     public function getPermalink()
@@ -365,6 +366,7 @@ class CourseLesson extends Model
         if(!$canView) {
             $meta['document_lists'] = [];
             $meta['document_ids'] = [];
+            $meta['quiz_questions'] = [];
             unset($meta['media']);
         }
 

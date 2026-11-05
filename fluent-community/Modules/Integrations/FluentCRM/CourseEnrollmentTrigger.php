@@ -25,7 +25,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
             'label'       => __('Enrolled in a course', 'fluent-community'),
             'description' => __('This automation will be initiated when a user enrolls in a course.', 'fluent-community'),
             'icon'        => 'fc-icon-wp_new_user_signup',
-            'svg_icon' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="10" r="2" stroke="currentColor" stroke-width="2"/><path d="M7.5 15c.8-1.8 2.6-2.8 3.5-2.8s2.7 1 3.5 2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M18 16v4M16 18h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
+            'svg_icon' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="10" r="2" stroke="currentColor" stroke-width="2"/><path d="M7.5 15c.8-1.8 2.6-2.8 3.5-2.8s2.7 1 3.5 2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="currentColor"/><path d="M18 16v4M16 18h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>',
         ];
     }
 
@@ -40,7 +40,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
                     'option_key'  => 'editable_statuses',
                     'is_multiple' => false,
                     'label'       => __('Subscription Status', 'fluent-community'),
-                    'placeholder' => __('Select Status', 'fluent-community')
+                    'placeholder' => __('Select Status', 'fluent-community'),
                 ],
                 'subscription_status_info' => [
                     'type'       => 'html',
@@ -48,30 +48,30 @@ class CourseEnrollmentTrigger extends BaseTrigger
                     'dependency' => [
                         'depends_on' => 'subscription_status',
                         'operator'   => '=',
-                        'value'      => 'pending'
-                    ]
-                ]
-            ]
+                        'value'      => 'pending',
+                    ],
+                ],
+            ],
         ];
     }
 
     public function getFunnelSettingsDefaults()
     {
         return [
-            'subscription_status' => 'subscribed'
+            'subscription_status' => 'subscribed',
         ];
     }
 
     public function getConditionFields($funnel)
     {
-        $courses = Course::orderBy('title', 'ASC')->select(['id', 'title'])->get();
+        $courses = Course::orderBy('title', 'ASC')->select([ 'id', 'title' ])->get();
 
         return [
             'update_type'  => [
                 'type'    => 'radio',
                 'label'   => __('If Contact Already Exists?', 'fluent-community'),
                 'help'    => __('Please specify what will happen if the subscriber already exists in the database', 'fluent-community'),
-                'options' => FunnelHelper::getUpdateOptions()
+                'options' => FunnelHelper::getUpdateOptions(),
             ],
             'course_ids'   => [
                 'type'        => 'multi-select',
@@ -80,14 +80,14 @@ class CourseEnrollmentTrigger extends BaseTrigger
                 'help'        => __('Select which courses this automation is for.', 'fluent-community'),
                 'placeholder' => __('Select Courses', 'fluent-community'),
                 'options'     => $courses,
-                'inline_help' => __('Leave blank to run for all Courses', 'fluent-community')
+                'inline_help' => __('Leave blank to run for all Courses', 'fluent-community'),
             ],
             'run_multiple' => [
                 'type'        => 'yes_no_check',
                 'label'       => '',
                 'check_label' => __('Restart the automation multiple times for a contact for this event. (Only enable this if you want to restart the automation for the same contact)', 'fluent-community'),
-                'inline_help' => __('If you enable this, it will restart the automation for a contact even if they are already in the automation. Otherwise, it will skip if the contact already exists.', 'fluent-community')
-            ]
+                'inline_help' => __('If you enable this, it will restart the automation for a contact even if they are already in the automation. Otherwise, it will skip if the contact already exists.', 'fluent-community'),
+            ],
         ];
     }
 
@@ -96,7 +96,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
         return [
             'update_type'  => 'update', // skip_all_actions, skip_update_if_exist
             'course_ids'   => [],
-            'run_multiple' => 'yes'
+            'run_multiple' => 'yes',
         ];
     }
 
@@ -119,7 +119,7 @@ class CourseEnrollmentTrigger extends BaseTrigger
 
         (new FunnelProcessor())->startFunnelSequence($funnel, $subscriberData, [
             'source_trigger_name' => $this->triggerName,
-            'source_ref_id'       => $course->id
+            'source_ref_id'       => $course->id,
         ]);
     }
 
@@ -130,22 +130,23 @@ class CourseEnrollmentTrigger extends BaseTrigger
         $updateType = Arr::get($conditions, 'update_type');
 
         $subscriber = FunnelHelper::getSubscriber($user->user_email);
-        if ($updateType == 'skip_all_if_exist' && $subscriber) {
+        if ($updateType === 'skip_all_if_exist' && $subscriber) {
             return false;
         }
 
         // check user roles
-        if ($checkIds = Arr::get($conditions, 'course_ids', [])) {
-            if (!in_array($course->id, $checkIds)) {
+        $checkIds = Arr::get($conditions, 'course_ids', []);
+        if ($checkIds) {
+            if (!in_array((int) $course->id, array_map('intval', $checkIds), true)) {
                 return false;
             }
         }
 
         // check run_only_one
         if ($subscriber && FunnelHelper::ifAlreadyInFunnel($funnel->id, $subscriber->id)) {
-            $multipleRun = Arr::get($conditions, 'run_multiple') == 'yes';
+            $multipleRun = Arr::get($conditions, 'run_multiple') === 'yes';
             if ($multipleRun) {
-                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [$subscriber->id]);
+                FunnelHelper::removeSubscribersFromFunnel($funnel->id, [ $subscriber->id ]);
             }
             return $multipleRun;
         }

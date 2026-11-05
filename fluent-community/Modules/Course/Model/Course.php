@@ -36,11 +36,6 @@ class Course extends BaseSpace
 {
     protected static $type = 'course';
 
-    public static function boot()
-    {
-        parent::boot();
-    }
-
     public function scopeByAdminAccess($query, $userId = null)
     {
         if (!$userId) {
@@ -56,11 +51,16 @@ class Course extends BaseSpace
         return $query->where('created_by', $userId);
     }
 
-    public function scopeSearchBy($query, $search)
+    /**
+     * Matching on the posts inside the course space (BaseSpace::posts(), text posts only,
+     * not lessons) is for the admin course list: on the portal it would tell a visitor
+     * which words the discussion of a course they cannot enter contains.
+     */
+    public function scopeSearchBy($query, $search, $includePosts = false)
     {
         if ($search) {
             $fields = $this->searchable;
-            $query->where(function ($query) use ($fields, $search) {
+            $query->where(function ($query) use ($fields, $search, $includePosts) {
                 $query->where(function ($q) use ($fields, $search) {
                     $q->where(array_shift($fields), 'LIKE', "%$search%");
                     foreach ($fields as $field) {
@@ -70,14 +70,17 @@ class Course extends BaseSpace
                     ->orWhereHas('categories', function ($q) use ($search) {
                         $q->where('title', 'LIKE', "%$search%")
                             ->orWhere('description', 'LIKE', "%$search%");
-                    })
-                    ->orWhereHas('posts', function ($q) use ($search) {
+                    });
+
+                if ($includePosts) {
+                    $query->orWhereHas('posts', function ($q) use ($search) {
                         $q->where('status', 'published')
                             ->where(function ($q) use ($search) {
                                 $q->where('title', 'LIKE', "%$search%")
                                     ->orWhere('message', 'LIKE', "%$search%");
                             });
                     });
+                }
             });
         }
 
@@ -150,11 +153,16 @@ class Course extends BaseSpace
 
         $validTypes = [ 'self_paced', 'scheduled', 'structured' ];
 
-        if (!in_array($courseType, $validTypes)) {
+        if (!in_array($courseType, $validTypes, true)) {
             return 'self_paced';
         }
         
         return $courseType;
+    }
+
+    public function hasPublicLessonView()
+    {
+        return $this->privacy === 'public' && Arr::get($this->settings, 'public_lesson_view') === 'yes' && $this->getCourseType() === 'self_paced';
     }
 
     public function group()
@@ -193,7 +201,7 @@ class Course extends BaseSpace
 
         // Check if course creator
         if (!empty($permissions['course_creator'])) {
-            return $this->created_by == $user->ID;
+            return (int) $this->created_by === (int) $user->ID;
         }
 
         return false;

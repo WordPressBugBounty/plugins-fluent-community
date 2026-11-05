@@ -15,7 +15,12 @@ class Integrations
     {
         if (defined('FLUENTCRM')) {
             new \FluentCommunity\Modules\Integrations\FluentCRM\SpaceJoinTrigger();
-            (new  \FluentCommunity\Modules\Integrations\FluentCRM\ProfileSection())->register();
+            (new \FluentCommunity\Modules\Integrations\FluentCRM\ProfileSection())->register();
+
+            // Older FluentCRM sends every is_pro block to its own FluentCRM Pro upgrade page.
+            if (!defined('FLUENT_COMMUNITY_PRO') && version_compare(FLUENTCRM_PLUGIN_VERSION, '3.2.6', '>')) {
+                (new \FluentCommunity\Modules\Integrations\FluentCRM\ProActionPlaceholders())->register();
+            }
             // Course Specifics
             if (Helper::isFeatureEnabled('course_module')) {
                 new \FluentCommunity\Modules\Integrations\FluentCRM\CourseEnrollmentTrigger();

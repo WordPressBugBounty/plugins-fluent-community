@@ -54,7 +54,7 @@ class User extends Model
     public function scopeSearchBy($query, $search, $fields = null)
     {
         if ($search) {
-            $fields = $fields ?: $this->searchable;
+            $fields = $fields ? $fields : $this->searchable;
             $query->where(function ($query) use ($fields, $search) {
                 $query->where(array_shift($fields), 'LIKE', "%$search%");
                 foreach ($fields as $field) {
@@ -90,11 +90,13 @@ class User extends Model
      */
     public function getPhotoAttribute()
     {
-        if ($photo = get_user_meta($this->ID, '_fcom_user_photo', true)) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
+        $photo = get_user_meta($this->ID, '_fcom_user_photo', true);
+        if ($photo) {
             return $photo;
         }
 
-        if ($contact = $this->getContact()) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
+        $contact = $this->getContact();
+        if ($contact) {
             return $contact->photo;
         }
 
@@ -108,7 +110,7 @@ class User extends Model
             return '';
         }
 
-        if (Utility::getPrivacySetting('enable_gravatar') == 'no') {
+        if (Utility::getPrivacySetting('enable_gravatar') === 'no') {
             return apply_filters('fluent_community/default_avatar', FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/placeholder.png', $this->ID);
         }
 
@@ -123,7 +125,7 @@ class User extends Model
 
         $fallback = '';
         if ($name) {
-            $fallback = '&d=https%3A%2F%2Fui-avatars.com%2Fapi%2F' . urlencode($name) . '/128';
+            $fallback = '&d=https%3A%2F%2Fui-avatars.com%2Fapi%2F' . urlencode($name) . '/128'; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.urlencode_urlencode
         }
 
         return apply_filters('fluent_crm/get_avatar',
@@ -282,7 +284,8 @@ class User extends Model
 
             wp_update_user($userData);
 
-            if ($contact = $this->getContact()) { // phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
+            $contact = $this->getContact();
+            if ($contact) {
                 $contact->fill(array_filter([
                     'first_name' => $firstName,
                     'last_name'  => $lastName,
@@ -363,7 +366,7 @@ class User extends Model
 
     public function isNotMemberOfAnySpace()
     {
-        return $this->spaces()->count() == 0;
+        return $this->spaces()->count() === 0;
     }
 
     public function getSpaceIds($cached = true)
@@ -406,7 +409,7 @@ class User extends Model
 
     public function isCommunityAdmin()
     {
-        return in_array('admin', $this->getCommunityRoles());
+        return in_array('admin', $this->getCommunityRoles(), true);
     }
 
     public function isCommunityModerator()
@@ -452,7 +455,7 @@ class User extends Model
         $globalRoles = $this->getCommunityRoles();
 
         if ($globalRoles) {
-            if (in_array('admin', $globalRoles)) {
+            if (in_array('admin', $globalRoles, true)) {
                 return 'admin';
             }
         }
@@ -464,12 +467,12 @@ class User extends Model
                 $role = $membership->pivot->role;
                 $status = $membership->pivot->status;
 
-                if ($role != 'member') {
+                if ($role !== 'member') {
                     return $role;
                 }
 
-                if (!in_array('moderator', $globalRoles)) {
-                    if ($status == 'pending') {
+                if (!in_array('moderator', $globalRoles, true)) {
+                    if ($status === 'pending') {
                         return 'pending';
                     }
                     return $role;
@@ -477,7 +480,7 @@ class User extends Model
             }
         }
 
-        if (in_array('moderator', $globalRoles)) {
+        if (in_array('moderator', $globalRoles, true)) {
             return 'moderator';
         }
 
@@ -523,7 +526,7 @@ class User extends Model
             ], $roles, $this);
         }
 
-        $isAdmin = in_array('admin', $roles);
+        $isAdmin = in_array('admin', $roles, true);
         $isModerator = (bool)array_intersect($roles, [ 'admin', 'moderator' ]);
 
         $permissions = [
@@ -538,10 +541,10 @@ class User extends Model
             'read'                => true,
         ];
 
-        if ($isAdmin || in_array('course_admin', $roles)) {
+        if ($isAdmin || in_array('course_admin', $roles, true)) {
             $permissions['course_creator'] = true;
             $permissions['course_admin'] = true;
-        } elseif (in_array('course_creator', $roles)) {
+        } elseif (in_array('course_creator', $roles, true)) {
             $permissions['course_creator'] = true;
         }
 
@@ -558,7 +561,9 @@ class User extends Model
 
         $roles = $this->getCommunityRoles();
 
-        return $permissions[$this->ID] = $this->getRolePermissions($roles);
+        $permissions[$this->ID] = $this->getRolePermissions($roles);
+
+        return $permissions[$this->ID];
     }
 
     public function getSpacePermissions($space)
@@ -569,11 +574,11 @@ class User extends Model
 
         $role = $this->getSpaceRole($space);
 
-        $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'document_library') == 'yes';
-        $hasMediaGallery = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'media_gallery') == 'yes';
+        $hasDocuments = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'document_library') === 'yes';
+        $hasMediaGallery = defined('FLUENT_COMMUNITY_PRO') && Arr::get($space->settings, 'media_gallery') === 'yes';
 
-        $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') == 'yes';
-        $isVerifiedPostOnly = Arr::get($space->settings, 'verified_post_only') == 'yes';
+        $isRestrictedPost = Arr::get($space->settings, 'restricted_post_only') === 'yes';
+        $isVerifiedPostOnly = Arr::get($space->settings, 'verified_post_only') === 'yes';
 
         $documentAccess = Arr::get($space->settings, 'document_access');
         $mediaAccess    = Arr::get($space->settings, 'media_access');
@@ -588,8 +593,8 @@ class User extends Model
                 'is_pending'         => false,
                 'is_non_member'      => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ]),
-                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ]),
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ], true),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ], true),
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
@@ -598,7 +603,7 @@ class User extends Model
                 $permissions['can_view_documents'] = false;
                 $permissions['can_view_media'] = false;
             }
-        } elseif ($role == 'pending') {
+        } elseif ($role === 'pending') {
             $permissions = [
                 'can_create_post'    => false,
                 'registered'         => true,
@@ -607,8 +612,8 @@ class User extends Model
                 'can_view_members'   => $space->canViewMembers($this),
                 'is_pending'         => true,
                 'can_view_info'      => $space->privacy !== 'secret',
-                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ]),
-                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ]),
+                'can_view_documents' => $hasDocuments && in_array($documentAccess, [ 'everybody', 'logged_in' ], true),
+                'can_view_media'     => $hasMediaGallery && in_array($mediaAccess, [ 'everybody', 'logged_in' ], true),
             ];
 
             if ($space->privacy === 'secret' || $space->privacy === 'private') {
@@ -617,7 +622,7 @@ class User extends Model
                 $permissions['can_view_documents'] = false;
                 $permissions['can_view_media'] = false;
             }
-        } elseif ($role == 'member' || $role == 'student') {
+        } elseif ($role === 'member' || $role === 'student') {
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? false : (!$isVerifiedPostOnly || $this->isVerified()),
                 'registered'           => true,
@@ -626,11 +631,11 @@ class User extends Model
                 'can_comment'          => true,
                 'can_view_info'        => true,
                 'can_view_documents'   => $hasDocuments,
-                'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') == 'members_only',
+                'can_upload_documents' => $hasDocuments && Arr::get($space->settings, 'document_upload') === 'members_only',
                 'can_view_media'       => $hasMediaGallery,
             ];
         } else {
-            $isMod = in_array($role, [ 'admin', 'moderator' ]);
+            $isMod = in_array($role, [ 'admin', 'moderator' ], true);
             $isAdmin = $role === 'admin';
             $permissions = [
                 'can_create_post'      => $isRestrictedPost ? $isMod : true,
@@ -655,7 +660,7 @@ class User extends Model
             ];
         }
 
-        $permissions['is_member'] = in_array($role, [ 'admin', 'moderator', 'member', 'student' ]);
+        $permissions['is_member'] = in_array($role, [ 'admin', 'moderator', 'member', 'student' ], true);
 
         return apply_filters('fluent_community/user/space/permissions', $permissions, $space, $role, $this);
     }
@@ -702,7 +707,7 @@ class User extends Model
 
     public function canEditFeed($feed, $throwException = false)
     {
-        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('edit_any_feed') || $this->hasSpacePermission('edit_any_feed', $feed->space);
+        $result = (int) $feed->user_id === (int) $this->ID || $this->hasCommunityPermission('edit_any_feed') || $this->hasSpacePermission('edit_any_feed', $feed->space);
 
         if (!$result && $throwException) {
             throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
@@ -713,7 +718,7 @@ class User extends Model
 
     public function canDeleteFeed($feed, $throwException = false)
     {
-        $result = $feed->user_id == $this->ID || $this->hasCommunityPermission('delete_any_feed') || $this->hasSpacePermission('delete_any_feed', $feed->space);
+        $result = (int) $feed->user_id === (int) $this->ID || $this->hasCommunityPermission('delete_any_feed') || $this->hasSpacePermission('delete_any_feed', $feed->space);
 
         if (!$result && $throwException) {
             throw new \Exception(esc_html__('You do not have permission to do this action', 'fluent-community'));
@@ -793,7 +798,7 @@ class User extends Model
                 $data['created_at'] = get_date_from_gmt($this->user_registered, 'Y-m-d H:i:s');
             }
 
-            $data['meta'] = wp_parse_args($exist->meta, $data['meta']);
+            $data['meta'] = wp_parse_args($exist->getRawMeta(), $data['meta']);
             $exist->fill($data);
             $exist->save();
             return $exist;

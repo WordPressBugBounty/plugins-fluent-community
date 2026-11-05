@@ -9,7 +9,7 @@ class Reaction extends Model
 {
     protected $table = 'fcom_post_reactions';
 
-    protected $guarded = ['id'];
+    protected $guarded = [ 'id' ];
 
     protected $fillable = [
         'user_id',
@@ -19,13 +19,13 @@ class Reaction extends Model
         'ip_address',
         'parent_id',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
-    protected $hidden = ['ip_address'];
+    protected $hidden = [ 'ip_address' ];
 
     protected $searchable = [
-        'message'
+        'message',
     ];
 
     public static function boot()

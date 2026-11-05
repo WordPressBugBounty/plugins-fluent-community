@@ -16,6 +16,11 @@ class CourseAdminPolicy extends BasePolicy
      */
     public function verifyRequest(Request $request)
     {
+        $xProfile = Helper::getCurrentProfile(true);
+        if ($xProfile && $xProfile->status !== 'active') {
+            return false;
+        }
+
         $user = Helper::getCurrentUser(true);
 
         if (!$user) {
@@ -41,7 +46,8 @@ class CourseAdminPolicy extends BasePolicy
 
         $user = Helper::getCurrentUser(true);
 
-        if ($courseId = $this->getRouteParam($request, 'course_id')) {
+        $courseId = $this->getRouteParam($request, 'course_id');
+        if ($courseId) {
             $course = Course::find($courseId);
             if (!$course) {
                 return false;

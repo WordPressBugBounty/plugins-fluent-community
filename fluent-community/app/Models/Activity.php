@@ -46,11 +46,6 @@ class Activity extends Model
         'action_name',
     ];
 
-    public static function boot()
-    {
-        parent::boot();
-    }
-
     public function scopeByActions($query, $actions = [])
     {
         if (!empty($actions)) {

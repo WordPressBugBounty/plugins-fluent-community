@@ -17,9 +17,9 @@ class Range
 
     const DEFAULT_DAYS = 30;
 
-    const PRESETS = ['7d' => 7, '30d' => 30, '90d' => 90, '12m' => '12m'];
+    const PRESETS = [ '7d' => 7, '30d' => 30, '90d' => 90, '12m' => '12m' ];
 
-    const GRANULARITIES = ['day', 'week', 'month'];
+    const GRANULARITIES = [ 'day', 'week', 'month' ];
 
     /** @var \DateTimeImmutable */
     private $from;
@@ -43,7 +43,7 @@ class Range
 
         // A backwards range is a range in the wrong order, not an empty one.
         if ($from > $to) {
-            list($from, $to) = [$to, $from];
+            list($from, $to) = [ $to, $from ];
         }
 
         $today = Clock::today();
