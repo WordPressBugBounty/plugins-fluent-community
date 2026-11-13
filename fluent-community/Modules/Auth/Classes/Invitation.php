@@ -162,10 +162,9 @@ class Invitation extends Model
 
     public function getAccessUrl()
     {
-        return add_query_arg([
-            'fcom_action'      => 'auth',
+        return Helper::authUrl('login', [
             'invitation_token' => $this->message_rendered,
-        ], Helper::baseUrl('/'));
+        ]);
     }
 
     public function isValid()

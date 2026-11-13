@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Services;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\Framework\Support\Arr;
@@ -29,6 +30,26 @@ class OnboardingService
         }
 
         return true;
+    }
+
+    /**
+     * The spaces the templates below create, as slug => title.
+     *
+     * The "Getting started" checklist treats these as starter content: such a space
+     * counts as set up only once it is renamed. Keep this list in step with the
+     * templates.
+     *
+     * @return array
+     */
+    public static function getTemplateSpaceTitles()
+    {
+        return [
+            'start-here'    => 'Start Here',
+            'say-hello'     => 'Say Hello',
+            'give-feedback' => 'Give Feedback',
+            'ask-for-help'  => 'Ask for Help',
+            'announcements' => 'Announcements',
+        ];
     }
 
     protected static function createDefaultSpaceTemplate()
@@ -251,7 +272,7 @@ class OnboardingService
         $validAddons = [ 'fluent-crm', 'fluent-smtp', 'fluent-cart' ];
         $validAddons = array_intersect($validAddons, $addons);
 
-        if (!$validAddons || !current_user_can('install_plugins')) {
+        if (!$validAddons || !Utility::canInstallAddons() || !current_user_can('install_plugins')) {
             return;
         }
 

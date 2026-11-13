@@ -588,6 +588,84 @@ class CourseAdminController extends Controller
         ];
     }
 
+    /**
+     * Enroll students whose access starts on a given date (CourseHelper::scheduleEnrollment).
+     * A future date gives them the course without access until then; a past date enrolls them
+     * now with the drip counted from that date. More than one user at a time needs Pro, as bulk add does.
+     *
+     * Body: user_ids (int[], max 500), starts_at (site time, 'Y-m-d H:i:s').
+     * Returns the bulk-add shape (added, skipped, failed, processed), so the chunked importer can use it.
+     */
+    public function scheduleStudents(Request $request, $courseId)
+    {
+        $course = Course::findOrFail($courseId);
+
+        $userIds = array_values(array_unique(array_filter(array_map('intval', (array) $request->get('user_ids', [])))));
+        $startsAt = sanitize_text_field((string) $request->get('starts_at', ''));
+
+        if (!$userIds) {
+            return $this->sendError([
+                'message' => __('Please select at least one user.', 'fluent-community'),
+            ]);
+        }
+
+        if (count($userIds) > 1 && !defined('FLUENT_COMMUNITY_PRO')) {
+            return $this->sendError([
+                'message' => __('Bulk adding requires FluentCommunity Pro.', 'fluent-community'),
+            ]);
+        }
+
+        if (count($userIds) > 500) {
+            return $this->sendError([
+                'message' => __('Too many users in one request. Maximum 500 per request.', 'fluent-community'),
+            ], 413);
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d H:i:s', $startsAt);
+        if (!$date || $date->format('Y-m-d H:i:s') !== $startsAt) {
+            return $this->sendError([
+                'message' => __('Please select a valid start date.', 'fluent-community'),
+            ]);
+        }
+
+        $counts = [ 'added' => 0, 'skipped' => 0, 'failed' => 0 ];
+
+        foreach ($userIds as $userId) {
+            $user = User::find($userId);
+            if (!$user) {
+                ++$counts['failed'];
+                continue;
+            }
+
+            $xprofile = $user->syncXProfile();
+            if ($xprofile && $xprofile->status !== 'active') {
+                ++$counts['failed'];
+                continue;
+            }
+
+            $result = CourseHelper::scheduleEnrollment($course, $userId, $startsAt, 'by_admin');
+            ++$counts[$result ? 'added' : 'skipped'];
+        }
+
+        // Always the counts shape, also when nothing was added: the chunked importer adds up every
+        // batch, and the single-user form shows `message` as an error when `added` is 0
+        if (!$counts['added']) {
+            $message = $counts['skipped']
+                ? __('User is already a student of this course.', 'fluent-community')
+                : __('Selected user is not active', 'fluent-community');
+        } elseif ($startsAt > current_time('mysql')) {
+            /* translators: %s is the date the course opens for the new students */
+            $message = sprintf(__('Added. The course opens for them on %s.', 'fluent-community'), date_i18n(get_option('date_format'), strtotime($startsAt)));
+        } else {
+            $message = __('User has been added to this course', 'fluent-community');
+        }
+
+        return array_merge($counts, [
+            'processed' => count($userIds),
+            'message'   => $message,
+        ]);
+    }
+
     public function removeStudent(Request $request, $courseId, $studentId)
     {
         $course = Course::findOrFail($courseId);
@@ -1272,7 +1350,10 @@ class CourseAdminController extends Controller
         ];
         $searchFields = [ 'display_name' ];
 
-        if (current_user_can('list_users')) {
+        // Only a user who may list WordPress users searches all of them, emails included.
+        $canListUsers = current_user_can('list_users');
+
+        if ($canListUsers) {
             $selects[] = 'user_email';
             $searchFields[] = 'user_email';
         }
@@ -1280,6 +1361,11 @@ class CourseAdminController extends Controller
         $userQuery = User::select([ 'ID' ])
             ->whereDoesntHave('space_pivot', function ($q) use ($courseId) {
                 $q->where('space_id', $courseId);
+            })
+            ->when(!$canListUsers, function ($q) {
+                $q->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                });
             })
             ->limit(100)
             ->searchBy($request->getSafe('search'), $searchFields);
@@ -1356,12 +1442,20 @@ class CourseAdminController extends Controller
         ];
         $searchFields = [ 'display_name' ];
 
-        if (current_user_can('list_users')) {
+        // Only a user who may list WordPress users searches all of them, emails included.
+        $canListUsers = current_user_can('list_users');
+
+        if ($canListUsers) {
             $selects[] = 'user_email';
             $searchFields[] = 'user_email';
         }
 
         $instructors = User::select($selects)
+            ->when(!$canListUsers, function ($q) {
+                $q->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                });
+            })
             ->limit(100)
             ->searchBy($search, $searchFields)
             ->get();

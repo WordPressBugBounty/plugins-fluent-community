@@ -26,12 +26,14 @@ class FeedSpaceUserMigrator
                 `role` VARCHAR(100) NULL DEFAULT 'member',
                 `meta` TEXT NULL,
                 `expire_at` DATETIME NULL,
+                `starts_at` DATETIME NULL,
                 `created_at` TIMESTAMP NULL,
                 `updated_at` TIMESTAMP NULL,
                 INDEX `space_id_user_id` (`space_id`, `user_id`),
                 INDEX `user_id_status` (`user_id`, `status`),
                 INDEX `space_status_created` (`space_id`, `status`, `created_at`),
-                INDEX `space_role_created` (`space_id`, `role`, `created_at`)
+                INDEX `space_role_created` (`space_id`, `role`, `created_at`),
+                INDEX `status_starts_at` (`status`, `starts_at`)
             ) $charsetCollate;";
             dbDelta($sql);
         } else {
@@ -53,6 +55,12 @@ class FeedSpaceUserMigrator
             // which cannot hold a date past 2038-01-19.
             if (!in_array('expire_at', $column_names)) {
                 $wpdb->query("ALTER TABLE $table ADD COLUMN `expire_at` DATETIME NULL AFTER `meta`");
+            }
+
+            // Site time the member's access starts: the drip anchor of a course enrollment, and the
+            // date a 'scheduled' enrollment turns active (CourseHelper::scheduleEnrollment)
+            if (!in_array('starts_at', $column_names)) {
+                $wpdb->query("ALTER TABLE $table ADD COLUMN `starts_at` DATETIME NULL AFTER `expire_at`");
             }
 
             //  now check index for space_id_user_id
@@ -81,6 +89,11 @@ class FeedSpaceUserMigrator
 
             if (!in_array('space_role_created', $index_names)) {
                 $wpdb->query("ALTER TABLE $table ADD INDEX `space_role_created` (`space_id`, `role`, `created_at`)");
+            }
+
+            // The hourly sweep looks up scheduled enrollments that are due
+            if (!in_array('status_starts_at', $index_names)) {
+                $wpdb->query("ALTER TABLE $table ADD INDEX `status_starts_at` (`status`, `starts_at`)");
             }
 
             self::maybeConvertUserIdColumn();

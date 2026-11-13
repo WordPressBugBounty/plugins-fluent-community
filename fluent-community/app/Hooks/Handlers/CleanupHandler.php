@@ -24,9 +24,19 @@ class CleanupHandler
             }
 
             $subObjectId = isset($wheres['sub_object_id']) ? $wheres['sub_object_id'] : null;
+            $userId = isset($wheres['user_id']) ? (int) $wheres['user_id'] : 0;
+            $objectSources = isset($wheres['object_sources']) ? (array) $wheres['object_sources'] : [];
+
+            // Scope by every filter the caller sends, so a shared URL never deletes another user's media.
             $media = Media::whereIn('media_url', $mediaUrls)
                 ->when($subObjectId, function ($q) use ($subObjectId) {
                     $q->where('sub_object_id', $subObjectId);
+                })
+                ->when($userId, function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                ->when($objectSources, function ($q) use ($objectSources) {
+                    $q->whereIn('object_source', $objectSources);
                 })
                 ->get();
 
@@ -248,6 +258,7 @@ class CleanupHandler
          * fcom_meta where object_type = user and object_id = user_id
          *
          * fcom_notification_users where user_id = user_id
+         * fcom_notifications where src_user_id = user_id (with their fcom_notification_users rows)
          * fcom_notification_prefs where user_id = user_id
          * fcom_post_comments where user_id = user_id
          * fcom_post_reactions where user_id = user_id
@@ -259,7 +270,7 @@ class CleanupHandler
          * Delete the related media data as well which are connected with posts and comments
          *
          * ## Media
-         * where object_source = user_photo|user_cover_photo|comment|feed|chat_message  and user_id = user_id
+         * where object_source = user_photo|user_avatar|user_cover_photo|comment|feed|chat_message|space_document  and user_id = user_id
          *
          *
          */
@@ -279,6 +290,15 @@ class CleanupHandler
 
         // notifications
         Utility::getApp('db')->table('fcom_notification_users')->where('user_id', $userId)->delete();
+
+        // notifications triggered by the user, with their recipients
+        NotificationSubscriber::whereIn('object_id', function ($query) use ($userId) {
+            $query->select('id')
+                ->from('fcom_notifications')
+                ->where('src_user_id', $userId);
+        })->delete();
+
+        Notification::where('src_user_id', $userId)->delete();
 
         // notification preferences
         Utility::getApp('db')->table('fcom_notification_prefs')->where('user_id', $userId)->delete();
@@ -305,10 +325,12 @@ class CleanupHandler
         // We are just going to update the is_active column to 0 then it will be deleted via cron jobs
         Media::whereIn('object_source', [
             'user_photo',
+            'user_avatar',
             'user_cover_photo',
             'comment',
             'feed',
             'chat_message',
+            'space_document',
         ])
             ->where('user_id', $userId)
             ->update([

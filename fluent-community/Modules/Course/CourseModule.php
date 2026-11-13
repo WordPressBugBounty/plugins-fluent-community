@@ -23,6 +23,15 @@ class CourseModule
         add_filter('fluent_community/insights/cards', [ $this, 'registerInsightsCards' ]);
 
         (new \FluentCommunity\Modules\Course\Services\CourseSearchProvider())->register();
+
+        // Open the scheduled enrollments whose start date has passed (CourseHelper::scheduleEnrollment).
+        // A member who visits the course first is activated on that visit.
+        $activateDue = function () {
+            \FluentCommunity\Modules\Course\Services\CourseHelper::activateDueEnrollments();
+        };
+        add_action('fluent_community_scheduled_hour_jobs', $activateDue);
+        // Follow-up batch while a large cohort is still opening
+        add_action(\FluentCommunity\Modules\Course\Services\CourseHelper::ACTIVATE_DUE_HOOK, $activateDue);
     }
 
     public function registerInsightsCards($cards)

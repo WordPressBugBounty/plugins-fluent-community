@@ -11,8 +11,18 @@ use FluentCommunity\Framework\Support\Arr;
 class Commands
 {
 
+    /**
+     * Deletes all FluentCommunity data, then imports the BuddyPress data.
+     *
+     * ## OPTIONS
+     *
+     * [--yes]
+     * : Skip the confirmation prompt.
+     */
     public function migrate_from_bb($args, $assoc_args = [])
     {
+        \WP_CLI::confirm('This deletes all FluentCommunity data before it imports BuddyPress data. Continue?', $assoc_args);
+
         $migrator = new BuddyPressMigrator();
 
         \WP_CLI::line('Starting BuddyPress Data Migration...');
@@ -81,51 +91,4 @@ class Commands
 
         \WP_CLI::success('Points Recalculated Successfully for ' . count($xProfiles) . ' users');
     }
-
-
-    public function download()
-    {
-        $baseUrl = 'https://community.buddyboss.com/wp-json/wp/v2/users/?per_page=50&page=';
-
-        $page = 590;
-
-        $dumpDir = wp_upload_dir()['basedir'] . '/fcom-dump';
-        if (!is_dir($dumpDir)) {
-            wp_mkdir_p($dumpDir);
-        }
-
-        while (true) {
-            $response = wp_remote_get($baseUrl . $page, [
-                'timeout' => 60,
-            ]);
-
-            if (is_wp_error($response)) {
-                \WP_CLI::error('Error fetching page ' . $page . ': ' . $response->get_error_message());
-                continue;
-            }
-
-            $json = wp_remote_retrieve_body($response);
-            $users = json_decode($json, true);
-            if (empty($users)) {
-                \WP_CLI::line('No more users found on page ' . $page );
-                break; // No more users to fetch, exit the loop
-            }
-
-            // save the json to a file
-            file_put_contents($dumpDir . '/' . $page . '.json', $json); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-
-            \WP_CLI::line('Downloaded page ' . $page);
-
-
-            ++$page;
-        }
-
-        \WP_CLI::success('Download Completed');
-
-
-    }
-
-
-
-
 }

@@ -72,9 +72,9 @@ class AuthModdule
             }
         }
 
-        // Remove fcom_action and fcom_url_hash from the current url
+        // Remove the action key (configured and legacy) and fcom_url_hash from the current url
         $currentUrl = home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $url = remove_query_arg([ 'fcom_action', 'fcom_url_hash' ], $currentUrl);
+        $url = remove_query_arg(array_merge(Helper::getActionKeys(), [ 'fcom_url_hash' ]), $currentUrl);
         $this->redirectAndExit($url);
     }
 
@@ -119,7 +119,11 @@ class AuthModdule
         exit(200);
     }
 
-    public function viewAuthPage()
+    /**
+     * @param array $requestData The request args. A readable auth path adds the
+     *                           form it stands for (e.g. `/signup` adds form=register).
+     */
+    public function viewAuthPage($requestData = [])
     {
 
         add_filter('login_form_defaults', function ($defaults) {
@@ -178,7 +182,7 @@ class AuthModdule
         do_action('fluent_community/auth/before_auth_page_process', $currentUserId, $inviation);
 
         $acceptedForms = [ 'login', 'register', 'reset_password' ];
-        $targetForm = Arr::get($_GET, 'form'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $targetForm = Arr::get(is_array($requestData) && $requestData ? $requestData : $_GET, 'form'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $explicitForm = in_array($targetForm, $acceptedForms, true);
         if (!$explicitForm) {
             $targetForm = 'login';
@@ -243,7 +247,7 @@ class AuthModdule
         $currentUrl = home_url(add_query_arg(urlencode_deep(wp_unslash($_GET)), $GLOBALS['wp']->request)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         do_action('fluent_community/enqueue_global_assets', true);
-        add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm, $inviation) {
+        add_action('wp_enqueue_scripts', function () use ($isFluentAuth, $targetForm, $inviation, $currentUrl) {
             wp_enqueue_style('fluent_auth_styles', Vite::getStaticSrcUrl('user_registration.css'), [], FLUENT_COMMUNITY_PLUGIN_VERSION);
             if(!$isFluentAuth || $targetForm === 'register' || $inviation) {
                 wp_enqueue_script('fluent_auth_scripts', Vite::getStaticSrcUrl('user_registration.js'), [], FLUENT_COMMUNITY_PLUGIN_VERSION, true);
@@ -251,9 +255,12 @@ class AuthModdule
                     'ajax_url'         => admin_url('admin-ajax.php'),
                     'is_logged_in'     => is_user_logged_in(),
                     'redirecting_text' => __('Redirecting...', 'fluent-community'),
+                    // For security plugin challenges.
+                    'login_url'        => wp_login_url($currentUrl),
                     'i18n'             => [
-                        'generic_error' => esc_html__('Something went wrong. Please try again later', 'fluent-community'),
-                        'network_error' => esc_html__('Could not reach the server. Please check your connection and try again.', 'fluent-community'),
+                        'generic_error'  => esc_html__('Something went wrong. Please try again later', 'fluent-community'),
+                        'network_error'  => esc_html__('Could not reach the server. Please check your connection and try again.', 'fluent-community'),
+                        'security_check' => esc_html__('This site needs an extra security check before you can log in.', 'fluent-community'),
                     ],
                 ));
             }
@@ -319,7 +326,7 @@ class AuthModdule
                             <?php echo do_shortcode('[fluent_auth_reset_password redirect_to="' . esc_url($currentUrl) . '"]'); ?>
                             <div class="fcom_spaced_divider">
                                 <div class="fcom_alt_auth_text">
-                                    <a href="<?php echo esc_url(add_query_arg('form', 'login', $currentUrl)); ?>">
+                                    <a href="<?php echo esc_url($this->getFormSwitchUrl('login')); ?>">
                                         <?php esc_html_e('Back to Login', 'fluent-community'); ?>
                                     </a>
                                 </div>
@@ -343,7 +350,7 @@ class AuthModdule
                     '_fcom_signup_nonce' => wp_create_nonce('fluent_auth_signup_nonce'),
                 ];
 
-                $frameData['loginUrl'] = add_query_arg('form', 'login', $currentUrl);
+                $frameData['loginUrl'] = $this->getFormSwitchUrl('login');
                 $frameData = wp_parse_args(Arr::get($formSettings, 'form'), $frameData);
 
                 $this->renderRegistrationForm($frameData, $inviation);
@@ -400,7 +407,7 @@ class AuthModdule
         if (is_wp_error($rateLimit)) {
             wp_send_json([
                 'message' => $rateLimit->get_error_message(),
-            ], 422);
+            ], 429);
         }
 
         $invitationToken = isset($_POST['invitation_token']) ? sanitize_text_field(wp_unslash($_POST['invitation_token'])) : '';
@@ -678,10 +685,17 @@ class AuthModdule
         if (is_wp_error($rateLimit)) {
             wp_send_json([
                 'message' => $rateLimit->get_error_message(),
-            ], 422);
+            ], 429);
         }
 
         $user = wp_authenticate($data['log'], $data['pwd']);
+
+        // Wordfence asks for the 2FA code after a valid password
+        if (is_wp_error($user) && $user->get_error_code() === 'wfls_twofactor_required') {
+            wp_send_json([
+                'verifcation_html' => AuthHelper::loginCodeFieldHtml(),
+            ]);
+        }
 
         if (is_wp_error($user)) {
             $enumerationCodes = [ 'invalid_username', 'invalid_email', 'incorrect_password' ];
@@ -737,6 +751,26 @@ class AuthModdule
         ]);
     }
 
+    /**
+     * The link from one auth form to another. It keeps the request's args
+     * (redirect_to, invitation_token, ...) and uses the readable path when it is on.
+     *
+     * @param string $form login, register or reset_password
+     * @return string
+     */
+    protected function getFormSwitchUrl($form)
+    {
+        $args = wp_unslash($_GET); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $args = is_array($args) ? Arr::except($args, array_merge(Helper::getActionKeys(), [ 'form' ])) : [];
+
+        // An invitation link without a form picks login or signup by itself, so keep "login" explicit.
+        if ($form === 'login' && !empty($args['invitation_token'])) {
+            $args['form'] = 'login';
+        }
+
+        return Helper::authUrl($form, $args);
+    }
+
     public function showLoginForm($frameData, $invitation = null)
     {
         $portalSettings = Helper::generalSettings();
@@ -767,7 +801,7 @@ class AuthModdule
             });
         }
 
-        $signupUrl = add_query_arg('form', 'register', $currentUrl);
+        $signupUrl = $this->getFormSwitchUrl('register');
 
         if (!$invitation) {
             $customSignupUrl = AuthenticationService::getCustomSignupPageUrl();

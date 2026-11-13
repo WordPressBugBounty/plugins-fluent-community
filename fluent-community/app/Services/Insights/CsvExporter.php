@@ -81,8 +81,13 @@ class CsvExporter
                         return $column['label'];
                     }, $columns),
                 ];
-                foreach ($data['rows'] as $row) {
-                    $rows[] = array_map(function ($column) use ($row) {
+                foreach ($data['rows'] as $index => $row) {
+                    $rows[] = array_map(function ($column) use ($row, $index) {
+                        // The table draws ranks from the row order, so the file numbers them the same way
+                        if ($column['type'] === 'rank' && !isset($row[$column['key']])) {
+                            return $index + 1;
+                        }
+
                         return isset($row[$column['key']]) ? $row[$column['key']] : '';
                     }, $columns);
                 }

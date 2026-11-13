@@ -69,18 +69,41 @@ class Utility
     /**
      * Orders a spaces/courses query by an admin-saved id list. Ids missing from the list
      * (created after the last save) come first, newest on top, then the saved order.
+     * Pass $table when the query joins another table with the same columns (a pivot).
      */
-    public static function applyCustomOrder($query, $optionKey)
+    public static function applyCustomOrder($query, $optionKey, $table = '')
     {
+        $prefix = $table ? $table . '.' : '';
         $ids = \FluentCommunity\App\Services\CustomSanitizer::sanitizeIdList(self::getOption($optionKey, []));
 
         if (!$ids) {
-            return $query->orderBy('title', 'ASC')->orderBy('id', 'ASC');
+            return $query->orderBy($prefix . 'title', 'ASC')->orderBy($prefix . 'id', 'ASC');
         }
 
-        return $query->orderByRaw('FIELD(id, ' . implode(',', $ids) . ') ASC')
-            ->orderBy('created_at', 'DESC')
-            ->orderBy('id', 'DESC');
+        $idColumn = $table ? $query->toBase()->getGrammar()->wrap($prefix . 'id') : 'id';
+
+        return $query->orderByRaw('FIELD(' . $idColumn . ', ' . implode(',', $ids) . ') ASC')
+            ->orderBy($prefix . 'created_at', 'DESC')
+            ->orderBy($prefix . 'id', 'DESC');
+    }
+
+    /**
+     * Orders a spaces/courses query by a sort from getListingSort().
+     */
+    public static function applyListingSort($query, $sortBy, $customOrderKey, $table = '')
+    {
+        $prefix = $table ? $table . '.' : '';
+
+        switch ($sortBy) {
+            case 'custom':
+                return self::applyCustomOrder($query, $customOrderKey, $table);
+            case 'latest':
+                return $query->orderBy($prefix . 'created_at', 'DESC');
+            case 'oldest':
+                return $query->orderBy($prefix . 'created_at', 'ASC');
+            default:
+                return $query->orderBy($prefix . 'title', 'ASC');
+        }
     }
 
     /**
@@ -316,13 +339,15 @@ class Utility
         return $settings;
     }
 
-    public static function getPrivacySettings()
+    /**
+     * The privacy settings and their defaults. A setting whose default is a
+     * visibility value accepts the visibility values; every other setting is yes/no.
+     *
+     * @return array<string, string>
+     */
+    private static function getPrivacyDefaults()
     {
-        if (self::$privacySettings) {
-            return self::$privacySettings;
-        }
-
-        $defaults = [
+        return [
             'can_customize_username'         => 'no',
             'can_change_email'               => 'no',
             'can_change_password'            => 'yes',
@@ -333,15 +358,22 @@ class Utility
             'enable_user_sync'               => 'yes',
             'skip_crm_undeliverable_emails'  => 'yes',
             'strip_image_meta'               => 'no',
-            'members_page_status'            => 'everybody', // everybody, logged_in, admin_only
-            'profile_page_visibility'        => 'everybody', // everybody, logged_in, admin_only
-            'user_space_visibility'          => 'everybody', // everybody, logged_in, admin_only
-            'leaderboard_members_visibility' => 'everybody', // everybody, logged_in, admin_only
+            'members_page_status'            => 'everybody',
+            'profile_page_visibility'        => 'everybody',
+            'user_space_visibility'          => 'everybody',
+            'leaderboard_members_visibility' => 'everybody',
         ];
+    }
 
-        $settings = self::getOption('privacy_settings', $defaults);
+    public static function getPrivacySettings()
+    {
+        if (self::$privacySettings) {
+            return self::$privacySettings;
+        }
 
-        $settings = wp_parse_args($settings, $defaults);
+        $defaults = self::getPrivacyDefaults();
+
+        $settings = wp_parse_args((array) self::getOption('privacy_settings', []), $defaults);
 
         if (!defined('FLUENT_COMMUNITY_PRO')) {
             $settings['can_customize_username'] = 'no';
@@ -407,17 +439,27 @@ class Utility
         return Arr::get($settings, $key);
     }
 
+    /**
+     * Save the privacy settings. A setting takes the submitted value only when it is
+     * one of the values the setting accepts. Every other stored value stays as it is.
+     */
     public static function updatePrivacySettings($settings)
     {
-        $preSettings = self::getPrivacySettings();
-        $settings = Arr::only($settings, array_keys($preSettings));
+        $submitted = (array) $settings;
+        $defaults = self::getPrivacyDefaults();
+        $settings = wp_parse_args((array) self::getOption('privacy_settings', []), $defaults);
+        $visibility = [ 'everybody', 'logged_in', 'admin_only' ];
 
-        $settings = array_map(function ($value) {
-            return is_scalar($value) ? sanitize_text_field($value) : '';
-        }, $settings);
+        foreach ($defaults as $key => $default) {
+            $choices = in_array($default, $visibility, true) ? $visibility : [ 'yes', 'no' ];
+            $value = is_scalar($submitted[$key] ?? null) ? sanitize_key((string) $submitted[$key]) : null;
+
+            if (in_array($value, $choices, true)) {
+                $settings[$key] = $value;
+            }
+        }
 
         self::updateOption('privacy_settings', $settings);
-        self::forgetCache('privacy_settings');
         self::$privacySettings = null;
 
         return $settings;
@@ -432,6 +474,51 @@ class Utility
     {
         $settings = self::getCustomizationSettings();
         return isset($settings[$key]) && $settings[$key] === $matchingValue;
+    }
+
+    /**
+     * Whether this site can install or activate add-on plugins from the FluentCommunity UI.
+     * A managed host with a read-only code base returns false: the add-ons card, every install
+     * prompt and the install endpoints then go away. The user's own capability checks still apply
+     * when this is true.
+     */
+    public static function canInstallAddons()
+    {
+        return (bool)apply_filters('fluent_community/can_install_addons', true);
+    }
+
+    /**
+     * Whether the Custom JavaScript snippet (Pro) is allowed in a context.
+     *
+     * Custom JavaScript runs in the browser of every member who opens the portal. A host or a
+     * security-minded site can return false from `fluent_community/can_use_custom_js` for all
+     * contexts to turn the feature off.
+     *
+     * @param string $context 'save' (store a new script), 'ui' (show the editor and the stored
+     *                        script to the current admin) or 'output' (print the stored script
+     *                        on the portal). 'save' and 'ui' default to the current user's
+     *                        `unfiltered_html` capability. 'output' defaults to true, because
+     *                        the visitor is any member and only an `unfiltered_html` user can
+     *                        store the script.
+     */
+    public static function canUseCustomJs($context = 'output')
+    {
+        $default = $context === 'output' ? true : current_user_can('unfiltered_html');
+
+        return (bool)apply_filters('fluent_community/can_use_custom_js', $default, $context);
+    }
+
+    /**
+     * The "Powered by" link text.
+     *
+     * @param string $context 'portal' (sidebar footer) or 'email' (email footer).
+     */
+    public static function getPoweredByText($context = 'portal')
+    {
+        // Email footers have always used the untranslated product name.
+        $default = $context === 'email' ? 'Powered by FluentCommunity' : __('Powered by FluentCommunity', 'fluent-community');
+
+        return (string)apply_filters('fluent_community/powered_by_text', $default, $context);
     }
 
     public static function getProductUrl($isPowered = false, $params = [])
@@ -451,7 +538,14 @@ class Utility
                 $params['ref'] = $affId;
             }
 
-            return add_query_arg($params, $url);
+            /**
+             * The link behind "Powered by" in the portal sidebar and in email footers.
+             * A host that ships FluentCommunity under its own brand can point it elsewhere.
+             *
+             * @param string $url    Default: fluentcommunity.co with UTM and affiliate parameters.
+             * @param array  $params The query parameters of the default URL.
+             */
+            return (string)apply_filters('fluent_community/powered_by_url', add_query_arg($params, $url), $params);
         }
 
         return add_query_arg([

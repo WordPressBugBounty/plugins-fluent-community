@@ -5,7 +5,6 @@ namespace FluentCommunity\App\Http\Controllers;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
-use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\ProfileHelper;
@@ -108,27 +107,39 @@ class ReactionController extends Controller
             ]);
         }
 
-        if (!$willRemove && (int) $currentUser->ID === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
+        if (!$willRemove && $type === 'like' && (int) $currentUser->ID === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
             return $this->sendError([
                 'message' => __('You cannot react to your own post', 'fluent-community'),
             ]);
         }
 
-        $react = Reaction::where('user_id', $currentUser->ID)
-            ->where('object_id', $feed->id)
-            ->where('type', $type)
-            ->objectType('feed')
-            ->first();
-
         if ($willRemove) {
-            if ($react) {
-                $react->delete();
-                if ($type === 'like') {
-                    $feed->reactions_count = $feed->reactions_count - 1;
-                    $feed->timestamps = false; // Don't update the updated_at timestamp
-                    $feed->save();
-                    do_action('fluent_community/feed/react_removed', $feed);
+            // Same lock as the add below, so parallel removes cannot each lower the count.
+            $removed = Helper::dbTransaction(function () use ($feed, $currentUser, $type) {
+                Helper::lockUser($currentUser->ID);
+
+                $react = Reaction::where('user_id', $currentUser->ID)
+                    ->where('object_id', $feed->id)
+                    ->where('type', $type)
+                    ->objectType('feed')
+                    ->first();
+
+                // Count only a row this request deleted.
+                if (!$react || !Reaction::where('id', $react->id)->delete()) {
+                    return false;
                 }
+
+                if ($type === 'like') {
+                    // getQuery() so the atomic decrement does not touch updated_at
+                    Feed::withoutGlobalScopes()->where('id', $feed->id)->where('reactions_count', '>', 0)->getQuery()->decrement('reactions_count');
+                    $feed->reactions_count = max(0, $feed->reactions_count - 1);
+                }
+
+                return true;
+            });
+
+            if ($removed && $type === 'like') {
+                do_action('fluent_community/feed/react_removed', $feed);
             }
 
             return [
@@ -137,6 +148,12 @@ class ReactionController extends Controller
             ];
         }
 
+        $react = Reaction::where('user_id', $currentUser->ID)
+            ->where('object_id', $feed->id)
+            ->where('type', $type)
+            ->objectType('feed')
+            ->first();
+
         if ($react) {
             return [
                 'message'   => __('You have already reacted to this post', 'fluent-community'),
@@ -144,11 +161,11 @@ class ReactionController extends Controller
             ];
         }
 
-        // Serialize a user's concurrent reactions by locking their profile row,
-        // so parallel add requests cannot each insert a duplicate reaction. The
-        // like counter is updated atomically, so unrelated users never contend.
+        // Serialize the user's concurrent reactions, so parallel add requests
+        // cannot each insert a duplicate reaction. The like counter is updated
+        // atomically, so unrelated users never contend.
         $react = Helper::dbTransaction(function () use ($feed, $currentUser, $type) {
-            XProfile::where('user_id', $currentUser->ID)->lockForUpdate()->first();
+            Helper::lockUser($currentUser->ID);
 
             $react = Reaction::where('user_id', $currentUser->ID)
                 ->where('object_id', $feed->id)

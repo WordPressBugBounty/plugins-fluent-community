@@ -35,6 +35,8 @@ class AdminController extends Controller
             'user_roles'                   => $formatedRoles,
             'users_can_register'           => (bool)get_option('users_can_register'),
             'user_registration_enable_url' => admin_url('options-general.php'),
+            'site_icon'                    => $this->getSiteIconData(),
+            'can_manage_site_icon'         => Helper::isSuperAdmin(),
         ];
         return apply_filters('fluent_community/general_settings_api_response', $data, $request->all());
     }
@@ -164,6 +166,89 @@ class AdminController extends Controller
         ];
     }
 
+    /**
+     * Upload a square image and set it as the WordPress site icon (the favicon).
+     */
+    public function uploadSiteIcon(Request $request)
+    {
+        $error = Helper::checkUploadSizeError();
+        if ($error) {
+            return $this->sendError($error, 413);
+        }
+
+        $this->validate($request->files(), [
+            'file' => 'required|mimetypes:image/png,image/jpeg,image/gif,image/webp|max:5120',
+        ], [
+            'file.required'  => __('Please select an image.', 'fluent-community'),
+            'file.mimetypes' => __('Use a PNG, JPG, GIF, or WebP image.', 'fluent-community'),
+            'file.max'       => __('The image must be smaller than 5 MB.', 'fluent-community'),
+        ]);
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $attachmentId = media_handle_upload('file', 0, [], [
+            'test_form' => false,
+            'mimes'     => [
+                'png'          => 'image/png',
+                'jpg|jpeg|jpe' => 'image/jpeg',
+                'gif'          => 'image/gif',
+                'webp'         => 'image/webp',
+            ],
+        ]);
+
+        if (is_wp_error($attachmentId)) {
+            return $this->sendError([
+                'message' => $attachmentId->get_error_message(),
+            ]);
+        }
+
+        $meta = wp_get_attachment_metadata($attachmentId);
+        $width = (int)Arr::get($meta, 'width');
+        $height = (int)Arr::get($meta, 'height');
+
+        if (!$width || abs($width - $height) > 1 || $width < 64) {
+            wp_delete_attachment($attachmentId, true);
+            return $this->sendError([
+                'message' => __('Use a square image, at least 64 x 64 pixels. 512 x 512 works best.', 'fluent-community'),
+            ]);
+        }
+
+        // Same marker the WordPress customizer sets on a cropped site icon.
+        update_post_meta($attachmentId, '_wp_attachment_context', 'site-icon');
+        update_option('site_icon', $attachmentId);
+
+        return [
+            'message'   => __('The favicon has been updated.', 'fluent-community'),
+            'site_icon' => $this->getSiteIconData(),
+        ];
+    }
+
+    /**
+     * Unset the site icon. The attachment stays in the media library.
+     */
+    public function removeSiteIcon(Request $request)
+    {
+        delete_option('site_icon');
+
+        return [
+            'message'   => __('The favicon has been removed.', 'fluent-community'),
+            'site_icon' => $this->getSiteIconData(),
+        ];
+    }
+
+    private function getSiteIconData()
+    {
+        $iconId = (int)get_option('site_icon');
+        $url = $iconId ? wp_get_attachment_image_url($iconId, 'full') : '';
+
+        return [
+            'id'  => $url ? $iconId : 0,
+            'url' => $url ? $url : '',
+        ];
+    }
+
     public function getEmailSettings(Request $request)
     {
         $emailSettings = Utility::getEmailNotificationSettings();
@@ -226,8 +311,8 @@ class AdminController extends Controller
             'push_setup'     => [
                 'state'          => PushNotificationModule::getSetupState(),
                 'settings_url'   => PushNotificationModule::getSettingsUrl(),
-                'can_install'    => current_user_can('install_plugins'),
-                'can_activate'   => current_user_can('activate_plugins'),
+                'can_install'    => Utility::canInstallAddons() && current_user_can('install_plugins'),
+                'can_activate'   => Utility::canInstallAddons() && current_user_can('activate_plugins'),
                 'has_installer'  => (bool)has_action('fluent_community/install_fluent_notify_plugin'),
                 'learn_more_url' => 'https://fluentnotify.com',
             ],

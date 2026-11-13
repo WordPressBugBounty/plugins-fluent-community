@@ -189,19 +189,19 @@ class CardRegistry
     private static function lockedCards()
     {
         return [
-            new LockedCard('engagement.dau_wau_mau', 'engagement', 'timeseries', __('Daily, weekly and monthly active members', 'fluent-community'), '', 'full', 10),
-            new LockedCard('engagement.participation', 'engagement', 'distribution', __('Participation tiers', 'fluent-community'), '', 'half', 20),
+            new LockedCard('engagement.dau_wau_mau', 'engagement', 'timeseries', __('Daily, Weekly and Monthly Active Members', 'fluent-community'), '', 'full', 10),
+            new LockedCard('engagement.participation', 'engagement', 'distribution', __('Participation Tiers', 'fluent-community'), '', 'half', 20),
             new LockedCard('engagement.responsiveness', 'engagement', 'kpi', __('Responsiveness', 'fluent-community'), '', 'half', 30),
-            new LockedCard('engagement.heatmap', 'engagement', 'heatmap', __('When members are active', 'fluent-community'), '', 'full', 40),
+            new LockedCard('engagement.heatmap', 'engagement', 'heatmap', __('When Members Are Active', 'fluent-community'), '', 'full', 40),
             new LockedCard('members.growth', 'members', 'timeseries', __('Growth', 'fluent-community'), '', 'full', 10),
-            new LockedCard('members.cohorts', 'members', 'cohort', __('Retention cohorts', 'fluent-community'), '', 'full', 20),
-            new LockedCard('members.top_contributors', 'members', 'table', __('Top contributors', 'fluent-community'), '', 'full', 30),
-            new LockedCard('spaces.comparison', 'spaces', 'table', __('Space comparison', 'fluent-community'), '', 'full', 10),
-            new LockedCard('content.top_posts', 'content', 'table', __('Top posts', 'fluent-community'), '', 'full', 10),
+            new LockedCard('members.cohorts', 'members', 'cohort', __('Retention Cohorts', 'fluent-community'), '', 'full', 20),
+            new LockedCard('members.top_contributors', 'members', 'table', __('Top Contributors', 'fluent-community'), '', 'full', 30),
+            new LockedCard('spaces.comparison', 'spaces', 'table', __('Space Comparison', 'fluent-community'), '', 'full', 10),
+            new LockedCard('content.top_posts', 'content', 'table', __('Top Posts', 'fluent-community'), '', 'full', 10),
             new LockedCard('content.topics', 'content', 'distribution', __('Topics', 'fluent-community'), '', 'full', 20),
-            new LockedCard('courses.lesson_funnel', 'courses', 'funnel', __('Lesson funnel', 'fluent-community'), '', 'full', 30),
-            new LockedCard('moderation.queue', 'moderation', 'kpi', __('Moderation queue', 'fluent-community'), '', 'full', 10),
-            new LockedCard('moderation.reports', 'moderation', 'timeseries', __('Reports received', 'fluent-community'), '', 'full', 20),
+            new LockedCard('courses.lesson_funnel', 'courses', 'funnel', __('Lesson Funnel', 'fluent-community'), '', 'full', 30),
+            new LockedCard('moderation.queue', 'moderation', 'kpi', __('Moderation Queue', 'fluent-community'), '', 'full', 10),
+            new LockedCard('moderation.reports', 'moderation', 'timeseries', __('Reports Received', 'fluent-community'), '', 'full', 20),
         ];
     }
 }

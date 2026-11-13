@@ -324,7 +324,9 @@ class ProfileHelper
             return new \WP_Error('invalid_email', __('Invalid email address', 'fluent-community'));
         }
 
-        if (!$password) {
+        $passwordGenerated = !$password;
+
+        if ($passwordGenerated) {
             $password = wp_generate_password(12);
         }
 
@@ -340,7 +342,7 @@ class ProfileHelper
 
         $role = apply_filters('fluent_community/created_user_role', 'subscriber', $userData);
 
-        return wp_insert_user([
+        $userId = wp_insert_user([
             'role'       => $role,
             'user_email' => $email,
             'user_login' => $userLogin,
@@ -348,6 +350,13 @@ class ProfileHelper
             'first_name' => sanitize_text_field($firstName),
             'last_name'  => sanitize_text_field($lastName),
         ]);
+
+        // Tells WordPress, and plugins that read it, that nobody chose this password.
+        if ($passwordGenerated && !is_wp_error($userId)) {
+            update_user_option($userId, 'default_password_nag', true, true);
+        }
+
+        return $userId;
     }
 
     public static function getUserAuthHash($userId = null)
@@ -431,8 +440,8 @@ class ProfileHelper
         }
 
         return add_query_arg([
-            'fcom_action'   => 'signed_url',
-            'fcom_url_hash' => $hash,
+            Helper::getActionKey() => 'signed_url',
+            'fcom_url_hash'        => $hash,
         ], $url);
     }
 

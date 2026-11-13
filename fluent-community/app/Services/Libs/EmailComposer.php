@@ -149,7 +149,7 @@ class EmailComposer
         if (!$footerTextHtml) {
             if ($settings['disable_powered_by'] === 'no') {
                 $utmParams = [ 'utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email' ];
-                $poweredBy = '<a href="' . Utility::getProductUrl(true, $utmParams) . '" target="_blank" style="font-size: 12px; margin: 15px 0; display: block; text-decoration: none;color: #9a9ea6;">Powered by FluentCommunity</a>';
+                $poweredBy = '<a href="' . esc_url(Utility::getProductUrl(true, $utmParams)) . '" target="_blank" style="font-size: 12px; margin: 15px 0; display: block; text-decoration: none;color: #9a9ea6;">' . esc_html(Utility::getPoweredByText('email')) . '</a>';
                 $this->addFooterLine('paragraph', $poweredBy);
             }
             return $this;
@@ -187,7 +187,7 @@ class EmailComposer
 
         if ($settings['disable_powered_by'] === 'no') {
             $utmParams = [ 'utm_campaign' => 'email', 'utm_source'   => 'footer', 'utm_medium'   => 'email' ];
-            $poweredBy = '<p style="margin-top: 10px;" class="powered_by"><a href="' . Utility::getProductUrl(true, $utmParams) . '" target="_blank" style="font-size: 12px; margin: 15px 0; text-decoration: none;color: #9a9ea6; display: block;">Powered by FluentCommunity</a></p>';
+            $poweredBy = '<p style="margin-top: 10px;" class="powered_by"><a href="' . esc_url(Utility::getProductUrl(true, $utmParams)) . '" target="_blank" style="font-size: 12px; margin: 15px 0; text-decoration: none;color: #9a9ea6; display: block;">' . esc_html(Utility::getPoweredByText('email')) . '</a></p>';
             $this->addFooterLine('paragraph', $poweredBy);
         }
 

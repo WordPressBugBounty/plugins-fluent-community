@@ -118,8 +118,10 @@ class Course extends BaseSpace
 
     public function students()
     {
+        // A scheduled enrollment (opens later) is not a student yet: it has no access and is not counted
         return $this->belongsToMany(User::class, 'fcom_space_user', 'space_id', 'user_id')
             ->wherePivot('role', 'student')
+            ->wherePivot('status', '!=', SpaceUserPivot::STATUS_SCHEDULED)
             ->withPivot([ 'role', 'created_at', 'status' ]);
     }
 

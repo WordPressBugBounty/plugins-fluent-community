@@ -154,7 +154,12 @@ class FileSystem
         $htaccessFile = $param['path'] . '/.htaccess';
 
         if (!is_dir($param['path'])) {
-            mkdir($param['path'], 0755); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+            // Recursive: the uploads base dir may not exist yet (fresh server, or an
+            // upload_path outside wp-content). A plain mkdir() fails then, and the
+            // .htaccess and index.php stubs are never written.
+            if (!wp_mkdir_p($param['path'])) {
+                return $param;
+            }
             file_put_contents($htaccessFile, $htaccessContent); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         } elseif (is_file($htaccessFile) && strpos((string) file_get_contents($htaccessFile), '# END FluentCommunity\n') === 0) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
             // Older versions wrote this file in single quotes, as one comment line that Apache ignores.

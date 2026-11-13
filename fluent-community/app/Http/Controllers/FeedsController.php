@@ -16,7 +16,6 @@ use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\BaseSpace;
-use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 
@@ -272,7 +271,13 @@ class FeedsController extends Controller
     {
         $user = $this->getUser(true);
 
-        do_action('fluent_community/check_rate_limit/create_post', $user);
+        try {
+            do_action('fluent_community/check_rate_limit/create_post', $user);
+        } catch (\Exception $e) {
+            return $this->sendError([
+                'message' => $e->getMessage(),
+            ], 429);
+        }
 
         $requestData = $request->all();
 
@@ -371,10 +376,18 @@ class FeedsController extends Controller
 
         $feed->fill($data);
 
-        // Serialize a member's concurrent submissions by locking their profile row,
-        // so parallel matching requests cannot pass the duplicate check and both insert.
-        $isDuplicate = Helper::dbTransaction(function () use ($feed, $user, $spaceId, $duplicateCheckMessage) {
-            XProfile::where('user_id', $user->ID)->lockForUpdate()->first();
+        // Serialize a member's concurrent submissions, so parallel requests cannot
+        // pass the rate limit or the duplicate check and all insert.
+        $rejection = Helper::dbTransaction(function () use ($feed, $user, $spaceId, $duplicateCheckMessage) {
+            Helper::lockUser($user->ID);
+
+            try {
+                do_action('fluent_community/check_rate_limit/create_post', $user);
+            } catch (\Exception $e) {
+                return $this->sendError([
+                    'message' => $e->getMessage(),
+                ], 429);
+            }
 
             $duplicate = $this->checkForDuplicatePost($user->ID, $duplicateCheckMessage, $spaceId);
             if ($duplicate) {
@@ -386,8 +399,8 @@ class FeedsController extends Controller
             return null;
         });
 
-        if ($isDuplicate) {
-            return $isDuplicate;
+        if ($rejection) {
+            return $rejection;
         }
 
         $feed = Feed::find($feed->id); // just renewing the feed
@@ -461,10 +474,10 @@ class FeedsController extends Controller
     public function update(Request $request, $feedId)
     {
         $requestData = $request->all();
-        $data = $this->sanitizeAndValidateData($requestData);
-        $user = $this->getUser(true);
         $existingFeed = Feed::findOrFail($feedId);
         /** @var Feed $existingFeed */
+        $data = $this->sanitizeAndValidateData($requestData, $existingFeed);
+        $user = $this->getUser(true);
 
         $editableStatuses = [ 'published', 'unlisted', 'scheduled', 'pending' ];
 
@@ -548,8 +561,12 @@ class FeedsController extends Controller
             do_action('fluent_community/feed/updating_content_type_old_' . $existingContentType, $existingFeed, $newContentType, $requestData);
         }
 
-        if ($newContentType !== 'text') {
-            $data = apply_filters('fluent_community/feed/update_feed_data_type_' . $newContentType, $data, $requestData, $existingFeed);
+        // A request that leaves content_type out keeps the post's type, so that type's update rules still run
+        // (an add-on's event post can't leave its space by omitting it). Documents are settled just above.
+        $filterType = ($newContentType === '' && $existingContentType !== 'document') ? (string) $existingContentType : $newContentType;
+
+        if ($filterType !== 'text') {
+            $data = apply_filters('fluent_community/feed/update_feed_data_type_' . $filterType, $data, $requestData, $existingFeed);
             if (is_wp_error($data)) {
                 return $this->sendError([
                     'message' => $data->get_error_message(),
@@ -829,17 +846,22 @@ class FeedsController extends Controller
         }
     }
 
-    private function sanitizeAndValidateData($data)
+    private function sanitizeAndValidateData($data, $existingFeed = null)
     {
         $data['type'] = 'text';
 
-        $this->validate($data, [
-            'message' => 'required',
-        ], [
-            'message.required' => __('Message is required', 'fluent-community'),
-        ]);
+        // A post type that carries its own content (an add-on's card) may let the message be empty.
+        $messageRequired = apply_filters('fluent_community/feed/message_required', true, $data, $existingFeed);
 
-        return FeedsHelper::sanitizeAndValidateData($data);
+        if ($messageRequired) {
+            $this->validate($data, [
+                'message' => 'required',
+            ], [
+                'message.required' => __('Post message is required', 'fluent-community'),
+            ]);
+        }
+
+        return FeedsHelper::sanitizeAndValidateData($data, $messageRequired);
     }
 
     private function checkForDuplicatePost($userId, $message, $spaceId = null)
@@ -849,6 +871,11 @@ class FeedsController extends Controller
         }
 
         $message = trim($message);
+
+        // An empty message (allowed by fluent_community/feed/message_required) duplicates nothing.
+        if ($message === '') {
+            return false;
+        }
 
         $exist = Feed::where('user_id', $userId)
             ->where('message', $message)
@@ -928,7 +955,13 @@ class FeedsController extends Controller
 
         $user = $this->getUser(true);
 
-        do_action('fluent_community/check_rate_limit/media_upload', $user);
+        try {
+            do_action('fluent_community/check_rate_limit/media_upload', $user);
+        } catch (\Exception $e) {
+            return $this->sendError([
+                'message' => $e->getMessage(),
+            ], 429);
+        }
 
         $allowedMimeTypesArray = apply_filters('fluent_community/support_attachment_types', [
             'image/jpeg',
@@ -1504,7 +1537,13 @@ class FeedsController extends Controller
     {
         $currentUser = $this->getUser(true);
 
-        do_action('fluent_community/check_rate_limit/oembed', $currentUser);
+        try {
+            do_action('fluent_community/check_rate_limit/oembed', $currentUser);
+        } catch (\Exception $e) {
+            return $this->sendError([
+                'message' => $e->getMessage(),
+            ], 429);
+        }
 
         $url = $request->getSafe('url', 'sanitize_url');
 

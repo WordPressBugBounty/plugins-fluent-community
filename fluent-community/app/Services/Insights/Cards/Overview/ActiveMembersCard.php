@@ -27,7 +27,7 @@ class ActiveMembersCard extends AbstractCard
 
     public function title()
     {
-        return __('Active members', 'fluent-community');
+        return __('Active Members', 'fluent-community');
     }
 
     public function description()
@@ -61,7 +61,7 @@ class ActiveMembersCard extends AbstractCard
             $previous = $this->alignTo($previousBucketer->fill($previousActive['buckets']), count($bucketer->keys()));
         }
 
-        $label = $withVisits ? __('Active members', 'fluent-community') : __('Contributing members', 'fluent-community');
+        $label = $withVisits ? __('Active Members', 'fluent-community') : __('Contributing Members', 'fluent-community');
 
         return $this->timeseries($bucketer, [
             [

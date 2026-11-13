@@ -6,6 +6,19 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Model;
 use FluentCommunity\App\Models\XProfile;
 
+/**
+ * A member's row in a space or course (fcom_space_user).
+ *
+ * @property int         $id
+ * @property int         $space_id
+ * @property int         $user_id
+ * @property string      $status     active | pending | scheduled (a course enrollment waiting for starts_at)
+ * @property string      $role
+ * @property array       $meta
+ * @property string|null $expire_at
+ * @property string|null $starts_at  site time the member's access starts (course drip anchor)
+ * @property string|null $created_at
+ */
 class SpaceUserPivot extends Model
 {
     /**
@@ -18,6 +31,12 @@ class SpaceUserPivot extends Model
      * Option holding when `updated_at` started meaning "last visit".
      */
     const SEEN_SINCE_OPTION = 'fluent_community_space_seen_since';
+
+    /**
+     * A course enrollment that waits for `starts_at`. It gives no access until it turns
+     * 'active' (CourseHelper::activateScheduledEnrollment).
+     */
+    const STATUS_SCHEDULED = 'scheduled';
 
     protected $table = 'fcom_space_user';
 
@@ -32,6 +51,7 @@ class SpaceUserPivot extends Model
         'status',
         'role',
         'meta',
+        'starts_at',
     ];
 
     public function scopeBySpace($query, $spaceId)
@@ -99,4 +119,25 @@ class SpaceUserPivot extends Model
         return $value;
     }
 
+    /**
+     * Active member counts keyed by space id, in one query. Pending, blocked and
+     * deactivated members are not counted.
+     */
+    public static function getActiveMemberCounts($spaceIds)
+    {
+        if (!$spaceIds) {
+            return [];
+        }
+
+        return static::whereIn('space_id', $spaceIds)
+            ->where('status', 'active')
+            ->whereHas('xprofile', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->whereHas('user')
+            ->selectRaw('space_id, COUNT(*) as total')
+            ->groupBy('space_id')
+            ->pluck('total', 'space_id')
+            ->toArray();
+    }
 }

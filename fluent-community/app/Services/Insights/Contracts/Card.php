@@ -41,13 +41,13 @@ interface Card
     /** @return bool */
     public function canView(Scope $scope);
 
-    /** @return string[] subset of compare, space_id, course_id, export */
+    /** @return string[] subset of compare, space_id, course_id, export, paging */
     public function supports();
 
     /**
      * @param Range $range
      * @param Scope $scope
-     * @param array $options compare (previous|year|none), page, per_page, sort
+     * @param array $options compare (previous|year|none), page, per_page, sort, export
      * @return array the type-specific `data` payload
      */
     public function compute(Range $range, Scope $scope, array $options);

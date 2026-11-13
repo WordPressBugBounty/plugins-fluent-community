@@ -1,33 +1,33 @@
-var E=(e,s,a)=>{if(!s.has(e))throw TypeError("Cannot "+a)};var l=(e,s,a)=>(E(e,s,"read from private field"),a?a.call(e):s.get(e)),I=(e,s,a)=>{if(s.has(e))throw TypeError("Cannot add the same private member more than once");s instanceof WeakSet?s.add(e):s.set(e,a)},T=(e,s,a,t)=>(E(e,s,"write to private field"),t?t.call(e,a):s.set(e,a),a);import{d as H}from"./admin_index4.js?ver=2.13.0";import{a as N,j as P,d as S,h as q,f as p,k as z,m as D,s as G,n as M,l as U}from"./admin_todoList.js?ver=2.13.0";import{$ as V,R as _,T as J,x as K,n as B,L as R,o as v,p as Q,t as W,z as X,q as Y,r as j}from"./admin_app.js?ver=2.13.0";import{b as A,G as Z,A as x}from"./admin_index.es.js?ver=2.13.0";import"./admin_runtime_vue.js?ver=2.13.0";import"./admin_index.js?ver=2.13.0";import"./admin_floating-ui.dom.js?ver=2.13.0";const F=({ctx:e,hide:s,show:a,config:t})=>{var h,b,y,k,w;const c=P();S(()=>{c()},[a]);const n=o=>m=>{m.preventDefault(),e&&o(e),c()},i=o=>{if(!e)return!1;const m=e.get(R),{state:{doc:u,selection:$}}=m;return u.rangeHasMark($.from,$.to,o)};return q`<host>
+var E=t=>{throw TypeError(t)};var B=(t,s,a)=>s.has(t)||E("Cannot "+a);var l=(t,s,a)=>(B(t,s,"read from private field"),a?a.call(t):s.get(t)),I=(t,s,a)=>s.has(t)?E("Cannot add the same private member more than once"):s instanceof WeakSet?s.add(t):s.set(t,a),T=(t,s,a,e)=>(B(t,s,"write to private field"),e?e.call(t,a):s.set(t,a),a);import{d as N}from"./admin_index4.js?ver=2.14.0";import{a as P,j as S,d as q,k as z,m as D,s as G,n as M,l as U,f as p,h as V}from"./admin_todoList.js?ver=2.14.0";import{$ as _,R as J,T as K,x as Q,n as R,L as j,o as v,p as W,t as X,z as Y,q as Z,r as A}from"./admin_app.js?ver=2.14.0";import{b as C,G as x,A as f}from"./admin_index.es.js?ver=2.14.0";import"./admin_runtime_vue.js?ver=2.14.0";import"./admin_index.js?ver=2.14.0";import"./admin_floating-ui.dom.js?ver=2.14.0";const L=({ctx:t,hide:s,show:a,config:e})=>{var h,b,y,k,w;const c=S();q(()=>{c()},[a]);const n=o=>m=>{m.preventDefault(),t&&o(t),c()},i=o=>{if(!t)return!1;const m=t.get(j),{state:{doc:u,selection:$}}=m;return u.rangeHasMark($.from,$.to,o)};return V`<host>
     <button
-      class=${p("toolbar-item",e&&i(V.type(e))&&"active")}
-      onmousedown=${n(o=>{o.get(v).call(Q.key)})}
-    >
-      ${((h=t==null?void 0:t.boldIcon)==null?void 0:h.call(t))??z}
-    </button>
-    <button
-      class=${p("toolbar-item",e&&i(_.type(e))&&"active")}
+      class=${p("toolbar-item",t&&i(_.type(t))&&"active")}
       onmousedown=${n(o=>{o.get(v).call(W.key)})}
     >
-      ${((b=t==null?void 0:t.italicIcon)==null?void 0:b.call(t))??D}
+      ${((h=e==null?void 0:e.boldIcon)==null?void 0:h.call(e))??z}
     </button>
     <button
-      class=${p("toolbar-item",e&&i(J.type(e))&&"active")}
+      class=${p("toolbar-item",t&&i(J.type(t))&&"active")}
       onmousedown=${n(o=>{o.get(v).call(X.key)})}
     >
-      ${((y=t==null?void 0:t.strikethroughIcon)==null?void 0:y.call(t))??G}
+      ${((b=e==null?void 0:e.italicIcon)==null?void 0:b.call(e))??D}
+    </button>
+    <button
+      class=${p("toolbar-item",t&&i(K.type(t))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(Y.key)})}
+    >
+      ${((y=e==null?void 0:e.strikethroughIcon)==null?void 0:y.call(e))??G}
     </button>
     <div class="divider"></div>
     <button
-      class=${p("toolbar-item",e&&i(K.type(e))&&"active")}
-      onmousedown=${n(o=>{o.get(v).call(Y.key)})}
+      class=${p("toolbar-item",t&&i(Q.type(t))&&"active")}
+      onmousedown=${n(o=>{o.get(v).call(Z.key)})}
     >
-      ${((k=t==null?void 0:t.codeIcon)==null?void 0:k.call(t))??M}
+      ${((k=e==null?void 0:e.codeIcon)==null?void 0:k.call(e))??M}
     </button>
     <button
-      class=${p("toolbar-item",e&&i(B.type(e))&&"active")}
-      onmousedown=${n(o=>{const m=o.get(R),{selection:u}=m.state;if(i(B.type(o))){o.get(A.key).removeLink(u.from,u.to);return}o.get(A.key).addLink(u.from,u.to),s==null||s()})}
+      class=${p("toolbar-item",t&&i(R.type(t))&&"active")}
+      onmousedown=${n(o=>{const m=o.get(j),{selection:u}=m.state;if(i(R.type(o))){o.get(C.key).removeLink(u.from,u.to);return}o.get(C.key).addLink(u.from,u.to),s==null||s()})}
     >
-      ${((w=t==null?void 0:t.linkIcon)==null?void 0:w.call(t))??U}
+      ${((w=e==null?void 0:e.linkIcon)==null?void 0:w.call(e))??U}
     </button>
-  </host>`};F.props={ctx:Object,hide:Function,show:Boolean,config:Object};const L=N(F),C=Z("CREPE_TOOLBAR");var d,r;class f{constructor(s,a,t){I(this,d,void 0);I(this,r,void 0);this.update=(n,i)=>{l(this,d).update(n,i)},this.destroy=()=>{l(this,d).destroy(),l(this,r).remove()},this.hide=()=>{l(this,d).hide()};const c=new L;T(this,r,c),l(this,r).ctx=s,l(this,r).hide=this.hide,l(this,r).config=t,T(this,d,new x({content:l(this,r),debounce:20,offset:10,shouldShow(n){const{doc:i,selection:h}=n.state,{empty:b,from:y,to:k}=h,w=!i.textBetween(y,k).length&&h instanceof j,o=!(h instanceof j),m=n.dom.getRootNode().activeElement,u=c.contains(m),$=!n.hasFocus()&&!u,O=!n.editable;return!($||o||b||w||O)}})),l(this,d).onShow=()=>{l(this,r).show=!0,setTimeout(()=>{let n=l(this,r).style.left;n=parseInt(n),n<0?l(this,r).style.left=0:n>350&&(l(this,r).style.left="350px")},0)},l(this,d).onHide=()=>{l(this,r).show=!1},this.update(a)}}d=new WeakMap,r=new WeakMap;H("milkdown-toolbar",L);const rt=(e,s)=>{e.config(a=>{a.set(C.key,{view:t=>new f(a,t,s)})}).use(C)};export{rt as defineFeature};
+  </host>`};L.props={ctx:Object,hide:Function,show:Boolean,config:Object};const O=P(L),F=x("CREPE_TOOLBAR");var d,r;class g{constructor(s,a,e){I(this,d);I(this,r);this.update=(n,i)=>{l(this,d).update(n,i)},this.destroy=()=>{l(this,d).destroy(),l(this,r).remove()},this.hide=()=>{l(this,d).hide()};const c=new O;T(this,r,c),l(this,r).ctx=s,l(this,r).hide=this.hide,l(this,r).config=e,T(this,d,new f({content:l(this,r),debounce:20,offset:10,shouldShow(n){const{doc:i,selection:h}=n.state,{empty:b,from:y,to:k}=h,w=!i.textBetween(y,k).length&&h instanceof A,o=!(h instanceof A),m=n.dom.getRootNode().activeElement,u=c.contains(m),$=!n.hasFocus()&&!u,H=!n.editable;return!($||o||b||w||H)}})),l(this,d).onShow=()=>{l(this,r).show=!0,setTimeout(()=>{let n=l(this,r).style.left;n=parseInt(n),n<0?l(this,r).style.left=0:n>350&&(l(this,r).style.left="350px")},0)},l(this,d).onHide=()=>{l(this,r).show=!1},this.update(a)}}d=new WeakMap,r=new WeakMap;N("milkdown-toolbar",O);const mt=(t,s)=>{t.config(a=>{a.set(F.key,{view:e=>new g(a,e,s)})}).use(F)};export{mt as defineFeature};

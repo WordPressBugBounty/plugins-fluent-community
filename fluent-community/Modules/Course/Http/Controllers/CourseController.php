@@ -61,21 +61,34 @@ class CourseController extends Controller
 
         $courses = $query->paginate();
 
+        $courseIds = $courses->pluck('id')->toArray();
+        $counts = CourseHelper::getCoursesCounts($courseIds);
+        $enrollments = ($courseIds && $user)
+            ? SpaceUserPivot::where('user_id', $user->ID)->whereIn('space_id', $courseIds)->get()->keyBy('space_id')
+            : null;
+        $joinedIds = $enrollments ? array_map('intval', $enrollments->keys()->toArray()) : [];
+        $progress = CourseHelper::getUserCoursesProgress($joinedIds, $user ? $user->ID : 0);
+
         foreach ($courses as $course) {
             $course->settings = $course->getVisibleSettings($user);
-            $course->isEnrolled = CourseHelper::isEnrolled($course->id);
+            $course->isEnrolled = in_array((int) $course->id, $joinedIds, true);
             if ($course->isEnrolled) {
-                $course->progress = CourseHelper::getCourseProgress($course->id);
+                $course->progress = Arr::get($progress, $course->id, 0);
+                // A scheduled member (CourseHelper::scheduleEnrollment) is listed as enrolled, with the open date
+                $enrollment = $enrollments->get($course->id);
+                $course->opens_at = ($enrollment->status === SpaceUserPivot::STATUS_SCHEDULED && $enrollment->starts_at && $enrollment->starts_at > current_time('mysql'))
+                    ? $enrollment->starts_at
+                    : null;
             }
 
             if (!$course->cover_photo) {
                 $course->cover_photo = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/course-placeholder.jpg';
             }
 
-            $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
-            $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
+            $course->sectionsCount = (int) Arr::get($counts['sections'], $course->id, 0);
+            $course->lessonsCount = (int) Arr::get($counts['lessons'], $course->id, 0);
             if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
-                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+                $course->studentsCount = (int) Arr::get($counts['students'], $course->id, 0);
             } else {
                 $course->studentsCount = 0;
             }
@@ -136,7 +149,7 @@ class CourseController extends Controller
                 $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
                 $course->creator->total_courses = count($creatorCourseIds);
                 if ($showStudentCount) {
-                    $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                    $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->where('status', '!=', SpaceUserPivot::STATUS_SCHEDULED)->distinct('user_id')->count('user_id');
                 }
                 if ($course->creator->short_description) {
                     $course->creator->short_description_rendered = wp_kses_post(FeedsHelper::mdToHtml($course->creator->short_description));
@@ -182,7 +195,7 @@ class CourseController extends Controller
 
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
 
-        if ($course->privacy === 'secret' && !$enrollment && !$isCourseCreator) {
+        if ($course->privacy === 'secret' && !$enrollment && !$isCourseCreator && !CourseHelper::getScheduledEnrollment($course->id)) {
             return $this->sendError([
                 'message' => __('You must need to be invited to view this course', 'fluent-community'),
             ]);
@@ -222,13 +235,17 @@ class CourseController extends Controller
 
         $enrollment = CourseHelper::getCourseEnrollment($course->id);
 
+        // A scheduled member (enrolled ahead of the open date) has a seat: the course page shows them
+        // the course and its open date, not the paywall. Lesson access still checks $enrollment.
+        $seat = $enrollment ? $enrollment : CourseHelper::getScheduledEnrollment($course->id);
+
         $currentUser = Helper::getCurrentUser();
 
-        if ($course->privacy === 'private' && !$enrollment) {
+        if ($course->privacy === 'private' && !$seat) {
             $course->lockscreen_config = LockscreenService::getLockscreenConfig($course, null, true);
         }
 
-        if ($course->privacy === 'secret' && !$enrollment && !$isCourseCreator) {
+        if ($course->privacy === 'secret' && !$seat && !$isCourseCreator) {
             return $this->sendError([
                 'message' => __('You must need to be invited to view this course', 'fluent-community'),
             ]);
@@ -238,7 +255,8 @@ class CourseController extends Controller
         $course->can_self_enroll = $isCourseCreator || ($course->status === 'published' && $course->privacy === 'public');
 
         $course = apply_filters('fluent_community/course/processed', $course, [
-            'is_enrolled' => (bool)$enrollment,
+            'is_enrolled'  => (bool)$seat,
+            'is_scheduled' => !$enrollment && $seat,
         ]);
 
         $courseSettings = $isCourseCreator ? $course->settings : $course->getVisibleSettings($currentUser);
@@ -251,7 +269,7 @@ class CourseController extends Controller
 
         // A visitor who may not see the lesson list still gets the lessons they can open
         // (a free preview, for example), so a direct link to one keeps working.
-        $canSeeLessonList = CourseHelper::canSeeLessonList($course, $enrollment, $isCourseCreator);
+        $canSeeLessonList = CourseHelper::canSeeLessonList($course, $seat, $isCourseCreator);
 
         // Every lesson's place in the full course, counted before any is hidden, so "Lesson 3 of 12"
         // stays right for a visitor who sees only some lessons. The count is public anyway (course list).
@@ -571,13 +589,17 @@ class CourseController extends Controller
 
         $courses = $coursesQuery->with([ 'creator' ])->paginate();
 
+        $counts = CourseHelper::getCoursesCounts($courses->pluck('id')->toArray());
+        // Several courses often share an instructor, so load each instructor's stats once.
+        $creatorStats = [];
+
         $formattedCourses = [];
         foreach ($courses as $course) {
-            $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
-            $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
+            $course->sectionsCount = (int) Arr::get($counts['sections'], $course->id, 0);
+            $course->lessonsCount = (int) Arr::get($counts['lessons'], $course->id, 0);
 
             if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
-                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+                $course->studentsCount = (int) Arr::get($counts['students'], $course->id, 0);
             } else {
                 $course->studentsCount = 0;
             }
@@ -586,10 +608,19 @@ class CourseController extends Controller
             $showStudentCount = Arr::get($course->settings, 'show_instructor_students_count') === 'yes';
             if ($showInstructorView) {
                 if ($course->creator) {
-                    $creatorCourseIds = Course::where('created_by', $course->creator->user_id)->pluck('id');
+                    $creatorId = $course->creator->user_id;
+                    if (!isset($creatorStats[$creatorId])) {
+                        $creatorStats[$creatorId] = [
+                            'course_ids' => Course::where('created_by', $creatorId)->pluck('id'),
+                        ];
+                    }
+                    $creatorCourseIds = $creatorStats[$creatorId]['course_ids'];
                     $course->creator->total_courses = count($creatorCourseIds);
                     if ($showStudentCount) {
-                        $course->creator->total_students = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->distinct('user_id')->count('user_id');
+                        if (!isset($creatorStats[$creatorId]['students'])) {
+                            $creatorStats[$creatorId]['students'] = SpaceUserPivot::whereIn('space_id', $creatorCourseIds)->where('status', '!=', SpaceUserPivot::STATUS_SCHEDULED)->distinct('user_id')->count('user_id');
+                        }
+                        $course->creator->total_students = $creatorStats[$creatorId]['students'];
                     }
                     if ($course->creator->short_description) {
                         $course->creator->short_description_rendered = wp_kses_post(FeedsHelper::mdToHtml($course->creator->short_description));

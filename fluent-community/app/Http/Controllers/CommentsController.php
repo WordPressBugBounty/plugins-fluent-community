@@ -12,7 +12,6 @@ use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Reaction;
-use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Foundation\Exceptions\ForbiddenHttpException;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
@@ -92,7 +91,6 @@ class CommentsController extends Controller
     public function store(Request $request, $feedId)
     {
         $user = $this->getUser(true);
-        do_action('fluent_community/check_rate_limit/create_comment', $user);
 
         $text = $this->validateCommentText($request->all());
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);
@@ -144,10 +142,16 @@ class CommentsController extends Controller
         // Only comments with text are duplicate checked
         $shouldCheckDuplicate = $text && !apply_filters('fluent_community/disable_duplicate_comment_check', false, get_current_user_id(), $feed->id);
 
-        // Serialize a member's concurrent submissions by locking their profile row,
-        // so parallel matching requests cannot pass the duplicate check and both insert.
-        $comment = Helper::dbTransaction(function () use ($commentData, $feed, $text, $shouldCheckDuplicate) {
-            XProfile::where('user_id', get_current_user_id())->lockForUpdate()->first();
+        // Serialize a member's concurrent submissions, so parallel requests cannot
+        // pass the rate limit or the duplicate check and all insert.
+        $comment = Helper::dbTransaction(function () use ($commentData, $feed, $text, $shouldCheckDuplicate, $user) {
+            Helper::lockUser(get_current_user_id());
+
+            try {
+                do_action('fluent_community/check_rate_limit/create_comment', $user);
+            } catch (\Exception $e) {
+                return new \WP_Error('rate_limited', $e->getMessage());
+            }
 
             if ($shouldCheckDuplicate && Comment::where('user_id', get_current_user_id())->where('message', $text)->where('post_id', $feed->id)->first()) {
                 return null;
@@ -162,6 +166,12 @@ class CommentsController extends Controller
 
             return $newComment;
         });
+
+        if (is_wp_error($comment)) {
+            return $this->sendError([
+                'message' => $comment->get_error_message(),
+            ], 429);
+        }
 
         if (!$comment) {
             return $this->sendError([
@@ -481,7 +491,7 @@ class CommentsController extends Controller
         }
 
         $maxCommentLength = apply_filters('fluent_community/max_comment_char_length', 10000);
-        if ($text && strlen($text) > $maxCommentLength) {
+        if ($text && mb_strlen($text, 'UTF-8') > $maxCommentLength) {
             /* translators: %s is the maximum allowed character count */
             throw new \Exception(esc_html(sprintf(__('The comment is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxCommentLength))), 422);
         }
@@ -544,78 +554,6 @@ class CommentsController extends Controller
                 $q->select(ProfileHelper::getXProfilePublicFields());
             },
         ]);
-    }
-
-    public function addOrRemovePostReact(Request $request, $feed_id)
-    {
-        $userId = get_current_user_id();
-        $feed = Feed::withoutGlobalScopes()->byUserAccess($userId)->findOrFail($feed_id);
-        $type = $request->get('react_type', 'like');
-        $type = in_array($type, [ 'like', 'bookmark' ], true) ? $type : 'like';
-        $willRemove = $request->get('remove');
-
-        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
-            return $this->sendError([
-                'message' => __('This post is not published yet', 'fluent-community'),
-            ]);
-        }
-
-        if (!$willRemove && (int) $userId === (int) $feed->user_id && apply_filters('fluent_community/disable_self_post_react', false, $feed)) {
-            return $this->sendError([
-                'message' => __('You cannot react to your own post', 'fluent-community'),
-            ]);
-        }
-
-        $react = Reaction::where('user_id', $userId)
-            ->where('object_id', $feed->id)
-            ->where('type', $type)
-            ->objectType('feed')
-            ->first();
-
-        if ($willRemove) {
-            if ($react) {
-                $react->delete();
-                if ($type === 'like') {
-                    $feed->reactions_count = $feed->reactions_count - 1;
-                    $feed->timestamps = false; // Don't update the updated_at timestamp
-                    $feed->save();
-                    do_action('fluent_community/feed/react_removed', $feed);
-                }
-            }
-
-            return [
-                'message'   => __('Reaction has been removed', 'fluent-community'),
-                'new_count' => $feed->reactions_count,
-            ];
-        }
-
-        if ($react) {
-            return [
-                'message'   => __('You have already reacted to this post', 'fluent-community'),
-                'new_count' => $feed->reactions_count,
-            ];
-        }
-
-        $react = Reaction::create([
-            'user_id'     => get_current_user_id(),
-            'object_id'   => $feed->id,
-            'type'        => $type,
-            'object_type' => 'feed',
-        ]);
-
-        if ($type === 'like') {
-            $feed->reactions_count = $feed->reactions_count + 1;
-            $feed->timestamps = false; // Don't update the updated_at timestamp
-            $feed->save();
-
-            $react->load('xprofile');
-            do_action('fluent_community/feed/react_added', $react, $feed);
-        }
-
-        return [
-            'message'   => __('Reaction has been added', 'fluent-community'),
-            'new_count' => $feed->reactions_count,
-        ];
     }
 
     public function deleteComment(Request $request, $feedId, $commentId)
@@ -693,10 +631,10 @@ class CommentsController extends Controller
         }
 
         if ($reactionState) {
-            // Serialize concurrent reactions on this comment by locking its row,
-            // so parallel add requests cannot each insert a duplicate reaction.
+            // Serialize the user's concurrent reactions, so parallel add requests
+            // cannot each insert a duplicate reaction.
             $reaction = Helper::dbTransaction(function () use ($comment, $feed) {
-                XProfile::where('user_id', get_current_user_id())->lockForUpdate()->first();
+                Helper::lockUser(get_current_user_id());
 
                 $reaction = Reaction::firstOrCreate([
                     'user_id'     => get_current_user_id(),
@@ -724,8 +662,9 @@ class CommentsController extends Controller
                 ->delete();
 
             if ($deleted) {
-                $comment->reactions_count = $comment->reactions_count - 1;
-                $comment->save();
+                // Atomic, so a parallel like from another member is not overwritten.
+                Comment::where('id', $comment->id)->where('reactions_count', '>', 0)->decrement('reactions_count');
+                $comment->reactions_count = max(0, $comment->reactions_count - 1);
                 do_action('fluent_community/comment/react_removed', $comment, $feed);
             }
         }

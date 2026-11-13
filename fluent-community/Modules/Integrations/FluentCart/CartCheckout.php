@@ -44,6 +44,14 @@ class CartCheckout
                 return;
             }
 
+            // The space id comes from the checkout link, so show it only when this order bought one of its paywall products.
+            $spaceProductIds = array_map('intval', (array) Arr::get($space->settings, 'cart_product_ids', []));
+            $orderProductIds = array_map('intval', $order->order_items->pluck('post_id')->toArray());
+
+            if (!array_intersect($spaceProductIds, $orderProductIds)) {
+                return;
+            }
+
             ?>
             <style>
                 .fcom_checkout_thank_you_box {

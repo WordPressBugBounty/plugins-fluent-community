@@ -6,7 +6,9 @@ use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
 use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\Reaction;
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\FeedsHelper;
+use FluentCommunity\App\Services\Helper;
 use FluentCommunity\Framework\Support\Arr;
 
 class PostMigrator
@@ -135,18 +137,24 @@ class PostMigrator
 
 
         $linkPreviewData = [];
-        $linkPreview = maybe_unserialize(Arr::get($this->metas, '_link_preview_data', ''));
+        // No objects from the imported meta, and the same clean-up as a preview saved in the portal.
+        $linkPreview = Utility::safeUnserialize(Arr::get($this->metas, '_link_preview_data', ''));
 
-        if ($linkPreview && !empty($linkPreview['url'])) {
-            $linkPreviewData = array_filter([
+        if (is_array($linkPreview) && !empty($linkPreview['url'])) {
+            $linkPreviewData = array_filter(Helper::sanitizeMediaPreview([
                 'title'       => $linkPreview['title'] ?? '',
                 'description' => $linkPreview['description'] ?? '',
                 'url'         => $linkPreview['url'],
                 'type'        => 'meta_data',
                 'image'       => $linkPreview['image_url'] ?? '',
-            ]);
+            ]));
 
-            if (!$content) {
+            // The sanitizer empties a non-http(s) URL. A preview without its link is not kept.
+            if (empty($linkPreviewData['url'])) {
+                $linkPreviewData = [];
+            }
+
+            if (!$content && $linkPreviewData) {
                 $content = '[' . $linkPreviewData['url'] . '](' . $linkPreviewData['url'] . ')';
             }
         }

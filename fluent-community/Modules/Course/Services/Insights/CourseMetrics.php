@@ -53,7 +53,7 @@ class CourseMetrics
     {
         return self::perCourse(
             'SELECT su.space_id AS id, COUNT(*) AS n FROM ' . Sql::table('fcom_space_user') . " su
-             WHERE su.space_id IN (%ids%) AND su.role = 'student' AND " . Sql::inRange('su.created_at', $range)
+             WHERE su.space_id IN (%ids%) AND su.role = 'student' AND su.status <> 'scheduled' AND " . Sql::inRange('su.created_at', $range)
             . Sql::notExcluded('su.user_id', $scope) . ' GROUP BY su.space_id',
             $courseIds
         );
@@ -74,7 +74,7 @@ class CourseMetrics
         return Sql::keyed(
             "SELECT {$bucket} AS k, COUNT(*) AS n FROM {$members} su
              INNER JOIN {$spaces} s ON s.id = su.space_id AND s.type = 'course'
-             WHERE su.role = 'student' AND " . Sql::inRange('su.created_at', $range) . $course . Sql::notExcluded('su.user_id', $scope) . '
+             WHERE su.role = 'student' AND su.status <> 'scheduled' AND " . Sql::inRange('su.created_at', $range) . $course . Sql::notExcluded('su.user_id', $scope) . '
              GROUP BY k'
         );
     }

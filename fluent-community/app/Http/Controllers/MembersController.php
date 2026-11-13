@@ -74,9 +74,18 @@ class MembersController extends Controller
 
             $members = $members->where('status', 'active')
                 ->where('user_id', '!=', get_current_user_id())
-                ->mentionBy($mention)
-                ->limit(10)
-                ->get();
+                ->mentionBy($mention);
+
+            /**
+             * Modify the @mention suggestions query before it runs.
+             *
+             * @param \FluentCommunity\Framework\Database\Orm\Builder $query XProfile query, by reference
+             * @param array $requestData
+             * @param BaseSpace|null $space The space the mention is made in, if any
+             */
+            do_action_ref_array('fluent_community/mention_members_query_ref', [ &$members, $request->all(), $space ]);
+
+            $members = $members->limit(10)->get();
 
             $data = [
                 'members' => [

@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\App\Hooks\Handlers;
 
+use FluentCommunity\App\App;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
@@ -10,6 +11,7 @@ use FluentCommunity\App\Models\BaseSpace;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\AnnouncementPref;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\DailyDigest;
 use FluentCommunity\App\Services\Libs\Mailer;
@@ -34,6 +36,8 @@ class EmailNotificationHandler
          * This is an async request
          */
         add_action('fluent_community/email_notify_users_everyone_tag', [ $this, 'emailNotifyUsersForEveryoneTag' ], 10, 2);
+        add_action('fluent_community/portal_action_' . AnnouncementPref::PAGE_ACTION, [ $this, 'renderAnnouncementEmailPage' ], 10, 0);
+        add_action('fluent_community/space/user_left', [ $this, 'clearAnnouncementSpace' ], 10, 2);
 
         add_action('fluent_community_send_daily_digest', [ $this, 'maybeSendDailyDigest' ], 10);
         add_action('fluent_community/space/join_requested', [ $this, 'handleCommunityJoinRequest' ], 10, 2);
@@ -101,6 +105,11 @@ class EmailNotificationHandler
         }
 
         if (!$feed || !$feed instanceof Feed) {
+            return;
+        }
+
+        // A moderator may have removed the post since this job was queued.
+        if (!in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return;
         }
 
@@ -229,7 +238,8 @@ class EmailNotificationHandler
             }
         }
 
-        return $this->notifyOnPostCreatedAsync($feed);
+        // Pass the id so the next batch reloads the post and rechecks its status.
+        return $this->notifyOnPostCreatedAsync($feed->id);
     }
 
     public function handleNewCommentEvent(Comment $comment, $feed)
@@ -275,12 +285,13 @@ class EmailNotificationHandler
     public function handleNewCommentNotificationAsync($commentId, $lastUserId = 0)
     {
         $comment = Comment::find($commentId);
-        if (!$comment) {
+        // A moderator may have removed the comment or its post since this job was queued.
+        if (!$comment || $comment->status !== 'published') {
             return true;
         }
 
         $feed = $comment->post;
-        if (!$feed) {
+        if (!$feed || !in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return;
         }
 
@@ -410,7 +421,7 @@ class EmailNotificationHandler
         // Let's try to send email to all users of this space for this post
         $feed = Feed::find($feedId);
 
-        if (!$feed || !$feed->space) {
+        if (!$feed || !$feed->space || !in_array($feed->status, FeedsHelper::getViewableByLinkStatuses(), true)) {
             return true;
         }
 
@@ -426,11 +437,7 @@ class EmailNotificationHandler
             return true;
         }
 
-        $users = User::whereDoesntHave('notificationPreferences', function ($query) {
-            $query->where('channel', 'mail')
-                ->where('event_key', 'mention')
-                ->where('value', 0);
-        })
+        $users = AnnouncementPref::scopeRecipients(User::query(), $feed->space_id)
             ->whereHas('space_pivot', function ($query) use ($feed) {
                 $query->where('space_id', $feed->space_id)
                     ->where('status', 'active');
@@ -477,12 +484,15 @@ class EmailNotificationHandler
                 continue;
             }
 
+            // The footer link opens the announcement email page for this space.
+            $manageUrl = AnnouncementPref::getManageUrl($user->ID, $feed->space_id);
+
             $newEmailBody = str_replace([
                 '##feed_permalink##',
                 '##email_notification_url##',
             ], [
                 ProfileHelper::signUserUrlWithAuthHash($feedPermalink, $user->ID),
-                ProfileHelper::getSignedNotificationPrefUrl($user->ID),
+                $manageUrl,
             ], $emailBody);
 
             $notificationBagde = $this->getNotificationBadges($user->ID);
@@ -524,6 +534,138 @@ class EmailNotificationHandler
 
         sleep(1); // sleeping for 1 second
         return $this->emailNotifyUsersForEveryoneTag($feedId, $lastSendUserId);
+    }
+
+    /**
+     * The page the footer of an announcement email links to. It works without
+     * login: the token in the link (AnnouncementPref::getToken) is the only key,
+     * and it can only change this member's announcement emails.
+     *
+     * GET shows the choices and never changes anything, so link scanners and
+     * mail-client prefetches are harmless. POST saves.
+     */
+    public function renderAnnouncementEmailPage()
+    {
+        // phpcs:disable WordPress.Security.NonceVerification -- no session here; the HMAC token in the link authorizes the request
+        $userId = isset($_REQUEST['uid']) ? (int)$_REQUEST['uid'] : 0;
+        $spaceId = isset($_REQUEST['space']) ? (int)$_REQUEST['space'] : 0;
+        $token = isset($_REQUEST['token']) ? sanitize_text_field(wp_unslash($_REQUEST['token'])) : '';
+        $isPost = isset($_SERVER['REQUEST_METHOD']) && strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']))) === 'POST';
+        $choice = $isPost && isset($_POST['choice']) ? sanitize_text_field(wp_unslash($_POST['choice'])) : '';
+        $keepThisSpace = $isPost && !empty($_POST['keep_this_space']);
+        // phpcs:enable WordPress.Security.NonceVerification
+
+        nocache_headers();
+
+        $space = $spaceId ? BaseSpace::withoutGlobalScopes()->find($spaceId) : null;
+        $user = $userId ? get_user_by('ID', $userId) : null;
+
+        if (!$space || !$user || !AnnouncementPref::verifyToken($userId, $spaceId, $token)) {
+            $this->renderAnnouncementView([
+                'error' => __('This link is not valid. Open your notification settings in the community to manage your emails.', 'fluent-community'),
+            ]);
+        }
+
+        // The page shows only the space this email came from. Anyone the email is
+        // forwarded to can open it, so it never lists the member's other spaces.
+        $canKeepSpace = in_array((int)$space->id, AnnouncementPref::getMemberSpaceIds($userId), true);
+        $saved = '';
+
+        if ($isPost && $choice === 'keep') {
+            if (!AnnouncementPref::isEnabled($userId)) {
+                AnnouncementPref::setEnabled($userId, true);
+            }
+            $saved = __('Saved. You will get announcement emails from all your spaces.', 'fluent-community');
+        } elseif ($isPost && $choice === 'stop') {
+            AnnouncementPref::setEnabled($userId, false);
+
+            // This page shows one space, so it changes only that space's row.
+            if ($canKeepSpace && $keepThisSpace) {
+                AnnouncementPref::keepSpace($userId, $space->id);
+            } else {
+                AnnouncementPref::removeSpaces($userId, $space->id);
+            }
+            $keptIds = AnnouncementPref::getAllowedSpaceIds($userId);
+            // An announcement is an admin post, so admin-post emails still include it.
+            $hasAdminPostEmails = AnnouncementPref::hasAdminPostEmails($userId);
+            $keepsThis = in_array((int)$space->id, $keptIds, true);
+            $keepsOthers = count($keptIds) > ($keepsThis ? 1 : 0);
+
+            if ($keepsThis && $keepsOthers) {
+                /* translators: %s is the space name */
+                $saved = sprintf(__('Saved. You will get announcement emails only from %s and the other spaces you chose in your settings.', 'fluent-community'), $space->title);
+            } elseif ($keepsThis) {
+                /* translators: %s is the space name */
+                $saved = sprintf(__('Saved. You will get announcement emails only from %s.', 'fluent-community'), $space->title);
+            } elseif ($keepsOthers) {
+                $saved = __('Saved. You will get announcement emails only from the spaces you chose in your settings.', 'fluent-community');
+            } elseif (!$hasAdminPostEmails) {
+                $saved = __('Saved. You will not get announcement emails from any space.', 'fluent-community');
+            } else {
+                $saved = __('Saved.', 'fluent-community');
+            }
+
+            if ($hasAdminPostEmails) {
+                $saved = trim($saved . ' ' . __('Spaces where you get emails for posts by admins still send you their announcements. Change that in each space\'s menu.', 'fluent-community'));
+            }
+        }
+
+        $this->renderAnnouncementView([
+            'space_id'       => (int)$space->id,
+            'space_title'    => $space->title,
+            'current'        => AnnouncementPref::isEnabled($userId) ? 'keep' : 'stop',
+            'can_keep_space' => $canKeepSpace,
+            'space_kept'     => in_array((int)$space->id, AnnouncementPref::getAllowedSpaceIds($userId), true),
+            'saved'          => $saved,
+            'form_url'       => AnnouncementPref::getManageUrl($userId, $spaceId),
+            'settings_url'   => $this->notificationSettingsUrl($userId),
+        ]);
+    }
+
+    /**
+     * Plain link to the member's settings page. Not a signed login link: the
+     * token on this page must never turn into a way to log in.
+     */
+    private function notificationSettingsUrl($userId)
+    {
+        $username = XProfile::where('user_id', (int)$userId)->value('username');
+
+        if (!$username) {
+            return Helper::baseUrl();
+        }
+
+        return Helper::baseUrl('u/' . rawurlencode($username) . '/notification-settings');
+    }
+
+    /**
+     * A member who leaves a space no longer gets its announcements, so a kept
+     * space has nothing left to keep.
+     */
+    public function clearAnnouncementSpace($space, $userId)
+    {
+        if ($space && $userId) {
+            AnnouncementPref::removeSpaces($userId, $space->id);
+        }
+    }
+
+    /**
+     * Render the page and stop. Kept separate so a test can override it.
+     */
+    protected function renderAnnouncementView($data)
+    {
+        status_header(empty($data['error']) ? 200 : 403);
+        App::make('view')->render('announcement_email', array_merge([
+            'error'        => '',
+            'space_id'       => 0,
+            'space_title'    => '',
+            'current'        => 'keep',
+            'can_keep_space' => false,
+            'space_kept'     => false,
+            'saved'          => '',
+            'form_url'     => '',
+            'settings_url' => Helper::baseUrl(),
+        ], $data));
+        exit();
     }
 
     public function maybeSendDailyDigest()

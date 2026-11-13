@@ -48,6 +48,20 @@ class SpacePolicy extends BasePolicy
         return $xProfile && $xProfile->status === 'active';
     }
 
+    public function getEmailPref(Request $request)
+    {
+        $xProfile = Helper::getCurrentProfile(true);
+
+        return $xProfile && $xProfile->status === 'active';
+    }
+
+    public function updateEmailPref(Request $request)
+    {
+        $xProfile = Helper::getCurrentProfile(true);
+
+        return $xProfile && $xProfile->status === 'active';
+    }
+
     public function markSeen(Request $request)
     {
         $xProfile = Helper::getCurrentProfile(true);

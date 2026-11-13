@@ -646,7 +646,7 @@ class CustomSanitizer
             '\@'   => '@',
             '\\_'  => '_',
             '\\&'  => '&',
-            '\\*'  => '*',
+            // no '\*': the editor escapes asterisks it shows as text; unescaped, Parsedown pairs them as bold
             '\\~'  => '~',
             '\\:'  => ':',
             '\\.'  => '.',

@@ -357,7 +357,10 @@ class CourseLesson extends Model
             $docLists = $meta['document_lists'];
             foreach ($docLists as $index => $docList) {
                 if(!empty($docList['media_key']) && !empty($docList['id'])) {
-                    $docLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key='.$docList['media_key'].'&media_id='.$docList['id']);
+                    $docLists[$index]['url'] = Helper::actionUrl('download_document', [
+                        'media_key' => $docList['media_key'],
+                        'media_id'  => $docList['id'],
+                    ]);
                 }
             }
             $meta['document_lists'] = $docLists;

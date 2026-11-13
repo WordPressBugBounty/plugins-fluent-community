@@ -27,7 +27,7 @@ class TopSpacesCard extends AbstractCard
 
     public function title()
     {
-        return __('Top spaces', 'fluent-community');
+        return __('Top Spaces', 'fluent-community');
     }
 
     public function description()

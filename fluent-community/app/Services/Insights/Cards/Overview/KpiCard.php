@@ -29,7 +29,7 @@ class KpiCard extends AbstractCard
 
     public function title()
     {
-        return __('Community health', 'fluent-community');
+        return __('Community Health', 'fluent-community');
     }
 
     public function description()
@@ -57,7 +57,7 @@ class KpiCard extends AbstractCard
         $items = [
             $this->kpiItem(
                 'members.active',
-                $withVisits ? __('Active members', 'fluent-community') : __('Contributing members', 'fluent-community'),
+                $withVisits ? __('Active Members', 'fluent-community') : __('Contributing Members', 'fluent-community'),
                 $active['total'],
                 $previousActive,
                 'number',
@@ -69,7 +69,7 @@ class KpiCard extends AbstractCard
         $newMembers = MemberMetrics::newByBucket($range, $scope, $bucketer);
         $items[] = $this->kpiItem(
             'members.new',
-            __('New members', 'fluent-community'),
+            __('New Members', 'fluent-community'),
             array_sum($newMembers),
             $comparison ? array_sum(MemberMetrics::newByBucket($comparison, $scope, $previousBucketer)) : null,
             'number',
@@ -99,7 +99,7 @@ class KpiCard extends AbstractCard
         $response = ResponseMetrics::stats($range, $scope);
         $items[] = $this->kpiItem(
             'response.reply_rate',
-            __('Posts answered', 'fluent-community'),
+            __('Posts Answered', 'fluent-community'),
             $response['reply_rate'],
             $comparison ? ResponseMetrics::stats($comparison, $scope)['reply_rate'] : null,
             'percent',

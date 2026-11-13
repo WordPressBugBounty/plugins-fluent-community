@@ -168,7 +168,10 @@ class Media extends Model
 
     public function getPrivateDownloadUrl()
     {
-        return Helper::baseUrl('?fcom_action=download_document&media_key=' . $this->media_key . '&media_id=' . $this->id);
+        return Helper::actionUrl('download_document', [
+            'media_key' => $this->media_key,
+            'media_id'  => $this->id,
+        ]);
     }
 
     public function getPrivateFileMeta()

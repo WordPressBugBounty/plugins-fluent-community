@@ -7,6 +7,7 @@ use FluentCommunity\App\Models\Meta;
 use FluentCommunity\App\Models\Reaction;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\Term;
+use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\EmailComposer;
@@ -22,15 +23,277 @@ class CourseHelper
 {
     protected static $completedLessonsCache = [];
 
+    protected static $enrollmentCache = [];
+
     public static function getCourseProgressTrack($courseId, $userId = null)
     {
         $isEnrolled = self::isEnrolled($courseId, $userId);
+        $scheduled = $isEnrolled ? null : self::getScheduledEnrollment($courseId, $userId);
 
         return [
             'completed_lessons' => $isEnrolled ? self::getCompletedLessonIds($courseId, $userId) : [],
-            'isEnrolled'        => $isEnrolled,
+            // A scheduled member shows as enrolled, with `opens_at`, so a client that predates
+            // scheduled enrollments shows the course as theirs (its lessons stay locked) and not
+            // a buy or enroll button
+            'isEnrolled'        => $isEnrolled || (bool) $scheduled,
             'progress'          => $isEnrolled ? self::getCourseProgress($courseId, $userId) : 0,
+            'opens_at'          => $scheduled ? $scheduled->starts_at : null,
         ];
+    }
+
+    /**
+     * Enroll a member whose access starts on a given date. Membership plugins use this to drip a course.
+     *
+     * - A future date stores a 'scheduled' enrollment. It gives no access, and
+     *   `fluent_community/course/enrolled` does not fire, until the date arrives
+     *   (activateDueEnrollments, hourly, or the member's next visit to the course).
+     * - A past or current date enrolls the member now. The date still anchors the structured drip,
+     *   so a member imported three months into a membership finds three months of sections open.
+     * - A member who already has an active enrollment is left as is (returns false), so a renewal
+     *   does not restart their drip. Call leaveCourse() first to restart it.
+     * - Calling it again for a scheduled member moves the date.
+     *
+     * @param Course|int $course
+     * @param int $userId
+     * @param string $startsAt site time, 'Y-m-d H:i:s' (the same clock as created_at)
+     * @param string $by the source, passed on to `fluent_community/course/enrolled`
+     * @return string|false 'scheduled', 'enrolled', or false when nothing changed or the input is invalid
+     */
+    public static function scheduleEnrollment($course, $userId, $startsAt, $by = 'by_admin')
+    {
+        if (is_numeric($course)) {
+            $course = Course::find($course);
+        }
+
+        $userId = (int) $userId;
+        $startsAt = self::normalizeSiteDate($startsAt);
+
+        if (!$course || !$course instanceof Course || !$userId || !$startsAt) {
+            return false;
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            return false;
+        }
+
+        $user->syncXProfile();
+
+        $existing = SpaceUserPivot::where('space_id', $course->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existing && $existing->status === 'active') {
+            return false;
+        }
+
+        $isDue = $startsAt <= current_time('mysql');
+
+        if (!$existing) {
+            $existing = SpaceUserPivot::create([
+                'space_id'  => $course->id,
+                'user_id'   => $userId,
+                'role'      => 'student',
+                'status'    => SpaceUserPivot::STATUS_SCHEDULED,
+                'starts_at' => $startsAt,
+                'meta'      => [ 'enrolled_by' => $by ],
+            ]);
+        } else {
+            $meta = is_array($existing->meta) ? $existing->meta : [];
+            $meta['enrolled_by'] = $by;
+
+            $existing->status = SpaceUserPivot::STATUS_SCHEDULED;
+            $existing->starts_at = $startsAt;
+            $existing->meta = $meta;
+            if (!in_array($existing->role, [ 'admin', 'moderator' ], true)) {
+                $existing->role = 'student';
+            }
+            $existing->save();
+        }
+
+        self::resetEnrollmentCache($course->id, $userId);
+
+        if ($isDue) {
+            return self::activateScheduledEnrollment($existing) ? 'enrolled' : false;
+        }
+
+        /*
+         * The member has bought or been given the course, but cannot open it before $startsAt.
+         * Use this for a "your course opens on..." message. `fluent_community/course/enrolled`
+         * fires later, when access starts.
+         */
+        do_action('fluent_community/course/enrollment_scheduled', $course, $userId, $startsAt, $by, $existing);
+
+        return 'scheduled';
+    }
+
+    /**
+     * Turn a scheduled enrollment active and fire `fluent_community/course/enrolled`.
+     *
+     * The status flip is one conditional UPDATE, so the hourly sweep and a member's visit
+     * cannot both fire the enrolled hooks for the same row.
+     *
+     * @param SpaceUserPivot $enrollment
+     * @return bool true when this call activated it
+     */
+    public static function activateScheduledEnrollment($enrollment)
+    {
+        if (!$enrollment || $enrollment->status !== SpaceUserPivot::STATUS_SCHEDULED) {
+            return false;
+        }
+
+        /*
+         * created_at becomes the moment access starts, so every report that dates enrollments by
+         * created_at (Insights, "Start Date" sorting) counts the member when the course opens.
+         * Keeping the purchase date there would add the member to a month that is already closed.
+         * The purchase date moves to meta.scheduled_on.
+         */
+        $meta = is_array($enrollment->meta) ? $enrollment->meta : [];
+        $meta['scheduled_on'] = (string) $enrollment->created_at;
+        $now = current_time('mysql');
+
+        $updated = SpaceUserPivot::where('id', $enrollment->id)
+            ->where('status', SpaceUserPivot::STATUS_SCHEDULED)
+            ->update([
+                'status'     => 'active',
+                'created_at' => $now,
+                'meta'       => maybe_serialize($meta),
+            ]);
+
+        if (!$updated) {
+            return false;
+        }
+
+        $enrollment->status = 'active';
+        $enrollment->created_at = $now;
+        $enrollment->meta = $meta;
+        self::resetEnrollmentCache($enrollment->space_id, $enrollment->user_id);
+
+        $user = User::find($enrollment->user_id);
+        if ($user) {
+            $user->cacheAccessSpaces();
+        }
+
+        $course = Course::find($enrollment->space_id);
+        if ($course) {
+            $by = Arr::get(is_array($enrollment->meta) ? $enrollment->meta : [], 'enrolled_by', 'scheduled');
+            do_action('fluent_community/course/enrolled', $course, (int) $enrollment->user_id, $by, $enrollment);
+        }
+
+        return true;
+    }
+
+    const ACTIVATE_DUE_HOOK = 'fluent_community/course/activate_due_enrollments';
+
+    /**
+     * Activate the scheduled enrollments whose start date has passed. Runs hourly.
+     *
+     * Each activation runs the `course/enrolled` listeners (emails, CRM, Insights), so a cohort that
+     * opens on one date is done in batches: the run stops after $limit rows or $timeBudget seconds,
+     * and queues an async follow-up while due rows remain. A member who visits first opens their own row.
+     *
+     * @param int $limit rows per run
+     * @param int $timeBudget seconds per run
+     * @return int the number activated
+     */
+    public static function activateDueEnrollments($limit = 100, $timeBudget = 20)
+    {
+        $startedAt = microtime(true);
+
+        $dueEnrollments = SpaceUserPivot::where('status', SpaceUserPivot::STATUS_SCHEDULED)
+            ->whereNotNull('starts_at')
+            ->where('starts_at', '<=', current_time('mysql'))
+            ->orderBy('starts_at', 'ASC')
+            ->limit((int) $limit)
+            ->get();
+
+        $count = 0;
+        $stoppedEarly = false;
+        foreach ($dueEnrollments as $enrollment) {
+            if (microtime(true) - $startedAt > $timeBudget) {
+                $stoppedEarly = true;
+                break;
+            }
+
+            if (self::activateScheduledEnrollment($enrollment)) {
+                ++$count;
+            }
+        }
+
+        $mayHaveMore = $stoppedEarly || count($dueEnrollments) >= (int) $limit;
+        if ($mayHaveMore && function_exists('as_enqueue_async_action') && !self::hasPendingActivationBatch()) {
+            as_enqueue_async_action(self::ACTIVATE_DUE_HOOK, [], 'fluent-community');
+        }
+
+        return $count;
+    }
+
+    /**
+     * Whether a follow-up batch is already queued. Pending only: as_next_scheduled_action() and
+     * as_has_scheduled_action() also count the running action, so a follow-up batch would find
+     * itself and never queue the next one, and a large cohort would stop after two batches.
+     *
+     * @return bool
+     */
+    protected static function hasPendingActivationBatch()
+    {
+        if (!function_exists('as_get_scheduled_actions')) {
+            return false;
+        }
+
+        return (bool) as_get_scheduled_actions([
+            'hook'     => self::ACTIVATE_DUE_HOOK,
+            'status'   => 'pending',
+            'per_page' => 1,
+        ], 'ids');
+    }
+
+    /**
+     * The member's scheduled (not yet open) enrollment in a course, or null.
+     *
+     * @return SpaceUserPivot|null
+     */
+    public static function getScheduledEnrollment($courseId, $userId = null)
+    {
+        $row = self::getEnrollmentRow($courseId, $userId);
+
+        return ($row && $row->status === SpaceUserPivot::STATUS_SCHEDULED) ? $row : null;
+    }
+
+    /**
+     * The date the member's access starts: `starts_at` when set, else the enrollment date. Site time.
+     *
+     * @param SpaceUserPivot $enrollment
+     * @return string
+     */
+    public static function getAccessStartDate($enrollment)
+    {
+        return $enrollment->starts_at ? $enrollment->starts_at : (string) $enrollment->created_at;
+    }
+
+    public static function resetEnrollmentCache($courseId = null, $userId = null)
+    {
+        if ($courseId === null) {
+            self::$enrollmentCache = [];
+            return;
+        }
+
+        unset(self::$enrollmentCache[(int) $courseId . '_' . (int) $userId]);
+    }
+
+    protected static function normalizeSiteDate($value)
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d H:i:s', $value);
+
+        if (!$date || $date->format('Y-m-d H:i:s') !== $value) {
+            return null;
+        }
+
+        return $value;
     }
 
     public static function resolveLessonAccess($initialCanView, $lesson, $course, $user, $ctx = [])
@@ -48,12 +311,46 @@ class CourseHelper
         return $access;
     }
 
+    /**
+     * Whether the member has access to the course now. A scheduled enrollment does not count.
+     */
     public static function isEnrolled($courseId, $userId = null)
     {
         return (bool) self::getCourseEnrollment($courseId, $userId);
     }
 
+    /**
+     * The enrollment that gives the member access to the course, or null.
+     *
+     * A scheduled enrollment (see scheduleEnrollment) gives no access, so it returns null here.
+     * When its date has passed, it is activated first.
+     *
+     * @return SpaceUserPivot|null
+     */
     public static function getCourseEnrollment($courseId, $userId = null)
+    {
+        $row = self::getEnrollmentRow($courseId, $userId);
+
+        if (!$row || $row->status !== SpaceUserPivot::STATUS_SCHEDULED) {
+            return $row;
+        }
+
+        if ($row->starts_at && $row->starts_at <= current_time('mysql')) {
+            self::activateScheduledEnrollment($row);
+            $row = self::getEnrollmentRow($courseId, $userId);
+
+            return ($row && $row->status !== SpaceUserPivot::STATUS_SCHEDULED) ? $row : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * The member's enrollment row in any status, cached for the request.
+     *
+     * @return SpaceUserPivot|null
+     */
+    protected static function getEnrollmentRow($courseId, $userId = null)
     {
         if (!$userId) {
             $userId = get_current_user_id();
@@ -63,17 +360,16 @@ class CourseHelper
             return null;
         }
 
-        static $enrollmentCache = [];
-        $key = $courseId . '_' . $userId;
-        if (array_key_exists($key, $enrollmentCache)) {
-            return $enrollmentCache[$key];
+        $key = (int) $courseId . '_' . (int) $userId;
+        if (array_key_exists($key, self::$enrollmentCache)) {
+            return self::$enrollmentCache[$key];
         }
 
-        $enrollmentCache[$key] = SpaceUserPivot::where('space_id', $courseId)
+        self::$enrollmentCache[$key] = SpaceUserPivot::where('space_id', $courseId)
             ->where('user_id', $userId)
             ->first();
 
-        return $enrollmentCache[$key];
+        return self::$enrollmentCache[$key];
     }
 
     public static function getCoursePublishedLessonIds($courseId)
@@ -136,6 +432,75 @@ class CourseHelper
         }
 
         return $progressMap;
+    }
+
+    /**
+     * One user's progress (0-100) in many courses, keyed by course id. Same math as
+     * getCourseProgress(), in two queries instead of two per course.
+     */
+    public static function getUserCoursesProgress($courseIds, $userId)
+    {
+        if (!$courseIds || !$userId) {
+            return [];
+        }
+
+        $progressMap = array_fill_keys($courseIds, 0);
+
+        $lessonCourseMap = CourseLesson::whereIn('space_id', $courseIds)
+            ->where('status', 'published')
+            ->pluck('space_id', 'id')
+            ->toArray();
+
+        if (!$lessonCourseMap) {
+            return $progressMap;
+        }
+
+        $totals = array_count_values($lessonCourseMap);
+
+        $completedLessonIds = Reaction::where('user_id', $userId)
+            ->whereIn('object_id', array_keys($lessonCourseMap))
+            ->where('object_type', 'lesson_completed')
+            ->where('type', 'completed')
+            ->pluck('object_id')
+            ->toArray();
+
+        $completed = [];
+        foreach ($completedLessonIds as $lessonId) {
+            $courseId = $lessonCourseMap[$lessonId];
+            $completed[$courseId] = ($completed[$courseId] ?? 0) + 1;
+        }
+
+        foreach ($completed as $courseId => $count) {
+            $progressMap[$courseId] = min(floor(($count / $totals[$courseId]) * 100), 100);
+        }
+
+        return $progressMap;
+    }
+
+    /**
+     * Section, lesson and student counts for many courses, keyed by course id.
+     * Same counts as the per-course queries on the course list, in three queries.
+     */
+    public static function getCoursesCounts($courseIds)
+    {
+        if (!$courseIds) {
+            return [ 'sections' => [], 'lessons' => [], 'students' => [] ];
+        }
+
+        $countBySpace = function ($query) use ($courseIds) {
+            return $query->whereIn('space_id', $courseIds)
+                ->selectRaw('space_id, COUNT(*) as total')
+                ->groupBy('space_id')
+                ->pluck('total', 'space_id')
+                ->toArray();
+        };
+
+        return [
+            'sections' => $countBySpace(CourseTopic::query()),
+            'lessons'  => $countBySpace(CourseLesson::query()),
+            // Scheduled enrollments have no access yet, so they do not count as students
+            'students' => $countBySpace(SpaceUserPivot::where('status', '!=', SpaceUserPivot::STATUS_SCHEDULED)),
+        ];
     }
 
     public static function getCompletedLessonIds($courseId, $userId = null)
@@ -433,7 +798,10 @@ class CourseHelper
 
         $accessAfterEnrollment = $section->reactions_count;
 
-        return gmdate('Y-m-d H:i:s', strtotime($enrollment->created_at) + $accessAfterEnrollment * 86400);
+        // The drip counts from the day the member's access starts (scheduleEnrollment), else the enrollment date
+        $start = strtotime(self::getAccessStartDate($enrollment));
+
+        return gmdate('Y-m-d H:i:s', $start + $accessAfterEnrollment * 86400);
     }
 
     public static function sanitizeLessonMeta($meta, $lesson)
@@ -554,9 +922,13 @@ class CourseHelper
             return null;
         }
 
-        return Course::whereHas('students', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
-        })
+        // Every enrollment, scheduled ones included: the FluentCRM profile shows each one with its status
+        $courseIds = SpaceUserPivot::where('user_id', $userId)
+            ->where('role', 'student')
+            ->pluck('space_id')
+            ->toArray();
+
+        return Course::whereIn('id', $courseIds ? $courseIds : [ 0 ])
             ->with('enrollment', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
@@ -661,7 +1033,13 @@ class CourseHelper
         $bodyMessage = __('Please enroll in this course to access this lesson', 'fluent-community');
         $backToCourseText = __('Back to Course', 'fluent-community');
 
-        if ($isLocked && Arr::get($config, 'lock_type') === 'sequential') {
+        if ($isLocked && Arr::get($config, 'lock_type') === 'course_opens' && $unlockDate) {
+            $headerMessage = __('This course opens for you soon', 'fluent-community');
+            /* translators: %s is replaced by the date the course opens */
+            $bodyMessage = sprintf(__('It opens on %s', 'fluent-community'),
+                date_i18n(get_option('date_format'), strtotime($unlockDate))
+            );
+        } elseif ($isLocked && Arr::get($config, 'lock_type') === 'sequential') {
             $headerMessage = __('Complete the previous lesson first', 'fluent-community');
             $bodyMessage = __('You need to complete the previous lesson before unlocking this one.', 'fluent-community');
         } elseif ($isLocked && $unlockDate) {
@@ -730,11 +1108,20 @@ class CourseHelper
         $unlockDate = '';
         $hasSectionAccess = false;
 
+        $courseOpensOn = null;
+
         if ($enrollment) {
             $unlockDate = $section ? self::getSectionAccessDate($section, $course->getCourseType(), $enrollment) : null;
             $hasSectionAccess = !$unlockDate || strtotime($unlockDate) <= strtotime(current_time('mysql'));
             if ($hasSectionAccess) {
                 $unlockDate = null;
+            }
+        } elseif ($user && !$isCourseAdmin) {
+            // Enrolled ahead of time (scheduleEnrollment): no access yet, but the lock says when it opens
+            $scheduled = self::getScheduledEnrollment($course->id, $user->ID);
+            if ($scheduled && $scheduled->starts_at) {
+                $courseOpensOn = $scheduled->starts_at;
+                $unlockDate = $courseOpensOn;
             }
         }
 
@@ -747,6 +1134,11 @@ class CourseHelper
             'has_section_access' => $hasSectionAccess,
             'has_public_access'  => $hasPublicAccess,
         ]);
+
+        // The course-wide open date outranks any per-lesson lock a filter set
+        if ($courseOpensOn && empty($access['can_view'])) {
+            $access['lock_type'] = 'course_opens';
+        }
 
         $access['unlock_date'] = $unlockDate;
         $access['has_section_access'] = $hasSectionAccess;

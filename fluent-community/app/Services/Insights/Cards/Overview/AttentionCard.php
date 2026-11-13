@@ -33,7 +33,7 @@ class AttentionCard extends AbstractCard
 
     public function title()
     {
-        return __('Needs attention', 'fluent-community');
+        return __('Needs Attention', 'fluent-community');
     }
 
     public function description()
@@ -64,7 +64,7 @@ class AttentionCard extends AbstractCard
         $items = [
             [
                 'key'      => 'response.unanswered',
-                'label'    => __('Unanswered posts', 'fluent-community'),
+                'label'    => __('Unanswered Posts', 'fluent-community'),
                 'action'   => __('Reply', 'fluent-community'),
                 'severity' => 'warn',
                 'hint'     => __('No reply after 24 hours, last 30 days', 'fluent-community'),
@@ -74,7 +74,7 @@ class AttentionCard extends AbstractCard
             ],
             [
                 'key'      => 'mod.pending_content',
-                'label'    => __('Posts and comments waiting for review', 'fluent-community'),
+                'label'    => __('Posts and Comments Waiting for Review', 'fluent-community'),
                 'action'   => __('Review', 'fluent-community'),
                 'severity' => 'warn',
                 'hint'     => __('Held for approval', 'fluent-community'),
@@ -84,7 +84,7 @@ class AttentionCard extends AbstractCard
             ],
             [
                 'key'      => 'members.pending',
-                'label'    => $scope->spaceId() ? __('Join requests waiting for approval', 'fluent-community') : __('Members waiting for approval', 'fluent-community'),
+                'label'    => $scope->spaceId() ? __('Join Requests Waiting for Approval', 'fluent-community') : __('Members Waiting for Approval', 'fluent-community'),
                 'action'   => __('Approve', 'fluent-community'),
                 'severity' => 'info',
                 'hint'     => $scope->spaceId() ? __('Pending join requests', 'fluent-community') : __('Pending profiles', 'fluent-community'),

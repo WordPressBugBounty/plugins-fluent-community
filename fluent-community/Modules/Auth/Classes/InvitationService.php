@@ -57,7 +57,9 @@ class InvitationService
             return $errors;
         }
 
-        if (!$user_pass) {
+        $passwordGenerated = !$user_pass;
+
+        if ($passwordGenerated) {
             $user_pass = wp_generate_password(8, false);
         }
 
@@ -105,6 +107,11 @@ class InvitationService
             $errors->add('registerfail', __('<strong>Error</strong>: Could not register you. Please contact the site admin!', 'fluent-community')
             );
             return $errors;
+        }
+
+        // Tells WordPress, and plugins that read it, that nobody chose this password.
+        if ($passwordGenerated) {
+            update_user_option($user_id, 'default_password_nag', true, true);
         }
 
         if (!empty($_COOKIE['wp_lang'])) {

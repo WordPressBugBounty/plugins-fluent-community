@@ -35,14 +35,18 @@ class NotificationPref
         'mention' => [ 'mail' => 'mention_mail', 'push' => 'mention_push' ],
         'co_comment' => [ 'push' => 'co_com_push' ],
         'digest'  => [ 'mail' => 'digest_mail' ],
+        // Announcement emails (an admin post sent to every space member). See AnnouncementPref.
+        'announcement' => [ 'mail' => 'announcement_mail' ],
     ];
 
     /**
-     * The digest is the one event whose admin default is named differently from
-     * the member's row key. Everything else falls back to NOTIFICATION_EVENTS.
+     * Events whose admin default is named differently from the member's row
+     * key. Everything else falls back to NOTIFICATION_EVENTS.
      */
     const GLOBAL_KEY_OVERRIDES = [
         'digest.mail' => 'digest_email_status',
+        // The site's announcement email switch doubles as the member default.
+        'announcement.mail' => 'mention_mail',
     ];
 
     /**
@@ -348,8 +352,11 @@ class NotificationPref
             $keptIds[] = $created->id;
         }
 
+        // The spaces a member keeps for announcement emails are written by
+        // AnnouncementPref::setAllowedSpaces(), so a form save must not delete them.
         $staleQuery = NotificationPreference::where('user_id', $userId)
-            ->whereIn('channel', $channels);
+            ->whereIn('channel', $channels)
+            ->where('event_key', '!=', AnnouncementPref::SPACE_EVENT);
 
         if ($keptIds) {
             $staleQuery->whereNotIn('id', $keptIds);

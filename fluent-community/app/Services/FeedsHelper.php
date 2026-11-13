@@ -123,6 +123,11 @@ class FeedsHelper
         return true;
     }
 
+    public static function getMaxPostLength()
+    {
+        return (int) apply_filters('fluent_community/max_post_length', 15000);
+    }
+
     public static function getLastFeedId()
     {
         $lastItem = Feed::where('status', 'published')
@@ -608,7 +613,7 @@ class FeedsHelper
         return $feed;
     }
 
-    public static function sanitizeAndValidateData($data)
+    public static function sanitizeAndValidateData($data, $messageRequired = true)
     {
         $message = CustomSanitizer::unslashMarkdown(trim((string) Arr::get($data, 'message', '')));
 
@@ -616,9 +621,9 @@ class FeedsHelper
         $messageForValidation = html_entity_decode($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $messageForValidation = preg_replace('/\s+/u', '', $messageForValidation);
 
-        if (!$messageForValidation) {
+        if (!$messageForValidation && $messageRequired) {
             throw new UnprocessableEntityHttpException(
-                esc_html__('Message is required', 'fluent-community'),
+                esc_html__('Post message is required', 'fluent-community'),
                 'feed_message_required'
             );
         }
@@ -660,8 +665,8 @@ class FeedsHelper
             }
         }
 
-        $maxlen = apply_filters('fluent_community/max_post_length', 15000);
-        if (\strlen($message) > $maxlen) {
+        $maxlen = self::getMaxPostLength();
+        if (mb_strlen($message, 'UTF-8') > $maxlen) {
             throw new UnprocessableEntityHttpException(
                 /* translators: %s is the maximum allowed character count */
                 esc_html(sprintf(__('The post is too long. Please keep it under %s characters.', 'fluent-community'), number_format($maxlen))),
@@ -1179,7 +1184,10 @@ class FeedsHelper
             $feedMeta = $feed->meta;
             $documentLists = Arr::get($feedMeta, 'document_lists', []);
             foreach ($documentLists as $index => $document) {
-                $documentLists[$index]['url'] = Helper::baseUrl('?fcom_action=download_document&media_key=' . $document['media_key'] . '&media_id=' . $document['id']);
+                $documentLists[$index]['url'] = Helper::actionUrl('download_document', [
+                    'media_key' => $document['media_key'],
+                    'media_id'  => $document['id'],
+                ]);
             }
             $feedMeta['document_lists'] = $documentLists;
             $feed->meta = $feedMeta;

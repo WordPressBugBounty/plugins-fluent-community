@@ -9,16 +9,16 @@ use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\SpaceUserPivot;
 use FluentCommunity\App\Models\XProfile;
+use FluentCommunity\App\Services\AnnouncementPref;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\NotificationPref;
 use FluentCommunity\App\Services\ProfileHelper;
+use FluentCommunity\App\Services\RateLimiter;
 use FluentCommunity\Framework\Http\Request\Request;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\Framework\Support\Collection;
-use FluentCommunity\Modules\Course\Model\CourseLesson;
-use FluentCommunity\Modules\Course\Model\CourseTopic;
 use FluentCommunity\Modules\Course\Services\CourseHelper;
 use FluentCommunity\Modules\PushNotification\PushNotificationModule;
 use FluentCommunity\Framework\Foundation\Exceptions\HttpException;
@@ -381,7 +381,7 @@ class ProfileController extends Controller
         $socialLinks = Arr::get($data, 'social_links', []);
 
         $maxDescriptionLength = apply_filters('fluent_community/max_profile_description_length', 5000);
-        if ($updateData['short_description'] && strlen($updateData['short_description']) > $maxDescriptionLength) {
+        if ($updateData['short_description'] && mb_strlen($updateData['short_description'], 'UTF-8') > $maxDescriptionLength) {
             return $this->sendError([
                 'message' => sprintf(
                     /* translators: %d: Maximum number of characters allowed in the profile bio. */
@@ -528,19 +528,18 @@ class ProfileController extends Controller
 
         $user = get_user_by('id', $xProfile->user_id);
 
-        // Throttle failed current-password checks so a hijacked session can't brute-force it.
+        // Throttle current-password checks so a hijacked session can't brute-force it.
+        // Each check is counted before it runs and a success clears the count.
         // Owner-only endpoint, so nobody else can trigger this lock.
         $attemptsKey = 'fcom_pwd_change_fails_' . $xProfile->user_id;
-        $failedAttempts = (int) get_transient($attemptsKey);
 
-        if ($failedAttempts >= 5) {
+        if (RateLimiter::hit($attemptsKey, 5, 15 * MINUTE_IN_SECONDS)) {
             return $this->sendError([
                 'message' => __('Too many failed attempts. Please try again later', 'fluent-community'),
             ]);
         }
 
         if (!$user || !wp_check_password($currentPassword, $user->user_pass, $user->ID)) {
-            set_transient($attemptsKey, $failedAttempts + 1, 15 * MINUTE_IN_SECONDS);
             return $this->sendError([
                 'message' => __('Your current password is incorrect', 'fluent-community'),
             ]);
@@ -620,16 +619,21 @@ class ProfileController extends Controller
             ]);
         }
 
-        if ((int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator())) {
-            $spaces = $xProfile->spaces()
-                ->wherePivot('status', 'active')
-                ->get();
-        } else {
-            $spaces = $xProfile->spaces()
-                ->whereIn('privacy', [ 'public', 'private' ])
-                ->wherePivot('status', 'active')
-                ->get();
-        }
+        $hasAllAccess = (int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
+
+        $query = $xProfile->spaces()
+            ->wherePivot('status', 'active')
+            ->when(!$hasAllAccess, function ($q) {
+                $q->whereIn('fcom_spaces.privacy', [ 'public', 'private' ]);
+            });
+
+        $sortBy = Utility::getListingSort('space', $request->getSafe('sort_by', 'sanitize_text_field', ''));
+
+        Utility::applyListingSort($query, $sortBy, 'fluent_community_spaces_order', 'fcom_spaces');
+
+        $spaces = $query->get();
+
+        $memberCounts = SpaceUserPivot::getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
             $space->settings = $space->getVisibleSettings($currentUser);
@@ -640,7 +644,7 @@ class ProfileController extends Controller
                 $space->members_count = 0;
                 continue;
             }
-            $space->members_count = $space->members()->count();
+            $space->members_count = (int) Arr::get($memberCounts, $space->id, 0);
         }
 
             $data = [
@@ -671,29 +675,37 @@ class ProfileController extends Controller
 
         $hasAllAccess = (int) $xProfile->user_id === get_current_user_id() || ($currentUser && $currentUser->isCommunityModerator());
 
-        $courses = $xProfile->courses()
+        $query = $xProfile->courses()
             ->wherePivot('status', 'active')
             ->where('fcom_spaces.status', 'published')
             ->when(!$hasAllAccess, function ($q) {
                 $q->whereIn('fcom_spaces.privacy', [ 'public', 'private' ]);
-            })
-            ->get();
+            });
+
+        $sortBy = Utility::getListingSort('course', $request->getSafe('sort_by', 'sanitize_text_field', ''));
+
+        Utility::applyListingSort($query, $sortBy, 'fluent_community_courses_order', 'fcom_spaces');
+
+        $courses = $query->get();
+
+        $courseIds = $courses->pluck('id')->toArray();
+        $counts = CourseHelper::getCoursesCounts($courseIds);
+        $progress = CourseHelper::getUserCoursesProgress($courseIds, $xProfile->user_id);
 
         foreach ($courses as $course) {
             $course->settings = $course->getVisibleSettings($currentUser);
-            $course->isEnrolled = CourseHelper::isEnrolled($course->id, $xProfile->user_id);
-            if ($course->isEnrolled) {
-                $course->progress = CourseHelper::getCourseProgress($course->id, $xProfile->user_id);
-            }
+            // Every course here comes from the member's active enrollment, so no lookup is needed.
+            $course->isEnrolled = true;
+            $course->progress = Arr::get($progress, $course->id, 0);
 
             if (!$course->cover_photo) {
                 $course->cover_photo = FLUENT_COMMUNITY_PLUGIN_URL . 'assets/images/course-placeholder.jpg';
             }
 
-            $course->sectionsCount = CourseTopic::where('space_id', $course->id)->count();
-            $course->lessonsCount = CourseLesson::where('space_id', $course->id)->count();
+            $course->sectionsCount = (int) Arr::get($counts['sections'], $course->id, 0);
+            $course->lessonsCount = (int) Arr::get($counts['lessons'], $course->id, 0);
             if (Arr::get($course->settings, 'hide_members_count') !== 'yes') {
-                $course->studentsCount = SpaceUserPivot::where('space_id', $course->id)->count();
+                $course->studentsCount = (int) Arr::get($counts['students'], $course->id, 0);
             } else {
                 $course->studentsCount = 0;
             }
@@ -817,6 +829,12 @@ class ProfileController extends Controller
             'com_my_post_mail'        => Arr::get($globalPreferances, 'com_my_post_mail') ? 'yes' : 'no',
             'message_email_frequency' => $isGlobalPerUser ? 'disabled' : 'default',
         ];
+
+        $announcementEnabled = Utility::hasEmailAnnouncementEnabled();
+        if ($announcementEnabled) {
+            // On for everyone unless the member turned it off.
+            $userGlobalPrefsDefaults['announcement_mail'] = 'yes';
+        }
 
         if ($pushAvailable) {
             $pushPreferances = NotificationPref::getGlobalPrefs('push');
@@ -944,6 +962,12 @@ class ProfileController extends Controller
             'default_messaging_email_frequency' => Arr::get($messagingConfig, 'messaging_email_status') !== 'yes' ? 'no' : Arr::get($messagingConfig, 'messaging_email_frequency'),
             'crm_email_status'                  => $crmEmailStatus,
             'push_available'                    => $pushAvailable,
+            'announcement_enabled'              => $announcementEnabled,
+            // Spaces kept while announcement emails are off. Returned even while the
+            // site has announcements off, so a save cannot send back an empty list.
+            'announcement_allowed'              => AnnouncementPref::getAllowedSpaceIds($xProfile->user_id),
+            // The spaces the member can keep: active memberships only.
+            'announcement_space_ids'            => $announcementEnabled ? AnnouncementPref::getMemberSpaceIds($xProfile->user_id) : [],
         ];
 
         return apply_filters('fluent_community/profile_notification_pref_api_response', $data, $request->all());
@@ -988,7 +1012,25 @@ class ProfileController extends Controller
             }
         }
 
+        // A client that predates announcement emails (older mobile apps) does not
+        // send announcement_mail. updateUserPrefs() deletes every row the payload
+        // leaves out, so carry the stored choice over instead of losing an opt-out.
+        if (!array_key_exists('announcement_mail', $userPrefs)) {
+            $storedPrefs = NotificationPref::getUserPrefs($xProfile->user_id);
+            if (array_key_exists('announcement_mail', $storedPrefs)) {
+                $userPrefs['announcement_mail'] = $storedPrefs['announcement_mail'];
+            }
+        }
+
         NotificationPref::updateUserPrefs($xProfile->user_id, $userPrefs);
+
+        // Optional: older clients do not send it, and then the kept spaces stay as they are.
+        // Not while the site has announcement emails off: the form cannot show the
+        // list then, so whatever it sends must not replace the stored one.
+        $allowedSpaces = $request->get('announcement_allowed', null);
+        if (is_array($allowedSpaces) && Utility::hasEmailAnnouncementEnabled()) {
+            AnnouncementPref::setAllowedSpaces($xProfile->user_id, $allowedSpaces);
+        }
 
         return [
             'prefs'   => $userPrefs,

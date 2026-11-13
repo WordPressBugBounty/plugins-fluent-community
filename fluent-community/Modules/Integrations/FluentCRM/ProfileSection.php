@@ -209,14 +209,14 @@ class ProfileSection
         }
 
         foreach ($removeSpaceIds as $removeSpaceId) {
-            $space = BaseSpace::withoutGlobalScopes()->find($removeSpaceId);
+            $space = BaseSpace::query()->onlyMain()->find($removeSpaceId);
             if ($space) {
                 Helper::removeFromSpace($space, $userId);
             }
         }
 
         foreach ($spaceIds as $spaceId) {
-            $space = BaseSpace::withoutGlobalScopes()->find($spaceId);
+            $space = BaseSpace::query()->onlyMain()->find($spaceId);
             /** @var BaseSpace|null $space */
             if ($space) {
                 Helper::addToSpace($space, $userId);

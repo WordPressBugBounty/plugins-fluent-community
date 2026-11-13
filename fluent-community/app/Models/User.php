@@ -463,7 +463,8 @@ class User extends Model
         if ($space) {
             $membership = $space->getMembership($this->ID);
 
-            if ($membership) {
+            // A course enrollment that has not opened yet (status 'scheduled') gives no role in the space
+            if ($membership && $membership->pivot->status !== SpaceUserPivot::STATUS_SCHEDULED) {
                 $role = $membership->pivot->role;
                 $status = $membership->pivot->status;
 
@@ -531,7 +532,7 @@ class User extends Model
 
         $permissions = [
             'admin'               => $isAdmin,
-            'super_admin'         => Helper::isSuperAdmin(),
+            'super_admin'         => Helper::isSuperAdmin($this->ID),
             'community_admin'     => $isAdmin,
             'community_moderator' => $isModerator,
             'delete_any_feed'     => $isModerator,
@@ -648,7 +649,7 @@ class User extends Model
                 'delete_any_feed'      => $isMod,
                 'edit_any_comment'     => $isMod,
                 'delete_any_comment'   => $isMod,
-                'super_admin'          => Helper::isSuperAdmin(),
+                'super_admin'          => Helper::isSuperAdmin($this->ID),
                 'read'                 => true,
                 'can_remove_member'    => $isAdmin,
                 'can_add_member'       => $isAdmin,

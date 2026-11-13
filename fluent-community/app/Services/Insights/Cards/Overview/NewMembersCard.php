@@ -27,7 +27,7 @@ class NewMembersCard extends AbstractCard
 
     public function title()
     {
-        return __('New members', 'fluent-community');
+        return __('New Members', 'fluent-community');
     }
 
     public function description()
@@ -59,14 +59,14 @@ class NewMembersCard extends AbstractCard
         return $this->timeseries($bucketer, [
             [
                 'key'      => 'members.new',
-                'label'    => __('New members', 'fluent-community'),
+                'label'    => __('New Members', 'fluent-community'),
                 'values'   => $bucketer->fill(MemberMetrics::newByBucket($range, $scope, $bucketer)),
                 'previous' => $previous,
             ],
         ], 'count', [
             'chart'    => 'column',
             'headline' => [
-                'label'  => __('Total members', 'fluent-community'),
+                'label'  => __('Total Members', 'fluent-community'),
                 'value'  => MemberMetrics::totalAt($range->to(), $scope),
                 'format' => 'number',
             ],

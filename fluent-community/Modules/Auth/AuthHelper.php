@@ -4,6 +4,7 @@ namespace FluentCommunity\Modules\Auth;
 
 use FluentCommunity\App\App;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\RateLimiter;
 use FluentCommunity\App\Services\Libs\Mailer;
 use FluentCommunity\Framework\Support\Arr;
 
@@ -62,7 +63,9 @@ class AuthHelper
             return $errors;
         }
 
-        if (!$user_pass) {
+        $passwordGenerated = !$user_pass;
+
+        if ($passwordGenerated) {
             $user_pass = wp_generate_password(8, false);
         }
 
@@ -110,6 +113,11 @@ class AuthHelper
             $errors->add('registerfail', __('<strong>Error</strong>: Could not register you. Please contact the site admin!', 'fluent-community')
             );
             return $errors;
+        }
+
+        // Tells WordPress, and plugins that read it, that nobody chose this password.
+        if ($passwordGenerated) {
+            update_user_option($user_id, 'default_password_nag', true, true);
         }
 
         if (!empty($_COOKIE['wp_lang'])) {
@@ -293,9 +301,15 @@ class AuthHelper
     public static function getLostPasswordUrl($redirectUrl = '')
     {
         if (self::isFluentAuthAvailable()) {
-            $url = add_query_arg([
-                'form' => 'reset_password',
-            ], Helper::getAuthUrl());
+            $authUrl = Helper::getAuthUrl();
+            if ($authUrl === Helper::authUrl('login')) {
+                // The built-in auth screen: use its reset password URL (readable path when on).
+                $url = Helper::authUrl('reset_password');
+            } else {
+                $url = add_query_arg([
+                    'form' => 'reset_password',
+                ], $authUrl);
+            }
         } else {
             $url = wp_lostpassword_url($redirectUrl);
         }
@@ -368,7 +382,6 @@ class AuthHelper
             'email'     => $formData['email'],
             'code_hash' => $codeHash,
             'expires'   => time() + 600, // 10 minutes expiry
-            'attempts'  => 0,
         ], 600);
 
         /* translators: %s is replaced by the title of the site */
@@ -450,6 +463,37 @@ class AuthHelper
         return ob_get_clean();
     }
 
+    /**
+     * The 2FA code step of the login form. Wordfence reads the code from the `wfls-token` field.
+     *
+     * @return string
+     */
+    public static function loginCodeFieldHtml()
+    {
+        ob_start();
+        ?>
+        <div class="fls_signup_verification fcom_login_code_step">
+            <p id="fcom_login_code_help"><?php esc_html_e('Enter the code from your authenticator app or a recovery code.', 'fluent-community'); ?></p>
+            <div class="fcom_form-group fcom_field_verification">
+                <div class="fcom_form_label">
+                    <label for="fcom_field_login_code"><?php esc_html_e('Authentication Code', 'fluent-community'); ?></label>
+                </div>
+                <div class="fs_input_wrap">
+                    <input type="text" id="fcom_field_login_code" name="wfls-token" autocomplete="one-time-code" aria-describedby="fcom_login_code_help" required/>
+                </div>
+            </div>
+            <div class="fcom_form-group">
+                <div class="fcom_form_input">
+                    <button type="submit" class="fcom_btn fcom_btn_primary">
+                        <span><?php esc_html_e('Verify and Log In', 'fluent-community'); ?></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
     public static function validateVerificationCode($code, $verificationToken, $formData)
     {
         if (!is_string($verificationToken) || $verificationToken === '') {
@@ -472,20 +516,21 @@ class AuthHelper
             return new \WP_Error('invalid_email', __('Invalid email address. Please try again', 'fluent-community'));
         }
 
-        // Cap online guesses per challenge: after too many wrong codes the challenge is burned.
-        if ((int) Arr::get($data, 'attempts', 0) >= 10) {
+        // Cap online guesses per challenge: after too many codes the challenge is burned.
+        // Each guess is counted before the check, so parallel guesses can't share one count.
+        $attemptsKey = 'fcom_signup_2fa_tries_' . md5($verificationToken);
+        if (RateLimiter::hit($attemptsKey, 10, (int) $data['expires'] - time())) {
             delete_transient($transientKey);
             return new \WP_Error('too_many_attempts', __('Too many invalid attempts. Please try again', 'fluent-community'));
         }
 
         if (!wp_check_password($code, $data['code_hash'])) {
-            $data['attempts'] = (int) Arr::get($data, 'attempts', 0) + 1;
-            set_transient($transientKey, $data, max(1, (int) $data['expires'] - time()));
             return new \WP_Error('invalid_code', __('Invalid verification code. Please try again', 'fluent-community'));
         }
 
         // Single-use: consume the challenge on success.
         delete_transient($transientKey);
+        delete_transient($attemptsKey);
 
         return true;
     }
@@ -496,19 +541,11 @@ class AuthHelper
             return true;
         }
 
-        $transientKey = 'fluent_com_rate_limit_' . md5(Helper::getIp());
-        $rateLimit = get_transient($transientKey);
-
-        if (!$rateLimit) {
-            $rateLimit = 0;
-        }
-
-        if ($rateLimit >= 10) {
+        // 10 attempts per IP per 5 minutes.
+        if (RateLimiter::hit('fluent_com_rate_limit_' . md5(Helper::getIp()), 10, 300)) {
             return new \WP_Error('rate_limit', __('Too many requests. Please try again later', 'fluent-community'));
         }
 
-        ++$rateLimit;
-        set_transient($transientKey, $rateLimit, 300); // per 5 minutes
         return true;
     }
 

@@ -13,6 +13,8 @@ $router->prefix('spaces')->withPolicy('SpacePolicy')->group(function ($router) {
     $router->post('/{spaceSlug}/join', 'SpaceController@join')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/leave', 'SpaceController@leave')->alphaNumDash('spaceSlug');
     $router->post('/{spaceSlug}/mark-seen', 'SpaceController@markSeen')->alphaNumDash('spaceSlug');
+    $router->get('/{spaceSlug}/email-pref', 'SpaceController@getEmailPref')->alphaNumDash('spaceSlug');
+    $router->post('/{spaceSlug}/email-pref', 'SpaceController@updateEmailPref')->alphaNumDash('spaceSlug');
 
     $router->get('/{spaceSlug}/meta-settings', 'SpaceController@getMetaSettings')->alphaNumDash('spaceSlug');
 
@@ -57,7 +59,7 @@ $router->prefix('feeds')->withPolicy('PortalPolicy')->group(function ($router) {
     $router->post('/{feed_id}/comments', 'CommentsController@store')->int('feed_id');
     $router->post('/{feed_id}/comments/{comment_id}', 'CommentsController@update')->int('feed_id')->int('comment_id');
     $router->patch('/{feed_id}/comments/{comment_id}', 'CommentsController@patchComment')->int('feed_id')->int('comment_id');
-    $router->post('/{feed_id}/react', 'CommentsController@addOrRemovePostReact')->int('feed_id');
+    $router->post('/{feed_id}/react', 'ReactionController@addOrRemovePostReact')->int('feed_id');
     $router->delete('/{feed_id}/comments/{comment_id}', 'CommentsController@deleteComment')->int('feed_id')->int('comment_id');
 
     $router->post('/{feed_id}/comments/{comment_id}/reactions', 'CommentsController@toggleReaction')->int('feed_id')->int('comment_id');
@@ -131,6 +133,9 @@ $router->prefix('admin')->withPolicy('SuperAdminPolicy')->group(function ($route
 
     $router->post('/on-boardings', 'AdminController@saveOnBoardingSettings');
     $router->post('/on-boardings/change-slug', 'AdminController@changePortalSlug');
+
+    $router->post('/site-icon', 'AdminController@uploadSiteIcon');
+    $router->delete('/site-icon', 'AdminController@removeSiteIcon');
 });
 
 $router->prefix('search')->withPolicy('PortalPolicy')->group(function ($router) {
@@ -186,9 +191,15 @@ $router->prefix('settings')->withPolicy('AdminPolicy')->group(function ($router)
     $router->post('privacy-settings', 'SettingController@updatePrivacySettings');
     $router->get('color-config', 'SettingController@getColorConfig');
 
+    $router->get('getting-started', 'SettingController@getGettingStarted');
+    $router->post('getting-started', 'SettingController@updateGettingStarted');
+
     $router->get('crm-tagging-config', 'SettingController@getCrmTaggingConfig');
 
     $router->get('fluent-player-settings', 'SettingController@getFluentPlayerSettings');
     $router->post('fluent-player-settings', 'SettingController@updateFluentPlayerSettings');
+
+    $router->get('fluent-event-settings', 'SettingController@getFluentEventSettings');
+    $router->post('fluent-event-settings', 'SettingController@updateFluentEventSettings');
 
 });

@@ -72,7 +72,9 @@ class InsightsController extends Controller
             return $this->sendError([ 'message' => __('This card cannot be exported.', 'fluent-community') ], 422);
         }
 
-        $payload = $cardObject->payload($range, $scope, $options);
+        // Export ignores the pager, so every export shares one cache entry
+        unset($options['page'], $options['per_page']);
+        $payload = $cardObject->payload($range, $scope, array_merge($options, [ 'export' => true ]));
 
         return [
             'filename' => sanitize_file_name('insights-' . str_replace('.', '-', $cardObject->key()) . '-' . $range->fromDate() . '-' . $range->toDate() . '.csv'),

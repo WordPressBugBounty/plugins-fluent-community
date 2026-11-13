@@ -17,6 +17,7 @@ return array(
     'manifest' => [
         '_BgImageUpload.js' => array(
             'file' => 'BgImageUpload.js',
+            'name' => 'BgImageUpload',
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -26,6 +27,7 @@ return array(
         ),
         '_CustomizerShell.js' => array(
             'file' => 'CustomizerShell.js',
+            'name' => 'CustomizerShell',
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -35,6 +37,7 @@ return array(
         ),
         '_FullEditorFrame.js' => array(
             'file' => 'FullEditorFrame.js',
+            'name' => 'FullEditorFrame',
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -44,6 +47,7 @@ return array(
         ),
         '__MenuGroupSettings.js' => array(
             'file' => '_MenuGroupSettings.js',
+            'name' => '_MenuGroupSettings',
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -54,21 +58,25 @@ return array(
         ),
         '_dayjs.js' => array(
             'file' => 'dayjs.js',
+            'name' => 'dayjs',
         ),
         '_emoji-picker.js' => array(
             'file' => 'emoji-picker.js',
+            'name' => 'emoji-picker',
             'imports' => array(
                 '_vue.js',
             ),
         ),
         '_fcom-utils.js' => array(
             'file' => 'fcom-utils.js',
+            'name' => 'fcom-utils',
             'imports' => array(
                 '_dayjs.js',
             ),
         ),
         '_index.js' => array(
             'file' => 'index.js',
+            'name' => 'index',
             'imports' => array(
                 '_vendor.js',
                 '_vue.js',
@@ -78,9 +86,11 @@ return array(
         ),
         '_index4.js' => array(
             'file' => 'index4.js',
+            'name' => 'index',
         ),
         '_index6.js' => array(
             'file' => 'index6.js',
+            'name' => 'index',
             'imports' => array(
                 '_index.js',
                 '_vue.js',
@@ -88,6 +98,7 @@ return array(
         ),
         '_milkdown.js' => array(
             'file' => 'milkdown.js',
+            'name' => 'milkdown',
             'imports' => array(
                 '_vendor.js',
                 '_fcom-utils.js',
@@ -96,19 +107,21 @@ return array(
         ),
         '_pinia.js' => array(
             'file' => 'pinia.js',
+            'name' => 'pinia',
             'imports' => array(
-                '_vendor.js',
                 '_vue.js',
             ),
         ),
         '_todoList.js' => array(
             'file' => 'todoList.js',
+            'name' => 'todoList',
             'imports' => array(
                 '_vendor.js',
             ),
         ),
         '_vendor.js' => array(
             'file' => 'vendor.js',
+            'name' => 'vendor',
             'imports' => array(
                 '_vue.js',
                 '_dayjs.js',
@@ -116,62 +129,71 @@ return array(
         ),
         '_vue-router.js' => array(
             'file' => 'vue-router.js',
+            'name' => 'vue-router',
             'imports' => array(
                 '_vue.js',
             ),
         ),
         '_vue.js' => array(
             'file' => 'vue.js',
+            'name' => 'vue',
         ),
         'src/Modules/Common/ManagePaywalls.vue' => array(
             'file' => 'admin_ManagePaywalls.js',
+            'name' => 'ManagePaywalls',
+            'src' => 'src/Modules/Common/ManagePaywalls.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 '_admin_ImagePlaceholder.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/ManagePaywalls.vue',
         ),
         'src/Modules/Common/ManageSpaceMenu.vue' => array(
             'file' => 'admin_ManageSpaceMenu.js',
+            'name' => 'ManageSpaceMenu',
+            'src' => 'src/Modules/Common/ManageSpaceMenu.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/ManageSpaceMenu.vue',
         ),
         'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts' => array(
             'file' => 'admin_index7.js',
+            'name' => 'index',
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index4.js',
                 '_admin_todoList.js',
                 'src/admin_app.js',
-                '_admin_index.es2.js',
+                '_admin_index2.es.js',
                 '_admin_floating-ui.dom.js',
                 '_admin_index.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts',
         ),
         'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts' => array(
             'file' => 'admin_index6.js',
+            'name' => 'index',
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_todoList.js',
                 'src/admin_app.js',
-                '_admin_index.es2.js',
+                '_admin_index2.es.js',
                 'src/shared/vue.js',
                 '_admin_index.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts',
         ),
         'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts' => array(
             'file' => 'admin_index2.js',
+            'name' => 'index',
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_todoList.js',
                 '_admin_index.es.js',
@@ -180,22 +202,24 @@ return array(
                 '_admin_index.js',
                 '_admin_floating-ui.dom.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
         ),
         'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts' => array(
             'file' => 'admin_index3.js',
+            'name' => 'index',
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index4.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
                 '_admin_index.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts',
         ),
         'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts' => array(
             'file' => 'admin_index5.js',
+            'name' => 'index',
+            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index4.js',
                 '_admin_todoList.js',
@@ -205,11 +229,12 @@ return array(
                 '_admin_index.js',
                 '_admin_floating-ui.dom.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts',
         ),
         'src/Modules/Common/PushNotification/NotificationBlockedGuide.vue' => array(
             'file' => 'NotificationBlockedGuide.js',
+            'name' => 'NotificationBlockedGuide',
+            'src' => 'src/Modules/Common/PushNotification/NotificationBlockedGuide.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -222,11 +247,12 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/PushNotification/NotificationBlockedGuide.vue',
         ),
         'src/Modules/Feeds/Customizer/FeedSettingsRoute.vue' => array(
             'file' => 'FeedSettingsRoute.js',
+            'name' => 'FeedSettingsRoute',
+            'src' => 'src/Modules/Feeds/Customizer/FeedSettingsRoute.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -240,11 +266,12 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Feeds/Customizer/FeedSettingsRoute.vue',
         ),
         'src/Modules/Feeds/Parts/ManageFeedLinks.vue' => array(
             'file' => 'ManageFeedLinks.js',
+            'name' => 'ManageFeedLinks',
+            'src' => 'src/Modules/Feeds/Parts/ManageFeedLinks.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -258,11 +285,12 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Feeds/Parts/ManageFeedLinks.vue',
         ),
         'src/Modules/Feeds/Parts/WelcomeBannerConfig.vue' => array(
             'file' => 'WelcomeBannerConfig.js',
+            'name' => 'WelcomeBannerConfig',
+            'src' => 'src/Modules/Feeds/Parts/WelcomeBannerConfig.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -277,11 +305,12 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Feeds/Parts/WelcomeBannerConfig.vue',
         ),
         'src/Modules/Space/Customizer/SpaceLockscreen.vue' => array(
             'file' => 'admin_SpaceLockscreen.js',
+            'name' => 'SpaceLockscreen',
+            'src' => 'src/Modules/Space/Customizer/SpaceLockscreen.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
@@ -289,11 +318,12 @@ return array(
                 'src/shared/vue.js',
                 '_admin_ImagePlaceholder.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/Customizer/SpaceLockscreen.vue',
         ),
         'src/Modules/Space/Customizer/SpaceSettingsRoute.vue' => array(
             'file' => 'SpaceSettingsRoute.js',
+            'name' => 'SpaceSettingsRoute',
+            'src' => 'src/Modules/Space/Customizer/SpaceSettingsRoute.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 'src/app.js',
                 '_CustomizerShell.js',
@@ -307,31 +337,34 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/Customizer/SpaceSettingsRoute.vue',
         ),
         'src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue' => array(
             'file' => 'admin_SpaceGeneralTab.js',
+            'name' => 'SpaceGeneralTab',
+            'src' => 'src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue',
         ),
         'src/Modules/Space/Pages/ManageSpacePages.vue' => array(
             'file' => 'admin_ManageSpacePages.js',
+            'name' => 'ManageSpacePages',
+            'src' => 'src/Modules/Space/Pages/ManageSpacePages.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/Pages/ManageSpacePages.vue',
         ),
         'src/Modules/Space/Pages/ViewSpacePage.vue' => array(
             'file' => 'ViewSpacePage.js',
+            'name' => 'ViewSpacePage',
+            'src' => 'src/Modules/Space/Pages/ViewSpacePage.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_index.js',
                 'src/app.js',
@@ -344,11 +377,12 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/Pages/ViewSpacePage.vue',
         ),
         'src/Modules/Space/SpaceNotFound.vue' => array(
             'file' => 'SpaceNotFound.js',
+            'name' => 'SpaceNotFound',
+            'src' => 'src/Modules/Space/SpaceNotFound.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 'src/app.js',
                 '_vue.js',
@@ -361,10 +395,23 @@ return array(
                 '_pinia.js',
                 '_milkdown.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Space/SpaceNotFound.vue',
         ),
         'src/app.js' => array(
+            'file' => 'app.js',
+            'name' => 'app',
+            'src' => 'src/app.js',
+            'isEntry' => true,
+            'imports' => array(
+                '_vue.js',
+                '_vue-router.js',
+                '_index.js',
+                '_dayjs.js',
+                '_pinia.js',
+                '_vendor.js',
+                '_emoji-picker.js',
+                '_fcom-utils.js',
+                '_milkdown.js',
+            ),
             'dynamicImports' => array(
                 'src/Modules/Common/PushNotification/NotificationBlockedGuide.vue',
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
@@ -384,40 +431,29 @@ return array(
                 'src/Modules/Space/Pages/ViewSpacePage.vue',
                 'src/Modules/Space/SpaceNotFound.vue',
             ),
-            'file' => 'app.js',
-            'imports' => array(
-                '_vue.js',
-                '_vue-router.js',
-                '_index.js',
-                '_dayjs.js',
-                '_pinia.js',
-                '_vendor.js',
-                '_emoji-picker.js',
-                '_fcom-utils.js',
-                '_milkdown.js',
-            ),
-            'isEntry' => true,
-            'src' => 'src/app.js',
         ),
         'src/shared/element-plus.js' => array(
             'file' => 'admin_runtime_element-plus.js',
+            'name' => 'admin_runtime_element-plus',
+            'src' => 'src/shared/element-plus.js',
+            'isEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/shared/vue.js',
                 '_admin_floating-ui.dom.js',
             ),
-            'isEntry' => true,
-            'src' => 'src/shared/element-plus.js',
         ),
         'src/shared/ui.js' => array(
             'file' => 'admin_runtime_ui.js',
-            'isEntry' => true,
+            'name' => 'admin_runtime_ui',
             'src' => 'src/shared/ui.js',
+            'isEntry' => true,
         ),
         'src/shared/vue.js' => array(
             'file' => 'admin_runtime_vue.js',
-            'isEntry' => true,
+            'name' => 'admin_runtime_vue',
             'src' => 'src/shared/vue.js',
+            'isEntry' => true,
         ),
         'style.css' => array(
             'file' => 'user_registration.css',
@@ -425,6 +461,7 @@ return array(
         ),
         '_admin_ImagePlaceholder.js' => array(
             'file' => 'admin_ImagePlaceholder.js',
+            'name' => 'ImagePlaceholder',
             'imports' => array(
                 'src/shared/vue.js',
                 'src/admin_app.js',
@@ -432,6 +469,7 @@ return array(
         ),
         '_admin_LockscreenEditor.js' => array(
             'file' => 'admin_LockscreenEditor.js',
+            'name' => 'LockscreenEditor',
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
@@ -441,46 +479,56 @@ return array(
         ),
         '_admin_floating-ui.dom.js' => array(
             'file' => 'admin_floating-ui.dom.js',
+            'name' => 'floating-ui.dom',
         ),
         '_admin_index.es.js' => array(
             'file' => 'admin_index.es.js',
+            'name' => 'index.es',
             'imports' => array(
                 'src/admin_app.js',
                 '_admin_todoList.js',
                 '_admin_floating-ui.dom.js',
             ),
         ),
-        '_admin_index.es2.js' => array(
-            'file' => 'admin_index.es2.js',
+        '_admin_index.js' => array(
+            'file' => 'admin_index.js',
+            'name' => 'index',
+            'imports' => array(
+                'src/shared/vue.js',
+            ),
+        ),
+        '_admin_index2.es.js' => array(
+            'file' => 'admin_index2.es.js',
+            'name' => 'index.es',
             'imports' => array(
                 'src/admin_app.js',
                 '_admin_todoList.js',
             ),
         ),
-        '_admin_index.js' => array(
-            'file' => 'admin_index.js',
-            'imports' => array(
-                'src/shared/vue.js',
-            ),
-        ),
         '_admin_index4.js' => array(
             'file' => 'admin_index4.js',
+            'name' => 'index',
         ),
         '_admin_todoList.js' => array(
             'file' => 'admin_todoList.js',
+            'name' => 'todoList',
         ),
         'src/Modules/Common/ManageSpaceLinks.vue' => array(
             'file' => 'admin_ManageSpaceLinks.js',
+            'name' => 'ManageSpaceLinks',
+            'src' => 'src/Modules/Common/ManageSpaceLinks.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Common/ManageSpaceLinks.vue',
         ),
         'src/Modules/Courses/Manage/Customizer/CourseLockscreen.vue' => array(
             'file' => 'admin_CourseLockscreen.js',
+            'name' => 'CourseLockscreen',
+            'src' => 'src/Modules/Courses/Manage/Customizer/CourseLockscreen.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_LockscreenEditor.js',
                 'src/shared/vue.js',
@@ -488,46 +536,67 @@ return array(
                 '_admin_index.js',
                 '_admin_ImagePlaceholder.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Courses/Manage/Customizer/CourseLockscreen.vue',
         ),
         'src/Modules/Courses/Manage/Customizer/Tabs/CourseGeneralTab.vue' => array(
             'file' => 'admin_CourseGeneralTab.js',
+            'name' => 'CourseGeneralTab',
+            'src' => 'src/Modules/Courses/Manage/Customizer/Tabs/CourseGeneralTab.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Courses/Manage/Customizer/Tabs/CourseGeneralTab.vue',
         ),
         'src/Modules/Courses/Manage/Customizer/Tabs/CourseWelcomeBannerTab.vue' => array(
             'file' => 'admin_CourseWelcomeBannerTab.js',
+            'name' => 'CourseWelcomeBannerTab',
+            'src' => 'src/Modules/Courses/Manage/Customizer/Tabs/CourseWelcomeBannerTab.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
-            'isDynamicEntry' => true,
-            'src' => 'src/Modules/Courses/Manage/Customizer/Tabs/CourseWelcomeBannerTab.vue',
         ),
         'src/Modules/Insights/InsightsPage.vue' => array(
             'file' => 'admin_InsightsPage.js',
+            'name' => 'InsightsPage',
+            'src' => 'src/Modules/Insights/InsightsPage.vue',
+            'isDynamicEntry' => true,
             'imports' => array(
                 '_admin_index.js',
                 'src/admin_app.js',
                 'src/shared/vue.js',
             ),
+        ),
+        'src/Pieces/CodeEditor/code-editor-setup.js' => array(
+            'file' => 'admin_code-editor-setup.js',
+            'name' => 'code-editor-setup',
+            'src' => 'src/Pieces/CodeEditor/code-editor-setup.js',
             'isDynamicEntry' => true,
-            'src' => 'src/Modules/Insights/InsightsPage.vue',
+            'imports' => array(
+                'src/admin_app.js',
+                'src/shared/vue.js',
+                '_admin_index.js',
+            ),
         ),
         'src/admin_app.js' => array(
+            'file' => 'admin_app.js',
+            'name' => 'admin_app',
+            'src' => 'src/admin_app.js',
+            'isEntry' => true,
+            'imports' => array(
+                'src/shared/vue.js',
+                '_admin_index.js',
+            ),
             'dynamicImports' => array(
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts',
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts',
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts',
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts',
                 'src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts',
+                'src/Pieces/CodeEditor/code-editor-setup.js',
                 'src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue',
                 'src/Modules/Common/ManagePaywalls.vue',
                 'src/Modules/Space/Customizer/SpaceLockscreen.vue',
@@ -540,53 +609,63 @@ return array(
                 'src/Modules/Common/ManageSpaceLinks.vue',
                 'src/Modules/Insights/InsightsPage.vue',
             ),
-            'file' => 'admin_app.js',
-            'imports' => array(
-                'src/shared/vue.js',
-                '_admin_index.js',
-            ),
-            'isEntry' => true,
-            'src' => 'src/admin_app.js',
         ),
         'src/customizer/customizer_app.js' => array(
             'file' => 'customizer_app.js',
-            'isEntry' => true,
+            'name' => 'customizer_app',
             'src' => 'src/customizer/customizer_app.js',
+            'isEntry' => true,
         ),
         'src/Onboarding/onboarding.js' => array(
             'file' => 'onboarding.js',
-            'isEntry' => true,
+            'name' => 'onboarding',
             'src' => 'src/Onboarding/onboarding.js',
+            'isEntry' => true,
         ),
         'src/public/js/user_registration.js' => array(
             'file' => 'user_registration.js',
-            'isEntry' => true,
+            'name' => 'user_registration',
             'src' => 'src/public/js/user_registration.js',
+            'isEntry' => true,
         ),
         'src/start.js' => array(
             'file' => 'start.js',
-            'isEntry' => true,
+            'name' => 'start',
             'src' => 'src/start.js',
+            'isEntry' => true,
         ),
         'src/portal_general.js' => array(
             'file' => 'portal_general.js',
-            'isEntry' => true,
+            'name' => 'portal_general',
             'src' => 'src/portal_general.js',
+            'isEntry' => true,
         ),
         'src/app_css.scss' => array(
             'file' => 'app_css.css',
-            'isEntry' => true,
             'src' => 'src/app_css.scss',
+            'isEntry' => true,
+            'name' => 'app_css',
+            'names' => array(
+                'app_css.css',
+            ),
         ),
         'src/theme-default.scss' => array(
             'file' => 'theme-default.css',
-            'isEntry' => true,
             'src' => 'src/theme-default.scss',
+            'isEntry' => true,
+            'name' => 'theme-default',
+            'names' => array(
+                'theme-default.css',
+            ),
         ),
         'src/global.scss' => array(
             'file' => 'global.css',
-            'isEntry' => true,
             'src' => 'src/global.scss',
+            'isEntry' => true,
+            'name' => 'global',
+            'names' => array(
+                'global.css',
+            ),
         ),
     ]
     //manifest end

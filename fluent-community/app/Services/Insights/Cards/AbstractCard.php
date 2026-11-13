@@ -71,7 +71,7 @@ abstract class AbstractCard implements Card
      *
      * @param Range $range
      * @param Scope $scope
-     * @param array $options compare, page, per_page, sort
+     * @param array $options compare, page, per_page, sort, export (every row, not one page)
      * @param bool $fresh bypass and rewrite the cache
      * @return array
      */
@@ -138,6 +138,7 @@ abstract class AbstractCard implements Card
             'page'     => max(1, isset($options['page']) ? (int)$options['page'] : 1),
             'per_page' => min(100, max(1, isset($options['per_page']) ? (int)$options['per_page'] : 20)),
             'sort'     => isset($options['sort']) ? sanitize_key($options['sort']) : '',
+            'export'   => !empty($options['export']),
         ];
     }
 

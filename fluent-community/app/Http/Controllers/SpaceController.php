@@ -9,6 +9,7 @@ use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\SpaceEmailPref;
 use FluentCommunity\App\Services\SpaceMenuService;
 use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\ProfileHelper;
@@ -189,23 +190,13 @@ class SpaceController extends Controller
             })
             ->when($search, function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%');
-            })
-            ->when($sortBy === 'alphabetical', function ($q) {
-                $q->orderBy('title', 'ASC');
-            })
-            ->when($sortBy === 'oldest', function ($q) {
-                $q->orderBy('created_at', 'ASC');
-            })
-            ->when($sortBy === 'latest', function ($q) {
-                $q->orderBy('created_at', 'DESC');
-            })
-            ->when($sortBy === 'custom', function ($q) {
-                Utility::applyCustomOrder($q, 'fluent_community_spaces_order');
             });
+
+        Utility::applyListingSort($query, $sortBy, 'fluent_community_spaces_order');
 
         $spaces = $query->paginate();
 
-        $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
+        $memberCounts = SpaceUserPivot::getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
             $space->description_rendered = wpautop($space->description);
@@ -247,7 +238,7 @@ class SpaceController extends Controller
         }
         $spaces = $spacesQuery->paginate();
 
-        $memberCounts = $this->getActiveMemberCounts($spaces->pluck('id')->toArray());
+        $memberCounts = SpaceUserPivot::getActiveMemberCounts($spaces->pluck('id')->toArray());
 
         foreach ($spaces as $space) {
             $shouldHideMembersCount = Arr::get($space->settings, 'hide_members_count') === 'yes';
@@ -447,8 +438,20 @@ class SpaceController extends Controller
                         $q->select(ProfileHelper::getXProfilePublicFields());
                 },
                 ])
-                    ->where('status', 'pending')
-                    ->paginate();
+                    ->where('status', 'pending');
+
+                /**
+                 * Modify the space members query before pagination. Runs for the active list and,
+                 * with status 'pending' in $requestData, for the join requests list.
+                 * Qualify columns with the table name (fcom_space_user.user_id): sorting joins fcom_xprofile.
+                 *
+                 * @param \FluentCommunity\Framework\Database\Orm\Builder $query SpaceUserPivot query, by reference
+                 * @param array $requestData
+                 * @param Space $space
+                 */
+                do_action_ref_array('fluent_community/space_members_query_ref', [ &$pendingRequests, $request->all(), $space ]);
+
+                $pendingRequests = $pendingRequests->paginate();
 
                 return apply_filters('fluent_community/space_members_api_response', [
                     'members'       => $pendingRequests,
@@ -485,8 +488,12 @@ class SpaceController extends Controller
                 $q->join('fcom_xprofile', 'fcom_xprofile.user_id', '=', 'fcom_space_user.user_id')
                     ->select('fcom_space_user.*');
             })
-            ->orderBy($orderColumn, $sortDirection)
-            ->paginate();
+            ->orderBy($orderColumn, $sortDirection);
+
+        /** This hook is documented above, at the join requests query. */
+        do_action_ref_array('fluent_community/space_members_query_ref', [ &$spaceMembers, $request->all(), $space ]);
+
+        $spaceMembers = $spaceMembers->paginate();
 
         return apply_filters('fluent_community/space_members_api_response', [
             'members'       => $spaceMembers,
@@ -763,7 +770,8 @@ class SpaceController extends Controller
             'space_id' => 'required|exists:fcom_spaces,id',
         ]);
 
-        $isMod = $currentUser->isCommunityModerator() && current_user_can('list_users');
+        // Only a user who may list WordPress users searches all of them, emails included.
+        $canListUsers = current_user_can('list_users');
 
         $spaceId = $request->get('space_id');
         $space = Space::findOrFail($spaceId);
@@ -776,7 +784,7 @@ class SpaceController extends Controller
 
         $selects = [ 'ID', 'display_name' ];
         $searchFields = [ 'display_name' ];
-        if ($isMod) {
+        if ($canListUsers) {
             $selects[] = 'user_email';
             $searchFields[] = 'user_email';
         }
@@ -784,6 +792,11 @@ class SpaceController extends Controller
         $userQuery = User::select([ 'ID' ])
             ->whereDoesntHave('space_pivot', function ($q) use ($space) {
                 $q->where('space_id', $space->id);
+            })
+            ->when(!$canListUsers, function ($q) {
+                $q->whereHas('xprofile', function ($q) {
+                    $q->where('status', 'active');
+                });
             })
             ->limit(100)
             ->searchBy($request->getSafe('search'), $searchFields);
@@ -1131,21 +1144,60 @@ class SpaceController extends Controller
         ];
     }
 
-    private function getActiveMemberCounts($spaceIds)
+    public function getEmailPref(Request $request, $spaceSlug)
     {
-        if (!$spaceIds) {
-            return [];
+        $space = Space::where('slug', $spaceSlug)->first();
+        $userId = get_current_user_id();
+
+        if (!$space || !SpaceEmailPref::isActiveMember($userId, $space)) {
+            return $this->sendError([
+                'message' => __('You are not a member of this space.', 'fluent-community'),
+            ], 403);
         }
 
-        return SpaceUserPivot::whereIn('space_id', $spaceIds)
-            ->where('status', 'active')
-            ->whereHas('xprofile', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->whereHas('user')
-            ->selectRaw('space_id, COUNT(*) as total')
-            ->groupBy('space_id')
-            ->pluck('total', 'space_id')
-            ->toArray();
+        return $this->sendSuccess(SpaceEmailPref::getState($userId, $space));
+    }
+
+    public function updateEmailPref(Request $request, $spaceSlug)
+    {
+        $space = Space::where('slug', $spaceSlug)->first();
+        $userId = get_current_user_id();
+
+        if (!$space || !SpaceEmailPref::isActiveMember($userId, $space)) {
+            return $this->sendError([
+                'message' => __('You are not a member of this space.', 'fluent-community'),
+            ], 403);
+        }
+
+        // Both fields are optional; send only the part that changed.
+        $newPosts = $request->get('new_posts', null);
+        $announcements = $request->get('announcements', null);
+
+        if ($newPosts === null && $announcements === null) {
+            return $this->sendError([
+                'message' => __('Please choose a valid option.', 'fluent-community'),
+            ], 422);
+        }
+
+        if ($newPosts !== null) {
+            $newPosts = sanitize_text_field($newPosts);
+            if (!in_array($newPosts, SpaceEmailPref::NEW_POST_CHOICES, true)) {
+                return $this->sendError([
+                    'message' => __('Please choose a valid option.', 'fluent-community'),
+                ], 422);
+            }
+        }
+
+        if ($newPosts !== null) {
+            SpaceEmailPref::setNewPosts($userId, $space, $newPosts);
+        }
+
+        if ($announcements !== null) {
+            SpaceEmailPref::setAnnouncements($userId, $space, rest_sanitize_boolean($announcements));
+        }
+
+        return $this->sendSuccess(array_merge(SpaceEmailPref::getState($userId, $space), [
+            'message' => __('Email preference saved.', 'fluent-community'),
+        ]));
     }
 }

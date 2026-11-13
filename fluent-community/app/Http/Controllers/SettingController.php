@@ -6,6 +6,7 @@ use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Models\Space;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\App\Services\CustomSanitizer;
+use FluentCommunity\App\Services\GettingStartedService;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\OnboardingService;
 use FluentCommunity\Framework\Http\Request\Request;
@@ -59,6 +60,8 @@ class SettingController extends Controller
             'followers_module'      => 'sanitize_text_field',
             'custom_profile_fields' => 'sanitize_text_field',
             'pwa_module'            => 'sanitize_text_field',
+            'content_moderation'    => 'sanitize_text_field',
+            'invitation'            => 'sanitize_text_field',
         ]);
 
         $prevConfig = Utility::getFeaturesConfig();
@@ -66,6 +69,11 @@ class SettingController extends Controller
         if (Arr::get($data, 'giphy_api_key') === 'FCOM_ENCRYPTED_DATA_KEY') {
             $data['giphy_api_key'] = Arr::get($prevConfig, 'giphy_api_key', '');
         }
+
+        // Save only known feature keys. Only the storage settings save, after its
+        // connection test, turns cloud storage on or off.
+        $data = Arr::only($data, array_keys($prevConfig));
+        $data['cloud_storage'] = Arr::get($prevConfig, 'cloud_storage', 'no');
 
         $data = wp_parse_args($data, $prevConfig);
 
@@ -278,6 +286,14 @@ class SettingController extends Controller
                 'action_text'    => $this->isPluginInstalled('fluent-notify/fluent-notify.php') ? __('Active FluentNotify', 'fluent-community') : __('Install FluentNotify', 'fluent-community'),
                 'description'    => __('Send browser push notifications to your community members for comments, replies and mentions.', 'fluent-community'),
             ],
+            'fluent-event'     => [
+                'is_repo'        => false,
+                'title'          => __('FluentEvent', 'fluent-community'),
+                'logo'           => Helper::assetUrl('images/brands/fluent-event.png'),
+                'is_installed'   => defined('FLUENT_EVENT_PLUGIN_VERSION'),
+                'action_text'    => $this->isPluginInstalled('fluent-event/fluent-event.php') ? __('Active FluentEvent', 'fluent-community') : __('Install FluentEvent', 'fluent-community'),
+                'description'    => __('Publish events as posts in your discussion spaces and collect RSVPs and registrations.', 'fluent-community')
+            ],
             'fluent-player'    => [
                 'is_repo'        => false,
                 'title'          => __('FluentPlayer', 'fluent-community'),
@@ -362,6 +378,10 @@ class SettingController extends Controller
 
     public function installPlugin(Request $request)
     {
+        if (!Utility::canInstallAddons()) {
+            return $this->sendError([ 'message' => __('Plugins cannot be installed on this site', 'fluent-community') ]);
+        }
+
         $pluginSlug = $request->get('plugin');
 
         $addons = $this->getAddons();
@@ -431,6 +451,12 @@ class SettingController extends Controller
                 $installHook = 'fluent_community/install_fluent_player_plugin';
             } elseif ($pluginSlug === 'fluent-notify') {
                 $installHook = 'fluent_community/install_fluent_notify_plugin';
+            } else if ($pluginSlug == 'fluent-event') {
+                if (!defined('FLUENT_COMMUNITY_PRO')) {
+                    return $this->sendError([ 'message' => __('FluentEvent requires the pro version of FluentCommunity. Please install FluentCommunity Pro first.', 'fluent-community') ]);
+                }
+
+                $installHook = 'fluent_community/install_fluent_event_plugin';
             }
 
             if (!$installHook || !has_action($installHook)) {
@@ -516,6 +542,44 @@ class SettingController extends Controller
         ];
     }
 
+    public function getFluentEventSettings(Request $request)
+    {
+        return [
+            'settings'  => \FluentCommunity\Modules\Integrations\Integrations::getFluentEventSettings(),
+            'admin_url' => defined('FLUENT_EVENT_PLUGIN_VERSION') ? admin_url('admin.php?page=fluent-event#/') : '',
+        ];
+    }
+
+    public function updateFluentEventSettings(Request $request)
+    {
+        $input = (array) $request->get('settings', []);
+        $current = \FluentCommunity\Modules\Integrations\Integrations::getFluentEventSettings();
+        $routeSlug = sanitize_title(Arr::get($input, 'route_slug', $current['route_slug']));
+
+        // While FluentEvent runs, its current slug is in the route list too, so it does not count as taken.
+        $takenPaths = array_diff(Helper::portalRoutePaths(), [$current['route_slug']]);
+        // The slug also names the Events tab under /space/:space/, beside these.
+        $spacePaths = ['home', 'about', 'post', 'members', 'invitations', 'documents', 'media', 'page', 'settings'];
+
+        if (!$routeSlug || in_array($routeSlug, array_merge($takenPaths, $spacePaths), true)) {
+            return $this->sendError([
+                'message' => __('This events URL slug is empty or already used by the community. Please choose another one.', 'fluent-community'),
+            ]);
+        }
+
+        $settings = [
+            'enable_fluent_event' => Arr::get($input, 'enable_fluent_event') === 'yes' ? 'yes' : 'no',
+            'route_slug'          => $routeSlug,
+        ];
+
+        Utility::updateOption('_fluent_event_settings', $settings);
+
+        return [
+            'message'  => __('FluentEvent settings have been saved successfully.', 'fluent-community'),
+            'settings' => $settings,
+        ];
+    }
+
     public function getPrivacySettings(Request $request)
     {
         $data = [
@@ -557,6 +621,7 @@ class SettingController extends Controller
             'create_crm_contact' => 'yes',
             'create_user'        => 'no',
             'send_welcome_email' => 'yes',
+            'sync_on_register'   => 'no',
             'has_space_tagging'  => 'no',
             'has_space_sync'     => 'no',
             'has_course_tagging' => 'no',
@@ -660,5 +725,39 @@ class SettingController extends Controller
             'has_fluentcrm' => defined('FLUENTCRM'),
         ];
         return apply_filters('fluent_community/crm_tagging_config_api_response', $data, $request->all());
+    }
+
+    public function getGettingStarted(Request $request)
+    {
+        return [
+            'checklist' => GettingStartedService::getChecklist(get_current_user_id()),
+        ];
+    }
+
+    /**
+     * Hide, reopen, or mark the "Getting started" card as celebrated, for the current admin.
+     */
+    public function updateGettingStarted(Request $request)
+    {
+        $userId = get_current_user_id();
+        $action = sanitize_text_field($request->get('action', ''));
+
+        $changes = [
+            'dismiss'    => [ 'dismissed_at' => time() ],
+            'reopen'     => [ 'dismissed_at' => null ],
+            'celebrated' => [ 'celebrated_at' => time() ],
+        ];
+
+        if (!isset($changes[$action])) {
+            return $this->sendError([
+                'message' => __('Invalid action.', 'fluent-community'),
+            ]);
+        }
+
+        GettingStartedService::updateState($userId, $changes[$action]);
+
+        return [
+            'checklist' => GettingStartedService::getChecklist($userId),
+        ];
     }
 }

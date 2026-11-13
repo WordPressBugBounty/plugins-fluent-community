@@ -2,6 +2,7 @@
 
 namespace FluentCommunity\Modules\Integrations;
 
+use FluentCommunity\App\Functions\Utility;
 use FluentCommunity\App\Services\Helper;
 
 class Integrations
@@ -9,6 +10,21 @@ class Integrations
     public function register($app)
     {
         $this->init($app);
+    }
+
+    public static function getFluentEventSettings()
+    {
+        $settings = Utility::getOption('_fluent_event_settings', []);
+
+        return wp_parse_args(is_array($settings) ? $settings : [], [
+            'enable_fluent_event' => 'no',
+            'route_slug'          => 'events',
+        ]);
+    }
+
+    public static function isFluentEventEnabled()
+    {
+        return self::getFluentEventSettings()['enable_fluent_event'] === 'yes';
     }
 
     public function init($app)
@@ -42,5 +58,13 @@ class Integrations
         }
 
         (new \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap())->register($app);
+
+        // FluentEvent hooks into the portal only after an admin enables it under Features,
+        // and builds its portal routes from the route_slug passed here.
+        $fluentEventSettings = self::getFluentEventSettings();
+
+        if ($fluentEventSettings['enable_fluent_event'] === 'yes') {
+            do_action('fluent_community/fluent_event/init', $app, $fluentEventSettings);
+        }
     }
 }

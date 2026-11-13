@@ -275,7 +275,8 @@ class BaseSpace extends Model
         $roles = [ 'admin' ];
 
         if ($checkModerator) {
-            if (Helper::isModerator()) {
+            $user = Helper::getUser($userId);
+            if ($user && Helper::isModerator($user)) {
                 return true;
             }
             $roles[] = 'moderator';

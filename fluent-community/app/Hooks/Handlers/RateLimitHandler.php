@@ -4,9 +4,9 @@ namespace FluentCommunity\App\Hooks\Handlers;
 
 use FluentCommunity\App\Models\Comment;
 use FluentCommunity\App\Models\Feed;
-use FluentCommunity\App\Models\Media;
 use FluentCommunity\App\Models\User;
 use FluentCommunity\App\Services\Helper;
+use FluentCommunity\App\Services\RateLimiter;
 
 class RateLimitHandler
 {
@@ -16,6 +16,7 @@ class RateLimitHandler
         add_action('fluent_community/check_rate_limit/create_comment', [ $this, 'maybeLimitComment' ], 10, 1);
         add_action('fluent_community/check_rate_limit/media_upload', [ $this, 'maybeLimitMediaUpload' ], 10, 1);
         add_action('fluent_community/check_rate_limit/oembed', [ $this, 'maybeLimitOembed' ], 10, 1);
+        add_action('fluent_community/check_rate_limit/giphy', [ $this, 'maybeLimitGiphy' ], 10, 1);
     }
 
     public function maybeLimitPost(User $user)
@@ -60,14 +61,11 @@ class RateLimitHandler
             return;
         }
         
-        // Check how many media items user has uploaded in last 1 minute
-        $mediaCount = Media::query()->withoutGlobalScopes()->where('user_id', $user->ID)
-            ->where('created_at', '>', gmdate('Y-m-d H:i:s', current_time('timestamp') - 60))
-            ->count();
-
+        // A locked counter, not a row count: the media row is only written after the
+        // file is processed, so parallel uploads would all pass a row count.
         $limitPerMinute = apply_filters('fluent_community/rate_limit/media_upload_per_minute', 10);
 
-        if ($mediaCount >= $limitPerMinute) {
+        if (RateLimiter::hit('fcom_media_upload_rate_limit_' . $user->ID, $limitPerMinute, MINUTE_IN_SECONDS)) {
             throw new \Exception(esc_html__('You have reached the limit of media uploads. Please try after some time', 'fluent-community'));
         }
     }
@@ -78,22 +76,23 @@ class RateLimitHandler
             return;
         }
 
-        // Without a persistent object cache the per-user counter would pile up as
-        // rows in wp_options, so the limit is only enforced when one is present.
-        if (!wp_using_ext_object_cache()) {
+        $limitPerMinute = apply_filters('fluent_community/rate_limit/oembed_per_minute', 20);
+
+        if (RateLimiter::hit('fcom_oembed_rate_limit_' . $user->ID, $limitPerMinute, MINUTE_IN_SECONDS)) {
+            throw new \Exception(esc_html__('You have reached the limit of link previews. Please try after some time', 'fluent-community'));
+        }
+    }
+
+    public function maybeLimitGiphy(User $user)
+    {
+        if (Helper::isSiteAdmin($user->ID, $user)) {
             return;
         }
 
-        $limitPerMinute = apply_filters('fluent_community/rate_limit/oembed_per_minute', 20);
+        $limitPerMinute = apply_filters('fluent_community/rate_limit/giphy_per_minute', 30);
 
-        // Transients rather than wp_cache_incr(): some managed hosts run Redis behind an
-        // ACL that denies INCRBY, and the Redis Object Cache drop-in dies on that error.
-        $transientKey = 'fcom_oembed_rate_limit_' . $user->ID;
-        $previewCount = (int) get_transient($transientKey) + 1;
-        set_transient($transientKey, $previewCount, MINUTE_IN_SECONDS);
-
-        if ($previewCount > $limitPerMinute) {
-            throw new \Exception(esc_html__('You have reached the limit of link previews. Please try after some time', 'fluent-community'));
+        if (RateLimiter::hit('fcom_giphy_rate_limit_' . $user->ID, $limitPerMinute, MINUTE_IN_SECONDS)) {
+            throw new \Exception(esc_html__('You have reached the limit of GIF searches. Please try after some time', 'fluent-community'));
         }
     }
 }

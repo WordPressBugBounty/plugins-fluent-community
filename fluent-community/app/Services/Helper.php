@@ -17,6 +17,7 @@ use FluentCommunity\App\Models\XProfile;
 use FluentCommunity\Framework\Support\Arr;
 use FluentCommunity\App\Models\SpaceGroup;
 use FluentCommunity\Modules\Course\Model\Course;
+use FluentCommunity\Modules\Course\Services\CourseHelper;
 
 /**
  * Helper class for various utility functions.
@@ -49,6 +50,19 @@ class Helper
             $db->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Lock the user's row until the current transaction ends, so the user's
+     * parallel requests run one at a time. Every logged-in user has this row,
+     * even one without a community profile.
+     *
+     * @param int $userId
+     * @return void
+     */
+    public static function lockUser($userId)
+    {
+        User::where('ID', $userId)->lockForUpdate()->first();
     }
 
     /**
@@ -280,9 +294,7 @@ class Helper
         }
 
         if (!$user) {
-            $user = ($userId && (int)$userId !== get_current_user_id())
-                ? User::find($userId)
-                : self::getCurrentUser();
+            $user = self::getUser($userId);
         }
 
         return $user && Arr::get($user->getPermissions(), 'community_admin');
@@ -344,6 +356,351 @@ class Helper
         }
 
         return $baseUrl . '/#/' . ltrim($path, '/');
+    }
+
+    /**
+     * The query key that FluentCommunity has always used for portal actions.
+     * The portal always accepts it, so links already sent keep working.
+     */
+    const LEGACY_ACTION_KEY = 'fcom_action';
+
+    /**
+     * Per-request caches. They fill only after `init`, so a filter that a
+     * theme adds late still counts.
+     *
+     * @var string|null
+     */
+    private static $actionKey = null;
+
+    /**
+     * @var array|null
+     */
+    private static $authPaths = null;
+
+    /**
+     * The query key for portal actions in public URLs (`?fcom_action=auth`).
+     *
+     * Order: the FLUENT_COMMUNITY_ACTION_KEY constant, then the
+     * `fluent_community/action_query_key` filter, then `fcom_action`.
+     * An invalid value is ignored (see isValidActionKey()).
+     *
+     * @return string
+     */
+    public static function getActionKey()
+    {
+        if (self::$actionKey !== null) {
+            return self::$actionKey;
+        }
+
+        $key = self::LEGACY_ACTION_KEY;
+
+        if (defined('FLUENT_COMMUNITY_ACTION_KEY') && self::isValidActionKey(\FLUENT_COMMUNITY_ACTION_KEY)) {
+            $key = \FLUENT_COMMUNITY_ACTION_KEY;
+        } else {
+            $filtered = apply_filters('fluent_community/action_query_key', self::LEGACY_ACTION_KEY);
+            if (self::isValidActionKey($filtered)) {
+                $key = $filtered;
+            }
+        }
+
+        if (did_action('init')) {
+            self::$actionKey = $key;
+        }
+
+        return $key;
+    }
+
+    /**
+     * Every key the portal reads an action from: the configured one first,
+     * then the legacy `fcom_action`.
+     *
+     * @return string[]
+     */
+    public static function getActionKeys()
+    {
+        return array_values(array_unique([ self::getActionKey(), self::LEGACY_ACTION_KEY ]));
+    }
+
+    /**
+     * A valid key has 3 to 32 lowercase letters, digits or underscores, and is
+     * not a WordPress query var or a query arg that portal actions use.
+     *
+     * @param mixed $key
+     * @return bool
+     */
+    public static function isValidActionKey($key)
+    {
+        if (!is_string($key) || !preg_match('/^[a-z0-9_]{3,32}$/', $key)) {
+            return false;
+        }
+
+        return !in_array($key, self::getReservedQueryKeys(), true);
+    }
+
+    /**
+     * @return string[]
+     */
+    private static function getReservedQueryKeys()
+    {
+        $reserved = [
+            // WordPress public query vars
+            'm', 'p', 'posts', 'w', 'cat', 'withcomments', 'withoutcomments', 's', 'search', 'exact', 'sentence',
+            'calendar', 'page', 'paged', 'more', 'tb', 'pb', 'author', 'order', 'orderby', 'year', 'monthnum', 'day',
+            'hour', 'minute', 'second', 'name', 'category_name', 'tag', 'feed', 'author_name', 'pagename', 'page_id',
+            'error', 'attachment', 'attachment_id', 'subpost', 'subpost_id', 'preview', 'robots', 'favicon', 'taxonomy',
+            'term', 'cpage', 'post_type', 'embed', 'sitemap', 'sitemap-subtype', 'sitemap-stylesheet',
+            // WordPress private query vars
+            'offset', 'posts_per_page', 'posts_per_archive_page', 'showposts', 'nopaging', 'post_status',
+            'category__in', 'category__not_in', 'category__and', 'tag__in', 'tag__not_in', 'tag__and', 'tag_slug__in',
+            'tag_slug__and', 'tag_id', 'post_mime_type', 'perm', 'comments_per_page', 'post__in', 'post__not_in',
+            'post_parent', 'post_parent__in', 'post_parent__not_in', 'title', 'fields',
+            // WordPress request args
+            'action', 'rest_route', 'redirect_to', '_wpnonce', '_wp_http_referer', 'loggedout', 'reauth', 'key',
+            'login', 'checkemail', 'doing_wp_cron',
+            // Args that travel with portal actions
+            'fcom_route', 'route', 'auth', 'form', 'invitation_token', 'invite_name', 'auto_accept', 'fcom_url_hash',
+            'media_key', 'media_id', 'webhook', 'uid', 'space', 'token', '__nonce', 'fcom_redirect', 'is_fcom_auth',
+            'customizer_panel', 'create_space', 'status',
+        ];
+
+        global $wp;
+        if (is_object($wp)) {
+            if (!empty($wp->public_query_vars) && is_array($wp->public_query_vars)) {
+                $reserved = array_merge($reserved, $wp->public_query_vars);
+            }
+            if (!empty($wp->private_query_vars) && is_array($wp->private_query_vars)) {
+                $reserved = array_merge($reserved, $wp->private_query_vars);
+            }
+        }
+
+        // The legacy key is always allowed.
+        return array_values(array_diff($reserved, [ self::LEGACY_ACTION_KEY ]));
+    }
+
+    /**
+     * The portal action of the current request, read from the configured key
+     * or the legacy `fcom_action` key. Null when the request has none.
+     *
+     * @param array|null $request Defaults to $_REQUEST.
+     * @return string|null
+     */
+    public static function getRequestedAction($request = null)
+    {
+        if ($request === null) {
+            $request = $_REQUEST; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        }
+
+        foreach (self::getActionKeys() as $key) {
+            if (isset($request[$key]) && is_string($request[$key])) {
+                return sanitize_text_field(wp_unslash($request[$key]));
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * A portal action URL: `{portal}/?{action key}={action}&{args}`.
+     * Values are URL-encoded here, so pass them raw.
+     *
+     * @param string $action
+     * @param array $args
+     * @return string
+     */
+    public static function actionUrl($action, $args = [])
+    {
+        $query = [ self::getActionKey() => $action ] + (array)$args;
+
+        return self::appendQueryArgs(self::baseUrl(), $query);
+    }
+
+    /**
+     * Append URL-encoded (RFC 3986) query args to a URL, before any #fragment.
+     *
+     * @param string $url
+     * @param array $args Raw values.
+     * @return string
+     */
+    private static function appendQueryArgs($url, $args)
+    {
+        $query = http_build_query((array)$args, '', '&', PHP_QUERY_RFC3986);
+        if ($query === '') {
+            return $url;
+        }
+
+        $fragment = '';
+        $hashPos = strpos($url, '#');
+        if ($hashPos !== false) {
+            $fragment = substr($url, $hashPos);
+            $url = substr($url, 0, $hashPos);
+        }
+
+        return $url . (strpos($url, '?') === false ? '?' : '&') . $query . $fragment;
+    }
+
+    /**
+     * The readable auth path slugs, keyed by screen: `login`, `signup`,
+     * `reset_password`. An empty slug turns that path off.
+     *
+     * Filter: `fluent_community/auth_paths`. A slug must have lowercase letters,
+     * digits and single hyphens, must not be a portal route path (`members`,
+     * `space`, ...) and must not repeat an earlier slug. An invalid slug falls
+     * back to its default (or to off, when the default is taken too).
+     *
+     * @return array{login: string, signup: string, reset_password: string}
+     */
+    public static function getAuthPaths()
+    {
+        if (self::$authPaths !== null) {
+            return self::$authPaths;
+        }
+
+        $defaults = [
+            'login'          => 'login',
+            'signup'         => 'signup',
+            'reset_password' => 'reset-password',
+        ];
+
+        $filtered = apply_filters('fluent_community/auth_paths', $defaults);
+        if (!is_array($filtered)) {
+            $filtered = $defaults;
+        }
+
+        $taken = self::portalRoutePaths();
+        $paths = [];
+
+        foreach ($defaults as $screen => $default) {
+            $slug = array_key_exists($screen, $filtered) ? $filtered[$screen] : $default;
+
+            if ($slug === '' || $slug === false || $slug === null) {
+                $paths[$screen] = '';
+                continue;
+            }
+
+            if (!self::isValidAuthPathSlug($slug, $taken)) {
+                $slug = self::isValidAuthPathSlug($default, $taken) ? $default : '';
+            }
+
+            $paths[$screen] = $slug;
+            if ($slug !== '') {
+                $taken[] = $slug;
+            }
+        }
+
+        // At the site root, a published page or post owns its URL. Its slug turns off,
+        // so links use the query URL instead of pointing at that page.
+        if (self::getPortalSlug() === '' && function_exists('get_page_by_path')) {
+            foreach ($paths as $screen => $slug) {
+                if ($slug === '') {
+                    continue;
+                }
+                $post = get_page_by_path($slug, 'OBJECT', [ 'page', 'post' ]);
+                if ($post && $post->post_status === 'publish') {
+                    $paths[$screen] = '';
+                }
+            }
+        }
+
+        if (did_action('init')) {
+            self::$authPaths = $paths;
+        }
+
+        return $paths;
+    }
+
+    /**
+     * @param mixed $slug
+     * @param string[] $taken
+     * @return bool
+     */
+    private static function isValidAuthPathSlug($slug, $taken)
+    {
+        if (!is_string($slug) || strlen($slug) > 64 || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+            return false;
+        }
+
+        return !in_array($slug, (array)$taken, true);
+    }
+
+    /**
+     * Readable auth paths need pretty permalinks and history routing. With
+     * plain permalinks or hash routing the server never sees `/login`.
+     *
+     * @return bool
+     */
+    public static function hasReadableAuthPaths()
+    {
+        return (bool)get_option('permalink_structure') && self::getPortalRouteType() !== 'hash';
+    }
+
+    /**
+     * The auth screen that a portal path asks for (`login`, `signup` or
+     * `reset_password`), or '' when the path is not a readable auth path.
+     *
+     * @param string $path The path after the portal base, e.g. `login` or `login/`.
+     * @return string
+     */
+    public static function getAuthScreenByPath($path)
+    {
+        $path = trim((string)$path, '/');
+
+        if ($path === '' || !self::hasReadableAuthPaths()) {
+            return '';
+        }
+
+        $screen = array_search($path, self::getAuthPaths(), true);
+
+        return $screen === false ? '' : (string)$screen;
+    }
+
+    /**
+     * The URL of an auth form: `login`, `register` or `reset_password`.
+     *
+     * Uses the readable path (`{portal}/signup`) when it is on, else
+     * `{portal}/?{action key}=auth&form=...`. Values are URL-encoded here,
+     * so pass them raw.
+     *
+     * @param string $form
+     * @param array $args Extra query args, e.g. redirect_to or invitation_token.
+     * @return string
+     */
+    public static function authUrl($form = 'login', $args = [])
+    {
+        $screens = [
+            'login'          => 'login',
+            'register'       => 'signup',
+            'reset_password' => 'reset_password',
+        ];
+
+        $args = (array)$args;
+        $screen = isset($screens[$form]) ? $screens[$form] : '';
+
+        if ($screen && self::hasReadableAuthPaths()) {
+            $paths = self::getAuthPaths();
+            if (!empty($paths[$screen])) {
+                return self::appendQueryArgs(self::baseUrl($paths[$screen]), $args);
+            }
+        }
+
+        if ($form && $form !== 'login') {
+            $args = [ 'form' => $form ] + $args;
+        }
+
+        return self::actionUrl('auth', $args);
+    }
+
+    /**
+     * The readable auth path slugs that are on, for the portal's link handling.
+     *
+     * @return string[]
+     */
+    public static function getActiveAuthPaths()
+    {
+        if (!self::hasReadableAuthPaths()) {
+            return [];
+        }
+
+        return array_values(array_filter(self::getAuthPaths()));
     }
 
     public static function getAuthUrl()
@@ -526,14 +883,14 @@ class Helper
             'auth_redirect'           => '',
             'restricted_role_content' => 'Sorry, you cannot access this page. Only authorized users can access this page.',
             'auth_url'                => '',
-            'cutsom_auth_url'         => self::baseUrl('?fcom_action=auth'),
+            'cutsom_auth_url'         => self::authUrl(),
             'use_custom_signup_page'  => 'no',
             'custom_signup_url'       => '',
         ];
 
         $settings = wp_parse_args($settings, $defaults);
         if ($settings['auth_form_type'] !== 'custom' || empty($settings['auth_form_type'])) {
-            $settings['cutsom_auth_url'] = self::baseUrl('?fcom_action=auth');
+            $settings['cutsom_auth_url'] = self::authUrl();
         }
 
         if (defined('FLUENT_COMMUNITY_PORTAL_SLUG')) {
@@ -603,7 +960,9 @@ class Helper
             return apply_filters('fluent_community/can_access_portal', true);
         }
 
-        $xProfile = self::getCurrentProfile();
+        $xProfile = (int)$userId === get_current_user_id()
+            ? self::getCurrentProfile()
+            : XProfile::where('user_id', $userId)->first();
 
         $result = $xProfile && $xProfile->status === 'active';
 
@@ -683,6 +1042,21 @@ class Helper
         $users[$userId] = User::find($userId);
 
         return $users[$userId];
+    }
+
+    /**
+     * Get a user model. The current user comes from the request cache.
+     *
+     * @param int|null $userId The user ID. Empty means the current user.
+     * @return User|false|null The User model, or a falsy value if not found.
+     */
+    public static function getUser($userId = null)
+    {
+        if (!$userId || (int)$userId === get_current_user_id()) {
+            return self::getCurrentUser();
+        }
+
+        return User::find($userId);
     }
 
     /**
@@ -878,6 +1252,7 @@ class Helper
     {
         if ($content) {
             $patterns = [
+                '/\\\\\*/'                               => '*',
                 '/^#{1,6}\s+/m'                         => '',
                 // Bold and Italic: remove '*' and '_' symbols
                 '/(\*\*|__)(.*?)\1/'                    => '$2',
@@ -1129,11 +1504,15 @@ class Helper
         $floor = max(min($cutoffs), gmdate('Y-m-d H:i:s', current_time('timestamp') - $maxDays * DAY_IN_SECONDS));
 
         global $wpdb;
+        $postsTable = $wpdb->prefix . 'fcom_posts';
 
         // DISTINCT: memberships are not unique per (space, user), and a duplicate row
         // would otherwise count each post once per row.
         $unreadCounts = Feed::query()
-            ->select('fcom_posts.space_id', Utility::getApp('db')->raw('COUNT(DISTINCT ' . $wpdb->prefix . 'fcom_posts.id) as feed_count'))
+            ->select(
+                'fcom_posts.space_id',
+                Utility::getApp('db')->raw("COUNT(DISTINCT `{$postsTable}`.`id`) as feed_count")
+            )
             ->join('fcom_space_user', function ($join) use ($userId) {
                 $join->on('fcom_space_user.space_id', '=', 'fcom_posts.space_id')
                     ->where('fcom_space_user.user_id', '=', $userId)
@@ -1406,6 +1785,11 @@ class Helper
             ],
         ];
 
+        $coreMainMenuItems = $defaultMainMenuItems;
+
+        // Add-ons supply their top-menu items here on every request, so an item outlives its add-on only as a saved row.
+        $defaultMainMenuItems = apply_filters('fluent_community/default_main_menu_items', $defaultMainMenuItems);
+
         $mainItems = Arr::get($menuGroups, 'mainMenuItems', []);
 
         if ($mainItems && is_array($mainItems)) {
@@ -1420,6 +1804,11 @@ class Helper
                     continue;
                 }
                 $defaultItem = Arr::get($defaultMainMenuItems, $item['slug'], []);
+                // A saved system item nothing supplies any more belonged to an add-on that is gone.
+                if (!$defaultItem && Arr::get($item, 'is_system') === 'yes') {
+                    unset($mainItems[$index]);
+                    continue;
+                }
                 if ($defaultItem) {
                     $preservedKeys = [ 'is_system', 'is_locked', 'is_unavailable', 'slug' ];
                     foreach ($preservedKeys as $key) {
@@ -1434,6 +1823,16 @@ class Helper
                             $item['shape_svg'] = $defaultItem['shape_svg'];
                         }
                     }
+                }
+            }
+            unset($item);
+
+            // An add-on enabled after the menu was saved joins it with its own default state, so Menu Settings
+            // lists it. Core items a saved menu lacks stay out, as before.
+            $savedSlugs = array_column($mainItems, 'slug');
+            foreach (array_diff_key($defaultMainMenuItems, $coreMainMenuItems) as $slug => $addonItem) {
+                if (!in_array($slug, $savedSlugs, true)) {
+                    $mainItems[$slug] = $addonItem;
                 }
             }
         } else {
@@ -1974,6 +2373,16 @@ class Helper
 
         if ($exist) {
             if ($exist->status !== 'active') {
+                if ($exist->status === SpaceUserPivot::STATUS_SCHEDULED) {
+                    // Opened now, ahead of the scheduled date: the drip starts now, and reports date the
+                    // enrollment now too (see CourseHelper::activateScheduledEnrollment)
+                    $meta = is_array($exist->meta) ? $exist->meta : [];
+                    $meta['scheduled_on'] = (string) $exist->created_at;
+                    $exist->meta = $meta;
+                    $exist->starts_at = current_time('mysql');
+                    $exist->created_at = $exist->starts_at;
+                }
+
                 $exist->status = 'active';
 
                 if (!in_array($exist->role, [ 'admin', 'moderator' ], true)) {
@@ -1982,10 +2391,18 @@ class Helper
 
                 $exist->save();
 
+                // Renew the model as the create path below does: listeners use the course and space relations
                 if ($space->type === 'course') {
-                    do_action('fluent_community/course/enrolled', $space, $userId, $by);
+                    CourseHelper::resetEnrollmentCache($space->id, $userId);
+                    if (!$space instanceof Course) {
+                        $space = Course::find($space->id);
+                    }
+                    do_action('fluent_community/course/enrolled', $space, $userId, $by, $exist);
                 } else {
-                    do_action('fluent_community/space/joined', $space, $userId, $by);
+                    if (!$space instanceof Space) {
+                        $space = Space::find($space->id);
+                    }
+                    do_action('fluent_community/space/joined', $space, $userId, $by, $exist);
                 }
 
                 return true;
@@ -2039,6 +2456,21 @@ class Helper
 
 
         if (!self::isUserInSpace($userId, $space->id)) {
+            // A course enrollment that has not opened yet (CourseHelper::scheduleEnrollment) is
+            // removed too, so a refund before the open date does not open the course later
+            if ($space->type === 'course') {
+                $removed = SpaceUserPivot::where('space_id', $space->id)
+                    ->where('user_id', $userId)
+                    ->where('status', SpaceUserPivot::STATUS_SCHEDULED)
+                    ->delete();
+
+                if ($removed) {
+                    CourseHelper::resetEnrollmentCache($space->id, $userId);
+                    do_action('fluent_community/course/scheduled_enrollment_removed', $space, $userId, $by);
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -2234,8 +2666,8 @@ class Helper
      */
     public static function resolveClientIp($serverData)
     {
-        $remoteAddr = preg_replace('/^(\d+\.\d+\.\d+\.\d+):\d+$/', '\1', (string)Arr::get($serverData, 'REMOTE_ADDR'));
-        $cloudflareIp = (string)Arr::get($serverData, 'HTTP_CF_CONNECTING_IP');
+        $remoteAddr = self::stripPort(Arr::get($serverData, 'REMOTE_ADDR'));
+        $cloudflareIp = rest_is_ip_address(self::stripPort(Arr::get($serverData, 'HTTP_CF_CONNECTING_IP')));
         $trustedProxies = (array)apply_filters('fluent_community/trusted_proxies', [ '127.0.0.1' ]);
 
         // A proxy appends the peer it saw, so only the right-most hop is reliable;
@@ -2255,6 +2687,25 @@ class Helper
     }
 
     /**
+     * @param string $ip
+     * @return string The address without a port, for both 1.2.3.4:80 and [2001:db8::1]:80
+     */
+    private static function stripPort($ip)
+    {
+        $ip = trim((string)$ip);
+
+        if (preg_match('/^\[(.+)\](?::\d+)?$/', $ip, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/^(\d+\.\d+\.\d+\.\d+):\d+$/', $ip, $matches)) {
+            return $matches[1];
+        }
+
+        return $ip;
+    }
+
+    /**
      * Check if the IP address is from Cloudflare.
      *
      * @param string $ip The IP address to check.
@@ -2270,7 +2721,9 @@ class Helper
             return false;
         }
 
-        $cloudflareIPRanges = array(
+        // Cloudflare reaches IPv6 origins over IPv6, so a v4-only list puts every visitor behind one edge.
+        // Filterable so a range change does not have to wait for a release. Source: https://www.cloudflare.com/ips/
+        $cloudflareIPRanges = (array)apply_filters('fluent_community/cloudflare_ip_ranges', [
             '173.245.48.0/20',
             '103.21.244.0/22',
             '103.22.200.0/22',
@@ -2286,13 +2739,17 @@ class Helper
             '104.24.0.0/14',
             '172.64.0.0/13',
             '131.0.72.0/22',
-        );
+            '2400:cb00::/32',
+            '2606:4700::/32',
+            '2803:f800::/32',
+            '2405:b500::/32',
+            '2405:8100::/32',
+            '2a06:98c0::/29',
+            '2c0f:f248::/32',
+        ]);
 
-        //Make sure that the request came via Cloudflare.
         foreach ($cloudflareIPRanges as $range) {
-            //Use the ip_in_range function from Joomla.
             if (self::ipInRange($ip, $range)) {
-                //IP is valid. Belongs to Cloudflare.
                 return true;
             }
         }
@@ -2301,7 +2758,8 @@ class Helper
     }
 
     /**
-     * Check if the IP address is in the given range.
+     * CIDR or exact match for both IPv4 and IPv6, on the packed binary form,
+     * because ip2long() returns false for any IPv6 address.
      *
      * @param string $ip The IP address to check.
      * @param string $range The range to check against.
@@ -2309,51 +2767,45 @@ class Helper
      */
     private static function ipInRange($ip, $range)
     {
-        if (strpos($range, '/') !== false) {
-            // $range is in IP/NETMASK format
-            list($range, $netmask) = explode('/', $range, 2);
-            if (strpos($netmask, '.') !== false) {
-                // $netmask is a 255.255.0.0 format
-                $netmask = str_replace('*', '0', $netmask);
-                $netmask_dec = ip2long($netmask);
-                return ((ip2long($ip) & $netmask_dec) === (ip2long($range) & $netmask_dec));
-            } else {
-                // $netmask is a CIDR size block
-                // fix the range argument
-                $x = explode('.', $range);
-                $x = array_pad($x, 4, '0');
-                list($a, $b, $c, $d) = $x;
-                $range = sprintf("%u.%u.%u.%u", empty($a) ? '0' : $a, empty($b) ? '0' : $b, empty($c) ? '0' : $c, empty($d) ? '0' : $d);
-                $range_dec = ip2long($range);
-                $ip_dec = ip2long($ip);
+        if (strpos($range, '/') === false) {
+            return $ip === $range;
+        }
 
-                # Strategy 1 - Create the netmask with 'netmask' 1s and then fill it to 32 with 0s
-                #$netmask_dec = bindec(str_pad('', $netmask, '1') . str_pad('', 32-$netmask, '0'));
+        list($subnet, $bits) = explode('/', $range, 2);
 
-                # Strategy 2 - Use math to create it
-                $wildcard_dec = pow(2, (32 - $netmask)) - 1;
-                $netmask_dec = ~$wildcard_dec;
-
-                return (($ip_dec & $netmask_dec) === ($range_dec & $netmask_dec));
-            }
-        } else {
-            // range might be 255.255.*.* or 1.2.3.0-1.2.3.255
-            if (strpos($range, '*') !== false) { // a.b.*.* format
-                // Just convert to A-B format by setting * to 0 for A and 255 for B
-                $lower = str_replace('*', '0', $range);
-                $upper = str_replace('*', '255', $range);
-                $range = "$lower-$upper";
-            }
-
-            if (strpos($range, '-') !== false) { // A-B format
-                list($lower, $upper) = explode('-', $range, 2);
-                $lower_dec = (float)sprintf("%u", ip2long($lower));
-                $upper_dec = (float)sprintf("%u", ip2long($upper));
-                $ip_dec = (float)sprintf("%u", ip2long($ip));
-                return (($ip_dec >= $lower_dec) && ($ip_dec <= $upper_dec));
-            }
+        if (!filter_var($ip, FILTER_VALIDATE_IP) || !filter_var($subnet, FILTER_VALIDATE_IP)) {
             return false;
         }
+
+        $ipBin = inet_pton($ip);
+        $subnetBin = inet_pton($subnet);
+
+        // Differing lengths means v4 against v6.
+        if (strlen($ipBin) !== strlen($subnetBin)) {
+            return false;
+        }
+
+        $bits = (int)$bits;
+
+        if ($bits < 0 || $bits > strlen($ipBin) * 8) {
+            return false;
+        }
+
+        $wholeBytes = intdiv($bits, 8);
+        $remainingBits = $bits % 8;
+
+        if ($wholeBytes && strncmp($ipBin, $subnetBin, $wholeBytes) !== 0) {
+            return false;
+        }
+
+        if ($remainingBits) {
+            $mask = chr((0xFF << (8 - $remainingBits)) & 0xFF);
+            if ((($ipBin[$wholeBytes] ^ $subnetBin[$wholeBytes]) & $mask) !== "\0") {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static function getPortalRequestPath($requestUri)
@@ -2372,6 +2824,12 @@ class Helper
 
         if (!$requestUri) {
             return false;
+        }
+
+        // At the site root, a readable auth path (/login) answers only when WordPress found
+        // nothing else there: a real page or post with the same slug wins.
+        if (!$portalSlug && self::getAuthScreenByPath($requestUri) && function_exists('is_404') && is_404()) {
+            return $requestUri;
         }
 
         if ($portalSlug) {
@@ -2408,9 +2866,11 @@ class Helper
             'status',
         ]);
 
+        $actionKey = self::getActionKey();
+
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         foreach (array_keys($_GET) as $key) {
-            if (strpos($key, 'fcom_') === 0) {
+            if (strpos($key, 'fcom_') === 0 || $key === $actionKey) {
                 return true;
             }
             if (in_array($key, $supportedParams, true)) {

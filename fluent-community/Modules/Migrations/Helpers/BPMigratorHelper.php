@@ -468,7 +468,7 @@ class BPMigratorHelper
 
                         if (!$exist) {
                             Reaction::create([
-                                'user_id'     => get_current_user_id(),
+                                'user_id'     => $user->ID,
                                 'object_id'   => $favPost->id,
                                 'type'        => 'like',
                                 'object_type' => 'feed',
@@ -767,6 +767,19 @@ class BPMigratorHelper
             return null;
         }
 
+        // The path can come from a filtered avatar URL, so copy only a real image inside the uploads folder.
+        // Normalize so the prefix check also works with Windows backslash paths.
+        $path = wp_normalize_path((string) realpath((string) $path));
+        $uploadsBase = wp_normalize_path((string) realpath(wp_upload_dir()['basedir']));
+        if (!$path || !$uploadsBase || strpos($path, trailingslashit($uploadsBase)) !== 0) {
+            return null;
+        }
+
+        $fileType = wp_check_filetype($path);
+        if (strpos((string) $fileType['type'], 'image/') !== 0 || !wp_getimagesize($path)) {
+            return null;
+        }
+
         $fileName = basename($path);
 
         $mediaArgs['settings']['original_name'] = $fileName;
@@ -790,7 +803,7 @@ class BPMigratorHelper
         $mediaArgs['media_path'] = $newFilePath;
         $mediaArgs['media_url'] = $fileUrl;
 
-        $mediaArgs['media_type '] = mime_content_type($newFilePath);
+        $mediaArgs['media_type'] = $fileType['type'];
 
         $imageSizes = wp_getimagesize($newFilePath);
 

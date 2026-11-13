@@ -28,6 +28,7 @@ $router->prefix('admin/courses')->namespace('FluentCommunity\Modules\Course\Http
     $router->get('/{course_id}/comments', 'CourseAdminController@getCourseComments')->int('course_id');
     $router->get('/{course_id}/students', 'CourseAdminController@getCourseStudents')->int('course_id');
     $router->post('/{course_id}/students', 'CourseAdminController@addStudent')->int('course_id');
+    $router->post('/{course_id}/students/schedule', 'CourseAdminController@scheduleStudents')->int('course_id');
     $router->delete('/{course_id}/students/{student_id}', 'CourseAdminController@removeStudent')->int('course_id')->int('student_id');
     $router->delete('/{course_id}/students/{student_id}/progress', 'CourseAdminController@resetStudentProgress')
         ->int('course_id')->int('student_id');

@@ -253,8 +253,16 @@ class SmartCodeParser
             return network_site_url('wp-login.php', 'login');
         }
 
-        if ($valueKey === 'name') {
+        // Existing templates use site_title for the site name, so keep it as an alias.
+        if (in_array($valueKey, [ 'name', 'site_title' ], true)) {
             return wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+        }
+
+        // Template authors include course creators, so resolve only public site keys.
+        // get_bloginfo() would also return the admin email and the WordPress version.
+        $allowedKeys = apply_filters('fluent_community/smartcode/site_keys', [ 'url', 'wpurl', 'description' ]);
+        if (!in_array($valueKey, (array) $allowedKeys, true)) {
+            return $defaultValue;
         }
 
         $value = get_bloginfo($valueKey);

@@ -164,7 +164,8 @@ class PortalHandler
                                 </span>
                                 <span><?php esc_html_e('Upgrade', 'fluent-community'); ?></span>
                             </a>
-                        <?php else: ?>
+                        <?php elseif (apply_filters('fluent_community/show_wp_admin_link', true)): ?>
+                            <?php // A host that keeps members out of wp-admin turns this link off. ?>
                             <a aria-label="<?php echo esc_attr__('Go to WordPress admin', 'fluent-community'); ?>" class="fcom_inline_icon_link_item fcom_wp_admin_link"
                                href="<?php echo esc_url(admin_url()); ?>">
                                 <span class="el-icon">
@@ -201,7 +202,7 @@ class PortalHandler
                     ?>
                     <a target="_blank" rel="noopener" style="font-size: 13px; cursor: pointer;"
                        class="fcom_inline_icon_link_item" href="<?php echo esc_url(Utility::getProductUrl(true)); ?>">
-                        <?php echo esc_html__('Powered by FluentCommunity', 'fluent-community'); ?>
+                        <?php echo esc_html(Utility::getPoweredByText('portal')); ?>
                     </a>
                     <?php
                 }
@@ -517,6 +518,7 @@ class PortalHandler
                 'can_switch_layout'       => Utility::getCustomizationSetting('disable_feed_layout') !== 'yes',
                 'mention_mail'            => Utility::hasEmailAnnouncementEnabled(),
                 'max_media_per_post'      => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
+                'max_post_length'         => FeedsHelper::getMaxPostLength(),
                 'has_post_title'          => Utility::postTitlePref(),
                 'has_course'              => Helper::isFeatureEnabled('course_module'),
                 'can_view_members_page'   => Utility::canViewMembersPage(),
@@ -540,6 +542,7 @@ class PortalHandler
                 'show_post_modal'         => Utility::isCustomizationEnabled('show_post_modal'),
                 'insights_level'          => Utility::insightsLevel(),
                 'can_deactivate_account'  => Utility::getPrivacySetting('can_deactive_account') === 'yes',
+                'can_install_addons'      => Utility::canInstallAddons(),
             ],
             'route_classes'              => array_filter([
                 'fcom_sticky_header'           => Utility::isCustomizationEnabled('fixed_page_header'),
@@ -550,6 +553,10 @@ class PortalHandler
                 'site_url'      => home_url(),
                 'portal_base'   => Helper::baseUrl('/'),
                 'global_search' => Helper::baseUrl(),
+                'action_key'    => Helper::getActionKey(),
+                'auth_paths'    => Helper::getActiveAuthPaths(),
+                'login_url'     => Helper::authUrl('login'),
+                'signup_url'    => Helper::authUrl('register'),
             ],
             'last_feed_id'               => FeedsHelper::getLastFeedId(),
             'unread_notification_count'  => $userModel ? $userModel->getUnreadNotificationCount() : 0,
@@ -823,16 +830,47 @@ class PortalHandler
         ];
     }
 
+    /**
+     * Fire the portal action of this request.
+     *
+     * 1. A query action: `?{action key}=...` or the legacy `?fcom_action=...`.
+     * 2. A readable auth path (`login`, `signup`, `reset-password`), which fires
+     *    the `auth` action. A `form` query arg still wins over the path's form.
+     *
+     * Most listeners end the request (redirect or render and exit).
+     */
+    protected function dispatchPortalActions()
+    {
+        $action = Helper::getRequestedAction();
+        if ($action !== null) {
+            do_action('fluent_community/portal_action_' . $action, $_GET); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        }
+
+        $authScreen = Helper::getAuthScreenByPath($this->currentPath);
+        if (!$authScreen) {
+            return;
+        }
+
+        $requestData = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $screenForms = [
+            'signup'         => 'register',
+            'reset_password' => 'reset_password',
+        ];
+
+        if (isset($screenForms[$authScreen]) && !isset($requestData['form'])) {
+            $requestData['form'] = $screenForms[$authScreen];
+        }
+
+        do_action('fluent_community/portal_action_auth', $requestData);
+    }
+
     protected function renderFullApp()
     {
         do_action('litespeed_control_set_nocache', 'fluentcommunity api request'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         // set no cache headers
         nocache_headers();
 
-        if (isset($_REQUEST['fcom_action'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $action = sanitize_text_field(wp_unslash($_REQUEST['fcom_action'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            do_action('fluent_community/portal_action_' . $action, $_GET); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        }
+        $this->dispatchPortalActions();
 
         $pathParts = explode('/', $this->currentPath);
         do_action('fluent_community/rendering_path_ssr_' . $pathParts[0], $pathParts);
@@ -871,7 +909,7 @@ class PortalHandler
                 $this->viewErrorPage(__('Your request is pending', 'fluent-community'), __('An admin needs to approve your join request. Please contact an admin to get approval', 'fluent-community'));
             } elseif ((string) $xprofile->status === '') { // it's a self deactiavted account
                 $this->viewErrorPage(__('Your account is deactivated', 'fluent-community'), __('You have deactivated your community profile.', 'fluent-community'), true, [
-                    'btn_url'  => Helper::baseUrl('?fcom_action=reactivate_account&__nonce=' . wp_create_nonce('fcom_reactivate_account')),
+                    'btn_url'  => Helper::actionUrl('reactivate_account', [ '__nonce' => wp_create_nonce('fcom_reactivate_account') ]),
                     'btn_text' => __('Activate my account', 'fluent-community'),
                 ]);
             } else {
@@ -1104,7 +1142,11 @@ class PortalHandler
             $uriParts = explode('/', $this->currentPath);
             if (count($uriParts) >= 2) {
                 $paceSlug = $uriParts[1];
-                $space = BaseSpace::query()->onlyMain()->where('slug', $paceSlug)->first();
+                // Draft and archived courses get no head tags: the app refuses them too.
+                $space = BaseSpace::query()->onlyMain()
+                    ->where('slug', $paceSlug)
+                    ->where('status', 'published')
+                    ->first();
                 if ($space && $space->privacy !== 'secret') {
 
                     // matches the URL the sitemap submits, so tab variants consolidate onto it
