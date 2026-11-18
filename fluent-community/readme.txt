@@ -4,7 +4,7 @@ Tags: community, forum, social network, LMS
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.14.0
+Stable tag: 2.15.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -290,6 +290,35 @@ OR
 8. Private Message
 
 == Changelog ==
+
+= 2.15.0 (Date: Nov 18, 2026) =
+- Introduced: MCP Server for AI Agents
+- Added: Multi-Image Post Layout With a Zoomable Photo Viewer
+- Added: Photo Reordering in the Post and Comment Composer
+- Added: Photo Descriptions and Captions in the Photo Viewer
+- Added: Show/Hide Password Toggle on Login and Signup Forms
+- Added: WordPress Admin Submenu With Quick Links to Portal Pages
+- Added: FluentCRM Action to Reset Course Progress
+- Added: Mark a Single Notification as Read
+- Added: Filter to Skip Remote Link Preview Lookups
+- Added: Reaction Notification Filter Hook
+- Added: Host Overrides for Email Settings and Announcement Emails
+- Improved: Markdown Editor on Milkdown 7.23 With Table Support
+- Improved: Lazy-Loaded Video Players in the Feed
+- Improved: Profile Photo Upload Menu With Upload Progress
+- Improved: Image Limits for Comments, Lifted for Admins and Moderators
+- Improved: Featured Image on Card View Posts
+- Security: Masked Socket Secret in Messaging Settings
+- Fixed: Quiz Intro Edits and Removals Not Shown to Students
+- Fixed: Unsaved Profile Fields Cleared During Photo Upload
+- Fixed: Empty Image Files After WebP Conversion
+- Fixed: Post Previews and Anchors on Hash-Routed Portals
+- Fixed: Google Docs Paste Bold and Angle-Bracket Links
+- Fixed: Failed oEmbed Previews Cached as Results
+- Fixed: X, Instagram and Other Script Embeds Shown as Raw Text
+- Fixed: Save Play Position Offered Without FluentPlayer Pro
+- Fixed: Trending Posts and Cleanup Compared in UTC, Not Site Time
+- Fixed: Scroll to Top on Courses and Spaces Pages
 
 = 2.14.0 (Date: Nov 13, 2026) =
 - Introduced: Community Events With FluentEvent
@@ -882,215 +911,7 @@ OR
 - Fixed: Allow Join Option Showing for Public Space
 - Fixed: Unlink URL Not Converting to Plain Text in Feed
 
-= 2.0.0 (Date: Oct 29, 2025) =
-- Introducing Native Monetization Features for courses and Spaces with FluentCart
-- Support Multiple Pricing Plans for Courses and Spaces
-- Copy Course Sections between courses
-- Duplicate Course with all settings
-- Image Gallery Improvements
-- New: Badge Remove Action for FluentCRM
-- New: Section Completed Trigger for FluentCRM
-- Styling Improvements for Feeds and Courses
-- Fixed Join Date Timezone issue
-- Hashtags now works on all languages
-- BuddyBoss Migration Improvements
-- Underline Framework upgrade for future feature updates
-- Improvements on Bookmarks
-- Other Bug fixes and Improvements
-
-= 1.8.3 (Date: Oct 07, 2025) =
-- Added: Mentioned Users Hook
-- Improved: Post Alignment in RTL Mode
-- Improved: Support All Languages in Profanity Filter
-- Fixed: Mention Search Working Only by First Name
-- Fixed: Group Visibility Issue for Public Spaces
-- Fixed: Document Attachments not Saving in Post
-- Fixed: Media Disabling Issue on Post Update
-- Fixed: Post Titles Not Migrating from BuddyBoss
-- Fixed: Space Not Mapping in BuddyBoss Migration
-
-= 1.8.2 (Date: Oct 02, 2025) =
-- New: Added Remove from course or spaces from FluentCRM Profile
-- Improved Follow/Unfollow Users
-- Hotfix: Course Enrollment Actions Hooks Fixed
-
-= 1.8.1 (Date: Oct 10, 2025) =
-- Hotfix: Video Player Issue Fixed
-
-= 1.8.0 (Date: Oct 01, 2025)
-- Introduced: User Follow/Block Module
-- Introduced: Course Email Notification
-- Added: Thumbnail Image for Quiz Lesson
-- Added: Image Upload Option with Poll Post
-- Added: Default Feed Layout Styling Option
-- Added: Default Logo and Footer in Invitation Email
-- Added: Media File Migration Support in BPMigration
-- Added: Max Media Per Post Customization Settings
-- Added: Default Course Section Collapse Hook
-- Improved: Feed Queries for Better Performance
-- Improved: Handled Multiple Ajax Request
-- Improved: Excluded Site Admins from Post Limit Check
-- Improved: UI-UX and Responsiveness
-- Fixed: Issue with Comment Permission
-- Fixed: Digest Email Notification Avatar Issue
-- Fixed: Course Slug Issue with Other Language
-- Fixed: iOS Home-screen Shortcut Icon
-- Fixed: Styling Issues with Email Notification
-- Fixed: Deactivated Members Filter Not Working
-- Fixed: Space Group Displaying for Logged-out Users
-- Fixed: Topic-based Courses Filtering from Sidebar Menu
-- Fixed: Add Topics for Orphaned (Not Assigned to Any Groups) Spaces
-- Fixed: Document Search Functionality by File's Title
-- Fixed: Incoming Webhook Password Field Not Saving
-- Fixed: Section and Course Order Mismatch Issue
-- Fixed: Images Not Removing from Edit Post Modal
-- Fixed: Space Join Request Email Notification not Sending to Multiple Moderators
-- Fixed: Issue when Mentioning Multiple Users with Similar Usernames
-- Fixed: Send Notification to All Not Working in Document Feed
-- Fixed: Space Menu Links not Saving Visibility
-- Fixed: Lesson View Sidebar Not Scrolling
-- Fixed: Child Feed Overlapping with Header
-- Fixed: UI Issue with RTL Mode
-
-= 1.7.72 (Date: July 08, 2025) =
-- SEO: Course Schema Added for Public and Private Courses
-- Imroved Course Index Searches (includes Course title and description)
-- Translation Strings Updated
-- Improved Responsiveness
-- Better handling Deactivated/Blocked Profiles
-
-= 1.7.71 (Date: July 07, 2025) =
-- Added: Lesson Completed Trigger for FluentCRM
-- Added: Self Deactivation Option for Users
-- Added Public Only Sidebar Link Option
-- Added Dynamic URL for users profile
-- Improved Search for Course Indexes (Includes Categories for search)
-- Improved BuddyBoss Migration for large communities
-- Improved Email Notification Designs
-- Improved Mobile Responsiveness
-- Security improvement for inline CSS contents
-
-= 1.7.6 (Date: June 19, 2025)
-- Added: Option to Update Course Instructor
-- Added: Option to Hide Students from Instructor View
-- Fixed: Lesson Duration Display
-- Fixed: Profile Badge Styling Issue
-- Fixed: Custom Link Icon Not Saving
-- Fixed: Migration Request Time Limit Issue
-
-= 1.7.5 (Date: Jun 18, 2025)
-- New: Custom Link with Access Control
-- New: Modern Course Overview Layout
-- Added: Space/Course Meta Settings API
-- Added: Data Sync Privacy Settings
-- Added: Free Lesson Preview
-- Redesigned: Course Overview Page
-- Added: Access Message HTML for Locked Lessons
-- Fixed: Course Completion Trigger
-- Fixed: Mailing Settings Not Applying
-- Fixed: Invitation Issue with FluentAuth
-- Fixed: Last Activity & Social Links Display
-- Fixed: Course Creator Access Permission Issues
-
-= 1.7.1 (Date: Jun 05, 2025) =
-- Fixed Full Screen Mode Issue in Course Lessons
-- Fixed Styling issues in the auth pages
-- Improved Translation Strings
-- Fixed Infinite Scroll Issues
-- Improvement on the WP Page Layouts
-
-= 1.7.0 (Date: Jun 04, 2025) =
-- New: Introducing Quiz Module in courses
-- Added: Course Completed Trigger with FluentCRM
-- Added: DateTime Smartcode on Post Content
-- Added: Course Lessons Collapse/Open for all Sections
-- Added: Missing Translations
-- Added: Topic Selection Option in Space Creation
-- Improvement on Auth Module
-- Improvements on Docuemnts & File Uploading
-- Content Moderation Improvements when updating contents
-- Improved Course and Lesson Delete Cleanup
-- Fixed: S3 Cleanup Issue on File Deletion
-- Fixed: Unlisted Post Not Able to Publish
-- Fixed: Course Creator Permission
-
-= 1.6.11 (Date: May 16, 2025) =
-- Hotfix: Remove Notification Badge from email
-
-= 1.6.10 (Date: May 15, 2025) =
-- New: Custom Logo Permalink Option
-- Added Max Media File Size Validation
-- Added Missing Translation
-- Fixed Invalid Schedule Time Issue
-- Fixed: Disabled Space Links Still Visible
-
-= 1.6.03 (Date: May 13, 2025) =
-- Hotfix: timezone issue fixed on the post scheduling
-- Fixed: post edit issue
-
-= 1.6.01 (Date: May 13, 2025) =
-- New: Auto SEO Manager
-- New: Post Scheduling
-- New: Default Feed Sorting Select Option
-- New: Post Preview Before Publishing
-- Fixed: Digest Email Delivery Issue
-- Fixed: User Deletion Bug
-- Fixed: Text Domain Warning
-- Improved: Multiple UI/UX Enhancements
-
-= 1.5.0 (Date: Apr 29, 2025) =
-- Introducing Theme Compilability with all the major themes and page builders 🚀
-- New: Custom Landing Page URL for Private Spaces or Courses
-- New: Improved UI/UX for Chat Application.
-- Style Improvements for the overall feeds
-- Bug fixes and improvements
-
-= 1.3.3 (Date: Apr 10, 2025) =
-- Improvement on Course Lesson Editor Compitability with Elementor and Other Builders
-- Poll End date issues fixed
-- Latest Activity Feed Improvements
-- Terms & Conditions Link Issues Fixed
-
-= 1.3.2 (Date: Apr 09, 2025) =
-- Hotfix: Editor Compitability fix with Elementor
-
-= 1.3.1 (Date: Apr 09, 2025) =
-- Introduced Gutenberg Block in Course Lesson Editor
-- Added Option to Move Lessons Between Sections
-- Added One to One Messaging Settings
-- Added Email Notification Settings for Messaging
-- Added User Blocking Functionality for Messaging
-- Added Poll Ended Date Time
-- Added Refresh Feed Option
-- Added Option for BB Migration from Scratch
-- Added New Tab for Terms and Conditions Link
-- Added Ungrouped Spaces to the Space Groups
-- Added LightSpeed Caching issues handling
-- Added 100% Public Course!
-- Added Hook in Feeds Query
-- Added Missing Translations
-- Security: Updated Framework library to fix data unserialization issue (props to patchstack)
-- Fixed Document Lists
-- Fixed Issue with Privacy Url
-- Fixed Moderation Email Not Sending Issue
-- Fixed Course Not Deleting From Space Groups
-- Fixed Notification for Mentioned User in Comment
-- Fixed BuddyBoss Avatar and Cover Mismatch Issue
-- Improved UI-UX
-
-= 1.2.15 (Date: Mar 18, 2025) =
-- Added Add Or Remove Verification Action for FluentCRM Integration (pro)
-- Added Custom CSS and Javascript Snippet Options (pro)
-- Added Custom Signup URL option for Auth Module
-- Improved BuddyBoss / BuddyPress migration for images
-- Fixed comment notification issues
-- Fixed object caching for moderator settings
-
-= 1.2.11 (Date: Mar 10, 2025) =
-- Improved Moderation Module and Added new features
-- BuddyBoss & BuddyPress Migration Support for Media
-- Improved Database Queries for Feeds
-- Accessibility support for top menu bar
+For Full Changelog please check here: <a href="https://docs.fluentcommunity.co/changelog">https://docs.fluentcommunity.co/changelog</a>
 
 == Upgrade Notice ==
 - This is the first version of the plugin

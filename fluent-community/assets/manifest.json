@@ -68,12 +68,8 @@
       "_dayjs.js"
     ]
   },
-  "_index4.js": {
-    "file": "index4.js",
-    "name": "index"
-  },
-  "_index6.js": {
-    "file": "index6.js",
+  "_index2.js": {
+    "file": "index2.js",
     "name": "index",
     "imports": [
       "_index.js",
@@ -94,13 +90,6 @@
     "name": "pinia",
     "imports": [
       "_vue.js"
-    ]
-  },
-  "_todoList.js": {
-    "file": "todoList.js",
-    "name": "todoList",
-    "imports": [
-      "_vendor.js"
     ]
   },
   "_vendor.js": {
@@ -143,75 +132,6 @@
       "_admin_index.js",
       "src/admin_app.js",
       "src/shared/vue.js"
-    ]
-  },
-  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts": {
-    "file": "admin_index7.js",
-    "name": "index",
-    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_admin_index4.js",
-      "_admin_todoList.js",
-      "src/admin_app.js",
-      "_admin_index2.es.js",
-      "_admin_floating-ui.dom.js",
-      "_admin_index.js",
-      "src/shared/vue.js"
-    ]
-  },
-  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts": {
-    "file": "admin_index6.js",
-    "name": "index",
-    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_admin_todoList.js",
-      "src/admin_app.js",
-      "_admin_index2.es.js",
-      "src/shared/vue.js",
-      "_admin_index.js"
-    ]
-  },
-  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts": {
-    "file": "admin_index2.js",
-    "name": "index",
-    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_admin_todoList.js",
-      "_admin_index.es.js",
-      "src/admin_app.js",
-      "src/shared/vue.js",
-      "_admin_index.js",
-      "_admin_floating-ui.dom.js"
-    ]
-  },
-  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts": {
-    "file": "admin_index3.js",
-    "name": "index",
-    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_admin_index4.js",
-      "src/admin_app.js",
-      "src/shared/vue.js",
-      "_admin_index.js"
-    ]
-  },
-  "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts": {
-    "file": "admin_index5.js",
-    "name": "index",
-    "src": "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_admin_index4.js",
-      "_admin_todoList.js",
-      "src/admin_app.js",
-      "_admin_index.es.js",
-      "src/shared/vue.js",
-      "_admin_index.js",
-      "_admin_floating-ui.dom.js"
     ]
   },
   "src/Modules/Common/PushNotification/NotificationBlockedGuide.vue": {
@@ -278,7 +198,7 @@
     "imports": [
       "_index.js",
       "src/app.js",
-      "_index6.js",
+      "_index2.js",
       "_BgImageUpload.js",
       "_vue.js",
       "_emoji-picker.js",
@@ -398,11 +318,6 @@
     ],
     "dynamicImports": [
       "src/Modules/Common/PushNotification/NotificationBlockedGuide.vue",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts",
       "src/Modules/Feeds/Customizer/FeedSettingsRoute.vue",
       "src/Modules/Feeds/Parts/WelcomeBannerConfig.vue",
       "src/Modules/Feeds/Parts/ManageFeedLinks.vue",
@@ -423,8 +338,7 @@
     "isEntry": true,
     "imports": [
       "_admin_index.js",
-      "src/shared/vue.js",
-      "_admin_floating-ui.dom.js"
+      "src/shared/vue.js"
     ]
   },
   "src/shared/ui.js": {
@@ -461,19 +375,6 @@
       "src/shared/vue.js"
     ]
   },
-  "_admin_floating-ui.dom.js": {
-    "file": "admin_floating-ui.dom.js",
-    "name": "floating-ui.dom"
-  },
-  "_admin_index.es.js": {
-    "file": "admin_index.es.js",
-    "name": "index.es",
-    "imports": [
-      "src/admin_app.js",
-      "_admin_todoList.js",
-      "_admin_floating-ui.dom.js"
-    ]
-  },
   "_admin_index.js": {
     "file": "admin_index.js",
     "name": "index",
@@ -481,21 +382,11 @@
       "src/shared/vue.js"
     ]
   },
-  "_admin_index2.es.js": {
-    "file": "admin_index2.es.js",
-    "name": "index.es",
-    "imports": [
-      "src/admin_app.js",
-      "_admin_todoList.js"
-    ]
-  },
-  "_admin_index4.js": {
-    "file": "admin_index4.js",
-    "name": "index"
-  },
-  "_admin_todoList.js": {
-    "file": "admin_todoList.js",
-    "name": "todoList"
+  "node_modules/.pnpm/apexcharts@8.9.0/node_modules/apexcharts/dist/apexcharts.ssr.esm.js": {
+    "file": "admin_apexcharts.ssr.esm.js",
+    "name": "apexcharts.ssr.esm",
+    "src": "node_modules/.pnpm/apexcharts@8.9.0/node_modules/apexcharts/dist/apexcharts.ssr.esm.js",
+    "isDynamicEntry": true
   },
   "src/Modules/Common/ManageSpaceLinks.vue": {
     "file": "admin_ManageSpaceLinks.js",
@@ -552,6 +443,10 @@
       "_admin_index.js",
       "src/admin_app.js",
       "src/shared/vue.js"
+    ],
+    "dynamicImports": [
+      "node_modules/.pnpm/apexcharts@8.9.0/node_modules/apexcharts/dist/apexcharts.ssr.esm.js",
+      "node_modules/.pnpm/apexcharts@8.9.0/node_modules/apexcharts/dist/apexcharts.ssr.esm.js"
     ]
   },
   "src/Pieces/CodeEditor/code-editor-setup.js": {
@@ -575,11 +470,6 @@
       "_admin_index.js"
     ],
     "dynamicImports": [
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/link-tooltip/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/block-edit/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/placeholder/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/toolbar/index.ts",
-      "src/Modules/Common/MilkDownEditor/Crepe/src/feature/image-block/index.ts",
       "src/Pieces/CodeEditor/code-editor-setup.js",
       "src/Modules/Space/Customizer/Tabs/SpaceGeneralTab.vue",
       "src/Modules/Common/ManagePaywalls.vue",

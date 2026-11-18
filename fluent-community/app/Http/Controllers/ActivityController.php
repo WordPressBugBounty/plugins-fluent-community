@@ -182,7 +182,7 @@ class ActivityController extends Controller
         if ($isTrending && !$spaceId) {
             // Find trending posts which are created within last 7 days and order by reactions and comments count
             // make the comments_count * 2 to give more priority to comments
-            $postsQuery->where('created_at', '>=', gmdate('Y-m-d H:i:s', strtotime('-7 days')))
+            $postsQuery->where('created_at', '>=', wp_date('Y-m-d H:i:s', strtotime('-7 days')))
                 ->orderByRaw('(reactions_count + (comments_count * 2)) DESC');
         } else {
             $postsQuery->orderBy('id', 'DESC')

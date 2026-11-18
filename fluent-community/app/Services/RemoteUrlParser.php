@@ -14,17 +14,52 @@ class RemoteUrlParser
      */
     public static function parse($url)
     {
+        /**
+         * Short-circuit every remote preview lookup (oEmbed and page meta) before any request.
+         *
+         * Also runs before the community block editor's oEmbed proxy, where any non-null value blocks the lookup.
+         *
+         * @param null|array|false|\WP_Error $pre Return null to continue, an array to use as the preview,
+         *                                         or false / WP_Error for no preview.
+         * @param string                      $url The URL being previewed.
+         */
+        $pre = apply_filters('fluent_community/remote_preview_pre_parse', null, $url);
+        if ($pre !== null) {
+            return $pre;
+        }
+
+        /**
+         * Seconds to reuse a fetched oEmbed result for the same URL, when a persistent object cache is active.
+         * Return 0 to turn the cache off.
+         *
+         * @param int    $ttl Default one day.
+         * @param string $url The URL being previewed.
+         */
+        $ttl = (int) apply_filters('fluent_community/oembed_cache_ttl', DAY_IN_SECONDS, $url);
+
+        // Without a persistent object cache, transients become rows in wp_options, so cache only when one is present
+        $useCache = $ttl > 0 && wp_using_ext_object_cache();
+        $cacheKey = 'fcom_url_preview_' . md5($url);
+        $cached = $useCache ? get_transient($cacheKey) : false;
+        if (is_array($cached)) {
+            return $cached;
+        }
+
         if (!self::$instance) {
             self::$instance = new self();
         }
 
         $oEmbed = self::$instance->getOembed($url);
-
-        if ($oEmbed) {
-            return $oEmbed;
+        if (!$oEmbed) {
+            // Not cached here, so a passing oEmbed failure does not pin a link card for the whole TTL
+            return self::$instance->getInfoFromRemoteUrl($url);
         }
 
-        return self::$instance->getInfoFromRemoteUrl($url);
+        if ($useCache) {
+            set_transient($cacheKey, $oEmbed, $ttl);
+        }
+
+        return $oEmbed;
     }
 
     public static function extractIframeThumbnail(&$html)
@@ -40,6 +75,12 @@ class RemoteUrlParser
         $src = sanitize_url(html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         if (!$src) {
             return '';
+        }
+
+        /** This filter is documented in RemoteUrlParser::parse() */
+        $pre = apply_filters('fluent_community/remote_preview_pre_parse', null, $src);
+        if ($pre !== null) {
+            return is_array($pre) ? (string) Arr::get($pre, 'image', '') : '';
         }
 
         if (preg_match('#^https?://(?:[\w-]+\.)?youtube\.com/embed/([^?/]+)#i', $src, $ytMatch)) {

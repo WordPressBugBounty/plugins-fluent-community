@@ -90,6 +90,20 @@ class NotificationsController extends Controller
         ];
     }
 
+    public function markSingleAsRead(Request $request, $notification_id)
+    {
+        $user = $this->getUser(true);
+
+        // Unlike markAsRead, this leaves other notifications on the same post unread.
+        NotificationSubscriber::where('object_id', (int) $notification_id)
+            ->where('user_id', $user->ID)
+            ->update([ 'is_read' => 1 ]);
+
+        return [
+            'unread_count' => $user->getUnreadNotificationCount(),
+        ];
+    }
+
     public function markAsReadByFeedId(Request $request, $feedId)
     {
         $feed = Feed::withoutGlobalScopes()->findOrFail($feedId);

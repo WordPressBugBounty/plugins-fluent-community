@@ -111,6 +111,11 @@ class FeaturesHandler
         $params['url'] = sanitize_url($params['url']);
         $params += [ 'maxwidth' => 600 ];
 
+        /** This filter is documented in RemoteUrlParser::parse(). Any non-null value blocks the lookup here. */
+        if (apply_filters('fluent_community/remote_preview_pre_parse', null, $params['url']) !== null) {
+            wp_send_json([ 'error' => 'not_found' ], 404);
+        }
+
         $request = new \WP_REST_Request('GET', '/oembed/1.0/proxy');
         $request->set_query_params($params);
 

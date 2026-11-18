@@ -152,6 +152,7 @@ $router->prefix('notifications')->withPolicy('PortalPolicy')->group(function ($r
     $router->get('/unread', 'NotificationsController@getUnreadNotifications');
     $router->post('/mark-read/{notification_id}', 'NotificationsController@markAsRead')->int('notification_id');
     $router->post('/mark-read/{feed_id}/by-feed-id', 'NotificationsController@markAsReadByFeedId')->int('feed_id');
+    $router->post('/mark-read/{notification_id}/single', 'NotificationsController@markSingleAsRead')->int('notification_id');
     $router->post('/mark-all-read', 'NotificationsController@markAllRead');
 });
 

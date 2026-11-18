@@ -94,7 +94,91 @@ class PortalSettingsHandler
                 $this->getMenuIcon(),
                 130
             );
+
+            add_submenu_page(
+                'fluent-community',
+                'FluentCommunity',
+                __('Dashboard', 'fluent-community'),
+                'edit_posts',
+                'fluent-community'
+            );
+
+            add_submenu_page(
+                'fluent-community',
+                __('Community Portal', 'fluent-community'),
+                __('Community Portal', 'fluent-community'),
+                'edit_posts',
+                Helper::baseUrl('/')
+            );
+
+            // Full URLs as menu slugs: WordPress links them as they are, so each item opens the portal page.
+            foreach ($this->getAdminQuickLinks() as $link) {
+                add_submenu_page(
+                    'fluent-community',
+                    $link['title'],
+                    $link['title'],
+                    'edit_posts',
+                    $link['url']
+                );
+            }
         });
+    }
+
+    /**
+     * Portal pages linked from the WP admin submenu and the dashboard cards.
+     * Each link is listed only for users who can open that page.
+     *
+     * @return array
+     */
+    public function getAdminQuickLinks()
+    {
+        $isAdmin = Helper::isSiteAdmin();
+        $links = [];
+
+        if ($isAdmin) {
+            $links['insights'] = [
+                'title'       => __('Insights', 'fluent-community'),
+                'description' => __('Activity, growth and engagement reports', 'fluent-community'),
+                'url'         => Helper::baseUrl('admin/insights'),
+            ];
+        }
+
+        if (Utility::canViewMembersPage()) {
+            $links['members'] = [
+                'title'       => __('Members', 'fluent-community'),
+                'description' => __('Browse and manage community members', 'fluent-community'),
+                'url'         => Helper::baseUrl('members'),
+            ];
+        }
+
+        if ($isAdmin) {
+            $links['space_groups'] = [
+                'title'       => __('Space Groups', 'fluent-community'),
+                'description' => __('Organize spaces into groups', 'fluent-community'),
+                'url'         => Helper::baseUrl('admin/settings/space_groups'),
+            ];
+        }
+
+        if (Helper::isFeatureEnabled('course_module')) {
+            $user = Helper::getCurrentUser();
+            if ($isAdmin || ($user && $user->hasCourseCreatorAccess())) {
+                $links['courses'] = [
+                    'title'       => __('Manage Courses', 'fluent-community'),
+                    'description' => __('View and manage all of your courses', 'fluent-community'),
+                    'url'         => Helper::baseUrl('admin/manage-courses'),
+                ];
+            }
+        }
+
+        if ($isAdmin) {
+            $links['settings'] = [
+                'title'       => __('Settings', 'fluent-community'),
+                'description' => __('General settings, features and customization', 'fluent-community'),
+                'url'         => Helper::baseUrl('admin/settings'),
+            ];
+        }
+
+        return $links;
     }
 
     public function getPortalSettingsMenuItems()
@@ -213,9 +297,25 @@ class PortalSettingsHandler
             'settings_page_url'   => admin_url('admin.php?page=fluent-community'),
             'is_license_page'     => isset($_GET['license']) && $_GET['license'] === 'yes', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             'license_url_page'    => defined('FLUENT_COMMUNITY_PRO_VERSION') ? admin_url('admin.php?page=fluent-community&license=yes') : '',
+            'quick_links'         => $this->getQuickLinksForJs(),
         ]);
 
         echo '<div class="wrap"><div id="fcom_onboarding_app"></div></div>';
+    }
+
+    private function getQuickLinksForJs()
+    {
+        $links = [];
+        foreach ($this->getAdminQuickLinks() as $key => $link) {
+            $links[] = [
+                'key'         => sanitize_key($key),
+                'title'       => $link['title'],
+                'description' => $link['description'],
+                'url'         => esc_url_raw($link['url']),
+            ];
+        }
+
+        return $links;
     }
 
     private function getMenuIcon()

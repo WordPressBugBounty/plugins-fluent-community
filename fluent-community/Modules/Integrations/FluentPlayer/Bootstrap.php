@@ -122,6 +122,16 @@ class Bootstrap
         return $settings;
     }
 
+    /**
+     * Whether FluentPlayer Pro is active. Pro-only player features need it.
+     *
+     * @return bool
+     */
+    public static function hasPlayerPro()
+    {
+        return is_callable([ '\FluentPlayer\App\Helpers\Helper', 'hasPro' ]) && \FluentPlayer\App\Helpers\Helper::hasPro();
+    }
+
     public static function updateSettings($settings)
     {
         $sanitizerRules = [

@@ -11,11 +11,11 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     );
 
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WPFluent\\' => 9,
         ),
-        'F' => 
+        'F' =>
         array (
             'FluentCommunity\\Modules\\' => 24,
             'FluentCommunity\\Framework\\' => 26,
@@ -25,23 +25,23 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
     );
 
     public static $prefixDirsPsr4 = array (
-        'WPFluent\\' => 
+        'WPFluent\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Modules\\' => 
+        'FluentCommunity\\Modules\\' =>
         array (
             0 => __DIR__ . '/../..' . '/Modules',
         ),
-        'FluentCommunity\\Framework\\' => 
+        'FluentCommunity\\Framework\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'FluentCommunity\\Dev\\' => 
+        'FluentCommunity\\Dev\\' =>
         array (
             0 => __DIR__ . '/../..' . '/dev',
         ),
-        'FluentCommunity\\App\\' => 
+        'FluentCommunity\\App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
         ),
@@ -153,8 +153,10 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\App\\Services\\Libs\\DailyDigest' => __DIR__ . '/../..' . '/app/Services/Libs/DailyDigest.php',
         'FluentCommunity\\App\\Services\\Libs\\EmailComposer' => __DIR__ . '/../..' . '/app/Services/Libs/EmailComposer.php',
         'FluentCommunity\\App\\Services\\Libs\\Emogrifier\\Emogrifier' => __DIR__ . '/../..' . '/app/Services/Libs/Emogrifier/Emogrifier.php',
+        'FluentCommunity\\App\\Services\\Libs\\EmptyMediaFinder' => __DIR__ . '/../..' . '/app/Services/Libs/EmptyMediaFinder.php',
         'FluentCommunity\\App\\Services\\Libs\\FileSystem' => __DIR__ . '/../..' . '/app/Services/Libs/FileSystem.php',
         'FluentCommunity\\App\\Services\\Libs\\Mailer' => __DIR__ . '/../..' . '/app/Services/Libs/Mailer.php',
+        'FluentCommunity\\App\\Services\\Libs\\WebpSave' => __DIR__ . '/../..' . '/app/Services/Libs/WebpSave.php',
         'FluentCommunity\\App\\Services\\LockscreenService' => __DIR__ . '/../..' . '/app/Services/LockscreenService.php',
         'FluentCommunity\\App\\Services\\NotificationPref' => __DIR__ . '/../..' . '/app/Services/NotificationPref.php',
         'FluentCommunity\\App\\Services\\OnboardingService' => __DIR__ . '/../..' . '/app/Services/OnboardingService.php',
@@ -481,6 +483,24 @@ class ComposerStaticInitb4f238457fc6612862e15e088b4e200e
         'FluentCommunity\\Modules\\Integrations\\FluentPlayer\\Bootstrap' => __DIR__ . '/../..' . '/Modules/Integrations/FluentPlayer/Bootstrap.php',
         'FluentCommunity\\Modules\\Integrations\\FluentPlayer\\Http\\Controllers\\MediaController' => __DIR__ . '/../..' . '/Modules/Integrations/FluentPlayer/Http/Controllers/MediaController.php',
         'FluentCommunity\\Modules\\Integrations\\Integrations' => __DIR__ . '/../..' . '/Modules/Integrations/Integrations.php',
+        'FluentCommunity\\Modules\\Mcp\\AbilitiesRegistrar' => __DIR__ . '/../..' . '/Modules/Mcp/AbilitiesRegistrar.php',
+        'FluentCommunity\\Modules\\Mcp\\Http\\Controllers\\McpSettingsController' => __DIR__ . '/../..' . '/Modules/Mcp/Http/Controllers/McpSettingsController.php',
+        'FluentCommunity\\Modules\\Mcp\\McpModule' => __DIR__ . '/../..' . '/Modules/Mcp/McpModule.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\BlockGuide' => __DIR__ . '/../..' . '/Modules/Mcp/Support/BlockGuide.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\LessonBlocks' => __DIR__ . '/../..' . '/Modules/Mcp/Support/LessonBlocks.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\LessonContent' => __DIR__ . '/../..' . '/Modules/Mcp/Support/LessonContent.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\McpGate' => __DIR__ . '/../..' . '/Modules/Mcp/Support/McpGate.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\McpHelper' => __DIR__ . '/../..' . '/Modules/Mcp/Support/McpHelper.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\PostImages' => __DIR__ . '/../..' . '/Modules/Mcp/Support/PostImages.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\ProTools' => __DIR__ . '/../..' . '/Modules/Mcp/Support/ProTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\Projector' => __DIR__ . '/../..' . '/Modules/Mcp/Support/Projector.php',
+        'FluentCommunity\\Modules\\Mcp\\Support\\RestBridge' => __DIR__ . '/../..' . '/Modules/Mcp/Support/RestBridge.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\ContextTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/ContextTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\CourseTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/CourseTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\MemberTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/MemberTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\ModerationTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/ModerationTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\PostTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/PostTools.php',
+        'FluentCommunity\\Modules\\Mcp\\Tools\\SearchTools' => __DIR__ . '/../..' . '/Modules/Mcp/Tools/SearchTools.php',
         'FluentCommunity\\Modules\\Migrations\\Helpers\\BPMigratorHelper' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/BPMigratorHelper.php',
         'FluentCommunity\\Modules\\Migrations\\Helpers\\PostMigrator' => __DIR__ . '/../..' . '/Modules/Migrations/Helpers/PostMigrator.php',
         'FluentCommunity\\Modules\\Migrations\\Http\\Controllers\\BPMigrationController' => __DIR__ . '/../..' . '/Modules/Migrations/Http/Controllers/BPMigrationController.php',

@@ -11,6 +11,7 @@ use FluentCommunity\App\Services\CustomSanitizer;
 use FluentCommunity\App\Services\FeedsHelper;
 use FluentCommunity\App\Services\Helper;
 use FluentCommunity\App\Services\Libs\FileSystem;
+use FluentCommunity\App\Services\Libs\WebpSave;
 use FluentCommunity\App\Services\UploadHelper;
 use FluentCommunity\App\Services\RemoteUrlParser;
 use FluentCommunity\Framework\Http\Request\Request;
@@ -946,6 +947,128 @@ class FeedsController extends Controller
         ];
     }
 
+    /**
+     * Resizes an uploaded image and converts it to WebP, as the upload request asks.
+     * The original is deleted only after a real, non-empty WebP exists (see WebpSave).
+     *
+     * @param array    $file                  The stored upload: url, file, type.
+     * @param array    $options               disable_convert, resize, max_width, context, skip_convert.
+     * @param string[] $convertibleExtensions Extensions that may become WebP.
+     * @return array The file: url, file, path, type, and meta (width, height) when known.
+     */
+    private static function convertUploadedImage(array $file, array $options, array $convertibleExtensions)
+    {
+        $upload_dir = wp_upload_dir();
+
+        $originalUrl = $file['url'];
+        $orginalPath = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
+        $originalFileType = $file['type'];
+        $originalFileName = $file['file'];
+
+        $willWebPConvert = Arr::get($options, 'disable_convert') !== 'yes';
+
+        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
+        $willResize = Arr::get($options, 'resize');
+        $maxWidth = Arr::get($options, 'max_width');
+
+        $willResize = apply_filters('fluent_community/media_upload_resize', $willResize, $file);
+
+        $context = Arr::get($options, 'context');
+        if ($context) {
+            $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
+        }
+
+        if ($willResize && $maxWidth) {
+            $upload_dir = wp_upload_dir();
+            $fileUrl = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $file['url']);
+
+            $editor = wp_get_image_editor($fileUrl);
+
+            if (!is_wp_error($editor) && $editor->get_size()['width'] > $maxWidth) {
+                // Current file extension
+                $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
+                $willConvert = in_array($ext, $convertibleExtensions, true) && $willWebPConvert;
+
+                if ($willConvert) {
+                    $dottedExtensions = array_map(function ($ext) {
+                        return '.' . $ext;
+                    }, $convertibleExtensions);
+
+                    $fileUrl = str_replace($dottedExtensions, '.webp', $fileUrl);
+                    $file['file'] = str_replace($dottedExtensions, '.webp', $file['file']);
+                    $file['url'] = str_replace($dottedExtensions, '.webp', $file['url']);
+                    $file['type'] = 'image/webp';
+                }
+
+                // resize the image
+                $editor->resize($maxWidth, null, false);
+                $editor->set_quality(90);
+                $originalLocalPath = str_replace('.webp', '.' . $ext, $fileUrl);
+
+                if ($willConvert) {
+                    $result = $editor->save($fileUrl, 'image/webp');
+                    if (WebpSave::succeeded($result)) {
+                        // remove original file now
+                        wp_delete_file($originalLocalPath);
+                    } else {
+                        // GD can report a WebP it did not write (palette images); keep the original format.
+                        WebpSave::discard($result);
+                        $result = $editor->save($originalLocalPath);
+                    }
+                    // Converted or not, a second conversion attempt below would fail the same way.
+                    $file['is_converted'] = true;
+                } else {
+                    $result = $editor->save($fileUrl);
+                }
+
+                if (is_wp_error($result) || Arr::get($result, 'mime-type') !== 'image/webp') {
+                    $file['file'] = $originalFileName;
+                    $file['url'] = $originalUrl;
+                    $file['type'] = is_wp_error($result) ? $originalFileType : $result['mime-type'];
+                }
+
+                $file['meta'] = [
+                    'width'  => $editor->get_size()['width'],
+                    'height' => $editor->get_size()['height'],
+                ];
+            }
+            $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
+        } else {
+            $upload_dir = wp_upload_dir();
+            $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
+        }
+
+        if ($willWebPConvert && empty($file['is_converted']) && !Arr::get($options, 'skip_convert')) {
+            $path = $file['path'];
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+            if ($extension !== 'webp' && in_array($extension, $convertibleExtensions, true)) {
+                // Let's convert to webp
+                $editor = wp_get_image_editor($file['path']);
+                if (!is_wp_error($editor)) {
+                    $result = $editor->save(str_replace('.' . $extension, '.webp', $file['path']), 'image/webp');
+
+                    if (WebpSave::succeeded($result)) {
+                        $file['path'] = str_replace('.' . $extension, '.webp', $file['path']);
+                        $file['url'] = str_replace('.' . $extension, '.webp', $file['url']);
+                        $file['type'] = 'image/webp';
+                        wp_delete_file($orginalPath);
+                    } else {
+                        // Keep the original; GD can report a WebP save it did not make (palette images).
+                        WebpSave::discard($result);
+                    }
+
+                    $file['meta'] = [
+                        'width'  => $editor->get_size()['width'],
+                        'height' => $editor->get_size()['height'],
+                    ];
+                }
+            }
+        }
+
+        return $file;
+    }
+
     public function handleMediaUpload(Request $request)
     {
         $error = Helper::checkUploadSizeError();
@@ -1037,107 +1160,15 @@ class FeedsController extends Controller
             ]);
         }
 
-        $upload_dir = wp_upload_dir();
-
-        $originalUrl = $file['url'];
-        $orginalPath = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
         $originalFileType = $file['type'];
-        $originalFileName = $file['file'];
 
-        $willWebPConvert = $request->get('disable_convert') !== 'yes';
-
-        $willWebPConvert = apply_filters('fluent_community/convert_image_to_webp', $willWebPConvert, $file);
-        $willResize = $request->get('resize');
-        $maxWidth = $request->get('max_width');
-
-        $willResize = apply_filters('fluent_community/media_upload_resize', $willResize, $file);
-
-        $context = $request->get('context');
-        if ($context) {
-            $maxWidth = apply_filters('fluent_community/media_upload_max_width_' . $context, $maxWidth, $file);
-        }
-
-        if ($willResize && $maxWidth) {
-            $upload_dir = wp_upload_dir();
-            $fileUrl = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $file['url']);
-
-            $editor = wp_get_image_editor($fileUrl);
-
-            if (!is_wp_error($editor) && $editor->get_size()['width'] > $maxWidth) {
-                // Current file extension
-                $ext = pathinfo($file['url'], PATHINFO_EXTENSION);
-                $willConvert = in_array($ext, $convertibleExtensions, true) && $willWebPConvert;
-
-                if ($willConvert) {
-                    $dottedExtensions = array_map(function ($ext) {
-                        return '.' . $ext;
-                    }, $convertibleExtensions);
-
-                    $fileUrl = str_replace($dottedExtensions, '.webp', $fileUrl);
-                    $file['file'] = str_replace($dottedExtensions, '.webp', $file['file']);
-                    $file['url'] = str_replace($dottedExtensions, '.webp', $file['url']);
-                    $file['type'] = 'image/webp';
-                }
-
-                // resize the image
-                $editor->resize($maxWidth, null, false);
-                $editor->set_quality(90);
-                if ($willConvert) {
-                    $result = $editor->save($fileUrl, 'image/webp');
-                    if ($result['mime-type'] === 'image/webp') {
-                        // remove original file now
-                        wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
-                    }
-                    $file['is_converted'] = true;
-                } else {
-                    $result = $editor->save($fileUrl);
-                }
-
-                if ($result['mime-type'] !== 'image/webp') {
-                    $file['file'] = $originalFileName;
-                    $file['url'] = $originalUrl;
-                    $file['type'] = $result['mime-type'];
-                }
-
-                $file['meta'] = [
-                    'width'  => $editor->get_size()['width'],
-                    'height' => $editor->get_size()['height'],
-                ];
-            }
-            $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
-        } else {
-            $upload_dir = wp_upload_dir();
-            $file['path'] = $upload_dir['basedir'] . '/fluent-community/' . $file['file'];
-        }
-
-        if ($willWebPConvert && empty($file['is_converted']) && !$request->get('skip_convert')) {
-            $path = $file['path'];
-            $extension = pathinfo($path, PATHINFO_EXTENSION);
-
-            if ($extension !== 'webp' && in_array($extension, $convertibleExtensions, true)) {
-                // Let's convert to webp
-                $editor = wp_get_image_editor($file['path']);
-                if (!is_wp_error($editor)) {
-                    $file['path'] = str_replace('.' . $extension, '.webp', $file['path']);
-                    $file['url'] = str_replace('.' . $extension, '.webp', $file['url']);
-                    $file['type'] = 'image/webp';
-                    $result = $editor->save($file['path'], 'image/webp');
-
-                    if ($result['mime-type'] !== 'image/webp') {
-                        $file['path'] = $orginalPath;
-                        $file['url'] = $originalUrl;
-                        $file['type'] = $result['mime-type'];
-                    } else {
-                        wp_delete_file($orginalPath);
-                    }
-
-                    $file['meta'] = [
-                        'width'  => $editor->get_size()['width'],
-                        'height' => $editor->get_size()['height'],
-                    ];
-                }
-            }
-        }
+        $file = self::convertUploadedImage($file, [
+            'disable_convert' => $request->get('disable_convert'),
+            'resize'          => $request->get('resize'),
+            'max_width'       => $request->get('max_width'),
+            'context'         => $request->get('context'),
+            'skip_convert'    => $request->get('skip_convert'),
+        ], $convertibleExtensions);
 
         // WP's Imagick editor keeps EXIF/XMP when converting, so a HEIC whose own strip
         // failed would pass its GPS on to the WebP; strip the converted file too
@@ -1195,7 +1226,7 @@ class FeedsController extends Controller
         $userId = get_current_user_id();
         if (!$userId) {
             return [
-                'timestamp'   => current_time('mysql', true),
+                'timestamp'   => current_time('mysql'),
                 'has_changes' => false,
                 'error'       => __('User not authenticated', 'fluent-community'),
                 'feeds'       => [],
@@ -1443,28 +1474,43 @@ class FeedsController extends Controller
         ];
     }
 
+    /**
+     * Stored dates are site time. The ticker has always sent ISO 8601 (the mobile apps parse it),
+     * so the value keeps that format and carries the site offset.
+     *
+     * @param mixed $storedDate
+     * @return string
+     */
+    private function tickerIsoDate($storedDate)
+    {
+        $date = date_create((string) $storedDate, wp_timezone());
+
+        return $date ? $date->format('c') : '';
+    }
+
     public function getTickerUpdates(Request $request)
     {
         $context = $request->get('context', 'global');
-        $since = $request->get('since'); // ISO 8601 timestamp
+        $since = $request->get('since');
 
         $userId = get_current_user_id();
         if (!$userId) {
             return [
                 'updates'     => [],
-                'timestamp'   => current_time('mysql', true),
+                'timestamp'   => current_time('mysql'),
                 'has_changes' => false,
                 'error'       => __('User not authenticated', 'fluent-community'),
             ];
         }
 
-        // Parse since timestamp
+        // Stored dates are site time. A since with an offset or Z (the browser's ISO time)
+        // is converted to site time; one without (the timestamp of the last response) already is.
         try {
-            $sinceDate = $since ? new \DateTime($since) : null;
+            $sinceDate = $since ? (new \DateTime($since, wp_timezone()))->setTimezone(wp_timezone()) : null;
         } catch (\Exception $e) {
             return [
                 'updates'     => [],
-                'timestamp'   => current_time('mysql', true),
+                'timestamp'   => current_time('mysql'),
                 'has_changes' => false,
                 'error'       => __('Invalid timestamp format', 'fluent-community'),
             ];
@@ -1504,7 +1550,7 @@ class FeedsController extends Controller
 
                 $updates[] = [
                     'id'         => $feed->id,
-                    'updated_at' => gmdate('c', strtotime($feed->updated_at)),
+                    'updated_at' => $this->tickerIsoDate($feed->updated_at),
                     'action'     => $isNew ? 'created' : 'updated',
                 ];
             }
@@ -1520,7 +1566,7 @@ class FeedsController extends Controller
             foreach ($deletedFeeds as $feed) {
                 $updates[] = [
                     'id'         => $feed->id,
-                    'updated_at' => gmdate('c', strtotime($feed->updated_at)),
+                    'updated_at' => $this->tickerIsoDate($feed->updated_at),
                     'action'     => 'deleted',
                 ];
             }
@@ -1528,7 +1574,7 @@ class FeedsController extends Controller
 
         return [
             'updates'     => $updates,
-            'timestamp'   => current_time('mysql', true),
+            'timestamp'   => current_time('mysql'),
             'has_changes' => !empty($updates),
         ];
     }

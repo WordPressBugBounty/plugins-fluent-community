@@ -50,6 +50,10 @@ class ProActionPlaceholders
                 __('Remove Courses', 'fluent-community'),
                 esc_html__('Remove user from the selected courses', 'fluent-community'),
             ];
+            $actions['reset_fluent_community_course_progress'] = [
+                __('Reset Course Progress', 'fluent-community'),
+                esc_html__('Reset the progress of the user in the selected courses. The user stays enrolled.', 'fluent-community'),
+            ];
         }
 
         $upgradeUrl = esc_url_raw(Utility::getProUpgradeUrl('fluentcrm_automation'));

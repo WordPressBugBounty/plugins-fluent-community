@@ -342,6 +342,21 @@ class Helper
      * @param string $path The path to append to the base URL.
      * @return string The full base URL.
      */
+    /**
+     * A URL in FluentCommunity's REST API, under the configured namespace and version (config/app.php; a host can set
+     * the namespace with FLUENT_COMMUNITY_REST_NAMESPACE). Use this instead of rest_url('fluent-community/v2/...').
+     *
+     * @param string $path Route path after the version, for example 'certificates/open-badges/x'.
+     * @return string
+     */
+    public static function restUrl($path = '')
+    {
+        $app = fluentCommunityApp();
+        $base = $app->config->get('app.rest_namespace') . '/' . $app->config->get('app.rest_version');
+
+        return rest_url($path === '' ? $base : $base . '/' . ltrim((string) $path, '/'));
+    }
+
     public static function baseUrl($path = '')
     {
         $baseUrl = apply_filters('fluent_community/base_url', home_url(self::getPortalSlug()));
@@ -813,6 +828,64 @@ class Helper
         }
 
         return Media::where('media_key', $key)->first();
+    }
+
+    /**
+     * Store the member's photo description (alt text) sent with an attached image.
+     *
+     * The text lives in the media row's settings, so every place that builds a media
+     * item from the row can read it. Only call this for media the request may attach.
+     *
+     * @param array $mediaImages The media_images list from the request.
+     * @param Media $media       The media row picked for one of those items.
+     * @return string The stored alt text ('' when none).
+     */
+    public static function syncMediaAlt($mediaImages, $media)
+    {
+        $settings = (array) $media->settings;
+        $current = (string) Arr::get($settings, 'alt', '');
+
+        // A draft upload belongs to whoever uploaded it until it is attached; only that
+        // member may describe it. Attached rows were already scoped by the caller.
+        if (!is_array($mediaImages) || (!$media->is_active && (int) $media->user_id !== get_current_user_id())) {
+            return $current;
+        }
+
+        foreach ($mediaImages as $image) {
+            if (!is_array($image) || !array_key_exists('alt', $image)) {
+                continue;
+            }
+
+            $url = (string) Arr::get($image, 'url', '');
+            $query = [];
+            parse_str((string) wp_parse_url($url, PHP_URL_QUERY), $query);
+
+            $matches = ((int) Arr::get($image, 'media_id') && (int) Arr::get($image, 'media_id') === (int) $media->id)
+                || (Arr::get($query, 'media_key') && Arr::get($query, 'media_key') === $media->media_key)
+                || ($url && strtok($url, '?') === strtok((string) $media->public_url, '?'));
+
+            if (!$matches) {
+                continue;
+            }
+
+            // sanitize_text_field() strips tags but turns a lone "<" into "&lt;"; decode once so
+            // "I <3 cats" stays readable. Every output escapes it (Vue bindings, esc_attr).
+            $alt = mb_substr(trim(wp_specialchars_decode(sanitize_text_field((string) $image['alt']), ENT_QUOTES)), 0, 300);
+
+            if ($alt !== $current) {
+                if ($alt === '') {
+                    unset($settings['alt']);
+                } else {
+                    $settings['alt'] = $alt;
+                }
+                $media->settings = $settings;
+                $media->save();
+            }
+
+            return $alt;
+        }
+
+        return $current;
     }
 
     public static function removeMediaByUrl($url = '', $subObjectId = null)

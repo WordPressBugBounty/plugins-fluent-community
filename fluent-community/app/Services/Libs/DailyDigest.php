@@ -66,8 +66,7 @@ class DailyDigest
             Arr::get($settings, 'site_title')
         );
 
-        /* translators: %1$s is replaced by the start date of the week, %2$s is replaced by the end date of the week */
-        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . sprintf(__('%1$s - %2$s', 'fluent-community'), date_i18n('F d', strtotime('-7 days')), date_i18n('F d, Y')) . '</p>';
+        $headingHtml .= '<p style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; margin: 0; margin-bottom: 16px;">' . self::weekRangeLabel() . '</p>';
 
         $emailComposer->addBlock('html_content', $headingHtml);
         $emailComposer->addBlock('paragraph', __('Here are some of the most popular posts and notifications you may have missed from the last week 🔥.', 'fluent-community'));
@@ -117,6 +116,20 @@ class DailyDigest
         }
 
         return apply_filters('fluent_community/digest_email_body', $emailBody, $this->user);
+    }
+
+    /**
+     * The week the digest covers, for its heading.
+     *
+     * @param int|null $now Unix time; null is the current time.
+     * @return string
+     */
+    public static function weekRangeLabel($now = null)
+    {
+        $now = $now === null ? time() : (int) $now;
+
+        /* translators: %1$s is replaced by the start date of the week, %2$s is replaced by the end date of the week */
+        return sprintf(__('%1$s - %2$s', 'fluent-community'), wp_date('F d', $now - 7 * DAY_IN_SECONDS), wp_date('F d, Y', $now));
     }
 
     public function willSend($hours = 20)
@@ -241,7 +254,7 @@ class DailyDigest
         }, 'space',
         ])
             ->byActiveAuthor()
-            ->where('created_at', '>=', gmdate('Y-m-d H:i:s', strtotime('-' . $days . ' days')))
+            ->where('created_at', '>=', wp_date('Y-m-d H:i:s', strtotime('-' . $days . ' days')))
             ->orderByRaw('(reactions_count + (comments_count * 2)) DESC')
             ->limit($count)
             ->get();

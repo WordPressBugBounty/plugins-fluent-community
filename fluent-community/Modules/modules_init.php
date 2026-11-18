@@ -10,4 +10,5 @@ add_action('fluent_community/portal_loaded', function ($app) {
     (new \FluentCommunity\Modules\Migrations\MigrationModule())->register($app);
     (new \FluentCommunity\Modules\Theming\TemplateLoader())->register();
     (new \FluentCommunity\Modules\PushNotification\PushNotificationModule())->register();
+    (new \FluentCommunity\Modules\Mcp\McpModule())->register($app);
 });

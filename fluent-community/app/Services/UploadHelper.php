@@ -80,6 +80,19 @@ class UploadHelper
             return new \WP_Error('upload_error', __('No upload file was received. Please try again.', 'fluent-community'));
         }
 
+        return self::finishImageUpload($file, $options);
+    }
+
+    /**
+     * Resize, convert to WebP and store the media row for a file that is already in the
+     * plugin's upload folder (from FileSystem::put or FileSystem::sideload).
+     *
+     * @param array $file    The stored file: url, file (name in the folder), type, optional meta.
+     * @param array $options disable_convert, resize, max_width, context, skip_convert.
+     * @return array|\WP_Error url (with media_key), media_key, type, width, height.
+     */
+    public static function finishImageUpload(array $file, array $options = [])
+    {
         $upload_dir = wp_upload_dir();
 
         $originalUrl = $file['url'];
@@ -126,21 +139,28 @@ class UploadHelper
                 // resize the image
                 $editor->resize($maxWidth, null, false);
                 $editor->set_quality(90);
+                $originalLocalPath = str_replace('.webp', '.' . $ext, $fileUrl);
+
                 if ($willConvert) {
                     $result = $editor->save($fileUrl, 'image/webp');
-                    if ($result['mime-type'] === 'image/webp') {
+                    if (self::webpSaved($result)) {
                         // remove original file now
-                        wp_delete_file(str_replace('.webp', '.' . $ext, $fileUrl));
+                        wp_delete_file($originalLocalPath);
+                    } else {
+                        // GD writes an empty WebP for a palette PNG and still reports success; keep the original format.
+                        self::discardFailedSave($result);
+                        $result = $editor->save($originalLocalPath);
                     }
+                    // Converted or not, a second conversion attempt below would fail the same way.
                     $file['is_converted'] = true;
                 } else {
                     $result = $editor->save($fileUrl);
                 }
 
-                if ($result['mime-type'] !== 'image/webp') {
+                if (is_wp_error($result) || Arr::get($result, 'mime-type') !== 'image/webp') {
                     $file['file'] = $originalFileName;
                     $file['url'] = $originalUrl;
-                    $file['type'] = $result['mime-type'];
+                    $file['type'] = is_wp_error($result) ? $originalFileType : $result['mime-type'];
                 }
 
                 $file['meta'] = [
@@ -163,17 +183,16 @@ class UploadHelper
                 // Let's convert to webp
                 $editor = wp_get_image_editor($file['path']);
                 if (!is_wp_error($editor)) {
-                    $file['path'] = str_replace('.' . $extension, '.webp', $file['path']);
-                    $file['url'] = str_replace('.' . $extension, '.webp', $file['url']);
-                    $file['type'] = 'image/webp';
-                    $result = $editor->save($file['path'], 'image/webp');
+                    $result = $editor->save(str_replace('.' . $extension, '.webp', $file['path']), 'image/webp');
 
-                    if ($result['mime-type'] !== 'image/webp') {
-                        $file['path'] = $orginalPath;
-                        $file['url'] = $originalUrl;
-                        $file['type'] = $result['mime-type'];
-                    } else {
+                    if (self::webpSaved($result)) {
+                        $file['path'] = str_replace('.' . $extension, '.webp', $file['path']);
+                        $file['url'] = str_replace('.' . $extension, '.webp', $file['url']);
+                        $file['type'] = 'image/webp';
                         wp_delete_file($orginalPath);
+                    } else {
+                        // Keep the original; GD can report a WebP save it did not make (palette PNG).
+                        self::discardFailedSave($result);
                     }
 
                     $file['meta'] = [
@@ -181,6 +200,14 @@ class UploadHelper
                         'height' => $editor->get_size()['height'],
                     ];
                 }
+            }
+        }
+
+        // A file that was neither resized nor converted has no size yet.
+        if (empty($file['meta']) && !empty($file['path']) && is_file($file['path'])) {
+            $size = wp_getimagesize($file['path']);
+            if ($size) {
+                $file['meta'] = [ 'width' => (int) $size[0], 'height' => (int) $size[1] ];
             }
         }
 
@@ -218,6 +245,31 @@ class UploadHelper
             'width'     => Arr::get($media->settings, 'width'),
             'height'    => Arr::get($media->settings, 'height'),
         ];
+    }
+
+    /**
+     * @param array|\WP_Error $result An image editor save() result.
+     * @return bool A WebP file that exists and is not empty.
+     */
+    private static function webpSaved($result)
+    {
+        if (is_wp_error($result) || Arr::get($result, 'mime-type') !== 'image/webp' || empty($result['path'])) {
+            return false;
+        }
+
+        clearstatcache(true, $result['path']);
+
+        return is_file($result['path']) && filesize($result['path']) > 0;
+    }
+
+    /**
+     * @param array|\WP_Error $result
+     */
+    private static function discardFailedSave($result)
+    {
+        if (!is_wp_error($result) && !empty($result['path']) && is_file($result['path'])) {
+            wp_delete_file($result['path']);
+        }
     }
 
     public static function fixImageOrientation($file)

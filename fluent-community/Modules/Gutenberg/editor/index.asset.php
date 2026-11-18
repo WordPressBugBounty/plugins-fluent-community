@@ -11,5 +11,5 @@
 		'wp-hooks',
 		'wp-plugins'
 	),
-	'version' => '9a34e467ba2352430f25'
+	'version' => 'ed607d53479962c3d42d'
 );

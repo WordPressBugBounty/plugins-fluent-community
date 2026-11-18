@@ -1336,11 +1336,12 @@ class Parsedown
             return;
         }
 
-        if (preg_match('/^[(]\s*+((?:[^ ()]++|[(][^ )]+[)])++)(?:[ ]+("[^"]*+"|\'[^\']*+\'))?\s*+[)]/', $remainder, $matches)) {
-            $Element['attributes']['href'] = $matches[1];
+        // CommonMark also allows the destination in angle brackets: [text](<url>)
+        if (preg_match('/^[(]\s*+(?:<([^<>\n]*+)>|((?:[^ ()]++|[(][^ )]+[)])++))(?:[ ]+("[^"]*+"|\'[^\']*+\'))?\s*+[)]/', $remainder, $matches)) {
+            $Element['attributes']['href'] = $matches[1] !== '' ? $matches[1] : ($matches[2] ?? '');
 
-            if (isset($matches[2])) {
-                $Element['attributes']['title'] = substr($matches[2], 1, -1);
+            if (isset($matches[3])) {
+                $Element['attributes']['title'] = substr($matches[3], 1, -1);
             }
 
             $extent += strlen($matches[0]);

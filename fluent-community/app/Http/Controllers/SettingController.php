@@ -502,6 +502,9 @@ class SettingController extends Controller
                 $settings[$key] = in_array($value, [ 'custom', 'alphabetical', 'latest', 'oldest' ], true) ? $value : '';
             } elseif ($key === 'default_theme_mode') {
                 $settings[$key] = in_array($value, [ 'light', 'dark', 'system' ], true) ? $value : 'light';
+            } elseif ($key === 'max_media_per_post') {
+                $maxMedia = (int) $value;
+                $settings[$key] = ($maxMedia >= 1 && $maxMedia <= 100) ? $maxMedia : 4;
             } elseif ($key === 'affiliate_id') {
                 $settings[$key] = (int)$value;
                 if (!$settings[$key]) {
@@ -526,7 +529,8 @@ class SettingController extends Controller
     public function getFluentPlayerSettings(Request $request)
     {
         return [
-            'settings' => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::getSettings(),
+            'settings'       => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::getSettings(),
+            'has_player_pro' => \FluentCommunity\Modules\Integrations\FluentPlayer\Bootstrap::hasPlayerPro(),
         ];
     }
 

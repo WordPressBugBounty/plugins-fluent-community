@@ -517,7 +517,7 @@ class PortalHandler
                 'is_onboarding_enabled'   => Arr::get($onboardSettings, 'is_onboarding_enabled', 'no') === 'yes',
                 'can_switch_layout'       => Utility::getCustomizationSetting('disable_feed_layout') !== 'yes',
                 'mention_mail'            => Utility::hasEmailAnnouncementEnabled(),
-                'max_media_per_post'      => apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')),
+                'max_media_per_post'      => FeedsHelper::getMaxMediaPerPost(),
                 'max_post_length'         => FeedsHelper::getMaxPostLength(),
                 'has_post_title'          => Utility::postTitlePref(),
                 'has_course'              => Helper::isFeatureEnabled('course_module'),

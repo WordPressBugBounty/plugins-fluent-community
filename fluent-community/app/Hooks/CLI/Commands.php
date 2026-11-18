@@ -63,6 +63,51 @@ class Commands
     }
 
     /**
+     * Lists uploads whose local file is missing or empty. Read-only.
+     *
+     * On sites that use WordPress's GD image editor, an image upload could end as an empty
+     * file (a GIF or palette PNG converted to WebP). Such images cannot be repaired; ask
+     * the member to upload them again.
+     *
+     * ## OPTIONS
+     *
+     * [--include-drafts]
+     * : Also check uploads that were never attached to a post or comment.
+     *
+     * [--format=<format>]
+     * : table, csv, json or count.
+     * ---
+     * default: table
+     * ---
+     *
+     * ## EXAMPLES
+     *
+     *     wp fluent_community find_empty_media
+     *     wp fluent_community find_empty_media --format=csv > empty-media.csv
+     */
+    public function find_empty_media($args, $assoc_args = [])
+    {
+        $rows = \FluentCommunity\App\Services\Libs\EmptyMediaFinder::find((bool) Arr::get($assoc_args, 'include-drafts', false));
+        $format = Arr::get($assoc_args, 'format', 'table');
+
+        if ($format === 'count') {
+            \WP_CLI::line((string) count($rows));
+            return;
+        }
+
+        if (!$rows) {
+            \WP_CLI::success('No missing or empty media files found.');
+            return;
+        }
+
+        \WP_CLI\Utils\format_items($format, $rows, [ 'id', 'problem', 'media_type', 'object_source', 'feed_id', 'comment_id', 'user_id', 'created_at', 'url' ]);
+
+        if ($format === 'table') {
+            \WP_CLI::warning(sprintf('%d media files are missing or empty. They cannot be repaired; the post or comment needs the image uploaded again.', count($rows)));
+        }
+    }
+
+    /**
      * usage: wp fluent_community recalculate_user_points
      */
     public function recalculate_user_points()

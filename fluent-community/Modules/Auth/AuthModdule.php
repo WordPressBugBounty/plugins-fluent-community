@@ -257,10 +257,12 @@ class AuthModdule
                     'redirecting_text' => __('Redirecting...', 'fluent-community'),
                     // For security plugin challenges.
                     'login_url'        => wp_login_url($currentUrl),
+                    'password_toggle'  => (bool) apply_filters('fluent_community/auth/password_toggle_enabled', true, $targetForm),
                     'i18n'             => [
                         'generic_error'  => esc_html__('Something went wrong. Please try again later', 'fluent-community'),
                         'network_error'  => esc_html__('Could not reach the server. Please check your connection and try again.', 'fluent-community'),
                         'security_check' => esc_html__('This site needs an extra security check before you can log in.', 'fluent-community'),
+                        'show_password'  => __('Show password', 'fluent-community'),
                     ],
                 ));
             }

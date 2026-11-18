@@ -628,8 +628,24 @@ class Utility
             $settings['disable_powered_by'] = 'no';
         }
 
-        if (empty($settings['email_footer_rendered']) && !empty($settings['email_footer'])) {
-            $settings['email_footer_rendered'] = FeedsHelper::mdToHtml($settings['email_footer']);
+        $storedFooter = $settings['email_footer'];
+
+        /*
+         * Lets a host supply the mailing settings from elsewhere, for example one sender, reply-to,
+         * logo and footer shared by several apps on the site. Every reader uses this: the mailer
+         * (From, Reply-To), the email composer (logo, footer) and the settings screen.
+         *
+         * @param array $settings The email settings (stored values over the defaults).
+         */
+        $settings = apply_filters('fluent_community/email_notification_settings', $settings);
+
+        $footer = (string) ($settings['email_footer'] ?? '');
+
+        if ($footer !== $storedFooter) {
+            // The filter changed the footer: the stored rendering belongs to the stored text. An empty footer is no footer.
+            $settings['email_footer_rendered'] = $footer === '' ? '' : FeedsHelper::mdToHtml($footer);
+        } elseif (empty($settings['email_footer_rendered']) && $footer !== '') {
+            $settings['email_footer_rendered'] = FeedsHelper::mdToHtml($footer);
         }
 
         return $settings;

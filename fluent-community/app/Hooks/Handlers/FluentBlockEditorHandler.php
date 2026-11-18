@@ -428,6 +428,8 @@ class FluentBlockEditorHandler
         wp_localize_script('fcom_editor_custom', 'fcomEditorVars', array_merge([
             'video_gate_default_threshold' => \FluentCommunity\Modules\Course\Services\LessonVideoGateService::getDefaultThreshold(),
             'can_unfiltered_html'          => current_user_can('unfiltered_html') ? 'yes' : 'no',
+            // For wp.apiFetch paths: the configured namespace and version, e.g. 'fluent-community/v2'.
+            'rest_base'                    => fluentCommunityApp()->config->get('app.rest_namespace') . '/' . fluentCommunityApp()->config->get('app.rest_version'),
         ], $this->contextEditorVars));
     }
 
@@ -802,40 +804,7 @@ class FluentBlockEditorHandler
             'disableCustomColors'              => false,
             'canUpdateBlockBindings'           => false,
             'bodyPlaceholder'                  => __('Start writing or type / to choose a block for your lesson content', 'fluent-community'),
-            'allowedBlockTypes'                => apply_filters('fluent_community/allowed_block_types', [
-                'core/audio',
-                'core/block',
-                'core/buttons',
-                'core/button',
-                'core/code',
-                'core/columns',
-                'core/column',
-                'core/cover',
-                'core/details',
-                'core/embed',
-                'core/footnotes',
-                'core/freeform',
-                'core/gallery',
-                'core/group',
-                'core/heading',
-                'core/html',
-                'core/image',
-                'core/list',
-                'core/list-item',
-                'core/math',
-                'core/media-text',
-                'core/missing',
-                'core/paragraph',
-                'core/preformatted',
-                'core/pullquote',
-                'core/quote',
-                'core/separator',
-                'core/social-link',
-                'core/social-links',
-                'core/spacer',
-                'core/table',
-                'core/verse',
-            ]),
+            'allowedBlockTypes'                => self::allowedBlockTypes(),
             'gradients'                        => [],
             'imageDefaultSize'                 => 'large',
             'imageEditing'                     => true,
@@ -890,6 +859,50 @@ class FluentBlockEditorHandler
 
         $editor_settings = apply_filters('fluent_community/block_editor_settings', $editor_settings);
         return $editor_settings;
+    }
+
+    /**
+     * The blocks the lesson, lock screen and page editor offers. Other plugins add
+     * theirs through the filter (FluentPlayer adds its media block).
+     *
+     * @return string[] Block names, for example core/paragraph.
+     */
+    public static function allowedBlockTypes()
+    {
+        return (array) apply_filters('fluent_community/allowed_block_types', [
+            'core/audio',
+            'core/block',
+            'core/buttons',
+            'core/button',
+            'core/code',
+            'core/columns',
+            'core/column',
+            'core/cover',
+            'core/details',
+            'core/embed',
+            'core/footnotes',
+            'core/freeform',
+            'core/gallery',
+            'core/group',
+            'core/heading',
+            'core/html',
+            'core/image',
+            'core/list',
+            'core/list-item',
+            'core/math',
+            'core/media-text',
+            'core/missing',
+            'core/paragraph',
+            'core/preformatted',
+            'core/pullquote',
+            'core/quote',
+            'core/separator',
+            'core/social-link',
+            'core/social-links',
+            'core/spacer',
+            'core/table',
+            'core/verse',
+        ]);
     }
 
     private function getExperimentalFeatures()

@@ -70,7 +70,7 @@ class LessonVideoGateHandler
         }
 
         $data['js_vars']['fcomLessonVideoGate'] = [
-            'rest_url'          => rest_url('fluent-community/v2'),
+            'rest_url'          => Helper::restUrl(),
             'nonce'             => wp_create_nonce('wp_rest'),
             'default_threshold'   => LessonVideoGateService::getDefaultThreshold(),
             'auto_complete_delay' => LessonVideoGateService::getAutoCompleteDelay(),

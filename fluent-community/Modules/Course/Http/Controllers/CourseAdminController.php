@@ -1242,6 +1242,11 @@ class CourseAdminController extends Controller
         // message bypasses the empty-value filter above so an emptied lesson body still saves
         if ($request->exists('message')) {
             $lessonData['message'] = CourseHelper::santizeLessonBody((string) $request->get('message'));
+
+            // Never keep a stale copy; readers fall back to message.
+            $lessonData['message_rendered'] = '';
+
+            $lessonData = apply_filters('fluent_community/lesson/update_data', $lessonData, $lesson);
         }
 
         if (!empty($lessonData)) {

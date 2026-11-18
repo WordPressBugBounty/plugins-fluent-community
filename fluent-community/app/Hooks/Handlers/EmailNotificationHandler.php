@@ -437,14 +437,39 @@ class EmailNotificationHandler
             return true;
         }
 
-        $users = AnnouncementPref::scopeRecipients(User::query(), $feed->space_id)
+        /*
+         * Let a host hold the announcement email, for example while the post is reviewed. A held run sends
+         * nothing and schedules nothing; the host sends it later by running this action again with the same
+         * arguments ($feedId, $lastSendUserId). Checked before every batch, so a hold also pauses a send
+         * that is under way.
+         *
+         * @param bool $hold          Default false.
+         * @param Feed $feed          The announcement post.
+         * @param int  $lastSendUserId 0 for the first batch, else the last user ID sent to.
+         */
+        if (apply_filters('fluent_community/announcement_email/hold', false, $feed, (int) $lastSendUserId)) {
+            return true;
+        }
+
+        $recipients = AnnouncementPref::scopeRecipients(User::query(), $feed->space_id)
             ->whereHas('space_pivot', function ($query) use ($feed) {
                 $query->where('space_id', $feed->space_id)
                     ->where('status', 'active');
             })
             ->whereHas('xprofile', function ($query) {
                 return $query->where('status', 'active');
-            })
+            });
+
+        /*
+         * Narrow who gets the announcement email, for example only members active recently. The filter adds
+         * conditions to the query; batching (100 at a time, by user ID) stays as it is.
+         *
+         * @param \FluentCommunity\Framework\Database\Orm\Builder $recipients The users query (wp users table).
+         * @param Feed $feed The announcement post.
+         */
+        $recipients = apply_filters('fluent_community/announcement_email/recipients_query', $recipients, $feed);
+
+        $users = $recipients
             ->orderBy('ID', 'ASC')
             ->when($lastSendUserId, function ($q) use ($lastSendUserId) {
                 $q->where('ID', '>', $lastSendUserId);

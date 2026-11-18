@@ -10,6 +10,7 @@ use FluentCommunity\App\Services\UploadHelper;
  * @method string getAbsolutePathOfFile(string $file)
  * @method array uploadFromRequest()
  * @method array put(array $files)
+ * @method array|\WP_Error sideload(array $file)
  * @method void delete(array|string $files)
  * @method void overrideUploadDir()
  * @method array setCustomUploadDir(array $param)
@@ -98,6 +99,56 @@ class FileSystem
         remove_filter('wp_handle_upload', [ UploadHelper::class, 'stripImageMeta' ]);
 
         return $uploadedFiles;
+    }
+
+    /**
+     * Store a file the server wrote itself (a download or decoded data), the way put()
+     * stores a browser upload: same folder, renamed, orientation fixed and metadata stripped.
+     * wp_handle_upload() refuses such a file because PHP did not receive it as an upload.
+     *
+     * @param array $file name, type, tmp_name, error, size.
+     * @return array|\WP_Error The stored file: url, file (name in the folder), type, original_name.
+     */
+    public function _sideload($file)
+    {
+        if (!function_exists('wp_handle_sideload')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        $prefilter = function ($upload) {
+            add_filter('upload_dir', [ $this, '_setCustomUploadDir' ]);
+
+            return $this->_renameFileName($upload);
+        };
+
+        $keepFileName = function ($fileinfo) {
+            remove_filter('upload_dir', [ $this, '_setCustomUploadDir' ]);
+            $fileinfo['file'] = basename($fileinfo['file']);
+
+            return $fileinfo;
+        };
+
+        add_filter('wp_handle_sideload_prefilter', $prefilter);
+        add_filter('wp_handle_upload', [ UploadHelper::class, 'fixImageOrientation' ]);
+        add_filter('wp_handle_upload', [ UploadHelper::class, 'stripImageMeta' ]);
+        add_filter('wp_handle_upload', $keepFileName);
+
+        $originalName = $file['name'];
+        $stored = \wp_handle_sideload($file, [ 'test_form' => false ]);
+
+        remove_filter('wp_handle_sideload_prefilter', $prefilter);
+        remove_filter('wp_handle_upload', [ UploadHelper::class, 'fixImageOrientation' ]);
+        remove_filter('wp_handle_upload', [ UploadHelper::class, 'stripImageMeta' ]);
+        remove_filter('wp_handle_upload', $keepFileName);
+        remove_filter('upload_dir', [ $this, '_setCustomUploadDir' ]);
+
+        if (isset($stored['error'])) {
+            return new \WP_Error('upload_error', $stored['error']);
+        }
+
+        $stored['original_name'] = $originalName;
+
+        return $stored;
     }
 
     /**

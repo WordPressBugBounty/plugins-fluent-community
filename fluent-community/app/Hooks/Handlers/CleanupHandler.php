@@ -189,7 +189,7 @@ class CleanupHandler
      */
     public function maybeDeleteOldNotifications()
     {
-        $notifications = Notification::where('updated_at', '<', gmdate('Y-m-d H:i:s', strtotime('-1 month')))
+        $notifications = Notification::where('updated_at', '<', wp_date('Y-m-d H:i:s', strtotime('-1 month')))
             ->limit(100)
             ->get();
 
@@ -207,7 +207,7 @@ class CleanupHandler
                     '_last_email_user_id',
                 ])
                 ->limit(9000)
-                ->where('created_at', '<', gmdate('Y-m-d H:i:s', strtotime('-1 week')))
+                ->where('created_at', '<', wp_date('Y-m-d H:i:s', strtotime('-1 week')))
                 ->delete();
 
             return false;

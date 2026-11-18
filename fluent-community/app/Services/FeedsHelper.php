@@ -128,6 +128,41 @@ class FeedsHelper
         return (int) apply_filters('fluent_community/max_post_length', 15000);
     }
 
+    /**
+     * Most images one post or comment can attach. Inline images in the text do not count.
+     *
+     * @param \FluentCommunity\App\Models\User|null $user Defaults to the current user.
+     * @return int|null Null when the user has no limit: site admins and community moderators.
+     */
+    public static function getMaxMediaPerPost($user = null)
+    {
+        if (!$user) {
+            $user = Helper::getCurrentUser();
+        }
+
+        $isExempt = $user && (Helper::isSiteAdmin($user->ID, $user) || $user->hasCommunityModeratorAccess());
+
+        if (apply_filters('fluent_community/media_limit_exempt', $isExempt, $user)) {
+            return null;
+        }
+
+        return max(0, (int) apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post')));
+    }
+
+    /**
+     * @param array    $items Media items in the order the user attached them.
+     * @param int|null $limit From getMaxMediaPerPost().
+     * @return array
+     */
+    public static function limitMediaItems($items, $limit)
+    {
+        if ($limit === null) {
+            return $items;
+        }
+
+        return array_slice($items, 0, $limit);
+    }
+
     public static function getLastFeedId()
     {
         $lastItem = Feed::where('status', 'published')
@@ -812,14 +847,15 @@ class FeedsHelper
 
                 if ($media) {
                     $feed->media_images = [
-                    [
+                    array_filter([
                         'url'      => $media->public_url,
                         'type'     => 'image',
                         'media_id' => $media->id,
                         'width'    => Arr::get($media->settings, 'width'),
                         'height'   => Arr::get($media->settings, 'height'),
                         'provider' => Arr::get($media->settings, 'provider', 'uploader'),
-                    ],
+                        'alt'      => Arr::get($media->settings, 'alt'),
+                    ]),
                     ];
                 }
             } elseif ($type !== 'meta_data') {
@@ -1070,13 +1106,11 @@ class FeedsHelper
 
             // Limit before building the preview: an image the post shows but does not keep
             // stays a draft, and deleteOldDraftMedias() removes it while the post still shows it
-            $maxMediaPerPost = apply_filters('fluent_community/max_media_per_post', Utility::getCustomizationSetting('max_media_per_post'));
-
-            $uploadedMediaItems = array_slice($uploadedMediaItems, 0, (int)$maxMediaPerPost);
+            $uploadedMediaItems = self::limitMediaItems($uploadedMediaItems, self::getMaxMediaPerPost());
 
             if (count($uploadedMediaItems) === 1) {
                 $singleMedia = $uploadedMediaItems[0];
-                $data['meta']['media_preview'] = [
+                $data['meta']['media_preview'] = array_filter([
                     'is_uploaded' => true,
                     'image'       => $singleMedia->public_url,
                     'type'        => 'meta_data',
@@ -1084,7 +1118,8 @@ class FeedsHelper
                     'width'       => Arr::get($singleMedia->settings, 'width'),
                     'height'      => Arr::get($singleMedia->settings, 'height'),
                     'media_id'    => $singleMedia->id,
-                ];
+                    'alt'         => Helper::syncMediaAlt($mediaImages, $singleMedia),
+                ]);
             } elseif ($uploadedMediaItems) {
                 $mediaPreviews = [];
                 foreach ($uploadedMediaItems as $mediaItem) {
@@ -1095,6 +1130,7 @@ class FeedsHelper
                         'width'    => Arr::get($mediaItem->settings, 'width'),
                         'height'   => Arr::get($mediaItem->settings, 'height'),
                         'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader'),
+                        'alt'      => Helper::syncMediaAlt($mediaImages, $mediaItem),
                     ];
                     $mediaPreviews[] = array_filter($mediaData);
                 }
@@ -1117,9 +1153,14 @@ class FeedsHelper
         if (strpos($firstUrl, Helper::baseUrl()) === 0) {
             // this is an internal URL
             if (Helper::getRouteNameByRequestPath($firstUrl) === 'feed_view') {
-                $uriParts = explode('/', $firstUrl);
-                if (count($uriParts) >= 2) {
-                    $postSlug = end($uriParts);
+                // Read the slug from the route only, so "?comment_id=", "#..." and a trailing "/" still match.
+                // Hash routing keeps the route in the fragment: /portal/#/space/x/post/slug
+                $route = Helper::getPortalRouteType() === 'hash'
+                    ? strtok((string) wp_parse_url($firstUrl, PHP_URL_FRAGMENT), '?#')
+                    : wp_parse_url($firstUrl, PHP_URL_PATH);
+                $postPath = untrailingslashit((string) $route);
+                $postSlug = strpos($postPath, '/post/') !== false ? basename($postPath) : '';
+                if ($postSlug) {
                     $feed = Feed::where('slug', $postSlug)->first();
                     if ($feed) {
                         $firstUrl = null;

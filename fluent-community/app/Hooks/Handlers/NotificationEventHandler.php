@@ -88,6 +88,10 @@ class NotificationEventHandler
             return;
         }
 
+        if (!$this->isReactionNotificationEnabled($feed->user_id, $react, $feed)) {
+            return;
+        }
+
         $feedTitle = $feed->getHumanExcerpt(40);
         $user = $react->user;
 
@@ -148,6 +152,10 @@ class NotificationEventHandler
             return;
         }
 
+        if (!$this->isReactionNotificationEnabled($comment->user_id, $react, $feed, $comment)) {
+            return;
+        }
+
         $commentExcerpt = $comment->getHumanExcerpt(40);
         $user           = $react->user;
 
@@ -194,6 +202,31 @@ class NotificationEventHandler
         ]);
 
         $notification->subscribe([ $comment->user_id ]);
+    }
+
+    /**
+     * Whether a reaction should notify the author of the post or comment.
+     * When the filter returns false, no notification is created and the
+     * grouped reaction notification is not marked unread again.
+     *
+     * @param int $recipientId The author who would get the notification.
+     * @param \FluentCommunity\App\Models\Reaction $react The new reaction.
+     * @param \FluentCommunity\App\Models\Feed $feed The post that was reacted to, or that holds the comment.
+     * @param \FluentCommunity\App\Models\Comment|null $comment The comment that was reacted to; null for a post reaction.
+     * @return bool
+     */
+    private function isReactionNotificationEnabled($recipientId, $react, $feed, $comment = null)
+    {
+        /**
+         * Filter whether a reaction creates an in-app notification.
+         *
+         * @param bool $enabled Default true.
+         * @param int $recipientId The author who would get the notification.
+         * @param \FluentCommunity\App\Models\Reaction $react The new reaction.
+         * @param \FluentCommunity\App\Models\Feed $feed The post that was reacted to, or that holds the comment.
+         * @param \FluentCommunity\App\Models\Comment|null $comment The comment that was reacted to; null for a post reaction.
+         */
+        return (bool) apply_filters('fluent_community/reaction_notification/enabled', true, (int) $recipientId, $react, $feed, $comment);
     }
 
     public function handleSpaceMemberRoleUpdated($space, $pivot)

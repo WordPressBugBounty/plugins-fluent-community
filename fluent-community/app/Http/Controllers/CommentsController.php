@@ -383,6 +383,8 @@ class CommentsController extends Controller
         $mediaImages = Arr::get($requestData, 'media_images', []);
 
         if ($mediaImages) {
+            $maxMedia = FeedsHelper::getMaxMediaPerPost();
+
             if ($exisitngComment) {
                 $mediaItems = [];
                 $mediaData = [];
@@ -400,25 +402,27 @@ class CommentsController extends Controller
                         }
                     }
 
-                    if ($media) {
+                    if ($media instanceof Media) {
                         $mediaItems[] = $media;
-                        $mediaData[] = [
+                        $mediaData[] = array_filter([
                             'media_id' => $media->id,
                             'url'      => $media->public_url,
                             'type'     => 'image',
                             'width'    => Arr::get($media->settings, 'width'),
                             'height'   => Arr::get($media->settings, 'height'),
                             'provider' => Arr::get($media->settings, 'provider', 'uploader'),
-                        ];
+                            'alt'      => Helper::syncMediaAlt($mediaImages, $media),
+                        ]);
                     }
                 }
-                $commentData['meta']['media_items'] = $mediaData;
+                $mediaItems = FeedsHelper::limitMediaItems($mediaItems, $maxMedia);
+                $commentData['meta']['media_items'] = FeedsHelper::limitMediaItems($mediaData, $maxMedia);
                 return [ $commentData, $mediaItems ];
             }
 
             $uploadedImages = Helper::getMediaByProvider($mediaImages);
             if ($uploadedImages) {
-                $mediaItems = Helper::getMediaItemsFromUrl($uploadedImages);
+                $mediaItems = FeedsHelper::limitMediaItems(Helper::getMediaItemsFromUrl($uploadedImages), $maxMedia);
                 if ($mediaItems) {
                     $mediaPreviews = [];
                     foreach ($mediaItems as $mediaItem) {
@@ -429,6 +433,7 @@ class CommentsController extends Controller
                             'width'    => Arr::get($mediaItem->settings, 'width'),
                             'height'   => Arr::get($mediaItem->settings, 'height'),
                             'provider' => Arr::get($mediaItem->settings, 'provider', 'uploader'),
+                            'alt'      => Helper::syncMediaAlt($mediaImages, $mediaItem),
                         ];
 
                         $mediaPreviews[] = array_filter($mediaData);
